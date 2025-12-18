@@ -82,7 +82,14 @@ To deliver a unified platform that rivals Zoho Projects, Microsoft Project, and 
 
 #### A. Project Planning
 - **Project Charter**: Define vision, objectives, scope, success criteria
-- **Work Breakdown Structure (WBS)**: Hierarchical task decomposition
+- **Workplans & Work Breakdown Structure (WBS)**: Hierarchical task decomposition and detailed execution plans
+- **Activity Management**:
+  - **Activity Planning**: Define workshops, site visits, meetings, etc.
+  - **Mode of Delivery**: Field Visit, Meeting, Workshop, Virtual, LOE
+  - **Logistics Planning**: Pax, Days, Frequency, and Quarterly flags (Q1-Q4)
+  - **Activity Budgeting**: Detailed breakdown (Conference, MIE, Transport, Air, Internet, Airtime, Equipment)
+  - **Activity Reporting**: Post-activity reports with multi-stage approval
+  - **Digital Signing Sheets**: Capture participant signatures for verification
 - **Project Templates**: Industry-specific and custom templates
 - **Gantt Charts**: Visual timeline with dependencies
 - **Critical Path Analysis**: Identify critical tasks and bottlenecks
@@ -109,6 +116,7 @@ To deliver a unified platform that rivals Zoho Projects, Microsoft Project, and 
 - **Task Comments**: Threaded discussions on tasks
 - **@Mentions**: Tag team members in comments and descriptions
 - **Activity Feed**: Real-time feed of project activities
+- **Signing Sheets**: Digital attendance and activity verification sheets
 - **File Attachments**: Upload files to projects, tasks, comments (integration with Google Drive, OneDrive, Dropbox)
 - **Screen Sharing**: Integration with collaboration tools for virtual collaboration
 - **Document Collaboration**: Real-time collaborative editing via Google Docs/Microsoft 365 integration
@@ -117,6 +125,7 @@ To deliver a unified platform that rivals Zoho Projects, Microsoft Project, and 
 - **Time Logs**: Manual time entry by task
 - **Timer**: Built-in timer for real-time tracking
 - **Timesheet Management**: Weekly/monthly timesheets with approval workflow
+- **Signing Sheets Integration**: Link digital signing sheets to time logs for verification
 - **Billable vs Non-billable**: Track billable hours for client invoicing
 - **Overtime Tracking**: Identify and manage overtime
 - **Integration**: Sync with HRM for payroll processing
@@ -127,7 +136,7 @@ To deliver a unified platform that rivals Zoho Projects, Microsoft Project, and 
 - **Acceptance Criteria**: Define clear acceptance criteria for deliverables
 - **Approval Workflow**: Client/stakeholder approval process
 - **Version Control**: Track deliverable versions and revisions
-- **Milestone Reports**: Progress against milestones
+- **Milestone & Activity Reports**: Progress against milestones and granular activity tracking
 
 #### F. Budget & Expense Management
 - **Budget Allocation**: Project budget by category (Labor, Materials, Equipment, Overhead)
@@ -203,7 +212,36 @@ To deliver a unified platform that rivals Zoho Projects, Microsoft Project, and 
 
 ---
 
-### 1.3 Integration Capabilities
+### 1.3 Activity Management Module (Field & Workshop Operations)
+
+#### A. Activity Planning & Execution
+- **Activity Definition**: Define specific activities (Workshops, Site Visits, Capacity Building, Field Surveys)
+- **Mode of Delivery**: Categorize by delivery mode (Field Visit, Meeting, Virtual, Workshop, LOE)
+- **Activity Parameters**: Track participants (Pax), duration (Days), and frequency
+- **Workplans**: Link activities to specific workplan outputs and sub-outputs
+- **Scheduling**: Start and end dates for activities with status tracking (Not Started, Started, Completed)
+
+#### B. Activity Budgeting
+- **Activity-Specific Budgets**: Detailed budget breakdown for each activity
+  - Conference/Venue costs
+  - M,I&E (Meals, Incidental & Expenses) / Per Diems
+  - Ground Transport (Fuel, Car Hire)
+  - Air Travel
+  - Communication (Internet, Airtime)
+  - Equipment (Projector, PA System)
+- **Budget Integration**: Link activity budgets to the overall project budget lines
+- **Funding Source Tracking**: Identify specific funding sources for each activity
+
+#### C. Activity Reporting & Verification
+- **Activity Reports**: Structured reporting for completed activities
+- **Digital Signing Sheets**: Capture participant attendance and verification digitally
+- **Verification Documents**: Upload photos, participant lists, and other field evidence
+- **Multi-Stage Review**: Approval workflow for activity reports (Submitted -> Review -> Approved/Update Requested)
+- **Activity Metrics**: Track actual vs planned pax, days, and costs
+
+---
+
+### 1.4 Integration Capabilities
 
 #### A. Internal BengoBox Microservices
 
@@ -220,7 +258,7 @@ To deliver a unified platform that rivals Zoho Projects, Microsoft Project, and 
 - **Performance Data**: Link project performance to employee appraisals
 - **Skill Matrix**: Access employee skills for resource allocation
 
-##### Treasury/Finance Integration
+##### Treasury (Finance Service) Integration
 - **Budget Approval**: Submit project budgets for finance approval
 - **Voucher Processing**: Create and track payment vouchers
 - **Expense Recording**: Sync project expenses with financial system
@@ -820,6 +858,7 @@ See `docs/sprints/` for detailed sprint planning.
 
 ### Sprint 3: Project Planning (4 weeks)
 - Project CRUD operations
+- Workplans & Work Breakdown Structure (WBS)
 - Task management with dependencies
 - Gantt chart data
 - Milestone management
@@ -833,11 +872,11 @@ See `docs/sprints/` for detailed sprint planning.
 - Real-time updates (WebSockets)
 
 ### Sprint 5: Time & Budget (3 weeks)
-- Time tracking
+- Time tracking & Signing Sheets (Attendance)
 - Budget management
 - Expense recording
 - Voucher system
-- Treasury integration
+- Treasury (Finance Service) integration for payments
 
 ### Sprint 6: Resource Management (2 weeks)
 - Resource pool
@@ -849,14 +888,15 @@ See `docs/sprints/` for detailed sprint planning.
 - Governance structure
 - Decision log
 - Change control
-- Standard reports
+- Standard reports & Activity Reports
 - Dashboard APIs
 
 ### Sprint 8: Apache Superset Integration (2 weeks)
-- Superset setup
+- Superset setup & Database views
 - Dataset configuration
-- Dashboard creation
-- Embedding setup
+- Dashboard creation (Executive, PM, Financial)
+- Embedding setup via Guest Tokens
+- [Link to Sprint 8 Details](docs/sprints/sprint-8-superset-integration.md)
 
 ### Sprint 9: External Integrations (4 weeks)
 - Google Workspace

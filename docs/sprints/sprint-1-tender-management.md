@@ -2,7 +2,7 @@
 
 **Duration**: 4 weeks  
 **Sprint Goal**: Implement complete tender management lifecycle from opportunity identification through submission  
-**Team Size**: 4-6 developers  
+**Team Size**: x developers  
 **Prerequisites**: Sprint 0 (Foundations) completed
 
 ---

@@ -19,6 +19,16 @@ We welcome contributions to the Projects Service. Please review this guide befor
 
 ## Coding Standards
 
+### Naming Conventions
+
+- **Go Packages**: Use lowercase, single-word names (e.g., `tender`, `project`). Avoid underscores or mixedCaps.
+- **Go Symbols**: Use `PascalCase` for exported symbols and `camelCase` for unexported symbols.
+- **Database**: Use `snake_case` for table names (plural) and column names.
+- **API Endpoints**: Use `kebab-case` and plural nouns (e.g., `/api/v1/tender-opportunities`).
+- **Environment Variables**: Use `UPPER_SNAKE_CASE` (e.g., `DATABASE_URL`).
+
+### General Guidelines
+
 - Follow idiomatic Go patterns and clean architecture boundaries.
 - Keep module interfaces small; prefer dependency injection over globals.
 - Use table-driven tests; leverage Testcontainers for DB/Redis integration tests.
@@ -27,9 +37,30 @@ We welcome contributions to the Projects Service. Please review this guide befor
 
 ## Commit Style
 
-- Use descriptive messages (`projects: add user management`, `rbac: implement permission checks`).
-- Reference task/issue IDs where applicable.
-- Avoid large mixed commits; keep concerns separated.
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code (formatting, etc.)
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `perf`: A code change that improves performance
+- `test`: Adding missing tests or correcting existing tests
+- `build`: Changes that affect the build system or external dependencies
+- `ci`: Changes to our CI configuration files and scripts
+- `chore`: Other changes that don't modify src or test files
+- `revert`: Reverts a previous commit
+
+**Example**: `feat(tender): add committee evaluation scoring matrix`
+
+## Branching Strategy
+
+- `main`: Production-ready code. All PRs must eventually merge here.
+- `develop`: Integration branch for upcoming releases.
+- **Feature Branches**: `feat/short-description` or `feature/short-description`.
+- **Bugfix Branches**: `fix/short-description` or `bugfix/short-description`.
+- **Hotfix Branches**: `hotfix/short-description` (branched from `main`).
+- **Release Branches**: `release/vX.Y.Z`.
 
 ## Issue Reporting
 

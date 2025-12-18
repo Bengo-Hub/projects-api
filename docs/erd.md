@@ -904,7 +904,7 @@ CREATE INDEX idx_attachments_uploaded_by ON attachments(uploaded_by);
 
 ---
 
-### 5.3 `activities`
+### 5.3 `activity_logs`
 
 Activity feed for projects and tasks.
 
@@ -923,10 +923,10 @@ Activity feed for projects and tasks.
 
 **Indexes:**
 ```sql
-CREATE INDEX idx_activities_entity ON activities(entity_type, entity_id, tenant_id);
-CREATE INDEX idx_activities_actor ON activities(actor_id);
-CREATE INDEX idx_activities_created ON activities(created_at DESC);
-CREATE INDEX idx_activities_type ON activities(activity_type, entity_id);
+CREATE INDEX idx_activity_logs_entity ON activity_logs(entity_type, entity_id, tenant_id);
+CREATE INDEX idx_activity_logs_actor ON activity_logs(actor_id);
+CREATE INDEX idx_activity_logs_created ON activity_logs(created_at DESC);
+CREATE INDEX idx_activity_logs_type ON activity_logs(activity_type, entity_id);
 ```
 
 ---
@@ -1369,9 +1369,236 @@ CREATE INDEX idx_reports_created_by ON reports(created_by);
 
 ---
 
+## 8. Client & Issue Management Entities
+
+### 8.1 `clients`
+
+External clients/organizations.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | |
+| `tenant_id` | VARCHAR(100) | NOT NULL, INDEX | |
+| `name` | VARCHAR(255) | NOT NULL | |
+| `industry` | VARCHAR(100) | | |
+| `website` | VARCHAR(255) | | |
+| `address` | TEXT | | |
+| `contact_person` | VARCHAR(255) | | |
+| `contact_email` | VARCHAR(255) | | |
+| `contact_phone` | VARCHAR(50) | | |
+| `metadata` | JSONB | | |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+---
+
+### 8.2 `client_users`
+
+Users belonging to client organizations (for portal access).
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | |
+| `tenant_id` | VARCHAR(100) | NOT NULL, INDEX | |
+| `client_id` | UUID | FK → clients.id, NOT NULL | |
+| `user_id` | UUID | FK → users.id, NOT NULL | Link to auth-service user |
+| `role` | VARCHAR(50) | | Admin, Viewer, Approver |
+| `is_active` | BOOLEAN | DEFAULT true | |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+---
+
+### 8.3 `issues`
+
+Project issues, bugs, or risks.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | |
+| `tenant_id` | VARCHAR(100) | NOT NULL, INDEX | |
+| `project_id` | UUID | FK → projects.id, NOT NULL | |
+| `task_id` | UUID | FK → tasks.id | Optional link to task |
+| `title` | VARCHAR(500) | NOT NULL | |
+| `description` | TEXT | | |
+| `issue_type` | VARCHAR(50) | | Bug, Issue, Risk, Impediment |
+| `priority` | VARCHAR(20) | | Critical, High, Medium, Low |
+| `severity` | VARCHAR(20) | | Blocker, Major, Minor, Trivial |
+| `status` | VARCHAR(50) | | Open, In Progress, Resolved, Closed, Won't Fix |
+| `reporter_id` | UUID | FK → users.id, NOT NULL | |
+| `assignee_id` | UUID | FK → users.id | |
+| `due_date` | DATE | | |
+| `resolved_at` | TIMESTAMPTZ | | |
+| `resolution_notes` | TEXT | | |
+| `metadata` | JSONB | | |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+---
+
+### 8.4 `issue_comments`
+
+Comments specifically for issues.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | |
+| `tenant_id` | VARCHAR(100) | NOT NULL, INDEX | |
+| `issue_id` | UUID | FK → issues.id, NOT NULL | |
+| `author_id` | UUID | FK → users.id, NOT NULL | |
+| `content` | TEXT | NOT NULL | |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+---
+
+## 9. Activity Management Entities
+
+### 8.1 `activities`
+
+Specific project activities like workshops, site visits, etc.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | |
+| `tenant_id` | VARCHAR(100) | NOT NULL, INDEX | |
+| `project_id` | UUID | FK → projects.id, NOT NULL | |
+| `output_id` | UUID | FK → activity_outputs.id | Link to workplan output |
+| `sub_output_id` | UUID | FK → activity_sub_outputs.id | Link to workplan sub-output |
+| `title` | VARCHAR(500) | NOT NULL | Activity title |
+| `description` | TEXT | | Detailed description |
+| `mode_of_delivery` | VARCHAR(50) | NOT NULL | Field Visit, Meeting, Workshop, Virtual, LOE |
+| `activity_type` | VARCHAR(50) | DEFAULT 'general' | General, CPU, etc. |
+| `funding_source_id` | UUID | FK → funding_sources.id | |
+| `person_responsible_id` | UUID | FK → users.id | |
+| `start_date` | DATE | | |
+| `end_date` | DATE | | |
+| `pax` | INTEGER | DEFAULT 0 | Number of participants |
+| `days` | INTEGER | DEFAULT 0 | Duration in days |
+| `frequency` | INTEGER | DEFAULT 1 | How often it occurs |
+| `status` | VARCHAR(50) | DEFAULT 'not_started' | Not Started, Started, Completed |
+| `deliverables` | TEXT | | Expected deliverables |
+| `q1`, `q2`, `q3`, `q4` | BOOLEAN | DEFAULT false | Quarterly planning flags |
+| `metadata` | JSONB | | |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+**Indexes:**
+```sql
+CREATE INDEX idx_activities_project ON activities(project_id, tenant_id);
+CREATE INDEX idx_activities_status ON activities(status, project_id);
+```
+
+---
+
+### 8.2 `activity_budgets`
+
+Detailed budget breakdown for a specific activity.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | |
+| `tenant_id` | VARCHAR(100) | NOT NULL, INDEX | |
+| `activity_id` | UUID | FK → activities.id, NOT NULL | |
+| `budget_line_id` | UUID | FK → budget_lines.id | Link to main project budget line |
+| `conference_budget` | DECIMAL(15,2) | DEFAULT 0 | Venue/Conference costs |
+| `mie_budget` | DECIMAL(15,2) | DEFAULT 0 | Meals, Incidental & Expenses |
+| `transport_budget` | DECIMAL(15,2) | DEFAULT 0 | Ground transport |
+| `air_travel_budget` | DECIMAL(15,2) | DEFAULT 0 | |
+| `internet_budget` | DECIMAL(15,2) | DEFAULT 0 | |
+| `airtime_budget` | DECIMAL(15,2) | DEFAULT 0 | |
+| `equipment_budget` | DECIMAL(15,2) | DEFAULT 0 | Projector, PA, etc. |
+| `total_budget` | DECIMAL(15,2) | NOT NULL | Sum of all categories |
+| `currency` | VARCHAR(3) | DEFAULT 'KES' | |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | |
+
+**Indexes:**
+```sql
+CREATE INDEX idx_activity_budgets_activity ON activity_budgets(activity_id);
+```
+
+---
+
+### 8.3 `activity_reports`
+
+Reports submitted after activity completion.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | |
+| `tenant_id` | VARCHAR(100) | NOT NULL, INDEX | |
+| `activity_id` | UUID | FK → activities.id, NOT NULL | |
+| `submitted_by` | UUID | FK → users.id, NOT NULL | |
+| `approver_id` | UUID | FK → users.id | |
+| `status` | VARCHAR(50) | DEFAULT 'pending' | Pending, Approved, Update Requested |
+| `title` | VARCHAR(255) | | |
+| `description` | TEXT | | |
+| `submission_date` | TIMESTAMPTZ | DEFAULT NOW() | |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+**Indexes:**
+```sql
+CREATE INDEX idx_activity_reports_activity ON activity_reports(activity_id);
+CREATE INDEX idx_activity_reports_status ON activity_reports(status);
+```
+
+---
+
+### 8.4 `activity_report_reviews`
+
+Reviews and feedback on activity reports.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | |
+| `tenant_id` | VARCHAR(100) | NOT NULL, INDEX | |
+| `activity_report_id` | UUID | FK → activity_reports.id, NOT NULL | |
+| `reviewer_id` | UUID | FK → users.id, NOT NULL | |
+| `status` | VARCHAR(50) | | Approved, Pending, Update Requested |
+| `comment` | TEXT | | |
+| `review_file_path` | TEXT | | Path to review document |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+
+---
+
+### 8.5 `activity_signing_sheets`
+
+Digital attendance/signing sheets for activities.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | |
+| `tenant_id` | VARCHAR(100) | NOT NULL, INDEX | |
+| `activity_id` | UUID | FK → activities.id, NOT NULL | |
+| `participant_name` | VARCHAR(255) | NOT NULL | |
+| `participant_email` | VARCHAR(255) | | |
+| `participant_phone` | VARCHAR(50) | | |
+| `organization` | VARCHAR(255) | | |
+| `designation` | VARCHAR(255) | | |
+| `signature_path` | TEXT | | Path to digital signature image |
+| `signed_at` | TIMESTAMPTZ | DEFAULT NOW() | |
+| `verified_by` | UUID | FK → users.id | |
+
+---
+
+### 8.6 `activity_lookup_tables`
+
+Supporting tables for activity classification.
+
+#### `activity_outputs`
+- `id`, `tenant_id`, `title`, `created_at`
+
+#### `activity_sub_outputs`
+- `id`, `tenant_id`, `output_id` (FK), `title`, `created_at`
+
+#### `activity_sub_activities`
+- `id`, `tenant_id`, `title`, `created_at`
+
+#### `funding_sources`
+- `id`, `tenant_id`, `name`, `description`, `created_at`
+
+---
+
 ## Summary Statistics
 
-### Total Entities: 45
+### Total Entities: 59
 
 | Category | Entity Count |
 |----------|--------------|
@@ -1381,7 +1608,9 @@ CREATE INDEX idx_reports_created_by ON reports(created_by);
 | Resource & Budget | 7 |
 | Collaboration | 5 |
 | Governance & Compliance | 6 |
+| Client & Issue Management | 4 |
 | Integration & System | 7 |
+| Activity Management | 13 |
 
 ### Vector Columns Summary
 

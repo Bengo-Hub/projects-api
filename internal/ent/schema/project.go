@@ -56,6 +56,7 @@ func (Project) Edges() []ent.Edge {
 		edge.To("comments", Comment.Type),
 		edge.To("activities", Activity.Type),
 		edge.To("attachments", Attachment.Type),
+		edge.To("tenders", Tender.Type),
 	}
 }
 

@@ -2,40 +2,43 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	eventslib "github.com/Bengo-Hub/shared-events"
-	
+
 	"github.com/bengobox/projects-service/internal/config"
+	"github.com/bengobox/projects-service/internal/ent"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 	router "github.com/bengobox/projects-service/internal/http/router"
 	"github.com/bengobox/projects-service/internal/modules/outbox"
 	"github.com/bengobox/projects-service/internal/platform/cache"
 	"github.com/bengobox/projects-service/internal/platform/database"
 	"github.com/bengobox/projects-service/internal/platform/events"
+	"github.com/bengobox/projects-service/internal/services/project"
 	"github.com/bengobox/projects-service/internal/services/rbac"
+	"github.com/bengobox/projects-service/internal/services/task"
+	"github.com/bengobox/projects-service/internal/services/tender"
 	"github.com/bengobox/projects-service/internal/services/usersync"
 	"github.com/bengobox/projects-service/internal/shared/logger"
-	"database/sql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type App struct {
-	cfg            *config.Config
-	log            *zap.Logger
-	httpServer     *http.Server
-	db             *pgxpool.Pool
-	cache          *redis.Client
-	events         *nats.Conn
+	cfg             *config.Config
+	log             *zap.Logger
+	httpServer      *http.Server
+	db              *ent.Client
+	cache           *redis.Client
+	events          *nats.Conn
 	outboxPublisher *eventslib.Publisher
 }
 
@@ -50,9 +53,14 @@ func New(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("logger init: %w", err)
 	}
 
-	dbPool, err := database.NewPool(ctx, cfg.Postgres)
+	dbClient, err := database.NewClient(ctx, cfg.Postgres)
 	if err != nil {
 		return nil, fmt.Errorf("postgres init: %w", err)
+	}
+
+	// Run database migrations
+	if err := database.RunMigrations(ctx, dbClient); err != nil {
+		return nil, fmt.Errorf("migrations: %w", err)
 	}
 
 	redisClient := cache.NewClient(cfg.Redis)
@@ -62,12 +70,27 @@ func New(ctx context.Context) (*App, error) {
 		log.Warn("event bus connection failed", zap.Error(err))
 	}
 
-	healthHandler := handlers.NewHealthHandler(log, dbPool, redisClient, natsConn)
+	healthHandler := handlers.NewHealthHandler(log, dbClient, redisClient, natsConn)
 
 	// Initialize user management services
-	rbacService := rbac.NewService(log)
+	rbacService := rbac.NewService(log, dbClient)
 	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
 	userHandler := handlers.NewUserHandler(log, rbacService, syncService)
+
+	// Initialize project service and handler
+	projectService := project.NewService(log, dbClient)
+	projectHandler := handlers.NewProjectHandler(log, projectService)
+
+	// Initialize task service and handler
+	taskService := task.NewService(log, dbClient)
+	taskHandler := handlers.NewTaskHandler(log, taskService)
+
+	// Initialize tender service and handlers
+	// We'll create the event-aware service after outbox initialization
+	tenderService := tender.NewService(log, dbClient)
+
+	// Initialize docs handler
+	docsHandler := handlers.NewDocsHandler()
 
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
@@ -92,27 +115,82 @@ func New(ctx context.Context) (*App, error) {
 		authMiddleware = authclient.NewAuthMiddleware(validator)
 	}
 
-	// Initialize outbox publisher
+	// Initialize outbox publisher and event-aware tender service
 	var outboxPublisher *eventslib.Publisher
-	if natsConn != nil && dbPool != nil {
+	var eventAwareTenderService *tender.EventAwareService
+	var sqlDB *sql.DB
+
+	if natsConn != nil && dbClient != nil {
 		js, err := natsConn.JetStream()
 		if err != nil {
 			log.Warn("failed to get jetstream context, outbox publisher disabled", zap.Error(err))
 		} else {
 			// Get underlying sql.DB for outbox repository
-			sqlDB, err := sql.Open("pgx", cfg.Postgres.URL)
+			sqlDB, err = sql.Open("pgx", cfg.Postgres.URL)
 			if err == nil {
 				outboxRepo := outbox.NewRepository(sqlDB)
 				pubCfg := eventslib.DefaultPublisherConfig(js, outboxRepo, log)
 				outboxPublisher = eventslib.NewPublisher(pubCfg)
 				log.Info("outbox publisher initialized")
+
+				// Create event publisher for tender service
+				eventPublisher := tender.NewOutboxEventPublisher(outboxRepo)
+				eventAwareTenderService = tender.NewEventAwareService(log, dbClient, sqlDB, eventPublisher)
+				log.Info("event-aware tender service initialized")
 			} else {
 				log.Warn("failed to create sql.DB for outbox, publisher disabled", zap.Error(err))
 			}
 		}
 	}
 
-	chiRouter := router.New(log, healthHandler, userHandler, authMiddleware)
+	// Initialize tender handlers with event-aware service if available, fallback to basic service
+	var tenderHandler *handlers.TenderHandler
+	var tenderDocumentHandler *handlers.TenderDocumentHandler
+	var tenderCommitteeHandler *handlers.TenderCommitteeHandler
+	var tenderEvaluationHandler *handlers.TenderEvaluationHandler
+	var tenderMeetingHandler *handlers.TenderMeetingHandler
+	var tenderSectionHandler *handlers.TenderSectionHandler
+	var tenderSubmissionHandler *handlers.TenderSubmissionHandler
+
+	if eventAwareTenderService != nil {
+		// Use event-aware service (publishes domain events)
+		tenderHandler = handlers.NewTenderHandler(log, eventAwareTenderService)
+		tenderDocumentHandler = handlers.NewTenderDocumentHandler(log, eventAwareTenderService)
+		tenderCommitteeHandler = handlers.NewTenderCommitteeHandler(log, eventAwareTenderService)
+		tenderEvaluationHandler = handlers.NewTenderEvaluationHandler(log, eventAwareTenderService)
+		tenderMeetingHandler = handlers.NewTenderMeetingHandler(log, eventAwareTenderService)
+		tenderSectionHandler = handlers.NewTenderSectionHandler(log, eventAwareTenderService)
+		tenderSubmissionHandler = handlers.NewTenderSubmissionHandler(log, eventAwareTenderService)
+	} else {
+		// Fallback to basic service (no events)
+		log.Warn("using basic tender service without event publishing")
+		tenderHandler = handlers.NewTenderHandler(log, tenderService)
+		tenderDocumentHandler = handlers.NewTenderDocumentHandler(log, tenderService)
+		tenderCommitteeHandler = handlers.NewTenderCommitteeHandler(log, tenderService)
+		tenderEvaluationHandler = handlers.NewTenderEvaluationHandler(log, tenderService)
+		tenderMeetingHandler = handlers.NewTenderMeetingHandler(log, tenderService)
+		tenderSectionHandler = handlers.NewTenderSectionHandler(log, tenderService)
+		tenderSubmissionHandler = handlers.NewTenderSubmissionHandler(log, tenderService)
+	}
+
+	chiRouter := router.New(router.Config{
+		Log: log,
+		Handlers: router.Handlers{
+			Health:           healthHandler,
+			User:             userHandler,
+			Project:          projectHandler,
+			Task:             taskHandler,
+			Tender:           tenderHandler,
+			TenderDocument:   tenderDocumentHandler,
+			TenderCommittee:  tenderCommitteeHandler,
+			TenderEvaluation: tenderEvaluationHandler,
+			TenderMeeting:    tenderMeetingHandler,
+			TenderSection:    tenderSectionHandler,
+			TenderSubmission: tenderSubmissionHandler,
+			Docs:             docsHandler,
+		},
+		AuthMiddleware: authMiddleware,
+	})
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
@@ -124,12 +202,12 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	return &App{
-		cfg:            cfg,
-		log:            log,
-		httpServer:     httpServer,
-		db:             dbPool,
-		cache:          redisClient,
-		events:         natsConn,
+		cfg:             cfg,
+		log:             log,
+		httpServer:      httpServer,
+		db:              dbClient,
+		cache:           redisClient,
+		events:          natsConn,
 		outboxPublisher: outboxPublisher,
 	}, nil
 }

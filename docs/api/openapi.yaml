@@ -1,0 +1,3424 @@
+openapi: 3.0.3
+info:
+  title: Projects Service API
+  description: |
+    Multi-tenant project and task management API for BengoBox platform.
+
+    ## Authentication
+    All endpoints (except health checks) require a valid JWT token in the Authorization header.
+
+    ## Multi-tenancy
+    All resource endpoints are scoped to a tenant via the `{tenantID}` path parameter.
+  version: 1.0.0
+  contact:
+    name: BengoBox Platform Team
+    email: platform@bengobox.com
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+  - url: https://api.bengobox.com/api/v1
+    description: Production
+
+tags:
+  - name: Health
+    description: Service health and readiness checks
+  - name: Projects
+    description: Project management operations
+  - name: Tasks
+    description: Task management operations (nested under projects)
+  - name: Users
+    description: User management and RBAC operations
+  - name: Tenders
+    description: Tender management and evaluation operations
+  - name: Tender Documents
+    description: Tender document management with versioning
+  - name: Tender Committees
+    description: Tender committee and member management
+  - name: Tender Evaluations
+    description: Tender evaluation and scoring operations
+  - name: Tender Meetings
+    description: Tender meeting scheduling and management
+  - name: Tender Sections
+    description: Tender response section management
+  - name: Tender Submissions
+    description: Tender submission tracking
+
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      description: Returns OK if the service process is running
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivenessResponse'
+
+  /readyz:
+    get:
+      summary: Readiness probe
+      description: Checks connectivity to all downstream dependencies
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: All dependencies healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: One or more dependencies unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: Exposes Prometheus-formatted metrics
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /{tenantID}/projects:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+    get:
+      summary: List projects
+      description: Returns a paginated list of projects for the tenant
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ProjectStatus'
+        - name: owner_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListProjectsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create project
+      description: Creates a new project in the tenant
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/projects/{projectID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/ProjectID'
+    get:
+      summary: Get project
+      description: Returns a single project by ID
+      tags: [Projects]
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update project
+      description: Updates an existing project
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      summary: Delete project
+      description: Deletes a project and all associated tasks
+      tags: [Projects]
+      responses:
+        '204':
+          description: Project deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/projects/{projectID}/tasks:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/ProjectID'
+    get:
+      summary: List tasks
+      description: Returns a paginated list of tasks for the project
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+        - name: priority
+          in: query
+          schema:
+            $ref: '#/components/schemas/Priority'
+        - name: assignee_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListTasksResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create task
+      description: Creates a new task in the project
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/projects/{projectID}/tasks/{taskID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/ProjectID'
+      - $ref: '#/components/parameters/TaskID'
+    get:
+      summary: Get task
+      description: Returns a single task by ID
+      tags: [Tasks]
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update task
+      description: Updates an existing task
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      summary: Delete task
+      description: Deletes a task
+      tags: [Tasks]
+      responses:
+        '204':
+          description: Task deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/users:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+    post:
+      summary: Create user
+      description: Creates a new user and syncs with auth-service
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /{tenantID}/users/me/roles:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+    get:
+      summary: Get current user roles
+      description: Returns roles assigned to the authenticated user
+      tags: [Users]
+      responses:
+        '200':
+          description: User roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRolesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /{tenantID}/roles:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+    get:
+      summary: List roles
+      description: Returns all available roles
+      tags: [Users]
+      responses:
+        '200':
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListRolesResponse'
+
+  /{tenantID}/tenders:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+    get:
+      summary: List tenders
+      description: Returns a paginated list of tenders for the tenant
+      tags: [Tenders]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TenderStatus'
+        - name: priority
+          in: query
+          schema:
+            $ref: '#/components/schemas/Priority'
+        - name: source
+          in: query
+          schema:
+            $ref: '#/components/schemas/TenderSource'
+        - name: created_by
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of tenders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListTendersResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create tender
+      description: Creates a new tender opportunity with auto-generated tender number
+      tags: [Tenders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenderRequest'
+      responses:
+        '201':
+          description: Tender created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/tenders/{tenderID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    get:
+      summary: Get tender
+      description: Returns a single tender by ID
+      tags: [Tenders]
+      responses:
+        '200':
+          description: Tender details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update tender
+      description: Updates an existing tender
+      tags: [Tenders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTenderRequest'
+      responses:
+        '200':
+          description: Tender updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      summary: Delete tender
+      description: Deletes a tender and all associated data
+      tags: [Tenders]
+      responses:
+        '204':
+          description: Tender deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/decision:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    post:
+      summary: Record tender decision
+      description: Records a go/no-go decision for a tender
+      tags: [Tenders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenderDecisionRequest'
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/tenders/{tenderID}/documents:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    get:
+      summary: List tender documents
+      description: Returns documents for a tender
+      tags: [Tender Documents]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: document_type
+          in: query
+          schema:
+            $ref: '#/components/schemas/TenderDocumentType'
+        - name: latest_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListTenderDocumentsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Upload tender document
+      description: Creates a new document for a tender
+      tags: [Tender Documents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenderDocumentRequest'
+      responses:
+        '201':
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenderDocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/tenders/{tenderID}/documents/{documentID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/DocumentID'
+    get:
+      summary: Get document
+      description: Returns a single document by ID
+      tags: [Tender Documents]
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenderDocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update document
+      description: Updates document metadata
+      tags: [Tender Documents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTenderDocumentRequest'
+      responses:
+        '200':
+          description: Document updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenderDocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete document
+      description: Deletes a document
+      tags: [Tender Documents]
+      responses:
+        '204':
+          description: Document deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/documents/{documentID}/versions:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/DocumentID'
+    post:
+      summary: Create document version
+      description: Creates a new version of an existing document
+      tags: [Tender Documents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenderDocumentRequest'
+      responses:
+        '201':
+          description: New version created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenderDocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # Tender Committee Endpoints
+  /{tenantID}/tenders/{tenderID}/committees:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    get:
+      summary: List committees
+      description: Returns committees for a tender
+      tags: [Tender Committees]
+      responses:
+        '200':
+          description: List of committees
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListCommitteesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create committee
+      description: Creates a new evaluation committee for a tender
+      tags: [Tender Committees]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommitteeRequest'
+      responses:
+        '201':
+          description: Committee created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitteeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/tenders/{tenderID}/committees/{committeeID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/CommitteeID'
+    get:
+      summary: Get committee
+      description: Returns a committee with its members
+      tags: [Tender Committees]
+      responses:
+        '200':
+          description: Committee details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitteeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update committee
+      description: Updates committee details
+      tags: [Tender Committees]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommitteeRequest'
+      responses:
+        '200':
+          description: Committee updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitteeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete committee
+      description: Deletes a committee
+      tags: [Tender Committees]
+      responses:
+        '204':
+          description: Committee deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/committees/{committeeID}/dissolve:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/CommitteeID'
+    post:
+      summary: Dissolve committee
+      description: Marks a committee as dissolved
+      tags: [Tender Committees]
+      responses:
+        '200':
+          description: Committee dissolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitteeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/committees/{committeeID}/members:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/CommitteeID'
+    post:
+      summary: Add member
+      description: Adds a member to a committee
+      tags: [Tender Committees]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMemberRequest'
+      responses:
+        '201':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: User is already a member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /{tenantID}/tenders/{tenderID}/committees/{committeeID}/members/{memberID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/CommitteeID'
+      - $ref: '#/components/parameters/MemberID'
+    get:
+      summary: Get member
+      description: Returns a committee member
+      tags: [Tender Committees]
+      responses:
+        '200':
+          description: Member details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update member
+      description: Updates member details
+      tags: [Tender Committees]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberRequest'
+      responses:
+        '200':
+          description: Member updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Remove member
+      description: Removes a member from a committee
+      tags: [Tender Committees]
+      responses:
+        '204':
+          description: Member removed
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Tender Evaluation Endpoints
+  /{tenantID}/tenders/{tenderID}/evaluations:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    get:
+      summary: List evaluations
+      description: Returns evaluations for a tender
+      tags: [Tender Evaluations]
+      responses:
+        '200':
+          description: List of evaluations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEvaluationsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create evaluation
+      description: Creates a new evaluation for a tender
+      tags: [Tender Evaluations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEvaluationRequest'
+      responses:
+        '201':
+          description: Evaluation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/tenders/{tenderID}/evaluations/summary:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    get:
+      summary: Get evaluation summary
+      description: Returns aggregated evaluation data for a tender
+      tags: [Tender Evaluations]
+      responses:
+        '200':
+          description: Evaluation summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationSummary'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/evaluations/{evaluationID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/EvaluationID'
+    get:
+      summary: Get evaluation
+      description: Returns an evaluation by ID
+      tags: [Tender Evaluations]
+      responses:
+        '200':
+          description: Evaluation details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update evaluation
+      description: Updates an evaluation
+      tags: [Tender Evaluations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEvaluationRequest'
+      responses:
+        '200':
+          description: Evaluation updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete evaluation
+      description: Deletes an evaluation
+      tags: [Tender Evaluations]
+      responses:
+        '204':
+          description: Evaluation deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/evaluations/{evaluationID}/submit:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/EvaluationID'
+    post:
+      summary: Submit evaluation
+      description: Marks an evaluation as final/submitted
+      tags: [Tender Evaluations]
+      responses:
+        '200':
+          description: Evaluation submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Tender Meeting Endpoints
+  /{tenantID}/tenders/{tenderID}/meetings:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    get:
+      summary: List meetings
+      description: Returns meetings for a tender
+      tags: [Tender Meetings]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/MeetingStatus'
+        - name: meeting_type
+          in: query
+          schema:
+            $ref: '#/components/schemas/MeetingType'
+        - name: committee_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: from_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: List of meetings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListMeetingsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create meeting
+      description: Schedules a new meeting for a tender
+      tags: [Tender Meetings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeetingRequest'
+      responses:
+        '201':
+          description: Meeting created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/tenders/{tenderID}/meetings/{meetingID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/MeetingID'
+    get:
+      summary: Get meeting
+      description: Returns a meeting by ID
+      tags: [Tender Meetings]
+      responses:
+        '200':
+          description: Meeting details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update meeting
+      description: Updates meeting details
+      tags: [Tender Meetings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMeetingRequest'
+      responses:
+        '200':
+          description: Meeting updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete meeting
+      description: Deletes a meeting
+      tags: [Tender Meetings]
+      responses:
+        '204':
+          description: Meeting deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/meetings/{meetingID}/start:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/MeetingID'
+    post:
+      summary: Start meeting
+      description: Marks a meeting as in progress
+      tags: [Tender Meetings]
+      responses:
+        '200':
+          description: Meeting started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/meetings/{meetingID}/end:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/MeetingID'
+    post:
+      summary: End meeting
+      description: Marks a meeting as completed with minutes
+      tags: [Tender Meetings]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndMeetingRequest'
+      responses:
+        '200':
+          description: Meeting ended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/meetings/{meetingID}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/MeetingID'
+    post:
+      summary: Cancel meeting
+      description: Cancels a scheduled meeting
+      tags: [Tender Meetings]
+      responses:
+        '200':
+          description: Meeting cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Tender Section Endpoints
+  /{tenantID}/tenders/{tenderID}/sections:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    get:
+      summary: List sections
+      description: Returns sections for a tender response
+      tags: [Tender Sections]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/SectionStatus'
+        - name: assignee_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: parent_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of sections
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSectionsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create section
+      description: Creates a new section in the tender response
+      tags: [Tender Sections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSectionRequest'
+      responses:
+        '201':
+          description: Section created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/tenders/{tenderID}/sections/progress:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    get:
+      summary: Get section progress
+      description: Returns progress summary for all sections
+      tags: [Tender Sections]
+      responses:
+        '200':
+          description: Section progress summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionProgress'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/sections/{sectionID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/SectionID'
+    get:
+      summary: Get section
+      description: Returns a section by ID with children
+      tags: [Tender Sections]
+      responses:
+        '200':
+          description: Section details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update section
+      description: Updates section details and content
+      tags: [Tender Sections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSectionRequest'
+      responses:
+        '200':
+          description: Section updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete section
+      description: Deletes a section
+      tags: [Tender Sections]
+      responses:
+        '204':
+          description: Section deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/sections/{sectionID}/assign:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/SectionID'
+    post:
+      summary: Assign section
+      description: Assigns a section to a user
+      tags: [Tender Sections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignSectionRequest'
+      responses:
+        '200':
+          description: Section assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/sections/{sectionID}/submit-review:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/SectionID'
+    post:
+      summary: Submit for review
+      description: Submits a section for review
+      tags: [Tender Sections]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitForReviewRequest'
+      responses:
+        '200':
+          description: Section submitted for review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/sections/{sectionID}/approve:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/SectionID'
+    post:
+      summary: Approve section
+      description: Approves a section after review
+      tags: [Tender Sections]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewSectionRequest'
+      responses:
+        '200':
+          description: Section approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/sections/{sectionID}/reject:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/SectionID'
+    post:
+      summary: Reject section
+      description: Rejects a section and sends back for revision
+      tags: [Tender Sections]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewSectionRequest'
+      responses:
+        '200':
+          description: Section rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Tender Submission Endpoints
+  /{tenantID}/tenders/{tenderID}/submissions:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+    get:
+      summary: List submissions
+      description: Returns submissions for a tender
+      tags: [Tender Submissions]
+      responses:
+        '200':
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSubmissionsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create submission
+      description: Creates a new submission record
+      tags: [Tender Submissions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubmissionRequest'
+      responses:
+        '201':
+          description: Submission created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /{tenantID}/tenders/{tenderID}/submissions/{submissionID}:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/SubmissionID'
+    get:
+      summary: Get submission
+      description: Returns a submission by ID
+      tags: [Tender Submissions]
+      responses:
+        '200':
+          description: Submission details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update submission
+      description: Updates submission details
+      tags: [Tender Submissions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubmissionRequest'
+      responses:
+        '200':
+          description: Submission updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete submission
+      description: Deletes a submission record
+      tags: [Tender Submissions]
+      responses:
+        '204':
+          description: Submission deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/submissions/{submissionID}/submit:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/SubmissionID'
+    post:
+      summary: Submit tender
+      description: Marks the submission as submitted
+      tags: [Tender Submissions]
+      responses:
+        '200':
+          description: Tender submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/submissions/{submissionID}/confirm-delivery:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/SubmissionID'
+    post:
+      summary: Confirm delivery
+      description: Confirms physical delivery of tender
+      tags: [Tender Submissions]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmDeliveryRequest'
+      responses:
+        '200':
+          description: Delivery confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /{tenantID}/tenders/{tenderID}/submissions/{submissionID}/email-tracking:
+    parameters:
+      - $ref: '#/components/parameters/TenantID'
+      - $ref: '#/components/parameters/TenderID'
+      - $ref: '#/components/parameters/SubmissionID'
+    post:
+      summary: Record email tracking
+      description: Records email tracking information
+      tags: [Tender Submissions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordEmailTrackingRequest'
+      responses:
+        '200':
+          description: Email tracking recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from auth-service
+
+  parameters:
+    TenantID:
+      name: tenantID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Tenant identifier
+
+    ProjectID:
+      name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Project identifier
+
+    TaskID:
+      name: taskID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Task identifier
+
+    TenderID:
+      name: tenderID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Tender identifier
+
+    DocumentID:
+      name: documentID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Document identifier
+
+    CommitteeID:
+      name: committeeID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Committee identifier
+
+    MemberID:
+      name: memberID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Committee member identifier
+
+    EvaluationID:
+      name: evaluationID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Evaluation identifier
+
+    MeetingID:
+      name: meetingID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Meeting identifier
+
+    SectionID:
+      name: sectionID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Section identifier
+
+    SubmissionID:
+      name: submissionID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Submission identifier
+
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Maximum number of items to return
+
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Number of items to skip
+
+  schemas:
+    ProjectStatus:
+      type: string
+      enum: [active, planning, on_hold, completed, cancelled]
+      description: Project lifecycle status
+
+    TaskStatus:
+      type: string
+      enum: [todo, in_progress, in_review, done, blocked]
+      description: Task workflow status
+
+    Priority:
+      type: string
+      enum: [low, medium, high, critical]
+      description: Priority level
+
+    TenderStatus:
+      type: string
+      enum: [identified, evaluating, preparing, submitted, under_review, shortlisted, awarded, lost, withdrawn]
+      description: Tender lifecycle status
+
+    TenderSource:
+      type: string
+      enum: [manual, government_portal, referral, website]
+      description: Source where tender was discovered
+
+    TenderDocumentType:
+      type: string
+      enum: [rfp, rfq, tor, specification, evaluation_criteria, contract_template, addendum, clarification, response, other]
+      description: Type of tender document
+
+    SubmissionMethod:
+      type: string
+      enum: [email, physical, portal, mixed]
+      description: How the tender should be submitted
+
+    CommitteeType:
+      type: string
+      enum: [evaluation, technical, financial, legal, compliance]
+      description: Type of committee
+
+    CommitteeStatus:
+      type: string
+      enum: [active, dissolved]
+      description: Committee status
+
+    MemberRole:
+      type: string
+      enum: [chair, secretary, member, observer]
+      description: Committee member role
+
+    EvaluationVote:
+      type: string
+      enum: [approve, reject, abstain, defer]
+      description: Evaluator vote
+
+    MeetingType:
+      type: string
+      enum: [evaluation, kickoff, review, decision, clarification]
+      description: Type of meeting
+
+    MeetingStatus:
+      type: string
+      enum: [scheduled, in_progress, completed, cancelled]
+      description: Meeting status
+
+    MeetingPlatform:
+      type: string
+      enum: [google_meet, teams, zoom, zoho_meet]
+      description: Virtual meeting platform
+
+    SectionType:
+      type: string
+      enum: [executive_summary, technical, approach, methodology, pricing, appendix, cover_letter, references, qualifications, other]
+      description: Type of tender response section
+
+    SectionStatus:
+      type: string
+      enum: [not_started, in_progress, review, approved, rejected]
+      description: Section workflow status
+
+    ReviewStatus:
+      type: string
+      enum: [pending_technical, pending_legal, pending_management, approved, rejected]
+      description: Section review status
+
+    SubmissionType:
+      type: string
+      enum: [email, physical, portal]
+      description: How the tender was submitted
+
+    SubmissionStatus:
+      type: string
+      enum: [draft, preparing, submitted, confirmed, rejected]
+      description: Submission status
+
+    LivenessResponse:
+      type: object
+      required: [status, service]
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: projects-service
+
+    ReadinessResponse:
+      type: object
+      required: [status, dependencies]
+      properties:
+        status:
+          type: string
+          example: OK
+        dependencies:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            postgres: ""
+            redis: ""
+            nats: ""
+
+    CreateProjectRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Website Redesign
+        description:
+          type: string
+          maxLength: 2000
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        budget:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: USD
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        budget:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ProjectResponse:
+      type: object
+      required: [id, tenant_id, name, status, currency, owner_id, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        budget:
+          type: number
+          format: double
+        currency:
+          type: string
+        owner_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ListProjectsResponse:
+      type: object
+      required: [projects, total, limit, offset]
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    CreateTaskRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Implement login page
+        description:
+          type: string
+          maxLength: 2000
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        assignee_id:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        assignee_id:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    TaskResponse:
+      type: object
+      required: [id, tenant_id, project_id, title, status, priority, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        assignee_id:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ListTasksResponse:
+      type: object
+      required: [tasks, total, limit, offset]
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    CreateUserRequest:
+      type: object
+      required: [email, tenant_slug]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        tenant_slug:
+          type: string
+        profile:
+          type: object
+          additionalProperties: true
+        roles:
+          type: array
+          items:
+            type: string
+
+    CreateUserResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        tenant_id:
+          type: string
+          format: uuid
+        created:
+          type: boolean
+
+    UserRolesResponse:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleResponse'
+
+    RoleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+
+    ListRolesResponse:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleResponse'
+
+    CreateTenderRequest:
+      type: object
+      required: [title, client_name, deadline]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Government IT Infrastructure Upgrade
+        description:
+          type: string
+          maxLength: 2000
+        client_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Ministry of Technology
+        client_contact:
+          type: string
+          maxLength: 255
+        client_email:
+          type: string
+          format: email
+        source:
+          $ref: '#/components/schemas/TenderSource'
+        source_url:
+          type: string
+          format: uri
+        priority:
+          $ref: '#/components/schemas/Priority'
+        estimated_value:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: USD
+        publication_date:
+          type: string
+          format: date-time
+        deadline:
+          type: string
+          format: date-time
+        clarification_deadline:
+          type: string
+          format: date-time
+        submission_method:
+          $ref: '#/components/schemas/SubmissionMethod'
+        submission_address:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        requirements_summary:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateTenderRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        client_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        client_contact:
+          type: string
+        client_email:
+          type: string
+          format: email
+        source:
+          $ref: '#/components/schemas/TenderSource'
+        source_url:
+          type: string
+          format: uri
+        status:
+          $ref: '#/components/schemas/TenderStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        estimated_value:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+        publication_date:
+          type: string
+          format: date-time
+        deadline:
+          type: string
+          format: date-time
+        clarification_deadline:
+          type: string
+          format: date-time
+        submission_method:
+          $ref: '#/components/schemas/SubmissionMethod'
+        submission_address:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        requirements_summary:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    TenderDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [go, no_go]
+        rationale:
+          type: string
+          maxLength: 2000
+
+    TenderResponse:
+      type: object
+      required: [id, tenant_id, tender_number, title, client_name, source, status, priority, currency, deadline, created_by, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        tender_number:
+          type: string
+          example: TND-202501-abc12345
+        title:
+          type: string
+        description:
+          type: string
+        client_name:
+          type: string
+        client_contact:
+          type: string
+        client_email:
+          type: string
+        source:
+          $ref: '#/components/schemas/TenderSource'
+        source_url:
+          type: string
+        status:
+          $ref: '#/components/schemas/TenderStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        estimated_value:
+          type: number
+          format: double
+        currency:
+          type: string
+        publication_date:
+          type: string
+          format: date-time
+        deadline:
+          type: string
+          format: date-time
+        clarification_deadline:
+          type: string
+          format: date-time
+        submission_method:
+          $ref: '#/components/schemas/SubmissionMethod'
+        submission_address:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        requirements_summary:
+          type: object
+          additionalProperties: true
+        decision:
+          type: string
+          enum: [go, no_go]
+        decision_rationale:
+          type: string
+        decision_date:
+          type: string
+          format: date-time
+        decided_by:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ListTendersResponse:
+      type: object
+      required: [tenders, total, limit, offset]
+      properties:
+        tenders:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenderResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    CreateTenderDocumentRequest:
+      type: object
+      required: [name, file_url, file_name, file_size]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: Technical Requirements Document
+        description:
+          type: string
+          maxLength: 1000
+        document_type:
+          $ref: '#/components/schemas/TenderDocumentType'
+        file_url:
+          type: string
+          format: uri
+        file_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        file_size:
+          type: integer
+          format: int64
+          minimum: 1
+        mime_type:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateTenderDocumentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        document_type:
+          $ref: '#/components/schemas/TenderDocumentType'
+        metadata:
+          type: object
+          additionalProperties: true
+
+    TenderDocumentResponse:
+      type: object
+      required: [id, tenant_id, tender_id, name, document_type, file_url, file_name, file_size, version, is_latest, uploaded_by, uploaded_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        tender_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        document_type:
+          $ref: '#/components/schemas/TenderDocumentType'
+        file_url:
+          type: string
+        file_name:
+          type: string
+        file_size:
+          type: integer
+          format: int64
+        mime_type:
+          type: string
+        version:
+          type: integer
+        is_latest:
+          type: boolean
+        previous_version_id:
+          type: string
+          format: uuid
+        uploaded_by:
+          type: string
+          format: uuid
+        uploaded_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ListTenderDocumentsResponse:
+      type: object
+      required: [documents, total, limit, offset]
+      properties:
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenderDocumentResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    # Committee Schemas
+    CreateCommitteeRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        committee_type:
+          $ref: '#/components/schemas/CommitteeType'
+        chair_id:
+          type: string
+          format: uuid
+        mandate:
+          type: string
+          maxLength: 2000
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateCommitteeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        committee_type:
+          $ref: '#/components/schemas/CommitteeType'
+        chair_id:
+          type: string
+          format: uuid
+        mandate:
+          type: string
+          maxLength: 2000
+        status:
+          $ref: '#/components/schemas/CommitteeStatus'
+        metadata:
+          type: object
+          additionalProperties: true
+
+    CommitteeResponse:
+      type: object
+      required: [id, tenant_id, tender_id, name, committee_type, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        tender_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        committee_type:
+          $ref: '#/components/schemas/CommitteeType'
+        chair_id:
+          type: string
+          format: uuid
+        mandate:
+          type: string
+        status:
+          $ref: '#/components/schemas/CommitteeStatus'
+        dissolved_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberResponse'
+
+    ListCommitteesResponse:
+      type: object
+      required: [committees, total]
+      properties:
+        committees:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommitteeResponse'
+        total:
+          type: integer
+
+    AddMemberRequest:
+      type: object
+      required: [user_id]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/MemberRole'
+        expertise:
+          type: string
+          maxLength: 500
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateMemberRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/MemberRole'
+        expertise:
+          type: string
+          maxLength: 500
+        is_active:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+
+    MemberResponse:
+      type: object
+      required: [id, tenant_id, committee_id, user_id, role, is_active, added_by, added_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        committee_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/MemberRole'
+        expertise:
+          type: string
+        is_active:
+          type: boolean
+        added_by:
+          type: string
+          format: uuid
+        added_at:
+          type: string
+          format: date-time
+        left_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    # Evaluation Schemas
+    CreateEvaluationRequest:
+      type: object
+      properties:
+        committee_id:
+          type: string
+          format: uuid
+        technical_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        financial_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        resource_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        risk_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        vote:
+          $ref: '#/components/schemas/EvaluationVote'
+        vote_comment:
+          type: string
+          maxLength: 1000
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        opportunities:
+          type: array
+          items:
+            type: string
+        threats:
+          type: array
+          items:
+            type: string
+        recommendation:
+          type: string
+          maxLength: 2000
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateEvaluationRequest:
+      type: object
+      properties:
+        technical_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        financial_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        resource_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        risk_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        vote:
+          $ref: '#/components/schemas/EvaluationVote'
+        vote_comment:
+          type: string
+          maxLength: 1000
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        opportunities:
+          type: array
+          items:
+            type: string
+        threats:
+          type: array
+          items:
+            type: string
+        recommendation:
+          type: string
+          maxLength: 2000
+        is_final:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+
+    EvaluationResponse:
+      type: object
+      required: [id, tenant_id, tender_id, evaluator_id, is_final, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        tender_id:
+          type: string
+          format: uuid
+        evaluator_id:
+          type: string
+          format: uuid
+        committee_id:
+          type: string
+          format: uuid
+        technical_score:
+          type: number
+        financial_score:
+          type: number
+        resource_score:
+          type: number
+        risk_score:
+          type: number
+        overall_score:
+          type: number
+        vote:
+          $ref: '#/components/schemas/EvaluationVote'
+        vote_comment:
+          type: string
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        opportunities:
+          type: array
+          items:
+            type: string
+        threats:
+          type: array
+          items:
+            type: string
+        recommendation:
+          type: string
+        is_final:
+          type: boolean
+        submitted_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ListEvaluationsResponse:
+      type: object
+      required: [evaluations, total]
+      properties:
+        evaluations:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluationResponse'
+        total:
+          type: integer
+
+    EvaluationSummary:
+      type: object
+      required: [total_evaluations, finalized_count, vote_summary]
+      properties:
+        total_evaluations:
+          type: integer
+        finalized_count:
+          type: integer
+        vote_summary:
+          type: object
+          additionalProperties:
+            type: integer
+        avg_technical_score:
+          type: number
+        avg_financial_score:
+          type: number
+        avg_resource_score:
+          type: number
+        avg_risk_score:
+          type: number
+        avg_overall_score:
+          type: number
+
+    # Meeting Schemas
+    CreateMeetingRequest:
+      type: object
+      required: [title, scheduled_at]
+      properties:
+        committee_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        meeting_type:
+          $ref: '#/components/schemas/MeetingType'
+        scheduled_at:
+          type: string
+          format: date-time
+        duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 480
+        location:
+          type: string
+          maxLength: 500
+        platform:
+          $ref: '#/components/schemas/MeetingPlatform'
+        meeting_url:
+          type: string
+          format: uri
+        meeting_id:
+          type: string
+          maxLength: 255
+        attendees:
+          type: array
+          items:
+            type: string
+            format: uuid
+        agenda:
+          type: string
+          maxLength: 5000
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateMeetingRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        meeting_type:
+          $ref: '#/components/schemas/MeetingType'
+        scheduled_at:
+          type: string
+          format: date-time
+        duration_minutes:
+          type: integer
+          minimum: 15
+          maximum: 480
+        location:
+          type: string
+          maxLength: 500
+        platform:
+          $ref: '#/components/schemas/MeetingPlatform'
+        meeting_url:
+          type: string
+          format: uri
+        meeting_id:
+          type: string
+          maxLength: 255
+        status:
+          $ref: '#/components/schemas/MeetingStatus'
+        attendees:
+          type: array
+          items:
+            type: string
+            format: uuid
+        agenda:
+          type: string
+          maxLength: 5000
+        minutes:
+          type: string
+          maxLength: 10000
+        decisions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        action_items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        recording_url:
+          type: string
+          format: uri
+        metadata:
+          type: object
+          additionalProperties: true
+
+    EndMeetingRequest:
+      type: object
+      properties:
+        minutes:
+          type: string
+          maxLength: 10000
+        decisions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        action_items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    MeetingResponse:
+      type: object
+      required: [id, tenant_id, tender_id, title, meeting_type, scheduled_at, duration_minutes, status, organized_by, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        tender_id:
+          type: string
+          format: uuid
+        committee_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        meeting_type:
+          $ref: '#/components/schemas/MeetingType'
+        scheduled_at:
+          type: string
+          format: date-time
+        duration_minutes:
+          type: integer
+        location:
+          type: string
+        platform:
+          $ref: '#/components/schemas/MeetingPlatform'
+        meeting_url:
+          type: string
+        meeting_id:
+          type: string
+        status:
+          $ref: '#/components/schemas/MeetingStatus'
+        attendees:
+          type: array
+          items:
+            type: string
+            format: uuid
+        agenda:
+          type: string
+        minutes:
+          type: string
+        decisions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        action_items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        recording_url:
+          type: string
+        organized_by:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ListMeetingsResponse:
+      type: object
+      required: [meetings, total, limit, offset]
+      properties:
+        meetings:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    # Section Schemas
+    CreateSectionRequest:
+      type: object
+      required: [title]
+      properties:
+        parent_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        section_number:
+          type: string
+          maxLength: 50
+        sort_order:
+          type: integer
+          minimum: 0
+        section_type:
+          $ref: '#/components/schemas/SectionType'
+        assignee_id:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date-time
+        page_limit:
+          type: integer
+          minimum: 1
+        compliance_checklist:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateSectionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 2000
+        section_number:
+          type: string
+          maxLength: 50
+        sort_order:
+          type: integer
+          minimum: 0
+        section_type:
+          $ref: '#/components/schemas/SectionType'
+        assignee_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SectionStatus'
+        due_date:
+          type: string
+          format: date-time
+        content:
+          type: string
+        word_count:
+          type: integer
+          minimum: 0
+        page_limit:
+          type: integer
+          minimum: 1
+        review_status:
+          $ref: '#/components/schemas/ReviewStatus'
+        reviewer_comments:
+          type: string
+          maxLength: 2000
+        compliance_checklist:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        is_compliant:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties: true
+
+    AssignSectionRequest:
+      type: object
+      required: [assignee_id]
+      properties:
+        assignee_id:
+          type: string
+          format: uuid
+
+    SubmitForReviewRequest:
+      type: object
+      required: [reviewer_id]
+      properties:
+        reviewer_id:
+          type: string
+          format: uuid
+
+    ReviewSectionRequest:
+      type: object
+      properties:
+        comments:
+          type: string
+          maxLength: 2000
+
+    SectionResponse:
+      type: object
+      required: [id, tenant_id, tender_id, title, sort_order, section_type, status, is_compliant, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        tender_id:
+          type: string
+          format: uuid
+        parent_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        section_number:
+          type: string
+        sort_order:
+          type: integer
+        section_type:
+          $ref: '#/components/schemas/SectionType'
+        assignee_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SectionStatus'
+        due_date:
+          type: string
+          format: date-time
+        content:
+          type: string
+        word_count:
+          type: integer
+        page_limit:
+          type: integer
+        review_status:
+          $ref: '#/components/schemas/ReviewStatus'
+        reviewer_id:
+          type: string
+          format: uuid
+        reviewer_comments:
+          type: string
+        reviewed_at:
+          type: string
+          format: date-time
+        compliance_checklist:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        is_compliant:
+          type: boolean
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/SectionResponse'
+
+    ListSectionsResponse:
+      type: object
+      required: [sections, total, limit, offset]
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/SectionResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    SectionProgress:
+      type: object
+      required: [total, completed, completion_percent, by_status, by_assignee, overdue, unassigned]
+      properties:
+        total:
+          type: integer
+        completed:
+          type: integer
+        completion_percent:
+          type: number
+        by_status:
+          type: object
+          additionalProperties:
+            type: integer
+        by_assignee:
+          type: object
+          additionalProperties:
+            type: integer
+        overdue:
+          type: integer
+        unassigned:
+          type: integer
+
+    # Submission Schemas
+    CreateSubmissionRequest:
+      type: object
+      properties:
+        submission_type:
+          $ref: '#/components/schemas/SubmissionType'
+        recipient_email:
+          type: string
+          format: email
+        recipient_address:
+          type: string
+          maxLength: 500
+        portal_url:
+          type: string
+          format: uri
+        courier_service:
+          type: string
+          maxLength: 100
+        documents:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total_pages:
+          type: integer
+          minimum: 1
+        copy_count:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+          maxLength: 2000
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateSubmissionRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/SubmissionStatus'
+        recipient_email:
+          type: string
+          format: email
+        recipient_address:
+          type: string
+          maxLength: 500
+        portal_url:
+          type: string
+          format: uri
+        portal_confirmation_number:
+          type: string
+          maxLength: 100
+        courier_service:
+          type: string
+          maxLength: 100
+        tracking_number:
+          type: string
+          maxLength: 100
+        estimated_delivery:
+          type: string
+          format: date-time
+        delivery_proof_url:
+          type: string
+          format: uri
+        documents:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total_pages:
+          type: integer
+          minimum: 1
+        copy_count:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+          maxLength: 2000
+        rejection_reason:
+          type: string
+          maxLength: 1000
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ConfirmDeliveryRequest:
+      type: object
+      properties:
+        delivery_proof_url:
+          type: string
+          format: uri
+
+    RecordEmailTrackingRequest:
+      type: object
+      required: [message_id]
+      properties:
+        message_id:
+          type: string
+          maxLength: 255
+        opened:
+          type: boolean
+
+    SubmissionResponse:
+      type: object
+      required: [id, tenant_id, tender_id, submission_type, status, email_opened, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        tender_id:
+          type: string
+          format: uuid
+        submission_type:
+          $ref: '#/components/schemas/SubmissionType'
+        status:
+          $ref: '#/components/schemas/SubmissionStatus'
+        recipient_email:
+          type: string
+        recipient_address:
+          type: string
+        portal_url:
+          type: string
+        portal_confirmation_number:
+          type: string
+        courier_service:
+          type: string
+        tracking_number:
+          type: string
+        estimated_delivery:
+          type: string
+          format: date-time
+        delivered_at:
+          type: string
+          format: date-time
+        delivery_proof_url:
+          type: string
+        email_message_id:
+          type: string
+        email_opened:
+          type: boolean
+        email_opened_at:
+          type: string
+          format: date-time
+        documents:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total_pages:
+          type: integer
+        copy_count:
+          type: integer
+        notes:
+          type: string
+        rejection_reason:
+          type: string
+        submitted_by:
+          type: string
+          format: uuid
+        submitted_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ListSubmissionsResponse:
+      type: object
+      required: [submissions, total]
+      properties:
+        submissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionResponse'
+        total:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    ValidationErrorResponse:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+
+security:
+  - BearerAuth: []

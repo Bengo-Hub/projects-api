@@ -6,25 +6,22 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bengobox/projects-service/internal/ent"
 	"github.com/nats-io/nats.go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
-type dbPinger interface {
-	Ping(context.Context) error
-}
-
 // HealthHandler exposes liveness/readiness endpoints for the projects service.
 type HealthHandler struct {
 	log    *zap.Logger
-	db     dbPinger
+	db     *ent.Client
 	cache  *redis.Client
 	events *nats.Conn
 }
 
-func NewHealthHandler(log *zap.Logger, db dbPinger, cache *redis.Client, events *nats.Conn) *HealthHandler {
+func NewHealthHandler(log *zap.Logger, db *ent.Client, cache *redis.Client, events *nats.Conn) *HealthHandler {
 	return &HealthHandler{log: log, db: db, cache: cache, events: events}
 }
 
@@ -54,7 +51,8 @@ func (h *HealthHandler) Readiness(w http.ResponseWriter, r *http.Request) {
 	issues := map[string]string{}
 
 	if h.db != nil {
-		if err := h.db.Ping(ctx); err != nil {
+		// Use a simple query to check database connectivity
+		if _, err := h.db.Role.Query().Limit(1).All(ctx); err != nil {
 			issues["postgres"] = err.Error()
 		}
 	}

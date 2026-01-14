@@ -19,6 +19,9 @@ require (
 	github.com/nats-io/nats.go v1.33.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/v9 v9.17.2
+	github.com/stretchr/testify v1.9.0
+	github.com/testcontainers/testcontainers-go v0.31.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.31.0
 	go.uber.org/zap v1.27.1
 )
 

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Read(//c/Chris/Titus/projects-api/**)"
+    ]
+  }
+}

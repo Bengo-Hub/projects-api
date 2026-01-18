@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -29,40 +28,40 @@ type TenantSyncEventQuery struct {
 }
 
 // Where adds a new predicate for the TenantSyncEventQuery builder.
-func (_q *TenantSyncEventQuery) Where(ps ...predicate.TenantSyncEvent) *TenantSyncEventQuery {
-	_q.predicates = append(_q.predicates, ps...)
-	return _q
+func (tseq *TenantSyncEventQuery) Where(ps ...predicate.TenantSyncEvent) *TenantSyncEventQuery {
+	tseq.predicates = append(tseq.predicates, ps...)
+	return tseq
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *TenantSyncEventQuery) Limit(limit int) *TenantSyncEventQuery {
-	_q.ctx.Limit = &limit
-	return _q
+func (tseq *TenantSyncEventQuery) Limit(limit int) *TenantSyncEventQuery {
+	tseq.ctx.Limit = &limit
+	return tseq
 }
 
 // Offset to start from.
-func (_q *TenantSyncEventQuery) Offset(offset int) *TenantSyncEventQuery {
-	_q.ctx.Offset = &offset
-	return _q
+func (tseq *TenantSyncEventQuery) Offset(offset int) *TenantSyncEventQuery {
+	tseq.ctx.Offset = &offset
+	return tseq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *TenantSyncEventQuery) Unique(unique bool) *TenantSyncEventQuery {
-	_q.ctx.Unique = &unique
-	return _q
+func (tseq *TenantSyncEventQuery) Unique(unique bool) *TenantSyncEventQuery {
+	tseq.ctx.Unique = &unique
+	return tseq
 }
 
 // Order specifies how the records should be ordered.
-func (_q *TenantSyncEventQuery) Order(o ...tenantsyncevent.OrderOption) *TenantSyncEventQuery {
-	_q.order = append(_q.order, o...)
-	return _q
+func (tseq *TenantSyncEventQuery) Order(o ...tenantsyncevent.OrderOption) *TenantSyncEventQuery {
+	tseq.order = append(tseq.order, o...)
+	return tseq
 }
 
 // First returns the first TenantSyncEvent entity from the query.
 // Returns a *NotFoundError when no TenantSyncEvent was found.
-func (_q *TenantSyncEventQuery) First(ctx context.Context) (*TenantSyncEvent, error) {
-	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
+func (tseq *TenantSyncEventQuery) First(ctx context.Context) (*TenantSyncEvent, error) {
+	nodes, err := tseq.Limit(1).All(setContextOp(ctx, tseq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +72,8 @@ func (_q *TenantSyncEventQuery) First(ctx context.Context) (*TenantSyncEvent, er
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *TenantSyncEventQuery) FirstX(ctx context.Context) *TenantSyncEvent {
-	node, err := _q.First(ctx)
+func (tseq *TenantSyncEventQuery) FirstX(ctx context.Context) *TenantSyncEvent {
+	node, err := tseq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -83,9 +82,9 @@ func (_q *TenantSyncEventQuery) FirstX(ctx context.Context) *TenantSyncEvent {
 
 // FirstID returns the first TenantSyncEvent ID from the query.
 // Returns a *NotFoundError when no TenantSyncEvent ID was found.
-func (_q *TenantSyncEventQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+func (tseq *TenantSyncEventQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = tseq.Limit(1).IDs(setContextOp(ctx, tseq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -96,8 +95,8 @@ func (_q *TenantSyncEventQuery) FirstID(ctx context.Context) (id uuid.UUID, err 
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *TenantSyncEventQuery) FirstIDX(ctx context.Context) uuid.UUID {
-	id, err := _q.FirstID(ctx)
+func (tseq *TenantSyncEventQuery) FirstIDX(ctx context.Context) uuid.UUID {
+	id, err := tseq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -107,8 +106,8 @@ func (_q *TenantSyncEventQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Only returns a single TenantSyncEvent entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one TenantSyncEvent entity is found.
 // Returns a *NotFoundError when no TenantSyncEvent entities are found.
-func (_q *TenantSyncEventQuery) Only(ctx context.Context) (*TenantSyncEvent, error) {
-	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
+func (tseq *TenantSyncEventQuery) Only(ctx context.Context) (*TenantSyncEvent, error) {
+	nodes, err := tseq.Limit(2).All(setContextOp(ctx, tseq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +122,8 @@ func (_q *TenantSyncEventQuery) Only(ctx context.Context) (*TenantSyncEvent, err
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *TenantSyncEventQuery) OnlyX(ctx context.Context) *TenantSyncEvent {
-	node, err := _q.Only(ctx)
+func (tseq *TenantSyncEventQuery) OnlyX(ctx context.Context) *TenantSyncEvent {
+	node, err := tseq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -134,9 +133,9 @@ func (_q *TenantSyncEventQuery) OnlyX(ctx context.Context) *TenantSyncEvent {
 // OnlyID is like Only, but returns the only TenantSyncEvent ID in the query.
 // Returns a *NotSingularError when more than one TenantSyncEvent ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *TenantSyncEventQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (tseq *TenantSyncEventQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = tseq.Limit(2).IDs(setContextOp(ctx, tseq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -151,8 +150,8 @@ func (_q *TenantSyncEventQuery) OnlyID(ctx context.Context) (id uuid.UUID, err e
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *TenantSyncEventQuery) OnlyIDX(ctx context.Context) uuid.UUID {
-	id, err := _q.OnlyID(ctx)
+func (tseq *TenantSyncEventQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+	id, err := tseq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -160,18 +159,18 @@ func (_q *TenantSyncEventQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 }
 
 // All executes the query and returns a list of TenantSyncEvents.
-func (_q *TenantSyncEventQuery) All(ctx context.Context) ([]*TenantSyncEvent, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
-	if err := _q.prepareQuery(ctx); err != nil {
+func (tseq *TenantSyncEventQuery) All(ctx context.Context) ([]*TenantSyncEvent, error) {
+	ctx = setContextOp(ctx, tseq.ctx, "All")
+	if err := tseq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*TenantSyncEvent, *TenantSyncEventQuery]()
-	return withInterceptors[[]*TenantSyncEvent](ctx, _q, qr, _q.inters)
+	return withInterceptors[[]*TenantSyncEvent](ctx, tseq, qr, tseq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *TenantSyncEventQuery) AllX(ctx context.Context) []*TenantSyncEvent {
-	nodes, err := _q.All(ctx)
+func (tseq *TenantSyncEventQuery) AllX(ctx context.Context) []*TenantSyncEvent {
+	nodes, err := tseq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -179,20 +178,20 @@ func (_q *TenantSyncEventQuery) AllX(ctx context.Context) []*TenantSyncEvent {
 }
 
 // IDs executes the query and returns a list of TenantSyncEvent IDs.
-func (_q *TenantSyncEventQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
-	if _q.ctx.Unique == nil && _q.path != nil {
-		_q.Unique(true)
+func (tseq *TenantSyncEventQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if tseq.ctx.Unique == nil && tseq.path != nil {
+		tseq.Unique(true)
 	}
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(tenantsyncevent.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, tseq.ctx, "IDs")
+	if err = tseq.Select(tenantsyncevent.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *TenantSyncEventQuery) IDsX(ctx context.Context) []uuid.UUID {
-	ids, err := _q.IDs(ctx)
+func (tseq *TenantSyncEventQuery) IDsX(ctx context.Context) []uuid.UUID {
+	ids, err := tseq.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -200,17 +199,17 @@ func (_q *TenantSyncEventQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *TenantSyncEventQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
-	if err := _q.prepareQuery(ctx); err != nil {
+func (tseq *TenantSyncEventQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, tseq.ctx, "Count")
+	if err := tseq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*TenantSyncEventQuery](), _q.inters)
+	return withInterceptors[int](ctx, tseq, querierCount[*TenantSyncEventQuery](), tseq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *TenantSyncEventQuery) CountX(ctx context.Context) int {
-	count, err := _q.Count(ctx)
+func (tseq *TenantSyncEventQuery) CountX(ctx context.Context) int {
+	count, err := tseq.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -218,9 +217,9 @@ func (_q *TenantSyncEventQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *TenantSyncEventQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
-	switch _, err := _q.FirstID(ctx); {
+func (tseq *TenantSyncEventQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, tseq.ctx, "Exist")
+	switch _, err := tseq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -231,8 +230,8 @@ func (_q *TenantSyncEventQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *TenantSyncEventQuery) ExistX(ctx context.Context) bool {
-	exist, err := _q.Exist(ctx)
+func (tseq *TenantSyncEventQuery) ExistX(ctx context.Context) bool {
+	exist, err := tseq.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -241,19 +240,19 @@ func (_q *TenantSyncEventQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the TenantSyncEventQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *TenantSyncEventQuery) Clone() *TenantSyncEventQuery {
-	if _q == nil {
+func (tseq *TenantSyncEventQuery) Clone() *TenantSyncEventQuery {
+	if tseq == nil {
 		return nil
 	}
 	return &TenantSyncEventQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]tenantsyncevent.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.TenantSyncEvent{}, _q.predicates...),
+		config:     tseq.config,
+		ctx:        tseq.ctx.Clone(),
+		order:      append([]tenantsyncevent.OrderOption{}, tseq.order...),
+		inters:     append([]Interceptor{}, tseq.inters...),
+		predicates: append([]predicate.TenantSyncEvent{}, tseq.predicates...),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:  tseq.sql.Clone(),
+		path: tseq.path,
 	}
 }
 
@@ -271,10 +270,10 @@ func (_q *TenantSyncEventQuery) Clone() *TenantSyncEventQuery {
 //		GroupBy(tenantsyncevent.FieldTenantID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *TenantSyncEventQuery) GroupBy(field string, fields ...string) *TenantSyncEventGroupBy {
-	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &TenantSyncEventGroupBy{build: _q}
-	grbuild.flds = &_q.ctx.Fields
+func (tseq *TenantSyncEventQuery) GroupBy(field string, fields ...string) *TenantSyncEventGroupBy {
+	tseq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &TenantSyncEventGroupBy{build: tseq}
+	grbuild.flds = &tseq.ctx.Fields
 	grbuild.label = tenantsyncevent.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -292,62 +291,62 @@ func (_q *TenantSyncEventQuery) GroupBy(field string, fields ...string) *TenantS
 //	client.TenantSyncEvent.Query().
 //		Select(tenantsyncevent.FieldTenantID).
 //		Scan(ctx, &v)
-func (_q *TenantSyncEventQuery) Select(fields ...string) *TenantSyncEventSelect {
-	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &TenantSyncEventSelect{TenantSyncEventQuery: _q}
+func (tseq *TenantSyncEventQuery) Select(fields ...string) *TenantSyncEventSelect {
+	tseq.ctx.Fields = append(tseq.ctx.Fields, fields...)
+	sbuild := &TenantSyncEventSelect{TenantSyncEventQuery: tseq}
 	sbuild.label = tenantsyncevent.Label
-	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &tseq.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a TenantSyncEventSelect configured with the given aggregations.
-func (_q *TenantSyncEventQuery) Aggregate(fns ...AggregateFunc) *TenantSyncEventSelect {
-	return _q.Select().Aggregate(fns...)
+func (tseq *TenantSyncEventQuery) Aggregate(fns ...AggregateFunc) *TenantSyncEventSelect {
+	return tseq.Select().Aggregate(fns...)
 }
 
-func (_q *TenantSyncEventQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range _q.inters {
+func (tseq *TenantSyncEventQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range tseq.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, _q); err != nil {
+			if err := trv.Traverse(ctx, tseq); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range _q.ctx.Fields {
+	for _, f := range tseq.ctx.Fields {
 		if !tenantsyncevent.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if _q.path != nil {
-		prev, err := _q.path(ctx)
+	if tseq.path != nil {
+		prev, err := tseq.path(ctx)
 		if err != nil {
 			return err
 		}
-		_q.sql = prev
+		tseq.sql = prev
 	}
 	return nil
 }
 
-func (_q *TenantSyncEventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*TenantSyncEvent, error) {
+func (tseq *TenantSyncEventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*TenantSyncEvent, error) {
 	var (
 		nodes = []*TenantSyncEvent{}
-		_spec = _q.querySpec()
+		_spec = tseq.querySpec()
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*TenantSyncEvent).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &TenantSyncEvent{config: _q.config}
+		node := &TenantSyncEvent{config: tseq.config}
 		nodes = append(nodes, node)
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, tseq.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
@@ -356,24 +355,24 @@ func (_q *TenantSyncEventQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	return nodes, nil
 }
 
-func (_q *TenantSyncEventQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := _q.querySpec()
-	_spec.Node.Columns = _q.ctx.Fields
-	if len(_q.ctx.Fields) > 0 {
-		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
+func (tseq *TenantSyncEventQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := tseq.querySpec()
+	_spec.Node.Columns = tseq.ctx.Fields
+	if len(tseq.ctx.Fields) > 0 {
+		_spec.Unique = tseq.ctx.Unique != nil && *tseq.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
+	return sqlgraph.CountNodes(ctx, tseq.driver, _spec)
 }
 
-func (_q *TenantSyncEventQuery) querySpec() *sqlgraph.QuerySpec {
+func (tseq *TenantSyncEventQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(tenantsyncevent.Table, tenantsyncevent.Columns, sqlgraph.NewFieldSpec(tenantsyncevent.FieldID, field.TypeUUID))
-	_spec.From = _q.sql
-	if unique := _q.ctx.Unique; unique != nil {
+	_spec.From = tseq.sql
+	if unique := tseq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if _q.path != nil {
+	} else if tseq.path != nil {
 		_spec.Unique = true
 	}
-	if fields := _q.ctx.Fields; len(fields) > 0 {
+	if fields := tseq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, tenantsyncevent.FieldID)
 		for i := range fields {
@@ -382,20 +381,20 @@ func (_q *TenantSyncEventQuery) querySpec() *sqlgraph.QuerySpec {
 			}
 		}
 	}
-	if ps := _q.predicates; len(ps) > 0 {
+	if ps := tseq.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := _q.ctx.Limit; limit != nil {
+	if limit := tseq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := _q.ctx.Offset; offset != nil {
+	if offset := tseq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := _q.order; len(ps) > 0 {
+	if ps := tseq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -405,33 +404,33 @@ func (_q *TenantSyncEventQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *TenantSyncEventQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(_q.driver.Dialect())
+func (tseq *TenantSyncEventQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(tseq.driver.Dialect())
 	t1 := builder.Table(tenantsyncevent.Table)
-	columns := _q.ctx.Fields
+	columns := tseq.ctx.Fields
 	if len(columns) == 0 {
 		columns = tenantsyncevent.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if _q.sql != nil {
-		selector = _q.sql
+	if tseq.sql != nil {
+		selector = tseq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if _q.ctx.Unique != nil && *_q.ctx.Unique {
+	if tseq.ctx.Unique != nil && *tseq.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range _q.predicates {
+	for _, p := range tseq.predicates {
 		p(selector)
 	}
-	for _, p := range _q.order {
+	for _, p := range tseq.order {
 		p(selector)
 	}
-	if offset := _q.ctx.Offset; offset != nil {
+	if offset := tseq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := _q.ctx.Limit; limit != nil {
+	if limit := tseq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -444,41 +443,41 @@ type TenantSyncEventGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *TenantSyncEventGroupBy) Aggregate(fns ...AggregateFunc) *TenantSyncEventGroupBy {
-	_g.fns = append(_g.fns, fns...)
-	return _g
+func (tsegb *TenantSyncEventGroupBy) Aggregate(fns ...AggregateFunc) *TenantSyncEventGroupBy {
+	tsegb.fns = append(tsegb.fns, fns...)
+	return tsegb
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *TenantSyncEventGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
-	if err := _g.build.prepareQuery(ctx); err != nil {
+func (tsegb *TenantSyncEventGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, tsegb.build.ctx, "GroupBy")
+	if err := tsegb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*TenantSyncEventQuery, *TenantSyncEventGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*TenantSyncEventQuery, *TenantSyncEventGroupBy](ctx, tsegb.build, tsegb, tsegb.build.inters, v)
 }
 
-func (_g *TenantSyncEventGroupBy) sqlScan(ctx context.Context, root *TenantSyncEventQuery, v any) error {
+func (tsegb *TenantSyncEventGroupBy) sqlScan(ctx context.Context, root *TenantSyncEventQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(_g.fns))
-	for _, fn := range _g.fns {
+	aggregation := make([]string, 0, len(tsegb.fns))
+	for _, fn := range tsegb.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
-		for _, f := range *_g.flds {
+		columns := make([]string, 0, len(*tsegb.flds)+len(tsegb.fns))
+		for _, f := range *tsegb.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*_g.flds...)...)
+	selector.GroupBy(selector.Columns(*tsegb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := tsegb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -492,27 +491,27 @@ type TenantSyncEventSelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *TenantSyncEventSelect) Aggregate(fns ...AggregateFunc) *TenantSyncEventSelect {
-	_s.fns = append(_s.fns, fns...)
-	return _s
+func (tses *TenantSyncEventSelect) Aggregate(fns ...AggregateFunc) *TenantSyncEventSelect {
+	tses.fns = append(tses.fns, fns...)
+	return tses
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *TenantSyncEventSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
-	if err := _s.prepareQuery(ctx); err != nil {
+func (tses *TenantSyncEventSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, tses.ctx, "Select")
+	if err := tses.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*TenantSyncEventQuery, *TenantSyncEventSelect](ctx, _s.TenantSyncEventQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*TenantSyncEventQuery, *TenantSyncEventSelect](ctx, tses.TenantSyncEventQuery, tses, tses.inters, v)
 }
 
-func (_s *TenantSyncEventSelect) sqlScan(ctx context.Context, root *TenantSyncEventQuery, v any) error {
+func (tses *TenantSyncEventSelect) sqlScan(ctx context.Context, root *TenantSyncEventQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(_s.fns))
-	for _, fn := range _s.fns {
+	aggregation := make([]string, 0, len(tses.fns))
+	for _, fn := range tses.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*_s.selector.flds); {
+	switch n := len(*tses.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -520,7 +519,7 @@ func (_s *TenantSyncEventSelect) sqlScan(ctx context.Context, root *TenantSyncEv
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
+	if err := tses.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

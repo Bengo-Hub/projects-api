@@ -27,234 +27,234 @@ type TaskCreate struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_c *TaskCreate) SetTenantID(v uuid.UUID) *TaskCreate {
-	_c.mutation.SetTenantID(v)
-	return _c
+func (tc *TaskCreate) SetTenantID(u uuid.UUID) *TaskCreate {
+	tc.mutation.SetTenantID(u)
+	return tc
 }
 
 // SetProjectID sets the "project_id" field.
-func (_c *TaskCreate) SetProjectID(v uuid.UUID) *TaskCreate {
-	_c.mutation.SetProjectID(v)
-	return _c
+func (tc *TaskCreate) SetProjectID(u uuid.UUID) *TaskCreate {
+	tc.mutation.SetProjectID(u)
+	return tc
 }
 
 // SetTitle sets the "title" field.
-func (_c *TaskCreate) SetTitle(v string) *TaskCreate {
-	_c.mutation.SetTitle(v)
-	return _c
+func (tc *TaskCreate) SetTitle(s string) *TaskCreate {
+	tc.mutation.SetTitle(s)
+	return tc
 }
 
 // SetDescription sets the "description" field.
-func (_c *TaskCreate) SetDescription(v string) *TaskCreate {
-	_c.mutation.SetDescription(v)
-	return _c
+func (tc *TaskCreate) SetDescription(s string) *TaskCreate {
+	tc.mutation.SetDescription(s)
+	return tc
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (_c *TaskCreate) SetNillableDescription(v *string) *TaskCreate {
-	if v != nil {
-		_c.SetDescription(*v)
+func (tc *TaskCreate) SetNillableDescription(s *string) *TaskCreate {
+	if s != nil {
+		tc.SetDescription(*s)
 	}
-	return _c
+	return tc
 }
 
 // SetStatus sets the "status" field.
-func (_c *TaskCreate) SetStatus(v string) *TaskCreate {
-	_c.mutation.SetStatus(v)
-	return _c
+func (tc *TaskCreate) SetStatus(s string) *TaskCreate {
+	tc.mutation.SetStatus(s)
+	return tc
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_c *TaskCreate) SetNillableStatus(v *string) *TaskCreate {
-	if v != nil {
-		_c.SetStatus(*v)
+func (tc *TaskCreate) SetNillableStatus(s *string) *TaskCreate {
+	if s != nil {
+		tc.SetStatus(*s)
 	}
-	return _c
+	return tc
 }
 
 // SetPriority sets the "priority" field.
-func (_c *TaskCreate) SetPriority(v string) *TaskCreate {
-	_c.mutation.SetPriority(v)
-	return _c
+func (tc *TaskCreate) SetPriority(s string) *TaskCreate {
+	tc.mutation.SetPriority(s)
+	return tc
 }
 
 // SetNillablePriority sets the "priority" field if the given value is not nil.
-func (_c *TaskCreate) SetNillablePriority(v *string) *TaskCreate {
-	if v != nil {
-		_c.SetPriority(*v)
+func (tc *TaskCreate) SetNillablePriority(s *string) *TaskCreate {
+	if s != nil {
+		tc.SetPriority(*s)
 	}
-	return _c
+	return tc
 }
 
 // SetAssigneeID sets the "assignee_id" field.
-func (_c *TaskCreate) SetAssigneeID(v uuid.UUID) *TaskCreate {
-	_c.mutation.SetAssigneeID(v)
-	return _c
+func (tc *TaskCreate) SetAssigneeID(u uuid.UUID) *TaskCreate {
+	tc.mutation.SetAssigneeID(u)
+	return tc
 }
 
 // SetNillableAssigneeID sets the "assignee_id" field if the given value is not nil.
-func (_c *TaskCreate) SetNillableAssigneeID(v *uuid.UUID) *TaskCreate {
-	if v != nil {
-		_c.SetAssigneeID(*v)
+func (tc *TaskCreate) SetNillableAssigneeID(u *uuid.UUID) *TaskCreate {
+	if u != nil {
+		tc.SetAssigneeID(*u)
 	}
-	return _c
+	return tc
 }
 
 // SetDueDate sets the "due_date" field.
-func (_c *TaskCreate) SetDueDate(v time.Time) *TaskCreate {
-	_c.mutation.SetDueDate(v)
-	return _c
+func (tc *TaskCreate) SetDueDate(t time.Time) *TaskCreate {
+	tc.mutation.SetDueDate(t)
+	return tc
 }
 
 // SetNillableDueDate sets the "due_date" field if the given value is not nil.
-func (_c *TaskCreate) SetNillableDueDate(v *time.Time) *TaskCreate {
-	if v != nil {
-		_c.SetDueDate(*v)
+func (tc *TaskCreate) SetNillableDueDate(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetDueDate(*t)
 	}
-	return _c
+	return tc
 }
 
 // SetCompletedAt sets the "completed_at" field.
-func (_c *TaskCreate) SetCompletedAt(v time.Time) *TaskCreate {
-	_c.mutation.SetCompletedAt(v)
-	return _c
+func (tc *TaskCreate) SetCompletedAt(t time.Time) *TaskCreate {
+	tc.mutation.SetCompletedAt(t)
+	return tc
 }
 
 // SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
-func (_c *TaskCreate) SetNillableCompletedAt(v *time.Time) *TaskCreate {
-	if v != nil {
-		_c.SetCompletedAt(*v)
+func (tc *TaskCreate) SetNillableCompletedAt(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetCompletedAt(*t)
 	}
-	return _c
+	return tc
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_c *TaskCreate) SetCreatedAt(v time.Time) *TaskCreate {
-	_c.mutation.SetCreatedAt(v)
-	return _c
+func (tc *TaskCreate) SetCreatedAt(t time.Time) *TaskCreate {
+	tc.mutation.SetCreatedAt(t)
+	return tc
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_c *TaskCreate) SetNillableCreatedAt(v *time.Time) *TaskCreate {
-	if v != nil {
-		_c.SetCreatedAt(*v)
+func (tc *TaskCreate) SetNillableCreatedAt(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetCreatedAt(*t)
 	}
-	return _c
+	return tc
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_c *TaskCreate) SetUpdatedAt(v time.Time) *TaskCreate {
-	_c.mutation.SetUpdatedAt(v)
-	return _c
+func (tc *TaskCreate) SetUpdatedAt(t time.Time) *TaskCreate {
+	tc.mutation.SetUpdatedAt(t)
+	return tc
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (_c *TaskCreate) SetNillableUpdatedAt(v *time.Time) *TaskCreate {
-	if v != nil {
-		_c.SetUpdatedAt(*v)
+func (tc *TaskCreate) SetNillableUpdatedAt(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetUpdatedAt(*t)
 	}
-	return _c
+	return tc
 }
 
 // SetMetadata sets the "metadata" field.
-func (_c *TaskCreate) SetMetadata(v map[string]interface{}) *TaskCreate {
-	_c.mutation.SetMetadata(v)
-	return _c
+func (tc *TaskCreate) SetMetadata(m map[string]interface{}) *TaskCreate {
+	tc.mutation.SetMetadata(m)
+	return tc
 }
 
 // SetID sets the "id" field.
-func (_c *TaskCreate) SetID(v uuid.UUID) *TaskCreate {
-	_c.mutation.SetID(v)
-	return _c
+func (tc *TaskCreate) SetID(u uuid.UUID) *TaskCreate {
+	tc.mutation.SetID(u)
+	return tc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (_c *TaskCreate) SetNillableID(v *uuid.UUID) *TaskCreate {
-	if v != nil {
-		_c.SetID(*v)
+func (tc *TaskCreate) SetNillableID(u *uuid.UUID) *TaskCreate {
+	if u != nil {
+		tc.SetID(*u)
 	}
-	return _c
+	return tc
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_c *TaskCreate) SetProject(v *Project) *TaskCreate {
-	return _c.SetProjectID(v.ID)
+func (tc *TaskCreate) SetProject(p *Project) *TaskCreate {
+	return tc.SetProjectID(p.ID)
 }
 
 // AddDependencyIDs adds the "dependencies" edge to the TaskDependency entity by IDs.
-func (_c *TaskCreate) AddDependencyIDs(ids ...uuid.UUID) *TaskCreate {
-	_c.mutation.AddDependencyIDs(ids...)
-	return _c
+func (tc *TaskCreate) AddDependencyIDs(ids ...uuid.UUID) *TaskCreate {
+	tc.mutation.AddDependencyIDs(ids...)
+	return tc
 }
 
 // AddDependencies adds the "dependencies" edges to the TaskDependency entity.
-func (_c *TaskCreate) AddDependencies(v ...*TaskDependency) *TaskCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tc *TaskCreate) AddDependencies(t ...*TaskDependency) *TaskCreate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return _c.AddDependencyIDs(ids...)
+	return tc.AddDependencyIDs(ids...)
 }
 
 // AddCommentIDs adds the "comments" edge to the Comment entity by IDs.
-func (_c *TaskCreate) AddCommentIDs(ids ...uuid.UUID) *TaskCreate {
-	_c.mutation.AddCommentIDs(ids...)
-	return _c
+func (tc *TaskCreate) AddCommentIDs(ids ...uuid.UUID) *TaskCreate {
+	tc.mutation.AddCommentIDs(ids...)
+	return tc
 }
 
 // AddComments adds the "comments" edges to the Comment entity.
-func (_c *TaskCreate) AddComments(v ...*Comment) *TaskCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tc *TaskCreate) AddComments(c ...*Comment) *TaskCreate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
-	return _c.AddCommentIDs(ids...)
+	return tc.AddCommentIDs(ids...)
 }
 
 // AddActivityIDs adds the "activities" edge to the Activity entity by IDs.
-func (_c *TaskCreate) AddActivityIDs(ids ...uuid.UUID) *TaskCreate {
-	_c.mutation.AddActivityIDs(ids...)
-	return _c
+func (tc *TaskCreate) AddActivityIDs(ids ...uuid.UUID) *TaskCreate {
+	tc.mutation.AddActivityIDs(ids...)
+	return tc
 }
 
 // AddActivities adds the "activities" edges to the Activity entity.
-func (_c *TaskCreate) AddActivities(v ...*Activity) *TaskCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tc *TaskCreate) AddActivities(a ...*Activity) *TaskCreate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _c.AddActivityIDs(ids...)
+	return tc.AddActivityIDs(ids...)
 }
 
 // AddAttachmentIDs adds the "attachments" edge to the Attachment entity by IDs.
-func (_c *TaskCreate) AddAttachmentIDs(ids ...uuid.UUID) *TaskCreate {
-	_c.mutation.AddAttachmentIDs(ids...)
-	return _c
+func (tc *TaskCreate) AddAttachmentIDs(ids ...uuid.UUID) *TaskCreate {
+	tc.mutation.AddAttachmentIDs(ids...)
+	return tc
 }
 
 // AddAttachments adds the "attachments" edges to the Attachment entity.
-func (_c *TaskCreate) AddAttachments(v ...*Attachment) *TaskCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tc *TaskCreate) AddAttachments(a ...*Attachment) *TaskCreate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _c.AddAttachmentIDs(ids...)
+	return tc.AddAttachmentIDs(ids...)
 }
 
 // Mutation returns the TaskMutation object of the builder.
-func (_c *TaskCreate) Mutation() *TaskMutation {
-	return _c.mutation
+func (tc *TaskCreate) Mutation() *TaskMutation {
+	return tc.mutation
 }
 
 // Save creates the Task in the database.
-func (_c *TaskCreate) Save(ctx context.Context) (*Task, error) {
-	_c.defaults()
-	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
+func (tc *TaskCreate) Save(ctx context.Context) (*Task, error) {
+	tc.defaults()
+	return withHooks(ctx, tc.sqlSave, tc.mutation, tc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *TaskCreate) SaveX(ctx context.Context) *Task {
-	v, err := _c.Save(ctx)
+func (tc *TaskCreate) SaveX(ctx context.Context) *Task {
+	v, err := tc.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -262,82 +262,82 @@ func (_c *TaskCreate) SaveX(ctx context.Context) *Task {
 }
 
 // Exec executes the query.
-func (_c *TaskCreate) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (tc *TaskCreate) Exec(ctx context.Context) error {
+	_, err := tc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *TaskCreate) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (tc *TaskCreate) ExecX(ctx context.Context) {
+	if err := tc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *TaskCreate) defaults() {
-	if _, ok := _c.mutation.Status(); !ok {
+func (tc *TaskCreate) defaults() {
+	if _, ok := tc.mutation.Status(); !ok {
 		v := task.DefaultStatus
-		_c.mutation.SetStatus(v)
+		tc.mutation.SetStatus(v)
 	}
-	if _, ok := _c.mutation.Priority(); !ok {
+	if _, ok := tc.mutation.Priority(); !ok {
 		v := task.DefaultPriority
-		_c.mutation.SetPriority(v)
+		tc.mutation.SetPriority(v)
 	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+	if _, ok := tc.mutation.CreatedAt(); !ok {
 		v := task.DefaultCreatedAt()
-		_c.mutation.SetCreatedAt(v)
+		tc.mutation.SetCreatedAt(v)
 	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
+	if _, ok := tc.mutation.UpdatedAt(); !ok {
 		v := task.DefaultUpdatedAt()
-		_c.mutation.SetUpdatedAt(v)
+		tc.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.ID(); !ok {
+	if _, ok := tc.mutation.ID(); !ok {
 		v := task.DefaultID()
-		_c.mutation.SetID(v)
+		tc.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *TaskCreate) check() error {
-	if _, ok := _c.mutation.TenantID(); !ok {
+func (tc *TaskCreate) check() error {
+	if _, ok := tc.mutation.TenantID(); !ok {
 		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Task.tenant_id"`)}
 	}
-	if _, ok := _c.mutation.ProjectID(); !ok {
+	if _, ok := tc.mutation.ProjectID(); !ok {
 		return &ValidationError{Name: "project_id", err: errors.New(`ent: missing required field "Task.project_id"`)}
 	}
-	if _, ok := _c.mutation.Title(); !ok {
+	if _, ok := tc.mutation.Title(); !ok {
 		return &ValidationError{Name: "title", err: errors.New(`ent: missing required field "Task.title"`)}
 	}
-	if v, ok := _c.mutation.Title(); ok {
+	if v, ok := tc.mutation.Title(); ok {
 		if err := task.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Task.title": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.Status(); !ok {
+	if _, ok := tc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Task.status"`)}
 	}
-	if _, ok := _c.mutation.Priority(); !ok {
+	if _, ok := tc.mutation.Priority(); !ok {
 		return &ValidationError{Name: "priority", err: errors.New(`ent: missing required field "Task.priority"`)}
 	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+	if _, ok := tc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Task.created_at"`)}
 	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
+	if _, ok := tc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Task.updated_at"`)}
 	}
-	if len(_c.mutation.ProjectIDs()) == 0 {
+	if _, ok := tc.mutation.ProjectID(); !ok {
 		return &ValidationError{Name: "project", err: errors.New(`ent: missing required edge "Task.project"`)}
 	}
 	return nil
 }
 
-func (_c *TaskCreate) sqlSave(ctx context.Context) (*Task, error) {
-	if err := _c.check(); err != nil {
+func (tc *TaskCreate) sqlSave(ctx context.Context) (*Task, error) {
+	if err := tc.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := _c.createSpec()
-	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
+	_node, _spec := tc.createSpec()
+	if err := sqlgraph.CreateNode(ctx, tc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -350,65 +350,65 @@ func (_c *TaskCreate) sqlSave(ctx context.Context) (*Task, error) {
 			return nil, err
 		}
 	}
-	_c.mutation.id = &_node.ID
-	_c.mutation.done = true
+	tc.mutation.id = &_node.ID
+	tc.mutation.done = true
 	return _node, nil
 }
 
-func (_c *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
+func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Task{config: _c.config}
+		_node = &Task{config: tc.config}
 		_spec = sqlgraph.NewCreateSpec(task.Table, sqlgraph.NewFieldSpec(task.FieldID, field.TypeUUID))
 	)
-	if id, ok := _c.mutation.ID(); ok {
+	if id, ok := tc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.TenantID(); ok {
+	if value, ok := tc.mutation.TenantID(); ok {
 		_spec.SetField(task.FieldTenantID, field.TypeUUID, value)
 		_node.TenantID = value
 	}
-	if value, ok := _c.mutation.Title(); ok {
+	if value, ok := tc.mutation.Title(); ok {
 		_spec.SetField(task.FieldTitle, field.TypeString, value)
 		_node.Title = value
 	}
-	if value, ok := _c.mutation.Description(); ok {
+	if value, ok := tc.mutation.Description(); ok {
 		_spec.SetField(task.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
-	if value, ok := _c.mutation.Status(); ok {
+	if value, ok := tc.mutation.Status(); ok {
 		_spec.SetField(task.FieldStatus, field.TypeString, value)
 		_node.Status = value
 	}
-	if value, ok := _c.mutation.Priority(); ok {
+	if value, ok := tc.mutation.Priority(); ok {
 		_spec.SetField(task.FieldPriority, field.TypeString, value)
 		_node.Priority = value
 	}
-	if value, ok := _c.mutation.AssigneeID(); ok {
+	if value, ok := tc.mutation.AssigneeID(); ok {
 		_spec.SetField(task.FieldAssigneeID, field.TypeUUID, value)
 		_node.AssigneeID = value
 	}
-	if value, ok := _c.mutation.DueDate(); ok {
+	if value, ok := tc.mutation.DueDate(); ok {
 		_spec.SetField(task.FieldDueDate, field.TypeTime, value)
 		_node.DueDate = value
 	}
-	if value, ok := _c.mutation.CompletedAt(); ok {
+	if value, ok := tc.mutation.CompletedAt(); ok {
 		_spec.SetField(task.FieldCompletedAt, field.TypeTime, value)
 		_node.CompletedAt = value
 	}
-	if value, ok := _c.mutation.CreatedAt(); ok {
+	if value, ok := tc.mutation.CreatedAt(); ok {
 		_spec.SetField(task.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := _c.mutation.UpdatedAt(); ok {
+	if value, ok := tc.mutation.UpdatedAt(); ok {
 		_spec.SetField(task.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := _c.mutation.Metadata(); ok {
+	if value, ok := tc.mutation.Metadata(); ok {
 		_spec.SetField(task.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
 	}
-	if nodes := _c.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -425,7 +425,7 @@ func (_c *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 		_node.ProjectID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.DependenciesIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.DependenciesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -441,7 +441,7 @@ func (_c *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.CommentsIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.CommentsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -457,7 +457,7 @@ func (_c *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.ActivitiesIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.ActivitiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -473,7 +473,7 @@ func (_c *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.AttachmentsIDs(); len(nodes) > 0 {
+	if nodes := tc.mutation.AttachmentsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -500,16 +500,16 @@ type TaskCreateBulk struct {
 }
 
 // Save creates the Task entities in the database.
-func (_c *TaskCreateBulk) Save(ctx context.Context) ([]*Task, error) {
-	if _c.err != nil {
-		return nil, _c.err
+func (tcb *TaskCreateBulk) Save(ctx context.Context) ([]*Task, error) {
+	if tcb.err != nil {
+		return nil, tcb.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*Task, len(_c.builders))
-	mutators := make([]Mutator, len(_c.builders))
-	for i := range _c.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(tcb.builders))
+	nodes := make([]*Task, len(tcb.builders))
+	mutators := make([]Mutator, len(tcb.builders))
+	for i := range tcb.builders {
 		func(i int, root context.Context) {
-			builder := _c.builders[i]
+			builder := tcb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TaskMutation)
@@ -523,11 +523,11 @@ func (_c *TaskCreateBulk) Save(ctx context.Context) ([]*Task, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, tcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, tcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -547,7 +547,7 @@ func (_c *TaskCreateBulk) Save(ctx context.Context) ([]*Task, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, tcb.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -555,8 +555,8 @@ func (_c *TaskCreateBulk) Save(ctx context.Context) ([]*Task, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *TaskCreateBulk) SaveX(ctx context.Context) []*Task {
-	v, err := _c.Save(ctx)
+func (tcb *TaskCreateBulk) SaveX(ctx context.Context) []*Task {
+	v, err := tcb.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -564,14 +564,14 @@ func (_c *TaskCreateBulk) SaveX(ctx context.Context) []*Task {
 }
 
 // Exec executes the query.
-func (_c *TaskCreateBulk) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (tcb *TaskCreateBulk) Exec(ctx context.Context) error {
+	_, err := tcb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *TaskCreateBulk) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (tcb *TaskCreateBulk) ExecX(ctx context.Context) {
+	if err := tcb.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

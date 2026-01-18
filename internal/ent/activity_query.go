@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -33,44 +32,44 @@ type ActivityQuery struct {
 }
 
 // Where adds a new predicate for the ActivityQuery builder.
-func (_q *ActivityQuery) Where(ps ...predicate.Activity) *ActivityQuery {
-	_q.predicates = append(_q.predicates, ps...)
-	return _q
+func (aq *ActivityQuery) Where(ps ...predicate.Activity) *ActivityQuery {
+	aq.predicates = append(aq.predicates, ps...)
+	return aq
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *ActivityQuery) Limit(limit int) *ActivityQuery {
-	_q.ctx.Limit = &limit
-	return _q
+func (aq *ActivityQuery) Limit(limit int) *ActivityQuery {
+	aq.ctx.Limit = &limit
+	return aq
 }
 
 // Offset to start from.
-func (_q *ActivityQuery) Offset(offset int) *ActivityQuery {
-	_q.ctx.Offset = &offset
-	return _q
+func (aq *ActivityQuery) Offset(offset int) *ActivityQuery {
+	aq.ctx.Offset = &offset
+	return aq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *ActivityQuery) Unique(unique bool) *ActivityQuery {
-	_q.ctx.Unique = &unique
-	return _q
+func (aq *ActivityQuery) Unique(unique bool) *ActivityQuery {
+	aq.ctx.Unique = &unique
+	return aq
 }
 
 // Order specifies how the records should be ordered.
-func (_q *ActivityQuery) Order(o ...activity.OrderOption) *ActivityQuery {
-	_q.order = append(_q.order, o...)
-	return _q
+func (aq *ActivityQuery) Order(o ...activity.OrderOption) *ActivityQuery {
+	aq.order = append(aq.order, o...)
+	return aq
 }
 
 // QueryProject chains the current query on the "project" edge.
-func (_q *ActivityQuery) QueryProject() *ProjectQuery {
-	query := (&ProjectClient{config: _q.config}).Query()
+func (aq *ActivityQuery) QueryProject() *ProjectQuery {
+	query := (&ProjectClient{config: aq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
+		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := _q.sqlQuery(ctx)
+		selector := aq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -79,20 +78,20 @@ func (_q *ActivityQuery) QueryProject() *ProjectQuery {
 			sqlgraph.To(project.Table, project.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, activity.ProjectTable, activity.ProjectColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryTask chains the current query on the "task" edge.
-func (_q *ActivityQuery) QueryTask() *TaskQuery {
-	query := (&TaskClient{config: _q.config}).Query()
+func (aq *ActivityQuery) QueryTask() *TaskQuery {
+	query := (&TaskClient{config: aq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
+		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := _q.sqlQuery(ctx)
+		selector := aq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -101,7 +100,7 @@ func (_q *ActivityQuery) QueryTask() *TaskQuery {
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, activity.TaskTable, activity.TaskColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -109,8 +108,8 @@ func (_q *ActivityQuery) QueryTask() *TaskQuery {
 
 // First returns the first Activity entity from the query.
 // Returns a *NotFoundError when no Activity was found.
-func (_q *ActivityQuery) First(ctx context.Context) (*Activity, error) {
-	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
+func (aq *ActivityQuery) First(ctx context.Context) (*Activity, error) {
+	nodes, err := aq.Limit(1).All(setContextOp(ctx, aq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +120,8 @@ func (_q *ActivityQuery) First(ctx context.Context) (*Activity, error) {
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *ActivityQuery) FirstX(ctx context.Context) *Activity {
-	node, err := _q.First(ctx)
+func (aq *ActivityQuery) FirstX(ctx context.Context) *Activity {
+	node, err := aq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -131,9 +130,9 @@ func (_q *ActivityQuery) FirstX(ctx context.Context) *Activity {
 
 // FirstID returns the first Activity ID from the query.
 // Returns a *NotFoundError when no Activity ID was found.
-func (_q *ActivityQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+func (aq *ActivityQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = aq.Limit(1).IDs(setContextOp(ctx, aq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -144,8 +143,8 @@ func (_q *ActivityQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) 
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *ActivityQuery) FirstIDX(ctx context.Context) uuid.UUID {
-	id, err := _q.FirstID(ctx)
+func (aq *ActivityQuery) FirstIDX(ctx context.Context) uuid.UUID {
+	id, err := aq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -155,8 +154,8 @@ func (_q *ActivityQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Only returns a single Activity entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one Activity entity is found.
 // Returns a *NotFoundError when no Activity entities are found.
-func (_q *ActivityQuery) Only(ctx context.Context) (*Activity, error) {
-	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
+func (aq *ActivityQuery) Only(ctx context.Context) (*Activity, error) {
+	nodes, err := aq.Limit(2).All(setContextOp(ctx, aq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -171,8 +170,8 @@ func (_q *ActivityQuery) Only(ctx context.Context) (*Activity, error) {
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *ActivityQuery) OnlyX(ctx context.Context) *Activity {
-	node, err := _q.Only(ctx)
+func (aq *ActivityQuery) OnlyX(ctx context.Context) *Activity {
+	node, err := aq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -182,9 +181,9 @@ func (_q *ActivityQuery) OnlyX(ctx context.Context) *Activity {
 // OnlyID is like Only, but returns the only Activity ID in the query.
 // Returns a *NotSingularError when more than one Activity ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *ActivityQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (aq *ActivityQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = aq.Limit(2).IDs(setContextOp(ctx, aq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -199,8 +198,8 @@ func (_q *ActivityQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *ActivityQuery) OnlyIDX(ctx context.Context) uuid.UUID {
-	id, err := _q.OnlyID(ctx)
+func (aq *ActivityQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+	id, err := aq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -208,18 +207,18 @@ func (_q *ActivityQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 }
 
 // All executes the query and returns a list of Activities.
-func (_q *ActivityQuery) All(ctx context.Context) ([]*Activity, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
-	if err := _q.prepareQuery(ctx); err != nil {
+func (aq *ActivityQuery) All(ctx context.Context) ([]*Activity, error) {
+	ctx = setContextOp(ctx, aq.ctx, "All")
+	if err := aq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*Activity, *ActivityQuery]()
-	return withInterceptors[[]*Activity](ctx, _q, qr, _q.inters)
+	return withInterceptors[[]*Activity](ctx, aq, qr, aq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *ActivityQuery) AllX(ctx context.Context) []*Activity {
-	nodes, err := _q.All(ctx)
+func (aq *ActivityQuery) AllX(ctx context.Context) []*Activity {
+	nodes, err := aq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -227,20 +226,20 @@ func (_q *ActivityQuery) AllX(ctx context.Context) []*Activity {
 }
 
 // IDs executes the query and returns a list of Activity IDs.
-func (_q *ActivityQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
-	if _q.ctx.Unique == nil && _q.path != nil {
-		_q.Unique(true)
+func (aq *ActivityQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if aq.ctx.Unique == nil && aq.path != nil {
+		aq.Unique(true)
 	}
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(activity.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, aq.ctx, "IDs")
+	if err = aq.Select(activity.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *ActivityQuery) IDsX(ctx context.Context) []uuid.UUID {
-	ids, err := _q.IDs(ctx)
+func (aq *ActivityQuery) IDsX(ctx context.Context) []uuid.UUID {
+	ids, err := aq.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -248,17 +247,17 @@ func (_q *ActivityQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *ActivityQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
-	if err := _q.prepareQuery(ctx); err != nil {
+func (aq *ActivityQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, aq.ctx, "Count")
+	if err := aq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*ActivityQuery](), _q.inters)
+	return withInterceptors[int](ctx, aq, querierCount[*ActivityQuery](), aq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *ActivityQuery) CountX(ctx context.Context) int {
-	count, err := _q.Count(ctx)
+func (aq *ActivityQuery) CountX(ctx context.Context) int {
+	count, err := aq.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -266,9 +265,9 @@ func (_q *ActivityQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *ActivityQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
-	switch _, err := _q.FirstID(ctx); {
+func (aq *ActivityQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, aq.ctx, "Exist")
+	switch _, err := aq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -279,8 +278,8 @@ func (_q *ActivityQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *ActivityQuery) ExistX(ctx context.Context) bool {
-	exist, err := _q.Exist(ctx)
+func (aq *ActivityQuery) ExistX(ctx context.Context) bool {
+	exist, err := aq.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -289,44 +288,44 @@ func (_q *ActivityQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the ActivityQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *ActivityQuery) Clone() *ActivityQuery {
-	if _q == nil {
+func (aq *ActivityQuery) Clone() *ActivityQuery {
+	if aq == nil {
 		return nil
 	}
 	return &ActivityQuery{
-		config:      _q.config,
-		ctx:         _q.ctx.Clone(),
-		order:       append([]activity.OrderOption{}, _q.order...),
-		inters:      append([]Interceptor{}, _q.inters...),
-		predicates:  append([]predicate.Activity{}, _q.predicates...),
-		withProject: _q.withProject.Clone(),
-		withTask:    _q.withTask.Clone(),
+		config:      aq.config,
+		ctx:         aq.ctx.Clone(),
+		order:       append([]activity.OrderOption{}, aq.order...),
+		inters:      append([]Interceptor{}, aq.inters...),
+		predicates:  append([]predicate.Activity{}, aq.predicates...),
+		withProject: aq.withProject.Clone(),
+		withTask:    aq.withTask.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:  aq.sql.Clone(),
+		path: aq.path,
 	}
 }
 
 // WithProject tells the query-builder to eager-load the nodes that are connected to
 // the "project" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ActivityQuery) WithProject(opts ...func(*ProjectQuery)) *ActivityQuery {
-	query := (&ProjectClient{config: _q.config}).Query()
+func (aq *ActivityQuery) WithProject(opts ...func(*ProjectQuery)) *ActivityQuery {
+	query := (&ProjectClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withProject = query
-	return _q
+	aq.withProject = query
+	return aq
 }
 
 // WithTask tells the query-builder to eager-load the nodes that are connected to
 // the "task" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ActivityQuery) WithTask(opts ...func(*TaskQuery)) *ActivityQuery {
-	query := (&TaskClient{config: _q.config}).Query()
+func (aq *ActivityQuery) WithTask(opts ...func(*TaskQuery)) *ActivityQuery {
+	query := (&TaskClient{config: aq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withTask = query
-	return _q
+	aq.withTask = query
+	return aq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -343,10 +342,10 @@ func (_q *ActivityQuery) WithTask(opts ...func(*TaskQuery)) *ActivityQuery {
 //		GroupBy(activity.FieldTenantID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *ActivityQuery) GroupBy(field string, fields ...string) *ActivityGroupBy {
-	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &ActivityGroupBy{build: _q}
-	grbuild.flds = &_q.ctx.Fields
+func (aq *ActivityQuery) GroupBy(field string, fields ...string) *ActivityGroupBy {
+	aq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &ActivityGroupBy{build: aq}
+	grbuild.flds = &aq.ctx.Fields
 	grbuild.label = activity.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -364,59 +363,59 @@ func (_q *ActivityQuery) GroupBy(field string, fields ...string) *ActivityGroupB
 //	client.Activity.Query().
 //		Select(activity.FieldTenantID).
 //		Scan(ctx, &v)
-func (_q *ActivityQuery) Select(fields ...string) *ActivitySelect {
-	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &ActivitySelect{ActivityQuery: _q}
+func (aq *ActivityQuery) Select(fields ...string) *ActivitySelect {
+	aq.ctx.Fields = append(aq.ctx.Fields, fields...)
+	sbuild := &ActivitySelect{ActivityQuery: aq}
 	sbuild.label = activity.Label
-	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &aq.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a ActivitySelect configured with the given aggregations.
-func (_q *ActivityQuery) Aggregate(fns ...AggregateFunc) *ActivitySelect {
-	return _q.Select().Aggregate(fns...)
+func (aq *ActivityQuery) Aggregate(fns ...AggregateFunc) *ActivitySelect {
+	return aq.Select().Aggregate(fns...)
 }
 
-func (_q *ActivityQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range _q.inters {
+func (aq *ActivityQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range aq.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, _q); err != nil {
+			if err := trv.Traverse(ctx, aq); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range _q.ctx.Fields {
+	for _, f := range aq.ctx.Fields {
 		if !activity.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if _q.path != nil {
-		prev, err := _q.path(ctx)
+	if aq.path != nil {
+		prev, err := aq.path(ctx)
 		if err != nil {
 			return err
 		}
-		_q.sql = prev
+		aq.sql = prev
 	}
 	return nil
 }
 
-func (_q *ActivityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Activity, error) {
+func (aq *ActivityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Activity, error) {
 	var (
 		nodes       = []*Activity{}
-		_spec       = _q.querySpec()
+		_spec       = aq.querySpec()
 		loadedTypes = [2]bool{
-			_q.withProject != nil,
-			_q.withTask != nil,
+			aq.withProject != nil,
+			aq.withTask != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Activity).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Activity{config: _q.config}
+		node := &Activity{config: aq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -424,20 +423,20 @@ func (_q *ActivityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Act
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, aq.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withProject; query != nil {
-		if err := _q.loadProject(ctx, query, nodes, nil,
+	if query := aq.withProject; query != nil {
+		if err := aq.loadProject(ctx, query, nodes, nil,
 			func(n *Activity, e *Project) { n.Edges.Project = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := _q.withTask; query != nil {
-		if err := _q.loadTask(ctx, query, nodes, nil,
+	if query := aq.withTask; query != nil {
+		if err := aq.loadTask(ctx, query, nodes, nil,
 			func(n *Activity, e *Task) { n.Edges.Task = e }); err != nil {
 			return nil, err
 		}
@@ -445,7 +444,7 @@ func (_q *ActivityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Act
 	return nodes, nil
 }
 
-func (_q *ActivityQuery) loadProject(ctx context.Context, query *ProjectQuery, nodes []*Activity, init func(*Activity), assign func(*Activity, *Project)) error {
+func (aq *ActivityQuery) loadProject(ctx context.Context, query *ProjectQuery, nodes []*Activity, init func(*Activity), assign func(*Activity, *Project)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Activity)
 	for i := range nodes {
@@ -474,7 +473,7 @@ func (_q *ActivityQuery) loadProject(ctx context.Context, query *ProjectQuery, n
 	}
 	return nil
 }
-func (_q *ActivityQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*Activity, init func(*Activity), assign func(*Activity, *Task)) error {
+func (aq *ActivityQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*Activity, init func(*Activity), assign func(*Activity, *Task)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Activity)
 	for i := range nodes {
@@ -504,24 +503,24 @@ func (_q *ActivityQuery) loadTask(ctx context.Context, query *TaskQuery, nodes [
 	return nil
 }
 
-func (_q *ActivityQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := _q.querySpec()
-	_spec.Node.Columns = _q.ctx.Fields
-	if len(_q.ctx.Fields) > 0 {
-		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
+func (aq *ActivityQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := aq.querySpec()
+	_spec.Node.Columns = aq.ctx.Fields
+	if len(aq.ctx.Fields) > 0 {
+		_spec.Unique = aq.ctx.Unique != nil && *aq.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
+	return sqlgraph.CountNodes(ctx, aq.driver, _spec)
 }
 
-func (_q *ActivityQuery) querySpec() *sqlgraph.QuerySpec {
+func (aq *ActivityQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(activity.Table, activity.Columns, sqlgraph.NewFieldSpec(activity.FieldID, field.TypeUUID))
-	_spec.From = _q.sql
-	if unique := _q.ctx.Unique; unique != nil {
+	_spec.From = aq.sql
+	if unique := aq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if _q.path != nil {
+	} else if aq.path != nil {
 		_spec.Unique = true
 	}
-	if fields := _q.ctx.Fields; len(fields) > 0 {
+	if fields := aq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, activity.FieldID)
 		for i := range fields {
@@ -529,27 +528,27 @@ func (_q *ActivityQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withProject != nil {
+		if aq.withProject != nil {
 			_spec.Node.AddColumnOnce(activity.FieldProjectID)
 		}
-		if _q.withTask != nil {
+		if aq.withTask != nil {
 			_spec.Node.AddColumnOnce(activity.FieldTaskID)
 		}
 	}
-	if ps := _q.predicates; len(ps) > 0 {
+	if ps := aq.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := _q.ctx.Limit; limit != nil {
+	if limit := aq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := _q.ctx.Offset; offset != nil {
+	if offset := aq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := _q.order; len(ps) > 0 {
+	if ps := aq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -559,33 +558,33 @@ func (_q *ActivityQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *ActivityQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(_q.driver.Dialect())
+func (aq *ActivityQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(aq.driver.Dialect())
 	t1 := builder.Table(activity.Table)
-	columns := _q.ctx.Fields
+	columns := aq.ctx.Fields
 	if len(columns) == 0 {
 		columns = activity.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if _q.sql != nil {
-		selector = _q.sql
+	if aq.sql != nil {
+		selector = aq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if _q.ctx.Unique != nil && *_q.ctx.Unique {
+	if aq.ctx.Unique != nil && *aq.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range _q.predicates {
+	for _, p := range aq.predicates {
 		p(selector)
 	}
-	for _, p := range _q.order {
+	for _, p := range aq.order {
 		p(selector)
 	}
-	if offset := _q.ctx.Offset; offset != nil {
+	if offset := aq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := _q.ctx.Limit; limit != nil {
+	if limit := aq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -598,41 +597,41 @@ type ActivityGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *ActivityGroupBy) Aggregate(fns ...AggregateFunc) *ActivityGroupBy {
-	_g.fns = append(_g.fns, fns...)
-	return _g
+func (agb *ActivityGroupBy) Aggregate(fns ...AggregateFunc) *ActivityGroupBy {
+	agb.fns = append(agb.fns, fns...)
+	return agb
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *ActivityGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
-	if err := _g.build.prepareQuery(ctx); err != nil {
+func (agb *ActivityGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, agb.build.ctx, "GroupBy")
+	if err := agb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*ActivityQuery, *ActivityGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*ActivityQuery, *ActivityGroupBy](ctx, agb.build, agb, agb.build.inters, v)
 }
 
-func (_g *ActivityGroupBy) sqlScan(ctx context.Context, root *ActivityQuery, v any) error {
+func (agb *ActivityGroupBy) sqlScan(ctx context.Context, root *ActivityQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(_g.fns))
-	for _, fn := range _g.fns {
+	aggregation := make([]string, 0, len(agb.fns))
+	for _, fn := range agb.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
-		for _, f := range *_g.flds {
+		columns := make([]string, 0, len(*agb.flds)+len(agb.fns))
+		for _, f := range *agb.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*_g.flds...)...)
+	selector.GroupBy(selector.Columns(*agb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := agb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -646,27 +645,27 @@ type ActivitySelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *ActivitySelect) Aggregate(fns ...AggregateFunc) *ActivitySelect {
-	_s.fns = append(_s.fns, fns...)
-	return _s
+func (as *ActivitySelect) Aggregate(fns ...AggregateFunc) *ActivitySelect {
+	as.fns = append(as.fns, fns...)
+	return as
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *ActivitySelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
-	if err := _s.prepareQuery(ctx); err != nil {
+func (as *ActivitySelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, as.ctx, "Select")
+	if err := as.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*ActivityQuery, *ActivitySelect](ctx, _s.ActivityQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*ActivityQuery, *ActivitySelect](ctx, as.ActivityQuery, as, as.inters, v)
 }
 
-func (_s *ActivitySelect) sqlScan(ctx context.Context, root *ActivityQuery, v any) error {
+func (as *ActivitySelect) sqlScan(ctx context.Context, root *ActivityQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(_s.fns))
-	for _, fn := range _s.fns {
+	aggregation := make([]string, 0, len(as.fns))
+	for _, fn := range as.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*_s.selector.flds); {
+	switch n := len(*as.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -674,7 +673,7 @@ func (_s *ActivitySelect) sqlScan(ctx context.Context, root *ActivityQuery, v an
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
+	if err := as.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

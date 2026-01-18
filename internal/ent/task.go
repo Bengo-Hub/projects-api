@@ -136,7 +136,7 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Task fields.
-func (_m *Task) assignValues(columns []string, values []any) error {
+func (t *Task) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -146,84 +146,84 @@ func (_m *Task) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				t.ID = *value
 			}
 		case task.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				t.TenantID = *value
 			}
 		case task.FieldProjectID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field project_id", values[i])
 			} else if value != nil {
-				_m.ProjectID = *value
+				t.ProjectID = *value
 			}
 		case task.FieldTitle:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field title", values[i])
 			} else if value.Valid {
-				_m.Title = value.String
+				t.Title = value.String
 			}
 		case task.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
-				_m.Description = value.String
+				t.Description = value.String
 			}
 		case task.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
-				_m.Status = value.String
+				t.Status = value.String
 			}
 		case task.FieldPriority:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field priority", values[i])
 			} else if value.Valid {
-				_m.Priority = value.String
+				t.Priority = value.String
 			}
 		case task.FieldAssigneeID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field assignee_id", values[i])
 			} else if value != nil {
-				_m.AssigneeID = *value
+				t.AssigneeID = *value
 			}
 		case task.FieldDueDate:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field due_date", values[i])
 			} else if value.Valid {
-				_m.DueDate = value.Time
+				t.DueDate = value.Time
 			}
 		case task.FieldCompletedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field completed_at", values[i])
 			} else if value.Valid {
-				_m.CompletedAt = value.Time
+				t.CompletedAt = value.Time
 			}
 		case task.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				_m.CreatedAt = value.Time
+				t.CreatedAt = value.Time
 			}
 		case task.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				_m.UpdatedAt = value.Time
+				t.UpdatedAt = value.Time
 			}
 		case task.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Metadata); err != nil {
+				if err := json.Unmarshal(*value, &t.Metadata); err != nil {
 					return fmt.Errorf("unmarshal field metadata: %w", err)
 				}
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			t.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -231,93 +231,93 @@ func (_m *Task) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Task.
 // This includes values selected through modifiers, order, etc.
-func (_m *Task) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (t *Task) Value(name string) (ent.Value, error) {
+	return t.selectValues.Get(name)
 }
 
 // QueryProject queries the "project" edge of the Task entity.
-func (_m *Task) QueryProject() *ProjectQuery {
-	return NewTaskClient(_m.config).QueryProject(_m)
+func (t *Task) QueryProject() *ProjectQuery {
+	return NewTaskClient(t.config).QueryProject(t)
 }
 
 // QueryDependencies queries the "dependencies" edge of the Task entity.
-func (_m *Task) QueryDependencies() *TaskDependencyQuery {
-	return NewTaskClient(_m.config).QueryDependencies(_m)
+func (t *Task) QueryDependencies() *TaskDependencyQuery {
+	return NewTaskClient(t.config).QueryDependencies(t)
 }
 
 // QueryComments queries the "comments" edge of the Task entity.
-func (_m *Task) QueryComments() *CommentQuery {
-	return NewTaskClient(_m.config).QueryComments(_m)
+func (t *Task) QueryComments() *CommentQuery {
+	return NewTaskClient(t.config).QueryComments(t)
 }
 
 // QueryActivities queries the "activities" edge of the Task entity.
-func (_m *Task) QueryActivities() *ActivityQuery {
-	return NewTaskClient(_m.config).QueryActivities(_m)
+func (t *Task) QueryActivities() *ActivityQuery {
+	return NewTaskClient(t.config).QueryActivities(t)
 }
 
 // QueryAttachments queries the "attachments" edge of the Task entity.
-func (_m *Task) QueryAttachments() *AttachmentQuery {
-	return NewTaskClient(_m.config).QueryAttachments(_m)
+func (t *Task) QueryAttachments() *AttachmentQuery {
+	return NewTaskClient(t.config).QueryAttachments(t)
 }
 
 // Update returns a builder for updating this Task.
 // Note that you need to call Task.Unwrap() before calling this method if this Task
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *Task) Update() *TaskUpdateOne {
-	return NewTaskClient(_m.config).UpdateOne(_m)
+func (t *Task) Update() *TaskUpdateOne {
+	return NewTaskClient(t.config).UpdateOne(t)
 }
 
 // Unwrap unwraps the Task entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *Task) Unwrap() *Task {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (t *Task) Unwrap() *Task {
+	_tx, ok := t.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Task is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	t.config.driver = _tx.drv
+	return t
 }
 
 // String implements the fmt.Stringer.
-func (_m *Task) String() string {
+func (t *Task) String() string {
 	var builder strings.Builder
 	builder.WriteString("Task(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", t.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", t.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("project_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ProjectID))
+	builder.WriteString(fmt.Sprintf("%v", t.ProjectID))
 	builder.WriteString(", ")
 	builder.WriteString("title=")
-	builder.WriteString(_m.Title)
+	builder.WriteString(t.Title)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
-	builder.WriteString(_m.Description)
+	builder.WriteString(t.Description)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
-	builder.WriteString(_m.Status)
+	builder.WriteString(t.Status)
 	builder.WriteString(", ")
 	builder.WriteString("priority=")
-	builder.WriteString(_m.Priority)
+	builder.WriteString(t.Priority)
 	builder.WriteString(", ")
 	builder.WriteString("assignee_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.AssigneeID))
+	builder.WriteString(fmt.Sprintf("%v", t.AssigneeID))
 	builder.WriteString(", ")
 	builder.WriteString("due_date=")
-	builder.WriteString(_m.DueDate.Format(time.ANSIC))
+	builder.WriteString(t.DueDate.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("completed_at=")
-	builder.WriteString(_m.CompletedAt.Format(time.ANSIC))
+	builder.WriteString(t.CompletedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(t.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))
+	builder.WriteString(fmt.Sprintf("%v", t.Metadata))
 	builder.WriteByte(')')
 	return builder.String()
 }

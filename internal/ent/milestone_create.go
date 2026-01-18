@@ -23,140 +23,140 @@ type MilestoneCreate struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_c *MilestoneCreate) SetTenantID(v uuid.UUID) *MilestoneCreate {
-	_c.mutation.SetTenantID(v)
-	return _c
+func (mc *MilestoneCreate) SetTenantID(u uuid.UUID) *MilestoneCreate {
+	mc.mutation.SetTenantID(u)
+	return mc
 }
 
 // SetProjectID sets the "project_id" field.
-func (_c *MilestoneCreate) SetProjectID(v uuid.UUID) *MilestoneCreate {
-	_c.mutation.SetProjectID(v)
-	return _c
+func (mc *MilestoneCreate) SetProjectID(u uuid.UUID) *MilestoneCreate {
+	mc.mutation.SetProjectID(u)
+	return mc
 }
 
 // SetName sets the "name" field.
-func (_c *MilestoneCreate) SetName(v string) *MilestoneCreate {
-	_c.mutation.SetName(v)
-	return _c
+func (mc *MilestoneCreate) SetName(s string) *MilestoneCreate {
+	mc.mutation.SetName(s)
+	return mc
 }
 
 // SetDescription sets the "description" field.
-func (_c *MilestoneCreate) SetDescription(v string) *MilestoneCreate {
-	_c.mutation.SetDescription(v)
-	return _c
+func (mc *MilestoneCreate) SetDescription(s string) *MilestoneCreate {
+	mc.mutation.SetDescription(s)
+	return mc
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (_c *MilestoneCreate) SetNillableDescription(v *string) *MilestoneCreate {
-	if v != nil {
-		_c.SetDescription(*v)
+func (mc *MilestoneCreate) SetNillableDescription(s *string) *MilestoneCreate {
+	if s != nil {
+		mc.SetDescription(*s)
 	}
-	return _c
+	return mc
 }
 
 // SetTargetDate sets the "target_date" field.
-func (_c *MilestoneCreate) SetTargetDate(v time.Time) *MilestoneCreate {
-	_c.mutation.SetTargetDate(v)
-	return _c
+func (mc *MilestoneCreate) SetTargetDate(t time.Time) *MilestoneCreate {
+	mc.mutation.SetTargetDate(t)
+	return mc
 }
 
 // SetNillableTargetDate sets the "target_date" field if the given value is not nil.
-func (_c *MilestoneCreate) SetNillableTargetDate(v *time.Time) *MilestoneCreate {
-	if v != nil {
-		_c.SetTargetDate(*v)
+func (mc *MilestoneCreate) SetNillableTargetDate(t *time.Time) *MilestoneCreate {
+	if t != nil {
+		mc.SetTargetDate(*t)
 	}
-	return _c
+	return mc
 }
 
 // SetStatus sets the "status" field.
-func (_c *MilestoneCreate) SetStatus(v string) *MilestoneCreate {
-	_c.mutation.SetStatus(v)
-	return _c
+func (mc *MilestoneCreate) SetStatus(s string) *MilestoneCreate {
+	mc.mutation.SetStatus(s)
+	return mc
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_c *MilestoneCreate) SetNillableStatus(v *string) *MilestoneCreate {
-	if v != nil {
-		_c.SetStatus(*v)
+func (mc *MilestoneCreate) SetNillableStatus(s *string) *MilestoneCreate {
+	if s != nil {
+		mc.SetStatus(*s)
 	}
-	return _c
+	return mc
 }
 
 // SetCompletedAt sets the "completed_at" field.
-func (_c *MilestoneCreate) SetCompletedAt(v time.Time) *MilestoneCreate {
-	_c.mutation.SetCompletedAt(v)
-	return _c
+func (mc *MilestoneCreate) SetCompletedAt(t time.Time) *MilestoneCreate {
+	mc.mutation.SetCompletedAt(t)
+	return mc
 }
 
 // SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
-func (_c *MilestoneCreate) SetNillableCompletedAt(v *time.Time) *MilestoneCreate {
-	if v != nil {
-		_c.SetCompletedAt(*v)
+func (mc *MilestoneCreate) SetNillableCompletedAt(t *time.Time) *MilestoneCreate {
+	if t != nil {
+		mc.SetCompletedAt(*t)
 	}
-	return _c
+	return mc
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_c *MilestoneCreate) SetCreatedAt(v time.Time) *MilestoneCreate {
-	_c.mutation.SetCreatedAt(v)
-	return _c
+func (mc *MilestoneCreate) SetCreatedAt(t time.Time) *MilestoneCreate {
+	mc.mutation.SetCreatedAt(t)
+	return mc
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_c *MilestoneCreate) SetNillableCreatedAt(v *time.Time) *MilestoneCreate {
-	if v != nil {
-		_c.SetCreatedAt(*v)
+func (mc *MilestoneCreate) SetNillableCreatedAt(t *time.Time) *MilestoneCreate {
+	if t != nil {
+		mc.SetCreatedAt(*t)
 	}
-	return _c
+	return mc
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_c *MilestoneCreate) SetUpdatedAt(v time.Time) *MilestoneCreate {
-	_c.mutation.SetUpdatedAt(v)
-	return _c
+func (mc *MilestoneCreate) SetUpdatedAt(t time.Time) *MilestoneCreate {
+	mc.mutation.SetUpdatedAt(t)
+	return mc
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (_c *MilestoneCreate) SetNillableUpdatedAt(v *time.Time) *MilestoneCreate {
-	if v != nil {
-		_c.SetUpdatedAt(*v)
+func (mc *MilestoneCreate) SetNillableUpdatedAt(t *time.Time) *MilestoneCreate {
+	if t != nil {
+		mc.SetUpdatedAt(*t)
 	}
-	return _c
+	return mc
 }
 
 // SetID sets the "id" field.
-func (_c *MilestoneCreate) SetID(v uuid.UUID) *MilestoneCreate {
-	_c.mutation.SetID(v)
-	return _c
+func (mc *MilestoneCreate) SetID(u uuid.UUID) *MilestoneCreate {
+	mc.mutation.SetID(u)
+	return mc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (_c *MilestoneCreate) SetNillableID(v *uuid.UUID) *MilestoneCreate {
-	if v != nil {
-		_c.SetID(*v)
+func (mc *MilestoneCreate) SetNillableID(u *uuid.UUID) *MilestoneCreate {
+	if u != nil {
+		mc.SetID(*u)
 	}
-	return _c
+	return mc
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_c *MilestoneCreate) SetProject(v *Project) *MilestoneCreate {
-	return _c.SetProjectID(v.ID)
+func (mc *MilestoneCreate) SetProject(p *Project) *MilestoneCreate {
+	return mc.SetProjectID(p.ID)
 }
 
 // Mutation returns the MilestoneMutation object of the builder.
-func (_c *MilestoneCreate) Mutation() *MilestoneMutation {
-	return _c.mutation
+func (mc *MilestoneCreate) Mutation() *MilestoneMutation {
+	return mc.mutation
 }
 
 // Save creates the Milestone in the database.
-func (_c *MilestoneCreate) Save(ctx context.Context) (*Milestone, error) {
-	_c.defaults()
-	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
+func (mc *MilestoneCreate) Save(ctx context.Context) (*Milestone, error) {
+	mc.defaults()
+	return withHooks(ctx, mc.sqlSave, mc.mutation, mc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *MilestoneCreate) SaveX(ctx context.Context) *Milestone {
-	v, err := _c.Save(ctx)
+func (mc *MilestoneCreate) SaveX(ctx context.Context) *Milestone {
+	v, err := mc.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -164,75 +164,75 @@ func (_c *MilestoneCreate) SaveX(ctx context.Context) *Milestone {
 }
 
 // Exec executes the query.
-func (_c *MilestoneCreate) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (mc *MilestoneCreate) Exec(ctx context.Context) error {
+	_, err := mc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *MilestoneCreate) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (mc *MilestoneCreate) ExecX(ctx context.Context) {
+	if err := mc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *MilestoneCreate) defaults() {
-	if _, ok := _c.mutation.Status(); !ok {
+func (mc *MilestoneCreate) defaults() {
+	if _, ok := mc.mutation.Status(); !ok {
 		v := milestone.DefaultStatus
-		_c.mutation.SetStatus(v)
+		mc.mutation.SetStatus(v)
 	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+	if _, ok := mc.mutation.CreatedAt(); !ok {
 		v := milestone.DefaultCreatedAt()
-		_c.mutation.SetCreatedAt(v)
+		mc.mutation.SetCreatedAt(v)
 	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
+	if _, ok := mc.mutation.UpdatedAt(); !ok {
 		v := milestone.DefaultUpdatedAt()
-		_c.mutation.SetUpdatedAt(v)
+		mc.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.ID(); !ok {
+	if _, ok := mc.mutation.ID(); !ok {
 		v := milestone.DefaultID()
-		_c.mutation.SetID(v)
+		mc.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *MilestoneCreate) check() error {
-	if _, ok := _c.mutation.TenantID(); !ok {
+func (mc *MilestoneCreate) check() error {
+	if _, ok := mc.mutation.TenantID(); !ok {
 		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Milestone.tenant_id"`)}
 	}
-	if _, ok := _c.mutation.ProjectID(); !ok {
+	if _, ok := mc.mutation.ProjectID(); !ok {
 		return &ValidationError{Name: "project_id", err: errors.New(`ent: missing required field "Milestone.project_id"`)}
 	}
-	if _, ok := _c.mutation.Name(); !ok {
+	if _, ok := mc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Milestone.name"`)}
 	}
-	if v, ok := _c.mutation.Name(); ok {
+	if v, ok := mc.mutation.Name(); ok {
 		if err := milestone.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Milestone.name": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.Status(); !ok {
+	if _, ok := mc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Milestone.status"`)}
 	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+	if _, ok := mc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Milestone.created_at"`)}
 	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
+	if _, ok := mc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Milestone.updated_at"`)}
 	}
-	if len(_c.mutation.ProjectIDs()) == 0 {
+	if _, ok := mc.mutation.ProjectID(); !ok {
 		return &ValidationError{Name: "project", err: errors.New(`ent: missing required edge "Milestone.project"`)}
 	}
 	return nil
 }
 
-func (_c *MilestoneCreate) sqlSave(ctx context.Context) (*Milestone, error) {
-	if err := _c.check(); err != nil {
+func (mc *MilestoneCreate) sqlSave(ctx context.Context) (*Milestone, error) {
+	if err := mc.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := _c.createSpec()
-	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
+	_node, _spec := mc.createSpec()
+	if err := sqlgraph.CreateNode(ctx, mc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -245,53 +245,53 @@ func (_c *MilestoneCreate) sqlSave(ctx context.Context) (*Milestone, error) {
 			return nil, err
 		}
 	}
-	_c.mutation.id = &_node.ID
-	_c.mutation.done = true
+	mc.mutation.id = &_node.ID
+	mc.mutation.done = true
 	return _node, nil
 }
 
-func (_c *MilestoneCreate) createSpec() (*Milestone, *sqlgraph.CreateSpec) {
+func (mc *MilestoneCreate) createSpec() (*Milestone, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Milestone{config: _c.config}
+		_node = &Milestone{config: mc.config}
 		_spec = sqlgraph.NewCreateSpec(milestone.Table, sqlgraph.NewFieldSpec(milestone.FieldID, field.TypeUUID))
 	)
-	if id, ok := _c.mutation.ID(); ok {
+	if id, ok := mc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.TenantID(); ok {
+	if value, ok := mc.mutation.TenantID(); ok {
 		_spec.SetField(milestone.FieldTenantID, field.TypeUUID, value)
 		_node.TenantID = value
 	}
-	if value, ok := _c.mutation.Name(); ok {
+	if value, ok := mc.mutation.Name(); ok {
 		_spec.SetField(milestone.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := _c.mutation.Description(); ok {
+	if value, ok := mc.mutation.Description(); ok {
 		_spec.SetField(milestone.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
-	if value, ok := _c.mutation.TargetDate(); ok {
+	if value, ok := mc.mutation.TargetDate(); ok {
 		_spec.SetField(milestone.FieldTargetDate, field.TypeTime, value)
 		_node.TargetDate = value
 	}
-	if value, ok := _c.mutation.Status(); ok {
+	if value, ok := mc.mutation.Status(); ok {
 		_spec.SetField(milestone.FieldStatus, field.TypeString, value)
 		_node.Status = value
 	}
-	if value, ok := _c.mutation.CompletedAt(); ok {
+	if value, ok := mc.mutation.CompletedAt(); ok {
 		_spec.SetField(milestone.FieldCompletedAt, field.TypeTime, value)
 		_node.CompletedAt = value
 	}
-	if value, ok := _c.mutation.CreatedAt(); ok {
+	if value, ok := mc.mutation.CreatedAt(); ok {
 		_spec.SetField(milestone.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := _c.mutation.UpdatedAt(); ok {
+	if value, ok := mc.mutation.UpdatedAt(); ok {
 		_spec.SetField(milestone.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := _c.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := mc.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -319,16 +319,16 @@ type MilestoneCreateBulk struct {
 }
 
 // Save creates the Milestone entities in the database.
-func (_c *MilestoneCreateBulk) Save(ctx context.Context) ([]*Milestone, error) {
-	if _c.err != nil {
-		return nil, _c.err
+func (mcb *MilestoneCreateBulk) Save(ctx context.Context) ([]*Milestone, error) {
+	if mcb.err != nil {
+		return nil, mcb.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*Milestone, len(_c.builders))
-	mutators := make([]Mutator, len(_c.builders))
-	for i := range _c.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(mcb.builders))
+	nodes := make([]*Milestone, len(mcb.builders))
+	mutators := make([]Mutator, len(mcb.builders))
+	for i := range mcb.builders {
 		func(i int, root context.Context) {
-			builder := _c.builders[i]
+			builder := mcb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*MilestoneMutation)
@@ -342,11 +342,11 @@ func (_c *MilestoneCreateBulk) Save(ctx context.Context) ([]*Milestone, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, mcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, mcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -366,7 +366,7 @@ func (_c *MilestoneCreateBulk) Save(ctx context.Context) ([]*Milestone, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, mcb.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -374,8 +374,8 @@ func (_c *MilestoneCreateBulk) Save(ctx context.Context) ([]*Milestone, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *MilestoneCreateBulk) SaveX(ctx context.Context) []*Milestone {
-	v, err := _c.Save(ctx)
+func (mcb *MilestoneCreateBulk) SaveX(ctx context.Context) []*Milestone {
+	v, err := mcb.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -383,14 +383,14 @@ func (_c *MilestoneCreateBulk) SaveX(ctx context.Context) []*Milestone {
 }
 
 // Exec executes the query.
-func (_c *MilestoneCreateBulk) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (mcb *MilestoneCreateBulk) Exec(ctx context.Context) error {
+	_, err := mcb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *MilestoneCreateBulk) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (mcb *MilestoneCreateBulk) ExecX(ctx context.Context) {
+	if err := mcb.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

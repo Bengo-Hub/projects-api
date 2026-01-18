@@ -73,7 +73,7 @@ func (*TaskDependency) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the TaskDependency fields.
-func (_m *TaskDependency) assignValues(columns []string, values []any) error {
+func (td *TaskDependency) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -83,34 +83,34 @@ func (_m *TaskDependency) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				td.ID = *value
 			}
 		case taskdependency.FieldTaskID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field task_id", values[i])
 			} else if value != nil {
-				_m.TaskID = *value
+				td.TaskID = *value
 			}
 		case taskdependency.FieldDependsOnTaskID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field depends_on_task_id", values[i])
 			} else if value != nil {
-				_m.DependsOnTaskID = *value
+				td.DependsOnTaskID = *value
 			}
 		case taskdependency.FieldDependencyType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field dependency_type", values[i])
 			} else if value.Valid {
-				_m.DependencyType = value.String
+				td.DependencyType = value.String
 			}
 		case taskdependency.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				_m.CreatedAt = value.Time
+				td.CreatedAt = value.Time
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			td.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -118,49 +118,49 @@ func (_m *TaskDependency) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the TaskDependency.
 // This includes values selected through modifiers, order, etc.
-func (_m *TaskDependency) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (td *TaskDependency) Value(name string) (ent.Value, error) {
+	return td.selectValues.Get(name)
 }
 
 // QueryTask queries the "task" edge of the TaskDependency entity.
-func (_m *TaskDependency) QueryTask() *TaskQuery {
-	return NewTaskDependencyClient(_m.config).QueryTask(_m)
+func (td *TaskDependency) QueryTask() *TaskQuery {
+	return NewTaskDependencyClient(td.config).QueryTask(td)
 }
 
 // Update returns a builder for updating this TaskDependency.
 // Note that you need to call TaskDependency.Unwrap() before calling this method if this TaskDependency
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *TaskDependency) Update() *TaskDependencyUpdateOne {
-	return NewTaskDependencyClient(_m.config).UpdateOne(_m)
+func (td *TaskDependency) Update() *TaskDependencyUpdateOne {
+	return NewTaskDependencyClient(td.config).UpdateOne(td)
 }
 
 // Unwrap unwraps the TaskDependency entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *TaskDependency) Unwrap() *TaskDependency {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (td *TaskDependency) Unwrap() *TaskDependency {
+	_tx, ok := td.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: TaskDependency is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	td.config.driver = _tx.drv
+	return td
 }
 
 // String implements the fmt.Stringer.
-func (_m *TaskDependency) String() string {
+func (td *TaskDependency) String() string {
 	var builder strings.Builder
 	builder.WriteString("TaskDependency(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", td.ID))
 	builder.WriteString("task_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TaskID))
+	builder.WriteString(fmt.Sprintf("%v", td.TaskID))
 	builder.WriteString(", ")
 	builder.WriteString("depends_on_task_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.DependsOnTaskID))
+	builder.WriteString(fmt.Sprintf("%v", td.DependsOnTaskID))
 	builder.WriteString(", ")
 	builder.WriteString("dependency_type=")
-	builder.WriteString(_m.DependencyType)
+	builder.WriteString(td.DependencyType)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(td.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -29,348 +29,348 @@ type TaskUpdate struct {
 }
 
 // Where appends a list predicates to the TaskUpdate builder.
-func (_u *TaskUpdate) Where(ps ...predicate.Task) *TaskUpdate {
-	_u.mutation.Where(ps...)
-	return _u
+func (tu *TaskUpdate) Where(ps ...predicate.Task) *TaskUpdate {
+	tu.mutation.Where(ps...)
+	return tu
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *TaskUpdate) SetTenantID(v uuid.UUID) *TaskUpdate {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (tu *TaskUpdate) SetTenantID(u uuid.UUID) *TaskUpdate {
+	tu.mutation.SetTenantID(u)
+	return tu
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *TaskUpdate) SetNillableTenantID(v *uuid.UUID) *TaskUpdate {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (tu *TaskUpdate) SetNillableTenantID(u *uuid.UUID) *TaskUpdate {
+	if u != nil {
+		tu.SetTenantID(*u)
 	}
-	return _u
+	return tu
 }
 
 // SetProjectID sets the "project_id" field.
-func (_u *TaskUpdate) SetProjectID(v uuid.UUID) *TaskUpdate {
-	_u.mutation.SetProjectID(v)
-	return _u
+func (tu *TaskUpdate) SetProjectID(u uuid.UUID) *TaskUpdate {
+	tu.mutation.SetProjectID(u)
+	return tu
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_u *TaskUpdate) SetNillableProjectID(v *uuid.UUID) *TaskUpdate {
-	if v != nil {
-		_u.SetProjectID(*v)
+func (tu *TaskUpdate) SetNillableProjectID(u *uuid.UUID) *TaskUpdate {
+	if u != nil {
+		tu.SetProjectID(*u)
 	}
-	return _u
+	return tu
 }
 
 // SetTitle sets the "title" field.
-func (_u *TaskUpdate) SetTitle(v string) *TaskUpdate {
-	_u.mutation.SetTitle(v)
-	return _u
+func (tu *TaskUpdate) SetTitle(s string) *TaskUpdate {
+	tu.mutation.SetTitle(s)
+	return tu
 }
 
 // SetNillableTitle sets the "title" field if the given value is not nil.
-func (_u *TaskUpdate) SetNillableTitle(v *string) *TaskUpdate {
-	if v != nil {
-		_u.SetTitle(*v)
+func (tu *TaskUpdate) SetNillableTitle(s *string) *TaskUpdate {
+	if s != nil {
+		tu.SetTitle(*s)
 	}
-	return _u
+	return tu
 }
 
 // SetDescription sets the "description" field.
-func (_u *TaskUpdate) SetDescription(v string) *TaskUpdate {
-	_u.mutation.SetDescription(v)
-	return _u
+func (tu *TaskUpdate) SetDescription(s string) *TaskUpdate {
+	tu.mutation.SetDescription(s)
+	return tu
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (_u *TaskUpdate) SetNillableDescription(v *string) *TaskUpdate {
-	if v != nil {
-		_u.SetDescription(*v)
+func (tu *TaskUpdate) SetNillableDescription(s *string) *TaskUpdate {
+	if s != nil {
+		tu.SetDescription(*s)
 	}
-	return _u
+	return tu
 }
 
 // ClearDescription clears the value of the "description" field.
-func (_u *TaskUpdate) ClearDescription() *TaskUpdate {
-	_u.mutation.ClearDescription()
-	return _u
+func (tu *TaskUpdate) ClearDescription() *TaskUpdate {
+	tu.mutation.ClearDescription()
+	return tu
 }
 
 // SetStatus sets the "status" field.
-func (_u *TaskUpdate) SetStatus(v string) *TaskUpdate {
-	_u.mutation.SetStatus(v)
-	return _u
+func (tu *TaskUpdate) SetStatus(s string) *TaskUpdate {
+	tu.mutation.SetStatus(s)
+	return tu
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *TaskUpdate) SetNillableStatus(v *string) *TaskUpdate {
-	if v != nil {
-		_u.SetStatus(*v)
+func (tu *TaskUpdate) SetNillableStatus(s *string) *TaskUpdate {
+	if s != nil {
+		tu.SetStatus(*s)
 	}
-	return _u
+	return tu
 }
 
 // SetPriority sets the "priority" field.
-func (_u *TaskUpdate) SetPriority(v string) *TaskUpdate {
-	_u.mutation.SetPriority(v)
-	return _u
+func (tu *TaskUpdate) SetPriority(s string) *TaskUpdate {
+	tu.mutation.SetPriority(s)
+	return tu
 }
 
 // SetNillablePriority sets the "priority" field if the given value is not nil.
-func (_u *TaskUpdate) SetNillablePriority(v *string) *TaskUpdate {
-	if v != nil {
-		_u.SetPriority(*v)
+func (tu *TaskUpdate) SetNillablePriority(s *string) *TaskUpdate {
+	if s != nil {
+		tu.SetPriority(*s)
 	}
-	return _u
+	return tu
 }
 
 // SetAssigneeID sets the "assignee_id" field.
-func (_u *TaskUpdate) SetAssigneeID(v uuid.UUID) *TaskUpdate {
-	_u.mutation.SetAssigneeID(v)
-	return _u
+func (tu *TaskUpdate) SetAssigneeID(u uuid.UUID) *TaskUpdate {
+	tu.mutation.SetAssigneeID(u)
+	return tu
 }
 
 // SetNillableAssigneeID sets the "assignee_id" field if the given value is not nil.
-func (_u *TaskUpdate) SetNillableAssigneeID(v *uuid.UUID) *TaskUpdate {
-	if v != nil {
-		_u.SetAssigneeID(*v)
+func (tu *TaskUpdate) SetNillableAssigneeID(u *uuid.UUID) *TaskUpdate {
+	if u != nil {
+		tu.SetAssigneeID(*u)
 	}
-	return _u
+	return tu
 }
 
 // ClearAssigneeID clears the value of the "assignee_id" field.
-func (_u *TaskUpdate) ClearAssigneeID() *TaskUpdate {
-	_u.mutation.ClearAssigneeID()
-	return _u
+func (tu *TaskUpdate) ClearAssigneeID() *TaskUpdate {
+	tu.mutation.ClearAssigneeID()
+	return tu
 }
 
 // SetDueDate sets the "due_date" field.
-func (_u *TaskUpdate) SetDueDate(v time.Time) *TaskUpdate {
-	_u.mutation.SetDueDate(v)
-	return _u
+func (tu *TaskUpdate) SetDueDate(t time.Time) *TaskUpdate {
+	tu.mutation.SetDueDate(t)
+	return tu
 }
 
 // SetNillableDueDate sets the "due_date" field if the given value is not nil.
-func (_u *TaskUpdate) SetNillableDueDate(v *time.Time) *TaskUpdate {
-	if v != nil {
-		_u.SetDueDate(*v)
+func (tu *TaskUpdate) SetNillableDueDate(t *time.Time) *TaskUpdate {
+	if t != nil {
+		tu.SetDueDate(*t)
 	}
-	return _u
+	return tu
 }
 
 // ClearDueDate clears the value of the "due_date" field.
-func (_u *TaskUpdate) ClearDueDate() *TaskUpdate {
-	_u.mutation.ClearDueDate()
-	return _u
+func (tu *TaskUpdate) ClearDueDate() *TaskUpdate {
+	tu.mutation.ClearDueDate()
+	return tu
 }
 
 // SetCompletedAt sets the "completed_at" field.
-func (_u *TaskUpdate) SetCompletedAt(v time.Time) *TaskUpdate {
-	_u.mutation.SetCompletedAt(v)
-	return _u
+func (tu *TaskUpdate) SetCompletedAt(t time.Time) *TaskUpdate {
+	tu.mutation.SetCompletedAt(t)
+	return tu
 }
 
 // SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
-func (_u *TaskUpdate) SetNillableCompletedAt(v *time.Time) *TaskUpdate {
-	if v != nil {
-		_u.SetCompletedAt(*v)
+func (tu *TaskUpdate) SetNillableCompletedAt(t *time.Time) *TaskUpdate {
+	if t != nil {
+		tu.SetCompletedAt(*t)
 	}
-	return _u
+	return tu
 }
 
 // ClearCompletedAt clears the value of the "completed_at" field.
-func (_u *TaskUpdate) ClearCompletedAt() *TaskUpdate {
-	_u.mutation.ClearCompletedAt()
-	return _u
+func (tu *TaskUpdate) ClearCompletedAt() *TaskUpdate {
+	tu.mutation.ClearCompletedAt()
+	return tu
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *TaskUpdate) SetUpdatedAt(v time.Time) *TaskUpdate {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
+func (tu *TaskUpdate) SetUpdatedAt(t time.Time) *TaskUpdate {
+	tu.mutation.SetUpdatedAt(t)
+	return tu
 }
 
 // SetMetadata sets the "metadata" field.
-func (_u *TaskUpdate) SetMetadata(v map[string]interface{}) *TaskUpdate {
-	_u.mutation.SetMetadata(v)
-	return _u
+func (tu *TaskUpdate) SetMetadata(m map[string]interface{}) *TaskUpdate {
+	tu.mutation.SetMetadata(m)
+	return tu
 }
 
 // ClearMetadata clears the value of the "metadata" field.
-func (_u *TaskUpdate) ClearMetadata() *TaskUpdate {
-	_u.mutation.ClearMetadata()
-	return _u
+func (tu *TaskUpdate) ClearMetadata() *TaskUpdate {
+	tu.mutation.ClearMetadata()
+	return tu
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_u *TaskUpdate) SetProject(v *Project) *TaskUpdate {
-	return _u.SetProjectID(v.ID)
+func (tu *TaskUpdate) SetProject(p *Project) *TaskUpdate {
+	return tu.SetProjectID(p.ID)
 }
 
 // AddDependencyIDs adds the "dependencies" edge to the TaskDependency entity by IDs.
-func (_u *TaskUpdate) AddDependencyIDs(ids ...uuid.UUID) *TaskUpdate {
-	_u.mutation.AddDependencyIDs(ids...)
-	return _u
+func (tu *TaskUpdate) AddDependencyIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.AddDependencyIDs(ids...)
+	return tu
 }
 
 // AddDependencies adds the "dependencies" edges to the TaskDependency entity.
-func (_u *TaskUpdate) AddDependencies(v ...*TaskDependency) *TaskUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tu *TaskUpdate) AddDependencies(t ...*TaskDependency) *TaskUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return _u.AddDependencyIDs(ids...)
+	return tu.AddDependencyIDs(ids...)
 }
 
 // AddCommentIDs adds the "comments" edge to the Comment entity by IDs.
-func (_u *TaskUpdate) AddCommentIDs(ids ...uuid.UUID) *TaskUpdate {
-	_u.mutation.AddCommentIDs(ids...)
-	return _u
+func (tu *TaskUpdate) AddCommentIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.AddCommentIDs(ids...)
+	return tu
 }
 
 // AddComments adds the "comments" edges to the Comment entity.
-func (_u *TaskUpdate) AddComments(v ...*Comment) *TaskUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tu *TaskUpdate) AddComments(c ...*Comment) *TaskUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
-	return _u.AddCommentIDs(ids...)
+	return tu.AddCommentIDs(ids...)
 }
 
 // AddActivityIDs adds the "activities" edge to the Activity entity by IDs.
-func (_u *TaskUpdate) AddActivityIDs(ids ...uuid.UUID) *TaskUpdate {
-	_u.mutation.AddActivityIDs(ids...)
-	return _u
+func (tu *TaskUpdate) AddActivityIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.AddActivityIDs(ids...)
+	return tu
 }
 
 // AddActivities adds the "activities" edges to the Activity entity.
-func (_u *TaskUpdate) AddActivities(v ...*Activity) *TaskUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tu *TaskUpdate) AddActivities(a ...*Activity) *TaskUpdate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _u.AddActivityIDs(ids...)
+	return tu.AddActivityIDs(ids...)
 }
 
 // AddAttachmentIDs adds the "attachments" edge to the Attachment entity by IDs.
-func (_u *TaskUpdate) AddAttachmentIDs(ids ...uuid.UUID) *TaskUpdate {
-	_u.mutation.AddAttachmentIDs(ids...)
-	return _u
+func (tu *TaskUpdate) AddAttachmentIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.AddAttachmentIDs(ids...)
+	return tu
 }
 
 // AddAttachments adds the "attachments" edges to the Attachment entity.
-func (_u *TaskUpdate) AddAttachments(v ...*Attachment) *TaskUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tu *TaskUpdate) AddAttachments(a ...*Attachment) *TaskUpdate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _u.AddAttachmentIDs(ids...)
+	return tu.AddAttachmentIDs(ids...)
 }
 
 // Mutation returns the TaskMutation object of the builder.
-func (_u *TaskUpdate) Mutation() *TaskMutation {
-	return _u.mutation
+func (tu *TaskUpdate) Mutation() *TaskMutation {
+	return tu.mutation
 }
 
 // ClearProject clears the "project" edge to the Project entity.
-func (_u *TaskUpdate) ClearProject() *TaskUpdate {
-	_u.mutation.ClearProject()
-	return _u
+func (tu *TaskUpdate) ClearProject() *TaskUpdate {
+	tu.mutation.ClearProject()
+	return tu
 }
 
 // ClearDependencies clears all "dependencies" edges to the TaskDependency entity.
-func (_u *TaskUpdate) ClearDependencies() *TaskUpdate {
-	_u.mutation.ClearDependencies()
-	return _u
+func (tu *TaskUpdate) ClearDependencies() *TaskUpdate {
+	tu.mutation.ClearDependencies()
+	return tu
 }
 
 // RemoveDependencyIDs removes the "dependencies" edge to TaskDependency entities by IDs.
-func (_u *TaskUpdate) RemoveDependencyIDs(ids ...uuid.UUID) *TaskUpdate {
-	_u.mutation.RemoveDependencyIDs(ids...)
-	return _u
+func (tu *TaskUpdate) RemoveDependencyIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.RemoveDependencyIDs(ids...)
+	return tu
 }
 
 // RemoveDependencies removes "dependencies" edges to TaskDependency entities.
-func (_u *TaskUpdate) RemoveDependencies(v ...*TaskDependency) *TaskUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tu *TaskUpdate) RemoveDependencies(t ...*TaskDependency) *TaskUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return _u.RemoveDependencyIDs(ids...)
+	return tu.RemoveDependencyIDs(ids...)
 }
 
 // ClearComments clears all "comments" edges to the Comment entity.
-func (_u *TaskUpdate) ClearComments() *TaskUpdate {
-	_u.mutation.ClearComments()
-	return _u
+func (tu *TaskUpdate) ClearComments() *TaskUpdate {
+	tu.mutation.ClearComments()
+	return tu
 }
 
 // RemoveCommentIDs removes the "comments" edge to Comment entities by IDs.
-func (_u *TaskUpdate) RemoveCommentIDs(ids ...uuid.UUID) *TaskUpdate {
-	_u.mutation.RemoveCommentIDs(ids...)
-	return _u
+func (tu *TaskUpdate) RemoveCommentIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.RemoveCommentIDs(ids...)
+	return tu
 }
 
 // RemoveComments removes "comments" edges to Comment entities.
-func (_u *TaskUpdate) RemoveComments(v ...*Comment) *TaskUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tu *TaskUpdate) RemoveComments(c ...*Comment) *TaskUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
-	return _u.RemoveCommentIDs(ids...)
+	return tu.RemoveCommentIDs(ids...)
 }
 
 // ClearActivities clears all "activities" edges to the Activity entity.
-func (_u *TaskUpdate) ClearActivities() *TaskUpdate {
-	_u.mutation.ClearActivities()
-	return _u
+func (tu *TaskUpdate) ClearActivities() *TaskUpdate {
+	tu.mutation.ClearActivities()
+	return tu
 }
 
 // RemoveActivityIDs removes the "activities" edge to Activity entities by IDs.
-func (_u *TaskUpdate) RemoveActivityIDs(ids ...uuid.UUID) *TaskUpdate {
-	_u.mutation.RemoveActivityIDs(ids...)
-	return _u
+func (tu *TaskUpdate) RemoveActivityIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.RemoveActivityIDs(ids...)
+	return tu
 }
 
 // RemoveActivities removes "activities" edges to Activity entities.
-func (_u *TaskUpdate) RemoveActivities(v ...*Activity) *TaskUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tu *TaskUpdate) RemoveActivities(a ...*Activity) *TaskUpdate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _u.RemoveActivityIDs(ids...)
+	return tu.RemoveActivityIDs(ids...)
 }
 
 // ClearAttachments clears all "attachments" edges to the Attachment entity.
-func (_u *TaskUpdate) ClearAttachments() *TaskUpdate {
-	_u.mutation.ClearAttachments()
-	return _u
+func (tu *TaskUpdate) ClearAttachments() *TaskUpdate {
+	tu.mutation.ClearAttachments()
+	return tu
 }
 
 // RemoveAttachmentIDs removes the "attachments" edge to Attachment entities by IDs.
-func (_u *TaskUpdate) RemoveAttachmentIDs(ids ...uuid.UUID) *TaskUpdate {
-	_u.mutation.RemoveAttachmentIDs(ids...)
-	return _u
+func (tu *TaskUpdate) RemoveAttachmentIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.RemoveAttachmentIDs(ids...)
+	return tu
 }
 
 // RemoveAttachments removes "attachments" edges to Attachment entities.
-func (_u *TaskUpdate) RemoveAttachments(v ...*Attachment) *TaskUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tu *TaskUpdate) RemoveAttachments(a ...*Attachment) *TaskUpdate {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _u.RemoveAttachmentIDs(ids...)
+	return tu.RemoveAttachmentIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *TaskUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (tu *TaskUpdate) Save(ctx context.Context) (int, error) {
+	tu.defaults()
+	return withHooks(ctx, tu.sqlSave, tu.mutation, tu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *TaskUpdate) SaveX(ctx context.Context) int {
-	affected, err := _u.Save(ctx)
+func (tu *TaskUpdate) SaveX(ctx context.Context) int {
+	affected, err := tu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -378,97 +378,97 @@ func (_u *TaskUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *TaskUpdate) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (tu *TaskUpdate) Exec(ctx context.Context) error {
+	_, err := tu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *TaskUpdate) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (tu *TaskUpdate) ExecX(ctx context.Context) {
+	if err := tu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *TaskUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
+func (tu *TaskUpdate) defaults() {
+	if _, ok := tu.mutation.UpdatedAt(); !ok {
 		v := task.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
+		tu.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *TaskUpdate) check() error {
-	if v, ok := _u.mutation.Title(); ok {
+func (tu *TaskUpdate) check() error {
+	if v, ok := tu.mutation.Title(); ok {
 		if err := task.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Task.title": %w`, err)}
 		}
 	}
-	if _u.mutation.ProjectCleared() && len(_u.mutation.ProjectIDs()) > 0 {
+	if _, ok := tu.mutation.ProjectID(); tu.mutation.ProjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Task.project"`)
 	}
 	return nil
 }
 
-func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
+func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := tu.check(); err != nil {
+		return n, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(task.Table, task.Columns, sqlgraph.NewFieldSpec(task.FieldID, field.TypeUUID))
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := tu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := tu.mutation.TenantID(); ok {
 		_spec.SetField(task.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.Title(); ok {
+	if value, ok := tu.mutation.Title(); ok {
 		_spec.SetField(task.FieldTitle, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Description(); ok {
+	if value, ok := tu.mutation.Description(); ok {
 		_spec.SetField(task.FieldDescription, field.TypeString, value)
 	}
-	if _u.mutation.DescriptionCleared() {
+	if tu.mutation.DescriptionCleared() {
 		_spec.ClearField(task.FieldDescription, field.TypeString)
 	}
-	if value, ok := _u.mutation.Status(); ok {
+	if value, ok := tu.mutation.Status(); ok {
 		_spec.SetField(task.FieldStatus, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Priority(); ok {
+	if value, ok := tu.mutation.Priority(); ok {
 		_spec.SetField(task.FieldPriority, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.AssigneeID(); ok {
+	if value, ok := tu.mutation.AssigneeID(); ok {
 		_spec.SetField(task.FieldAssigneeID, field.TypeUUID, value)
 	}
-	if _u.mutation.AssigneeIDCleared() {
+	if tu.mutation.AssigneeIDCleared() {
 		_spec.ClearField(task.FieldAssigneeID, field.TypeUUID)
 	}
-	if value, ok := _u.mutation.DueDate(); ok {
+	if value, ok := tu.mutation.DueDate(); ok {
 		_spec.SetField(task.FieldDueDate, field.TypeTime, value)
 	}
-	if _u.mutation.DueDateCleared() {
+	if tu.mutation.DueDateCleared() {
 		_spec.ClearField(task.FieldDueDate, field.TypeTime)
 	}
-	if value, ok := _u.mutation.CompletedAt(); ok {
+	if value, ok := tu.mutation.CompletedAt(); ok {
 		_spec.SetField(task.FieldCompletedAt, field.TypeTime, value)
 	}
-	if _u.mutation.CompletedAtCleared() {
+	if tu.mutation.CompletedAtCleared() {
 		_spec.ClearField(task.FieldCompletedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
+	if value, ok := tu.mutation.UpdatedAt(); ok {
 		_spec.SetField(task.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.Metadata(); ok {
+	if value, ok := tu.mutation.Metadata(); ok {
 		_spec.SetField(task.FieldMetadata, field.TypeJSON, value)
 	}
-	if _u.mutation.MetadataCleared() {
+	if tu.mutation.MetadataCleared() {
 		_spec.ClearField(task.FieldMetadata, field.TypeJSON)
 	}
-	if _u.mutation.ProjectCleared() {
+	if tu.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -481,7 +481,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -497,7 +497,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.DependenciesCleared() {
+	if tu.mutation.DependenciesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -510,23 +510,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedDependenciesIDs(); len(nodes) > 0 && !_u.mutation.DependenciesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   task.DependenciesTable,
-			Columns: []string{task.DependenciesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(taskdependency.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.DependenciesIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.RemovedDependenciesIDs(); len(nodes) > 0 && !tu.mutation.DependenciesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -540,9 +524,25 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.DependenciesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.DependenciesTable,
+			Columns: []string{task.DependenciesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskdependency.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.CommentsCleared() {
+	if tu.mutation.CommentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -555,7 +555,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedCommentsIDs(); len(nodes) > 0 && !_u.mutation.CommentsCleared() {
+	if nodes := tu.mutation.RemovedCommentsIDs(); len(nodes) > 0 && !tu.mutation.CommentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -571,7 +571,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.CommentsIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.CommentsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -587,7 +587,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.ActivitiesCleared() {
+	if tu.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -600,7 +600,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedActivitiesIDs(); len(nodes) > 0 && !_u.mutation.ActivitiesCleared() {
+	if nodes := tu.mutation.RemovedActivitiesIDs(); len(nodes) > 0 && !tu.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -616,7 +616,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ActivitiesIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.ActivitiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -632,7 +632,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.AttachmentsCleared() {
+	if tu.mutation.AttachmentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -645,7 +645,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedAttachmentsIDs(); len(nodes) > 0 && !_u.mutation.AttachmentsCleared() {
+	if nodes := tu.mutation.RemovedAttachmentsIDs(); len(nodes) > 0 && !tu.mutation.AttachmentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -661,7 +661,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.AttachmentsIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.AttachmentsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -677,7 +677,7 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{task.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -685,8 +685,8 @@ func (_u *TaskUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		return 0, err
 	}
-	_u.mutation.done = true
-	return _node, nil
+	tu.mutation.done = true
+	return n, nil
 }
 
 // TaskUpdateOne is the builder for updating a single Task entity.
@@ -698,355 +698,355 @@ type TaskUpdateOne struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *TaskUpdateOne) SetTenantID(v uuid.UUID) *TaskUpdateOne {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (tuo *TaskUpdateOne) SetTenantID(u uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.SetTenantID(u)
+	return tuo
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *TaskUpdateOne) SetNillableTenantID(v *uuid.UUID) *TaskUpdateOne {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (tuo *TaskUpdateOne) SetNillableTenantID(u *uuid.UUID) *TaskUpdateOne {
+	if u != nil {
+		tuo.SetTenantID(*u)
 	}
-	return _u
+	return tuo
 }
 
 // SetProjectID sets the "project_id" field.
-func (_u *TaskUpdateOne) SetProjectID(v uuid.UUID) *TaskUpdateOne {
-	_u.mutation.SetProjectID(v)
-	return _u
+func (tuo *TaskUpdateOne) SetProjectID(u uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.SetProjectID(u)
+	return tuo
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_u *TaskUpdateOne) SetNillableProjectID(v *uuid.UUID) *TaskUpdateOne {
-	if v != nil {
-		_u.SetProjectID(*v)
+func (tuo *TaskUpdateOne) SetNillableProjectID(u *uuid.UUID) *TaskUpdateOne {
+	if u != nil {
+		tuo.SetProjectID(*u)
 	}
-	return _u
+	return tuo
 }
 
 // SetTitle sets the "title" field.
-func (_u *TaskUpdateOne) SetTitle(v string) *TaskUpdateOne {
-	_u.mutation.SetTitle(v)
-	return _u
+func (tuo *TaskUpdateOne) SetTitle(s string) *TaskUpdateOne {
+	tuo.mutation.SetTitle(s)
+	return tuo
 }
 
 // SetNillableTitle sets the "title" field if the given value is not nil.
-func (_u *TaskUpdateOne) SetNillableTitle(v *string) *TaskUpdateOne {
-	if v != nil {
-		_u.SetTitle(*v)
+func (tuo *TaskUpdateOne) SetNillableTitle(s *string) *TaskUpdateOne {
+	if s != nil {
+		tuo.SetTitle(*s)
 	}
-	return _u
+	return tuo
 }
 
 // SetDescription sets the "description" field.
-func (_u *TaskUpdateOne) SetDescription(v string) *TaskUpdateOne {
-	_u.mutation.SetDescription(v)
-	return _u
+func (tuo *TaskUpdateOne) SetDescription(s string) *TaskUpdateOne {
+	tuo.mutation.SetDescription(s)
+	return tuo
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (_u *TaskUpdateOne) SetNillableDescription(v *string) *TaskUpdateOne {
-	if v != nil {
-		_u.SetDescription(*v)
+func (tuo *TaskUpdateOne) SetNillableDescription(s *string) *TaskUpdateOne {
+	if s != nil {
+		tuo.SetDescription(*s)
 	}
-	return _u
+	return tuo
 }
 
 // ClearDescription clears the value of the "description" field.
-func (_u *TaskUpdateOne) ClearDescription() *TaskUpdateOne {
-	_u.mutation.ClearDescription()
-	return _u
+func (tuo *TaskUpdateOne) ClearDescription() *TaskUpdateOne {
+	tuo.mutation.ClearDescription()
+	return tuo
 }
 
 // SetStatus sets the "status" field.
-func (_u *TaskUpdateOne) SetStatus(v string) *TaskUpdateOne {
-	_u.mutation.SetStatus(v)
-	return _u
+func (tuo *TaskUpdateOne) SetStatus(s string) *TaskUpdateOne {
+	tuo.mutation.SetStatus(s)
+	return tuo
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *TaskUpdateOne) SetNillableStatus(v *string) *TaskUpdateOne {
-	if v != nil {
-		_u.SetStatus(*v)
+func (tuo *TaskUpdateOne) SetNillableStatus(s *string) *TaskUpdateOne {
+	if s != nil {
+		tuo.SetStatus(*s)
 	}
-	return _u
+	return tuo
 }
 
 // SetPriority sets the "priority" field.
-func (_u *TaskUpdateOne) SetPriority(v string) *TaskUpdateOne {
-	_u.mutation.SetPriority(v)
-	return _u
+func (tuo *TaskUpdateOne) SetPriority(s string) *TaskUpdateOne {
+	tuo.mutation.SetPriority(s)
+	return tuo
 }
 
 // SetNillablePriority sets the "priority" field if the given value is not nil.
-func (_u *TaskUpdateOne) SetNillablePriority(v *string) *TaskUpdateOne {
-	if v != nil {
-		_u.SetPriority(*v)
+func (tuo *TaskUpdateOne) SetNillablePriority(s *string) *TaskUpdateOne {
+	if s != nil {
+		tuo.SetPriority(*s)
 	}
-	return _u
+	return tuo
 }
 
 // SetAssigneeID sets the "assignee_id" field.
-func (_u *TaskUpdateOne) SetAssigneeID(v uuid.UUID) *TaskUpdateOne {
-	_u.mutation.SetAssigneeID(v)
-	return _u
+func (tuo *TaskUpdateOne) SetAssigneeID(u uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.SetAssigneeID(u)
+	return tuo
 }
 
 // SetNillableAssigneeID sets the "assignee_id" field if the given value is not nil.
-func (_u *TaskUpdateOne) SetNillableAssigneeID(v *uuid.UUID) *TaskUpdateOne {
-	if v != nil {
-		_u.SetAssigneeID(*v)
+func (tuo *TaskUpdateOne) SetNillableAssigneeID(u *uuid.UUID) *TaskUpdateOne {
+	if u != nil {
+		tuo.SetAssigneeID(*u)
 	}
-	return _u
+	return tuo
 }
 
 // ClearAssigneeID clears the value of the "assignee_id" field.
-func (_u *TaskUpdateOne) ClearAssigneeID() *TaskUpdateOne {
-	_u.mutation.ClearAssigneeID()
-	return _u
+func (tuo *TaskUpdateOne) ClearAssigneeID() *TaskUpdateOne {
+	tuo.mutation.ClearAssigneeID()
+	return tuo
 }
 
 // SetDueDate sets the "due_date" field.
-func (_u *TaskUpdateOne) SetDueDate(v time.Time) *TaskUpdateOne {
-	_u.mutation.SetDueDate(v)
-	return _u
+func (tuo *TaskUpdateOne) SetDueDate(t time.Time) *TaskUpdateOne {
+	tuo.mutation.SetDueDate(t)
+	return tuo
 }
 
 // SetNillableDueDate sets the "due_date" field if the given value is not nil.
-func (_u *TaskUpdateOne) SetNillableDueDate(v *time.Time) *TaskUpdateOne {
-	if v != nil {
-		_u.SetDueDate(*v)
+func (tuo *TaskUpdateOne) SetNillableDueDate(t *time.Time) *TaskUpdateOne {
+	if t != nil {
+		tuo.SetDueDate(*t)
 	}
-	return _u
+	return tuo
 }
 
 // ClearDueDate clears the value of the "due_date" field.
-func (_u *TaskUpdateOne) ClearDueDate() *TaskUpdateOne {
-	_u.mutation.ClearDueDate()
-	return _u
+func (tuo *TaskUpdateOne) ClearDueDate() *TaskUpdateOne {
+	tuo.mutation.ClearDueDate()
+	return tuo
 }
 
 // SetCompletedAt sets the "completed_at" field.
-func (_u *TaskUpdateOne) SetCompletedAt(v time.Time) *TaskUpdateOne {
-	_u.mutation.SetCompletedAt(v)
-	return _u
+func (tuo *TaskUpdateOne) SetCompletedAt(t time.Time) *TaskUpdateOne {
+	tuo.mutation.SetCompletedAt(t)
+	return tuo
 }
 
 // SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
-func (_u *TaskUpdateOne) SetNillableCompletedAt(v *time.Time) *TaskUpdateOne {
-	if v != nil {
-		_u.SetCompletedAt(*v)
+func (tuo *TaskUpdateOne) SetNillableCompletedAt(t *time.Time) *TaskUpdateOne {
+	if t != nil {
+		tuo.SetCompletedAt(*t)
 	}
-	return _u
+	return tuo
 }
 
 // ClearCompletedAt clears the value of the "completed_at" field.
-func (_u *TaskUpdateOne) ClearCompletedAt() *TaskUpdateOne {
-	_u.mutation.ClearCompletedAt()
-	return _u
+func (tuo *TaskUpdateOne) ClearCompletedAt() *TaskUpdateOne {
+	tuo.mutation.ClearCompletedAt()
+	return tuo
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *TaskUpdateOne) SetUpdatedAt(v time.Time) *TaskUpdateOne {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
+func (tuo *TaskUpdateOne) SetUpdatedAt(t time.Time) *TaskUpdateOne {
+	tuo.mutation.SetUpdatedAt(t)
+	return tuo
 }
 
 // SetMetadata sets the "metadata" field.
-func (_u *TaskUpdateOne) SetMetadata(v map[string]interface{}) *TaskUpdateOne {
-	_u.mutation.SetMetadata(v)
-	return _u
+func (tuo *TaskUpdateOne) SetMetadata(m map[string]interface{}) *TaskUpdateOne {
+	tuo.mutation.SetMetadata(m)
+	return tuo
 }
 
 // ClearMetadata clears the value of the "metadata" field.
-func (_u *TaskUpdateOne) ClearMetadata() *TaskUpdateOne {
-	_u.mutation.ClearMetadata()
-	return _u
+func (tuo *TaskUpdateOne) ClearMetadata() *TaskUpdateOne {
+	tuo.mutation.ClearMetadata()
+	return tuo
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_u *TaskUpdateOne) SetProject(v *Project) *TaskUpdateOne {
-	return _u.SetProjectID(v.ID)
+func (tuo *TaskUpdateOne) SetProject(p *Project) *TaskUpdateOne {
+	return tuo.SetProjectID(p.ID)
 }
 
 // AddDependencyIDs adds the "dependencies" edge to the TaskDependency entity by IDs.
-func (_u *TaskUpdateOne) AddDependencyIDs(ids ...uuid.UUID) *TaskUpdateOne {
-	_u.mutation.AddDependencyIDs(ids...)
-	return _u
+func (tuo *TaskUpdateOne) AddDependencyIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.AddDependencyIDs(ids...)
+	return tuo
 }
 
 // AddDependencies adds the "dependencies" edges to the TaskDependency entity.
-func (_u *TaskUpdateOne) AddDependencies(v ...*TaskDependency) *TaskUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tuo *TaskUpdateOne) AddDependencies(t ...*TaskDependency) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return _u.AddDependencyIDs(ids...)
+	return tuo.AddDependencyIDs(ids...)
 }
 
 // AddCommentIDs adds the "comments" edge to the Comment entity by IDs.
-func (_u *TaskUpdateOne) AddCommentIDs(ids ...uuid.UUID) *TaskUpdateOne {
-	_u.mutation.AddCommentIDs(ids...)
-	return _u
+func (tuo *TaskUpdateOne) AddCommentIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.AddCommentIDs(ids...)
+	return tuo
 }
 
 // AddComments adds the "comments" edges to the Comment entity.
-func (_u *TaskUpdateOne) AddComments(v ...*Comment) *TaskUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tuo *TaskUpdateOne) AddComments(c ...*Comment) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
-	return _u.AddCommentIDs(ids...)
+	return tuo.AddCommentIDs(ids...)
 }
 
 // AddActivityIDs adds the "activities" edge to the Activity entity by IDs.
-func (_u *TaskUpdateOne) AddActivityIDs(ids ...uuid.UUID) *TaskUpdateOne {
-	_u.mutation.AddActivityIDs(ids...)
-	return _u
+func (tuo *TaskUpdateOne) AddActivityIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.AddActivityIDs(ids...)
+	return tuo
 }
 
 // AddActivities adds the "activities" edges to the Activity entity.
-func (_u *TaskUpdateOne) AddActivities(v ...*Activity) *TaskUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tuo *TaskUpdateOne) AddActivities(a ...*Activity) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _u.AddActivityIDs(ids...)
+	return tuo.AddActivityIDs(ids...)
 }
 
 // AddAttachmentIDs adds the "attachments" edge to the Attachment entity by IDs.
-func (_u *TaskUpdateOne) AddAttachmentIDs(ids ...uuid.UUID) *TaskUpdateOne {
-	_u.mutation.AddAttachmentIDs(ids...)
-	return _u
+func (tuo *TaskUpdateOne) AddAttachmentIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.AddAttachmentIDs(ids...)
+	return tuo
 }
 
 // AddAttachments adds the "attachments" edges to the Attachment entity.
-func (_u *TaskUpdateOne) AddAttachments(v ...*Attachment) *TaskUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tuo *TaskUpdateOne) AddAttachments(a ...*Attachment) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _u.AddAttachmentIDs(ids...)
+	return tuo.AddAttachmentIDs(ids...)
 }
 
 // Mutation returns the TaskMutation object of the builder.
-func (_u *TaskUpdateOne) Mutation() *TaskMutation {
-	return _u.mutation
+func (tuo *TaskUpdateOne) Mutation() *TaskMutation {
+	return tuo.mutation
 }
 
 // ClearProject clears the "project" edge to the Project entity.
-func (_u *TaskUpdateOne) ClearProject() *TaskUpdateOne {
-	_u.mutation.ClearProject()
-	return _u
+func (tuo *TaskUpdateOne) ClearProject() *TaskUpdateOne {
+	tuo.mutation.ClearProject()
+	return tuo
 }
 
 // ClearDependencies clears all "dependencies" edges to the TaskDependency entity.
-func (_u *TaskUpdateOne) ClearDependencies() *TaskUpdateOne {
-	_u.mutation.ClearDependencies()
-	return _u
+func (tuo *TaskUpdateOne) ClearDependencies() *TaskUpdateOne {
+	tuo.mutation.ClearDependencies()
+	return tuo
 }
 
 // RemoveDependencyIDs removes the "dependencies" edge to TaskDependency entities by IDs.
-func (_u *TaskUpdateOne) RemoveDependencyIDs(ids ...uuid.UUID) *TaskUpdateOne {
-	_u.mutation.RemoveDependencyIDs(ids...)
-	return _u
+func (tuo *TaskUpdateOne) RemoveDependencyIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.RemoveDependencyIDs(ids...)
+	return tuo
 }
 
 // RemoveDependencies removes "dependencies" edges to TaskDependency entities.
-func (_u *TaskUpdateOne) RemoveDependencies(v ...*TaskDependency) *TaskUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tuo *TaskUpdateOne) RemoveDependencies(t ...*TaskDependency) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return _u.RemoveDependencyIDs(ids...)
+	return tuo.RemoveDependencyIDs(ids...)
 }
 
 // ClearComments clears all "comments" edges to the Comment entity.
-func (_u *TaskUpdateOne) ClearComments() *TaskUpdateOne {
-	_u.mutation.ClearComments()
-	return _u
+func (tuo *TaskUpdateOne) ClearComments() *TaskUpdateOne {
+	tuo.mutation.ClearComments()
+	return tuo
 }
 
 // RemoveCommentIDs removes the "comments" edge to Comment entities by IDs.
-func (_u *TaskUpdateOne) RemoveCommentIDs(ids ...uuid.UUID) *TaskUpdateOne {
-	_u.mutation.RemoveCommentIDs(ids...)
-	return _u
+func (tuo *TaskUpdateOne) RemoveCommentIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.RemoveCommentIDs(ids...)
+	return tuo
 }
 
 // RemoveComments removes "comments" edges to Comment entities.
-func (_u *TaskUpdateOne) RemoveComments(v ...*Comment) *TaskUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tuo *TaskUpdateOne) RemoveComments(c ...*Comment) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
 	}
-	return _u.RemoveCommentIDs(ids...)
+	return tuo.RemoveCommentIDs(ids...)
 }
 
 // ClearActivities clears all "activities" edges to the Activity entity.
-func (_u *TaskUpdateOne) ClearActivities() *TaskUpdateOne {
-	_u.mutation.ClearActivities()
-	return _u
+func (tuo *TaskUpdateOne) ClearActivities() *TaskUpdateOne {
+	tuo.mutation.ClearActivities()
+	return tuo
 }
 
 // RemoveActivityIDs removes the "activities" edge to Activity entities by IDs.
-func (_u *TaskUpdateOne) RemoveActivityIDs(ids ...uuid.UUID) *TaskUpdateOne {
-	_u.mutation.RemoveActivityIDs(ids...)
-	return _u
+func (tuo *TaskUpdateOne) RemoveActivityIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.RemoveActivityIDs(ids...)
+	return tuo
 }
 
 // RemoveActivities removes "activities" edges to Activity entities.
-func (_u *TaskUpdateOne) RemoveActivities(v ...*Activity) *TaskUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tuo *TaskUpdateOne) RemoveActivities(a ...*Activity) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _u.RemoveActivityIDs(ids...)
+	return tuo.RemoveActivityIDs(ids...)
 }
 
 // ClearAttachments clears all "attachments" edges to the Attachment entity.
-func (_u *TaskUpdateOne) ClearAttachments() *TaskUpdateOne {
-	_u.mutation.ClearAttachments()
-	return _u
+func (tuo *TaskUpdateOne) ClearAttachments() *TaskUpdateOne {
+	tuo.mutation.ClearAttachments()
+	return tuo
 }
 
 // RemoveAttachmentIDs removes the "attachments" edge to Attachment entities by IDs.
-func (_u *TaskUpdateOne) RemoveAttachmentIDs(ids ...uuid.UUID) *TaskUpdateOne {
-	_u.mutation.RemoveAttachmentIDs(ids...)
-	return _u
+func (tuo *TaskUpdateOne) RemoveAttachmentIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.RemoveAttachmentIDs(ids...)
+	return tuo
 }
 
 // RemoveAttachments removes "attachments" edges to Attachment entities.
-func (_u *TaskUpdateOne) RemoveAttachments(v ...*Attachment) *TaskUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
+func (tuo *TaskUpdateOne) RemoveAttachments(a ...*Attachment) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
 	}
-	return _u.RemoveAttachmentIDs(ids...)
+	return tuo.RemoveAttachmentIDs(ids...)
 }
 
 // Where appends a list predicates to the TaskUpdate builder.
-func (_u *TaskUpdateOne) Where(ps ...predicate.Task) *TaskUpdateOne {
-	_u.mutation.Where(ps...)
-	return _u
+func (tuo *TaskUpdateOne) Where(ps ...predicate.Task) *TaskUpdateOne {
+	tuo.mutation.Where(ps...)
+	return tuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *TaskUpdateOne) Select(field string, fields ...string) *TaskUpdateOne {
-	_u.fields = append([]string{field}, fields...)
-	return _u
+func (tuo *TaskUpdateOne) Select(field string, fields ...string) *TaskUpdateOne {
+	tuo.fields = append([]string{field}, fields...)
+	return tuo
 }
 
 // Save executes the query and returns the updated Task entity.
-func (_u *TaskUpdateOne) Save(ctx context.Context) (*Task, error) {
-	_u.defaults()
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (tuo *TaskUpdateOne) Save(ctx context.Context) (*Task, error) {
+	tuo.defaults()
+	return withHooks(ctx, tuo.sqlSave, tuo.mutation, tuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *TaskUpdateOne) SaveX(ctx context.Context) *Task {
-	node, err := _u.Save(ctx)
+func (tuo *TaskUpdateOne) SaveX(ctx context.Context) *Task {
+	node, err := tuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -1054,50 +1054,50 @@ func (_u *TaskUpdateOne) SaveX(ctx context.Context) *Task {
 }
 
 // Exec executes the query on the entity.
-func (_u *TaskUpdateOne) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (tuo *TaskUpdateOne) Exec(ctx context.Context) error {
+	_, err := tuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *TaskUpdateOne) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (tuo *TaskUpdateOne) ExecX(ctx context.Context) {
+	if err := tuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *TaskUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
+func (tuo *TaskUpdateOne) defaults() {
+	if _, ok := tuo.mutation.UpdatedAt(); !ok {
 		v := task.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
+		tuo.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *TaskUpdateOne) check() error {
-	if v, ok := _u.mutation.Title(); ok {
+func (tuo *TaskUpdateOne) check() error {
+	if v, ok := tuo.mutation.Title(); ok {
 		if err := task.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Task.title": %w`, err)}
 		}
 	}
-	if _u.mutation.ProjectCleared() && len(_u.mutation.ProjectIDs()) > 0 {
+	if _, ok := tuo.mutation.ProjectID(); tuo.mutation.ProjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Task.project"`)
 	}
 	return nil
 }
 
-func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
-	if err := _u.check(); err != nil {
+func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
+	if err := tuo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(task.Table, task.Columns, sqlgraph.NewFieldSpec(task.FieldID, field.TypeUUID))
-	id, ok := _u.mutation.ID()
+	id, ok := tuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Task.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := _u.fields; len(fields) > 0 {
+	if fields := tuo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, task.FieldID)
 		for _, f := range fields {
@@ -1109,59 +1109,59 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 			}
 		}
 	}
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := tuo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := tuo.mutation.TenantID(); ok {
 		_spec.SetField(task.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.Title(); ok {
+	if value, ok := tuo.mutation.Title(); ok {
 		_spec.SetField(task.FieldTitle, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Description(); ok {
+	if value, ok := tuo.mutation.Description(); ok {
 		_spec.SetField(task.FieldDescription, field.TypeString, value)
 	}
-	if _u.mutation.DescriptionCleared() {
+	if tuo.mutation.DescriptionCleared() {
 		_spec.ClearField(task.FieldDescription, field.TypeString)
 	}
-	if value, ok := _u.mutation.Status(); ok {
+	if value, ok := tuo.mutation.Status(); ok {
 		_spec.SetField(task.FieldStatus, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Priority(); ok {
+	if value, ok := tuo.mutation.Priority(); ok {
 		_spec.SetField(task.FieldPriority, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.AssigneeID(); ok {
+	if value, ok := tuo.mutation.AssigneeID(); ok {
 		_spec.SetField(task.FieldAssigneeID, field.TypeUUID, value)
 	}
-	if _u.mutation.AssigneeIDCleared() {
+	if tuo.mutation.AssigneeIDCleared() {
 		_spec.ClearField(task.FieldAssigneeID, field.TypeUUID)
 	}
-	if value, ok := _u.mutation.DueDate(); ok {
+	if value, ok := tuo.mutation.DueDate(); ok {
 		_spec.SetField(task.FieldDueDate, field.TypeTime, value)
 	}
-	if _u.mutation.DueDateCleared() {
+	if tuo.mutation.DueDateCleared() {
 		_spec.ClearField(task.FieldDueDate, field.TypeTime)
 	}
-	if value, ok := _u.mutation.CompletedAt(); ok {
+	if value, ok := tuo.mutation.CompletedAt(); ok {
 		_spec.SetField(task.FieldCompletedAt, field.TypeTime, value)
 	}
-	if _u.mutation.CompletedAtCleared() {
+	if tuo.mutation.CompletedAtCleared() {
 		_spec.ClearField(task.FieldCompletedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
+	if value, ok := tuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(task.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.Metadata(); ok {
+	if value, ok := tuo.mutation.Metadata(); ok {
 		_spec.SetField(task.FieldMetadata, field.TypeJSON, value)
 	}
-	if _u.mutation.MetadataCleared() {
+	if tuo.mutation.MetadataCleared() {
 		_spec.ClearField(task.FieldMetadata, field.TypeJSON)
 	}
-	if _u.mutation.ProjectCleared() {
+	if tuo.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -1174,7 +1174,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -1190,7 +1190,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.DependenciesCleared() {
+	if tuo.mutation.DependenciesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1203,23 +1203,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedDependenciesIDs(); len(nodes) > 0 && !_u.mutation.DependenciesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   task.DependenciesTable,
-			Columns: []string{task.DependenciesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(taskdependency.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.DependenciesIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.RemovedDependenciesIDs(); len(nodes) > 0 && !tuo.mutation.DependenciesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1233,9 +1217,25 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.DependenciesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.DependenciesTable,
+			Columns: []string{task.DependenciesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskdependency.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.CommentsCleared() {
+	if tuo.mutation.CommentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1248,7 +1248,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedCommentsIDs(); len(nodes) > 0 && !_u.mutation.CommentsCleared() {
+	if nodes := tuo.mutation.RemovedCommentsIDs(); len(nodes) > 0 && !tuo.mutation.CommentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1264,7 +1264,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.CommentsIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.CommentsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1280,7 +1280,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.ActivitiesCleared() {
+	if tuo.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1293,7 +1293,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedActivitiesIDs(); len(nodes) > 0 && !_u.mutation.ActivitiesCleared() {
+	if nodes := tuo.mutation.RemovedActivitiesIDs(); len(nodes) > 0 && !tuo.mutation.ActivitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1309,7 +1309,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ActivitiesIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.ActivitiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1325,7 +1325,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.AttachmentsCleared() {
+	if tuo.mutation.AttachmentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1338,7 +1338,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedAttachmentsIDs(); len(nodes) > 0 && !_u.mutation.AttachmentsCleared() {
+	if nodes := tuo.mutation.RemovedAttachmentsIDs(); len(nodes) > 0 && !tuo.mutation.AttachmentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1354,7 +1354,7 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.AttachmentsIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.AttachmentsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1370,10 +1370,10 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Task{config: _u.config}
+	_node = &Task{config: tuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, tuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{task.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -1381,6 +1381,6 @@ func (_u *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) {
 		}
 		return nil, err
 	}
-	_u.mutation.done = true
+	tuo.mutation.done = true
 	return _node, nil
 }

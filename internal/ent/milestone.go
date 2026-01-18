@@ -83,7 +83,7 @@ func (*Milestone) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Milestone fields.
-func (_m *Milestone) assignValues(columns []string, values []any) error {
+func (m *Milestone) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -93,64 +93,64 @@ func (_m *Milestone) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				m.ID = *value
 			}
 		case milestone.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				m.TenantID = *value
 			}
 		case milestone.FieldProjectID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field project_id", values[i])
 			} else if value != nil {
-				_m.ProjectID = *value
+				m.ProjectID = *value
 			}
 		case milestone.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				_m.Name = value.String
+				m.Name = value.String
 			}
 		case milestone.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
-				_m.Description = value.String
+				m.Description = value.String
 			}
 		case milestone.FieldTargetDate:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field target_date", values[i])
 			} else if value.Valid {
-				_m.TargetDate = value.Time
+				m.TargetDate = value.Time
 			}
 		case milestone.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
-				_m.Status = value.String
+				m.Status = value.String
 			}
 		case milestone.FieldCompletedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field completed_at", values[i])
 			} else if value.Valid {
-				_m.CompletedAt = value.Time
+				m.CompletedAt = value.Time
 			}
 		case milestone.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				_m.CreatedAt = value.Time
+				m.CreatedAt = value.Time
 			}
 		case milestone.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				_m.UpdatedAt = value.Time
+				m.UpdatedAt = value.Time
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -158,64 +158,64 @@ func (_m *Milestone) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Milestone.
 // This includes values selected through modifiers, order, etc.
-func (_m *Milestone) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (m *Milestone) Value(name string) (ent.Value, error) {
+	return m.selectValues.Get(name)
 }
 
 // QueryProject queries the "project" edge of the Milestone entity.
-func (_m *Milestone) QueryProject() *ProjectQuery {
-	return NewMilestoneClient(_m.config).QueryProject(_m)
+func (m *Milestone) QueryProject() *ProjectQuery {
+	return NewMilestoneClient(m.config).QueryProject(m)
 }
 
 // Update returns a builder for updating this Milestone.
 // Note that you need to call Milestone.Unwrap() before calling this method if this Milestone
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *Milestone) Update() *MilestoneUpdateOne {
-	return NewMilestoneClient(_m.config).UpdateOne(_m)
+func (m *Milestone) Update() *MilestoneUpdateOne {
+	return NewMilestoneClient(m.config).UpdateOne(m)
 }
 
 // Unwrap unwraps the Milestone entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *Milestone) Unwrap() *Milestone {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (m *Milestone) Unwrap() *Milestone {
+	_tx, ok := m.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Milestone is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	m.config.driver = _tx.drv
+	return m
 }
 
 // String implements the fmt.Stringer.
-func (_m *Milestone) String() string {
+func (m *Milestone) String() string {
 	var builder strings.Builder
 	builder.WriteString("Milestone(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", m.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", m.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("project_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ProjectID))
+	builder.WriteString(fmt.Sprintf("%v", m.ProjectID))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(_m.Name)
+	builder.WriteString(m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
-	builder.WriteString(_m.Description)
+	builder.WriteString(m.Description)
 	builder.WriteString(", ")
 	builder.WriteString("target_date=")
-	builder.WriteString(_m.TargetDate.Format(time.ANSIC))
+	builder.WriteString(m.TargetDate.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
-	builder.WriteString(_m.Status)
+	builder.WriteString(m.Status)
 	builder.WriteString(", ")
 	builder.WriteString("completed_at=")
-	builder.WriteString(_m.CompletedAt.Format(time.ANSIC))
+	builder.WriteString(m.CompletedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

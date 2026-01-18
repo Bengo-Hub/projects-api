@@ -80,7 +80,7 @@ func (*UserRole) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the UserRole fields.
-func (_m *UserRole) assignValues(columns []string, values []any) error {
+func (ur *UserRole) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -90,48 +90,48 @@ func (_m *UserRole) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				ur.ID = *value
 			}
 		case userrole.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				ur.TenantID = *value
 			}
 		case userrole.FieldUserID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field user_id", values[i])
 			} else if value != nil {
-				_m.UserID = *value
+				ur.UserID = *value
 			}
 		case userrole.FieldRoleCode:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field role_code", values[i])
 			} else if value.Valid {
-				_m.RoleCode = value.String
+				ur.RoleCode = value.String
 			}
 		case userrole.FieldAssignedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field assigned_at", values[i])
 			} else if value.Valid {
-				_m.AssignedAt = value.Time
+				ur.AssignedAt = value.Time
 			}
 		case userrole.FieldAssignedBy:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field assigned_by", values[i])
 			} else if value != nil {
-				_m.AssignedBy = *value
+				ur.AssignedBy = *value
 			}
 		case userrole.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Metadata); err != nil {
+				if err := json.Unmarshal(*value, &ur.Metadata); err != nil {
 					return fmt.Errorf("unmarshal field metadata: %w", err)
 				}
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			ur.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -139,55 +139,55 @@ func (_m *UserRole) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the UserRole.
 // This includes values selected through modifiers, order, etc.
-func (_m *UserRole) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (ur *UserRole) Value(name string) (ent.Value, error) {
+	return ur.selectValues.Get(name)
 }
 
 // QueryRole queries the "role" edge of the UserRole entity.
-func (_m *UserRole) QueryRole() *RoleQuery {
-	return NewUserRoleClient(_m.config).QueryRole(_m)
+func (ur *UserRole) QueryRole() *RoleQuery {
+	return NewUserRoleClient(ur.config).QueryRole(ur)
 }
 
 // Update returns a builder for updating this UserRole.
 // Note that you need to call UserRole.Unwrap() before calling this method if this UserRole
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *UserRole) Update() *UserRoleUpdateOne {
-	return NewUserRoleClient(_m.config).UpdateOne(_m)
+func (ur *UserRole) Update() *UserRoleUpdateOne {
+	return NewUserRoleClient(ur.config).UpdateOne(ur)
 }
 
 // Unwrap unwraps the UserRole entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *UserRole) Unwrap() *UserRole {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (ur *UserRole) Unwrap() *UserRole {
+	_tx, ok := ur.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: UserRole is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	ur.config.driver = _tx.drv
+	return ur
 }
 
 // String implements the fmt.Stringer.
-func (_m *UserRole) String() string {
+func (ur *UserRole) String() string {
 	var builder strings.Builder
 	builder.WriteString("UserRole(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", ur.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", ur.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("user_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString(fmt.Sprintf("%v", ur.UserID))
 	builder.WriteString(", ")
 	builder.WriteString("role_code=")
-	builder.WriteString(_m.RoleCode)
+	builder.WriteString(ur.RoleCode)
 	builder.WriteString(", ")
 	builder.WriteString("assigned_at=")
-	builder.WriteString(_m.AssignedAt.Format(time.ANSIC))
+	builder.WriteString(ur.AssignedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("assigned_by=")
-	builder.WriteString(fmt.Sprintf("%v", _m.AssignedBy))
+	builder.WriteString(fmt.Sprintf("%v", ur.AssignedBy))
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))
+	builder.WriteString(fmt.Sprintf("%v", ur.Metadata))
 	builder.WriteByte(')')
 	return builder.String()
 }

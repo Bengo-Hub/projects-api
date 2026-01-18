@@ -1,13 +1,12 @@
 package usersync
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
+	"github.com/google/uuid"
+	serviceclient "github.com/Bengo-Hub/shared-service-client"
 	"go.uber.org/zap"
 )
 
@@ -15,19 +14,24 @@ import (
 type Service struct {
 	authServiceURL string
 	apiKey         string
-	httpClient     *http.Client
+	serviceClient  *serviceclient.Client
 	logger         *zap.Logger
 }
 
 // NewService creates a new user sync service
 func NewService(authServiceURL, apiKey string, logger *zap.Logger) *Service {
+	cfg := serviceclient.DefaultConfig(
+		authServiceURL,
+		"projects-service",
+		logger.Named("usersync"),
+	)
+	cfg.Timeout = 10 * time.Second
+
 	return &Service{
 		authServiceURL: authServiceURL,
 		apiKey:         apiKey,
-		httpClient: &http.Client{
-			Timeout: 10 * time.Second,
-		},
-		logger: logger,
+		serviceClient:  serviceclient.New(cfg),
+		logger:         logger,
 	}
 }
 
@@ -42,11 +46,11 @@ type SyncUserRequest struct {
 
 // SyncUserResponse represents the response from auth-service
 type SyncUserResponse struct {
-	UserID   string `json:"user_id"`
-	Email    string `json:"email"`
-	TenantID string `json:"tenant_id"`
-	Created  bool   `json:"created"`
-	Message  string `json:"message"`
+	UserID   uuid.UUID `json:"user_id"`
+	Email    string    `json:"email"`
+	TenantID uuid.UUID `json:"tenant_id"`
+	Created  bool      `json:"created"`
+	Message  string    `json:"message"`
 }
 
 // SyncUser syncs a user with auth-service SSO
@@ -56,28 +60,18 @@ func (s *Service) SyncUser(ctx context.Context, req SyncUserRequest) (*SyncUserR
 		return nil, fmt.Errorf("auth-service API key not configured")
 	}
 
-	reqBody, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("marshal sync request: %w", err)
+	headers := map[string]string{
+		"X-API-Key": s.apiKey,
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", s.authServiceURL+"/api/v1/admin/users/sync", bytes.NewBuffer(reqBody))
-	if err != nil {
-		return nil, fmt.Errorf("create sync request: %w", err)
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("X-API-Key", s.apiKey)
-
-	resp, err := s.httpClient.Do(httpReq)
+	resp, err := s.serviceClient.Post(ctx, "/api/v1/admin/users/sync", req, headers)
 	if err != nil {
 		return nil, fmt.Errorf("sync user request failed: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+	if !resp.IsSuccess() {
 		var errResp map[string]interface{}
-		json.NewDecoder(resp.Body).Decode(&errResp)
+		_ = resp.DecodeJSON(&errResp)
 		s.logger.Warn("user sync failed",
 			zap.Int("status", resp.StatusCode),
 			zap.Any("error", errResp),
@@ -87,16 +81,15 @@ func (s *Service) SyncUser(ctx context.Context, req SyncUserRequest) (*SyncUserR
 	}
 
 	var syncResp SyncUserResponse
-	if err := json.NewDecoder(resp.Body).Decode(&syncResp); err != nil {
+	if err := resp.DecodeJSON(&syncResp); err != nil {
 		return nil, fmt.Errorf("decode sync response: %w", err)
 	}
 
 	s.logger.Info("user synced with auth-service",
-		zap.String("user_id", syncResp.UserID),
+		zap.String("user_id", syncResp.UserID.String()),
 		zap.String("email", syncResp.Email),
 		zap.Bool("created", syncResp.Created),
 	)
 
 	return &syncResp, nil
 }
-

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -31,44 +30,44 @@ type TaskDependencyQuery struct {
 }
 
 // Where adds a new predicate for the TaskDependencyQuery builder.
-func (_q *TaskDependencyQuery) Where(ps ...predicate.TaskDependency) *TaskDependencyQuery {
-	_q.predicates = append(_q.predicates, ps...)
-	return _q
+func (tdq *TaskDependencyQuery) Where(ps ...predicate.TaskDependency) *TaskDependencyQuery {
+	tdq.predicates = append(tdq.predicates, ps...)
+	return tdq
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *TaskDependencyQuery) Limit(limit int) *TaskDependencyQuery {
-	_q.ctx.Limit = &limit
-	return _q
+func (tdq *TaskDependencyQuery) Limit(limit int) *TaskDependencyQuery {
+	tdq.ctx.Limit = &limit
+	return tdq
 }
 
 // Offset to start from.
-func (_q *TaskDependencyQuery) Offset(offset int) *TaskDependencyQuery {
-	_q.ctx.Offset = &offset
-	return _q
+func (tdq *TaskDependencyQuery) Offset(offset int) *TaskDependencyQuery {
+	tdq.ctx.Offset = &offset
+	return tdq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *TaskDependencyQuery) Unique(unique bool) *TaskDependencyQuery {
-	_q.ctx.Unique = &unique
-	return _q
+func (tdq *TaskDependencyQuery) Unique(unique bool) *TaskDependencyQuery {
+	tdq.ctx.Unique = &unique
+	return tdq
 }
 
 // Order specifies how the records should be ordered.
-func (_q *TaskDependencyQuery) Order(o ...taskdependency.OrderOption) *TaskDependencyQuery {
-	_q.order = append(_q.order, o...)
-	return _q
+func (tdq *TaskDependencyQuery) Order(o ...taskdependency.OrderOption) *TaskDependencyQuery {
+	tdq.order = append(tdq.order, o...)
+	return tdq
 }
 
 // QueryTask chains the current query on the "task" edge.
-func (_q *TaskDependencyQuery) QueryTask() *TaskQuery {
-	query := (&TaskClient{config: _q.config}).Query()
+func (tdq *TaskDependencyQuery) QueryTask() *TaskQuery {
+	query := (&TaskClient{config: tdq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
+		if err := tdq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := _q.sqlQuery(ctx)
+		selector := tdq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -77,7 +76,7 @@ func (_q *TaskDependencyQuery) QueryTask() *TaskQuery {
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, taskdependency.TaskTable, taskdependency.TaskColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(tdq.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -85,8 +84,8 @@ func (_q *TaskDependencyQuery) QueryTask() *TaskQuery {
 
 // First returns the first TaskDependency entity from the query.
 // Returns a *NotFoundError when no TaskDependency was found.
-func (_q *TaskDependencyQuery) First(ctx context.Context) (*TaskDependency, error) {
-	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
+func (tdq *TaskDependencyQuery) First(ctx context.Context) (*TaskDependency, error) {
+	nodes, err := tdq.Limit(1).All(setContextOp(ctx, tdq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +96,8 @@ func (_q *TaskDependencyQuery) First(ctx context.Context) (*TaskDependency, erro
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *TaskDependencyQuery) FirstX(ctx context.Context) *TaskDependency {
-	node, err := _q.First(ctx)
+func (tdq *TaskDependencyQuery) FirstX(ctx context.Context) *TaskDependency {
+	node, err := tdq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -107,9 +106,9 @@ func (_q *TaskDependencyQuery) FirstX(ctx context.Context) *TaskDependency {
 
 // FirstID returns the first TaskDependency ID from the query.
 // Returns a *NotFoundError when no TaskDependency ID was found.
-func (_q *TaskDependencyQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+func (tdq *TaskDependencyQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = tdq.Limit(1).IDs(setContextOp(ctx, tdq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -120,8 +119,8 @@ func (_q *TaskDependencyQuery) FirstID(ctx context.Context) (id uuid.UUID, err e
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *TaskDependencyQuery) FirstIDX(ctx context.Context) uuid.UUID {
-	id, err := _q.FirstID(ctx)
+func (tdq *TaskDependencyQuery) FirstIDX(ctx context.Context) uuid.UUID {
+	id, err := tdq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -131,8 +130,8 @@ func (_q *TaskDependencyQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Only returns a single TaskDependency entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one TaskDependency entity is found.
 // Returns a *NotFoundError when no TaskDependency entities are found.
-func (_q *TaskDependencyQuery) Only(ctx context.Context) (*TaskDependency, error) {
-	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
+func (tdq *TaskDependencyQuery) Only(ctx context.Context) (*TaskDependency, error) {
+	nodes, err := tdq.Limit(2).All(setContextOp(ctx, tdq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -147,8 +146,8 @@ func (_q *TaskDependencyQuery) Only(ctx context.Context) (*TaskDependency, error
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *TaskDependencyQuery) OnlyX(ctx context.Context) *TaskDependency {
-	node, err := _q.Only(ctx)
+func (tdq *TaskDependencyQuery) OnlyX(ctx context.Context) *TaskDependency {
+	node, err := tdq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -158,9 +157,9 @@ func (_q *TaskDependencyQuery) OnlyX(ctx context.Context) *TaskDependency {
 // OnlyID is like Only, but returns the only TaskDependency ID in the query.
 // Returns a *NotSingularError when more than one TaskDependency ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *TaskDependencyQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (tdq *TaskDependencyQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = tdq.Limit(2).IDs(setContextOp(ctx, tdq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -175,8 +174,8 @@ func (_q *TaskDependencyQuery) OnlyID(ctx context.Context) (id uuid.UUID, err er
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *TaskDependencyQuery) OnlyIDX(ctx context.Context) uuid.UUID {
-	id, err := _q.OnlyID(ctx)
+func (tdq *TaskDependencyQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+	id, err := tdq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -184,18 +183,18 @@ func (_q *TaskDependencyQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 }
 
 // All executes the query and returns a list of TaskDependencies.
-func (_q *TaskDependencyQuery) All(ctx context.Context) ([]*TaskDependency, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
-	if err := _q.prepareQuery(ctx); err != nil {
+func (tdq *TaskDependencyQuery) All(ctx context.Context) ([]*TaskDependency, error) {
+	ctx = setContextOp(ctx, tdq.ctx, "All")
+	if err := tdq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*TaskDependency, *TaskDependencyQuery]()
-	return withInterceptors[[]*TaskDependency](ctx, _q, qr, _q.inters)
+	return withInterceptors[[]*TaskDependency](ctx, tdq, qr, tdq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *TaskDependencyQuery) AllX(ctx context.Context) []*TaskDependency {
-	nodes, err := _q.All(ctx)
+func (tdq *TaskDependencyQuery) AllX(ctx context.Context) []*TaskDependency {
+	nodes, err := tdq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -203,20 +202,20 @@ func (_q *TaskDependencyQuery) AllX(ctx context.Context) []*TaskDependency {
 }
 
 // IDs executes the query and returns a list of TaskDependency IDs.
-func (_q *TaskDependencyQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
-	if _q.ctx.Unique == nil && _q.path != nil {
-		_q.Unique(true)
+func (tdq *TaskDependencyQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if tdq.ctx.Unique == nil && tdq.path != nil {
+		tdq.Unique(true)
 	}
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(taskdependency.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, tdq.ctx, "IDs")
+	if err = tdq.Select(taskdependency.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *TaskDependencyQuery) IDsX(ctx context.Context) []uuid.UUID {
-	ids, err := _q.IDs(ctx)
+func (tdq *TaskDependencyQuery) IDsX(ctx context.Context) []uuid.UUID {
+	ids, err := tdq.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -224,17 +223,17 @@ func (_q *TaskDependencyQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *TaskDependencyQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
-	if err := _q.prepareQuery(ctx); err != nil {
+func (tdq *TaskDependencyQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, tdq.ctx, "Count")
+	if err := tdq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*TaskDependencyQuery](), _q.inters)
+	return withInterceptors[int](ctx, tdq, querierCount[*TaskDependencyQuery](), tdq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *TaskDependencyQuery) CountX(ctx context.Context) int {
-	count, err := _q.Count(ctx)
+func (tdq *TaskDependencyQuery) CountX(ctx context.Context) int {
+	count, err := tdq.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -242,9 +241,9 @@ func (_q *TaskDependencyQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *TaskDependencyQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
-	switch _, err := _q.FirstID(ctx); {
+func (tdq *TaskDependencyQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, tdq.ctx, "Exist")
+	switch _, err := tdq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -255,8 +254,8 @@ func (_q *TaskDependencyQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *TaskDependencyQuery) ExistX(ctx context.Context) bool {
-	exist, err := _q.Exist(ctx)
+func (tdq *TaskDependencyQuery) ExistX(ctx context.Context) bool {
+	exist, err := tdq.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -265,32 +264,32 @@ func (_q *TaskDependencyQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the TaskDependencyQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *TaskDependencyQuery) Clone() *TaskDependencyQuery {
-	if _q == nil {
+func (tdq *TaskDependencyQuery) Clone() *TaskDependencyQuery {
+	if tdq == nil {
 		return nil
 	}
 	return &TaskDependencyQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]taskdependency.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.TaskDependency{}, _q.predicates...),
-		withTask:   _q.withTask.Clone(),
+		config:     tdq.config,
+		ctx:        tdq.ctx.Clone(),
+		order:      append([]taskdependency.OrderOption{}, tdq.order...),
+		inters:     append([]Interceptor{}, tdq.inters...),
+		predicates: append([]predicate.TaskDependency{}, tdq.predicates...),
+		withTask:   tdq.withTask.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:  tdq.sql.Clone(),
+		path: tdq.path,
 	}
 }
 
 // WithTask tells the query-builder to eager-load the nodes that are connected to
 // the "task" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *TaskDependencyQuery) WithTask(opts ...func(*TaskQuery)) *TaskDependencyQuery {
-	query := (&TaskClient{config: _q.config}).Query()
+func (tdq *TaskDependencyQuery) WithTask(opts ...func(*TaskQuery)) *TaskDependencyQuery {
+	query := (&TaskClient{config: tdq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withTask = query
-	return _q
+	tdq.withTask = query
+	return tdq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -307,10 +306,10 @@ func (_q *TaskDependencyQuery) WithTask(opts ...func(*TaskQuery)) *TaskDependenc
 //		GroupBy(taskdependency.FieldTaskID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *TaskDependencyQuery) GroupBy(field string, fields ...string) *TaskDependencyGroupBy {
-	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &TaskDependencyGroupBy{build: _q}
-	grbuild.flds = &_q.ctx.Fields
+func (tdq *TaskDependencyQuery) GroupBy(field string, fields ...string) *TaskDependencyGroupBy {
+	tdq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &TaskDependencyGroupBy{build: tdq}
+	grbuild.flds = &tdq.ctx.Fields
 	grbuild.label = taskdependency.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -328,58 +327,58 @@ func (_q *TaskDependencyQuery) GroupBy(field string, fields ...string) *TaskDepe
 //	client.TaskDependency.Query().
 //		Select(taskdependency.FieldTaskID).
 //		Scan(ctx, &v)
-func (_q *TaskDependencyQuery) Select(fields ...string) *TaskDependencySelect {
-	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &TaskDependencySelect{TaskDependencyQuery: _q}
+func (tdq *TaskDependencyQuery) Select(fields ...string) *TaskDependencySelect {
+	tdq.ctx.Fields = append(tdq.ctx.Fields, fields...)
+	sbuild := &TaskDependencySelect{TaskDependencyQuery: tdq}
 	sbuild.label = taskdependency.Label
-	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &tdq.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a TaskDependencySelect configured with the given aggregations.
-func (_q *TaskDependencyQuery) Aggregate(fns ...AggregateFunc) *TaskDependencySelect {
-	return _q.Select().Aggregate(fns...)
+func (tdq *TaskDependencyQuery) Aggregate(fns ...AggregateFunc) *TaskDependencySelect {
+	return tdq.Select().Aggregate(fns...)
 }
 
-func (_q *TaskDependencyQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range _q.inters {
+func (tdq *TaskDependencyQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range tdq.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, _q); err != nil {
+			if err := trv.Traverse(ctx, tdq); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range _q.ctx.Fields {
+	for _, f := range tdq.ctx.Fields {
 		if !taskdependency.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if _q.path != nil {
-		prev, err := _q.path(ctx)
+	if tdq.path != nil {
+		prev, err := tdq.path(ctx)
 		if err != nil {
 			return err
 		}
-		_q.sql = prev
+		tdq.sql = prev
 	}
 	return nil
 }
 
-func (_q *TaskDependencyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*TaskDependency, error) {
+func (tdq *TaskDependencyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*TaskDependency, error) {
 	var (
 		nodes       = []*TaskDependency{}
-		_spec       = _q.querySpec()
+		_spec       = tdq.querySpec()
 		loadedTypes = [1]bool{
-			_q.withTask != nil,
+			tdq.withTask != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*TaskDependency).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &TaskDependency{config: _q.config}
+		node := &TaskDependency{config: tdq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -387,14 +386,14 @@ func (_q *TaskDependencyQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, tdq.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withTask; query != nil {
-		if err := _q.loadTask(ctx, query, nodes, nil,
+	if query := tdq.withTask; query != nil {
+		if err := tdq.loadTask(ctx, query, nodes, nil,
 			func(n *TaskDependency, e *Task) { n.Edges.Task = e }); err != nil {
 			return nil, err
 		}
@@ -402,7 +401,7 @@ func (_q *TaskDependencyQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	return nodes, nil
 }
 
-func (_q *TaskDependencyQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*TaskDependency, init func(*TaskDependency), assign func(*TaskDependency, *Task)) error {
+func (tdq *TaskDependencyQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*TaskDependency, init func(*TaskDependency), assign func(*TaskDependency, *Task)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*TaskDependency)
 	for i := range nodes {
@@ -432,24 +431,24 @@ func (_q *TaskDependencyQuery) loadTask(ctx context.Context, query *TaskQuery, n
 	return nil
 }
 
-func (_q *TaskDependencyQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := _q.querySpec()
-	_spec.Node.Columns = _q.ctx.Fields
-	if len(_q.ctx.Fields) > 0 {
-		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
+func (tdq *TaskDependencyQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := tdq.querySpec()
+	_spec.Node.Columns = tdq.ctx.Fields
+	if len(tdq.ctx.Fields) > 0 {
+		_spec.Unique = tdq.ctx.Unique != nil && *tdq.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
+	return sqlgraph.CountNodes(ctx, tdq.driver, _spec)
 }
 
-func (_q *TaskDependencyQuery) querySpec() *sqlgraph.QuerySpec {
+func (tdq *TaskDependencyQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(taskdependency.Table, taskdependency.Columns, sqlgraph.NewFieldSpec(taskdependency.FieldID, field.TypeUUID))
-	_spec.From = _q.sql
-	if unique := _q.ctx.Unique; unique != nil {
+	_spec.From = tdq.sql
+	if unique := tdq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if _q.path != nil {
+	} else if tdq.path != nil {
 		_spec.Unique = true
 	}
-	if fields := _q.ctx.Fields; len(fields) > 0 {
+	if fields := tdq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, taskdependency.FieldID)
 		for i := range fields {
@@ -457,24 +456,24 @@ func (_q *TaskDependencyQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withTask != nil {
+		if tdq.withTask != nil {
 			_spec.Node.AddColumnOnce(taskdependency.FieldTaskID)
 		}
 	}
-	if ps := _q.predicates; len(ps) > 0 {
+	if ps := tdq.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := _q.ctx.Limit; limit != nil {
+	if limit := tdq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := _q.ctx.Offset; offset != nil {
+	if offset := tdq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := _q.order; len(ps) > 0 {
+	if ps := tdq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -484,33 +483,33 @@ func (_q *TaskDependencyQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *TaskDependencyQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(_q.driver.Dialect())
+func (tdq *TaskDependencyQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(tdq.driver.Dialect())
 	t1 := builder.Table(taskdependency.Table)
-	columns := _q.ctx.Fields
+	columns := tdq.ctx.Fields
 	if len(columns) == 0 {
 		columns = taskdependency.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if _q.sql != nil {
-		selector = _q.sql
+	if tdq.sql != nil {
+		selector = tdq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if _q.ctx.Unique != nil && *_q.ctx.Unique {
+	if tdq.ctx.Unique != nil && *tdq.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range _q.predicates {
+	for _, p := range tdq.predicates {
 		p(selector)
 	}
-	for _, p := range _q.order {
+	for _, p := range tdq.order {
 		p(selector)
 	}
-	if offset := _q.ctx.Offset; offset != nil {
+	if offset := tdq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := _q.ctx.Limit; limit != nil {
+	if limit := tdq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -523,41 +522,41 @@ type TaskDependencyGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *TaskDependencyGroupBy) Aggregate(fns ...AggregateFunc) *TaskDependencyGroupBy {
-	_g.fns = append(_g.fns, fns...)
-	return _g
+func (tdgb *TaskDependencyGroupBy) Aggregate(fns ...AggregateFunc) *TaskDependencyGroupBy {
+	tdgb.fns = append(tdgb.fns, fns...)
+	return tdgb
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *TaskDependencyGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
-	if err := _g.build.prepareQuery(ctx); err != nil {
+func (tdgb *TaskDependencyGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, tdgb.build.ctx, "GroupBy")
+	if err := tdgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*TaskDependencyQuery, *TaskDependencyGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*TaskDependencyQuery, *TaskDependencyGroupBy](ctx, tdgb.build, tdgb, tdgb.build.inters, v)
 }
 
-func (_g *TaskDependencyGroupBy) sqlScan(ctx context.Context, root *TaskDependencyQuery, v any) error {
+func (tdgb *TaskDependencyGroupBy) sqlScan(ctx context.Context, root *TaskDependencyQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(_g.fns))
-	for _, fn := range _g.fns {
+	aggregation := make([]string, 0, len(tdgb.fns))
+	for _, fn := range tdgb.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
-		for _, f := range *_g.flds {
+		columns := make([]string, 0, len(*tdgb.flds)+len(tdgb.fns))
+		for _, f := range *tdgb.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*_g.flds...)...)
+	selector.GroupBy(selector.Columns(*tdgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := tdgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -571,27 +570,27 @@ type TaskDependencySelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *TaskDependencySelect) Aggregate(fns ...AggregateFunc) *TaskDependencySelect {
-	_s.fns = append(_s.fns, fns...)
-	return _s
+func (tds *TaskDependencySelect) Aggregate(fns ...AggregateFunc) *TaskDependencySelect {
+	tds.fns = append(tds.fns, fns...)
+	return tds
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *TaskDependencySelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
-	if err := _s.prepareQuery(ctx); err != nil {
+func (tds *TaskDependencySelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, tds.ctx, "Select")
+	if err := tds.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*TaskDependencyQuery, *TaskDependencySelect](ctx, _s.TaskDependencyQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*TaskDependencyQuery, *TaskDependencySelect](ctx, tds.TaskDependencyQuery, tds, tds.inters, v)
 }
 
-func (_s *TaskDependencySelect) sqlScan(ctx context.Context, root *TaskDependencyQuery, v any) error {
+func (tds *TaskDependencySelect) sqlScan(ctx context.Context, root *TaskDependencyQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(_s.fns))
-	for _, fn := range _s.fns {
+	aggregation := make([]string, 0, len(tds.fns))
+	for _, fn := range tds.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*_s.selector.flds); {
+	switch n := len(*tds.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -599,7 +598,7 @@ func (_s *TaskDependencySelect) sqlScan(ctx context.Context, root *TaskDependenc
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
+	if err := tds.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

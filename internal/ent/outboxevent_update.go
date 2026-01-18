@@ -24,147 +24,147 @@ type OutboxEventUpdate struct {
 }
 
 // Where appends a list predicates to the OutboxEventUpdate builder.
-func (_u *OutboxEventUpdate) Where(ps ...predicate.OutboxEvent) *OutboxEventUpdate {
-	_u.mutation.Where(ps...)
-	return _u
+func (oeu *OutboxEventUpdate) Where(ps ...predicate.OutboxEvent) *OutboxEventUpdate {
+	oeu.mutation.Where(ps...)
+	return oeu
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *OutboxEventUpdate) SetTenantID(v uuid.UUID) *OutboxEventUpdate {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (oeu *OutboxEventUpdate) SetTenantID(u uuid.UUID) *OutboxEventUpdate {
+	oeu.mutation.SetTenantID(u)
+	return oeu
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *OutboxEventUpdate) SetNillableTenantID(v *uuid.UUID) *OutboxEventUpdate {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (oeu *OutboxEventUpdate) SetNillableTenantID(u *uuid.UUID) *OutboxEventUpdate {
+	if u != nil {
+		oeu.SetTenantID(*u)
 	}
-	return _u
+	return oeu
 }
 
 // SetAggregateType sets the "aggregate_type" field.
-func (_u *OutboxEventUpdate) SetAggregateType(v string) *OutboxEventUpdate {
-	_u.mutation.SetAggregateType(v)
-	return _u
+func (oeu *OutboxEventUpdate) SetAggregateType(s string) *OutboxEventUpdate {
+	oeu.mutation.SetAggregateType(s)
+	return oeu
 }
 
 // SetNillableAggregateType sets the "aggregate_type" field if the given value is not nil.
-func (_u *OutboxEventUpdate) SetNillableAggregateType(v *string) *OutboxEventUpdate {
-	if v != nil {
-		_u.SetAggregateType(*v)
+func (oeu *OutboxEventUpdate) SetNillableAggregateType(s *string) *OutboxEventUpdate {
+	if s != nil {
+		oeu.SetAggregateType(*s)
 	}
-	return _u
+	return oeu
 }
 
 // SetAggregateID sets the "aggregate_id" field.
-func (_u *OutboxEventUpdate) SetAggregateID(v uuid.UUID) *OutboxEventUpdate {
-	_u.mutation.SetAggregateID(v)
-	return _u
+func (oeu *OutboxEventUpdate) SetAggregateID(u uuid.UUID) *OutboxEventUpdate {
+	oeu.mutation.SetAggregateID(u)
+	return oeu
 }
 
 // SetNillableAggregateID sets the "aggregate_id" field if the given value is not nil.
-func (_u *OutboxEventUpdate) SetNillableAggregateID(v *uuid.UUID) *OutboxEventUpdate {
-	if v != nil {
-		_u.SetAggregateID(*v)
+func (oeu *OutboxEventUpdate) SetNillableAggregateID(u *uuid.UUID) *OutboxEventUpdate {
+	if u != nil {
+		oeu.SetAggregateID(*u)
 	}
-	return _u
+	return oeu
 }
 
 // SetEventType sets the "event_type" field.
-func (_u *OutboxEventUpdate) SetEventType(v string) *OutboxEventUpdate {
-	_u.mutation.SetEventType(v)
-	return _u
+func (oeu *OutboxEventUpdate) SetEventType(s string) *OutboxEventUpdate {
+	oeu.mutation.SetEventType(s)
+	return oeu
 }
 
 // SetNillableEventType sets the "event_type" field if the given value is not nil.
-func (_u *OutboxEventUpdate) SetNillableEventType(v *string) *OutboxEventUpdate {
-	if v != nil {
-		_u.SetEventType(*v)
+func (oeu *OutboxEventUpdate) SetNillableEventType(s *string) *OutboxEventUpdate {
+	if s != nil {
+		oeu.SetEventType(*s)
 	}
-	return _u
+	return oeu
 }
 
 // SetPayload sets the "payload" field.
-func (_u *OutboxEventUpdate) SetPayload(v map[string]interface{}) *OutboxEventUpdate {
-	_u.mutation.SetPayload(v)
-	return _u
+func (oeu *OutboxEventUpdate) SetPayload(m map[string]interface{}) *OutboxEventUpdate {
+	oeu.mutation.SetPayload(m)
+	return oeu
 }
 
 // ClearPayload clears the value of the "payload" field.
-func (_u *OutboxEventUpdate) ClearPayload() *OutboxEventUpdate {
-	_u.mutation.ClearPayload()
-	return _u
+func (oeu *OutboxEventUpdate) ClearPayload() *OutboxEventUpdate {
+	oeu.mutation.ClearPayload()
+	return oeu
 }
 
 // SetStatus sets the "status" field.
-func (_u *OutboxEventUpdate) SetStatus(v string) *OutboxEventUpdate {
-	_u.mutation.SetStatus(v)
-	return _u
+func (oeu *OutboxEventUpdate) SetStatus(s string) *OutboxEventUpdate {
+	oeu.mutation.SetStatus(s)
+	return oeu
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *OutboxEventUpdate) SetNillableStatus(v *string) *OutboxEventUpdate {
-	if v != nil {
-		_u.SetStatus(*v)
+func (oeu *OutboxEventUpdate) SetNillableStatus(s *string) *OutboxEventUpdate {
+	if s != nil {
+		oeu.SetStatus(*s)
 	}
-	return _u
+	return oeu
 }
 
 // SetAttempts sets the "attempts" field.
-func (_u *OutboxEventUpdate) SetAttempts(v int) *OutboxEventUpdate {
-	_u.mutation.ResetAttempts()
-	_u.mutation.SetAttempts(v)
-	return _u
+func (oeu *OutboxEventUpdate) SetAttempts(i int) *OutboxEventUpdate {
+	oeu.mutation.ResetAttempts()
+	oeu.mutation.SetAttempts(i)
+	return oeu
 }
 
 // SetNillableAttempts sets the "attempts" field if the given value is not nil.
-func (_u *OutboxEventUpdate) SetNillableAttempts(v *int) *OutboxEventUpdate {
-	if v != nil {
-		_u.SetAttempts(*v)
+func (oeu *OutboxEventUpdate) SetNillableAttempts(i *int) *OutboxEventUpdate {
+	if i != nil {
+		oeu.SetAttempts(*i)
 	}
-	return _u
+	return oeu
 }
 
-// AddAttempts adds value to the "attempts" field.
-func (_u *OutboxEventUpdate) AddAttempts(v int) *OutboxEventUpdate {
-	_u.mutation.AddAttempts(v)
-	return _u
+// AddAttempts adds i to the "attempts" field.
+func (oeu *OutboxEventUpdate) AddAttempts(i int) *OutboxEventUpdate {
+	oeu.mutation.AddAttempts(i)
+	return oeu
 }
 
 // SetLastAttemptAt sets the "last_attempt_at" field.
-func (_u *OutboxEventUpdate) SetLastAttemptAt(v time.Time) *OutboxEventUpdate {
-	_u.mutation.SetLastAttemptAt(v)
-	return _u
+func (oeu *OutboxEventUpdate) SetLastAttemptAt(t time.Time) *OutboxEventUpdate {
+	oeu.mutation.SetLastAttemptAt(t)
+	return oeu
 }
 
 // SetNillableLastAttemptAt sets the "last_attempt_at" field if the given value is not nil.
-func (_u *OutboxEventUpdate) SetNillableLastAttemptAt(v *time.Time) *OutboxEventUpdate {
-	if v != nil {
-		_u.SetLastAttemptAt(*v)
+func (oeu *OutboxEventUpdate) SetNillableLastAttemptAt(t *time.Time) *OutboxEventUpdate {
+	if t != nil {
+		oeu.SetLastAttemptAt(*t)
 	}
-	return _u
+	return oeu
 }
 
 // ClearLastAttemptAt clears the value of the "last_attempt_at" field.
-func (_u *OutboxEventUpdate) ClearLastAttemptAt() *OutboxEventUpdate {
-	_u.mutation.ClearLastAttemptAt()
-	return _u
+func (oeu *OutboxEventUpdate) ClearLastAttemptAt() *OutboxEventUpdate {
+	oeu.mutation.ClearLastAttemptAt()
+	return oeu
 }
 
 // Mutation returns the OutboxEventMutation object of the builder.
-func (_u *OutboxEventUpdate) Mutation() *OutboxEventMutation {
-	return _u.mutation
+func (oeu *OutboxEventUpdate) Mutation() *OutboxEventMutation {
+	return oeu.mutation
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *OutboxEventUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (oeu *OutboxEventUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, oeu.sqlSave, oeu.mutation, oeu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *OutboxEventUpdate) SaveX(ctx context.Context) int {
-	affected, err := _u.Save(ctx)
+func (oeu *OutboxEventUpdate) SaveX(ctx context.Context) int {
+	affected, err := oeu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -172,26 +172,26 @@ func (_u *OutboxEventUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *OutboxEventUpdate) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (oeu *OutboxEventUpdate) Exec(ctx context.Context) error {
+	_, err := oeu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *OutboxEventUpdate) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (oeu *OutboxEventUpdate) ExecX(ctx context.Context) {
+	if err := oeu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *OutboxEventUpdate) check() error {
-	if v, ok := _u.mutation.AggregateType(); ok {
+func (oeu *OutboxEventUpdate) check() error {
+	if v, ok := oeu.mutation.AggregateType(); ok {
 		if err := outboxevent.AggregateTypeValidator(v); err != nil {
 			return &ValidationError{Name: "aggregate_type", err: fmt.Errorf(`ent: validator failed for field "OutboxEvent.aggregate_type": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.EventType(); ok {
+	if v, ok := oeu.mutation.EventType(); ok {
 		if err := outboxevent.EventTypeValidator(v); err != nil {
 			return &ValidationError{Name: "event_type", err: fmt.Errorf(`ent: validator failed for field "OutboxEvent.event_type": %w`, err)}
 		}
@@ -199,52 +199,52 @@ func (_u *OutboxEventUpdate) check() error {
 	return nil
 }
 
-func (_u *OutboxEventUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
+func (oeu *OutboxEventUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := oeu.check(); err != nil {
+		return n, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(outboxevent.Table, outboxevent.Columns, sqlgraph.NewFieldSpec(outboxevent.FieldID, field.TypeUUID))
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := oeu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := oeu.mutation.TenantID(); ok {
 		_spec.SetField(outboxevent.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.AggregateType(); ok {
+	if value, ok := oeu.mutation.AggregateType(); ok {
 		_spec.SetField(outboxevent.FieldAggregateType, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.AggregateID(); ok {
+	if value, ok := oeu.mutation.AggregateID(); ok {
 		_spec.SetField(outboxevent.FieldAggregateID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.EventType(); ok {
+	if value, ok := oeu.mutation.EventType(); ok {
 		_spec.SetField(outboxevent.FieldEventType, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Payload(); ok {
+	if value, ok := oeu.mutation.Payload(); ok {
 		_spec.SetField(outboxevent.FieldPayload, field.TypeJSON, value)
 	}
-	if _u.mutation.PayloadCleared() {
+	if oeu.mutation.PayloadCleared() {
 		_spec.ClearField(outboxevent.FieldPayload, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.Status(); ok {
+	if value, ok := oeu.mutation.Status(); ok {
 		_spec.SetField(outboxevent.FieldStatus, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Attempts(); ok {
+	if value, ok := oeu.mutation.Attempts(); ok {
 		_spec.SetField(outboxevent.FieldAttempts, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedAttempts(); ok {
+	if value, ok := oeu.mutation.AddedAttempts(); ok {
 		_spec.AddField(outboxevent.FieldAttempts, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.LastAttemptAt(); ok {
+	if value, ok := oeu.mutation.LastAttemptAt(); ok {
 		_spec.SetField(outboxevent.FieldLastAttemptAt, field.TypeTime, value)
 	}
-	if _u.mutation.LastAttemptAtCleared() {
+	if oeu.mutation.LastAttemptAtCleared() {
 		_spec.ClearField(outboxevent.FieldLastAttemptAt, field.TypeTime)
 	}
-	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, oeu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{outboxevent.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -252,8 +252,8 @@ func (_u *OutboxEventUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		}
 		return 0, err
 	}
-	_u.mutation.done = true
-	return _node, nil
+	oeu.mutation.done = true
+	return n, nil
 }
 
 // OutboxEventUpdateOne is the builder for updating a single OutboxEvent entity.
@@ -265,154 +265,154 @@ type OutboxEventUpdateOne struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *OutboxEventUpdateOne) SetTenantID(v uuid.UUID) *OutboxEventUpdateOne {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (oeuo *OutboxEventUpdateOne) SetTenantID(u uuid.UUID) *OutboxEventUpdateOne {
+	oeuo.mutation.SetTenantID(u)
+	return oeuo
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *OutboxEventUpdateOne) SetNillableTenantID(v *uuid.UUID) *OutboxEventUpdateOne {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (oeuo *OutboxEventUpdateOne) SetNillableTenantID(u *uuid.UUID) *OutboxEventUpdateOne {
+	if u != nil {
+		oeuo.SetTenantID(*u)
 	}
-	return _u
+	return oeuo
 }
 
 // SetAggregateType sets the "aggregate_type" field.
-func (_u *OutboxEventUpdateOne) SetAggregateType(v string) *OutboxEventUpdateOne {
-	_u.mutation.SetAggregateType(v)
-	return _u
+func (oeuo *OutboxEventUpdateOne) SetAggregateType(s string) *OutboxEventUpdateOne {
+	oeuo.mutation.SetAggregateType(s)
+	return oeuo
 }
 
 // SetNillableAggregateType sets the "aggregate_type" field if the given value is not nil.
-func (_u *OutboxEventUpdateOne) SetNillableAggregateType(v *string) *OutboxEventUpdateOne {
-	if v != nil {
-		_u.SetAggregateType(*v)
+func (oeuo *OutboxEventUpdateOne) SetNillableAggregateType(s *string) *OutboxEventUpdateOne {
+	if s != nil {
+		oeuo.SetAggregateType(*s)
 	}
-	return _u
+	return oeuo
 }
 
 // SetAggregateID sets the "aggregate_id" field.
-func (_u *OutboxEventUpdateOne) SetAggregateID(v uuid.UUID) *OutboxEventUpdateOne {
-	_u.mutation.SetAggregateID(v)
-	return _u
+func (oeuo *OutboxEventUpdateOne) SetAggregateID(u uuid.UUID) *OutboxEventUpdateOne {
+	oeuo.mutation.SetAggregateID(u)
+	return oeuo
 }
 
 // SetNillableAggregateID sets the "aggregate_id" field if the given value is not nil.
-func (_u *OutboxEventUpdateOne) SetNillableAggregateID(v *uuid.UUID) *OutboxEventUpdateOne {
-	if v != nil {
-		_u.SetAggregateID(*v)
+func (oeuo *OutboxEventUpdateOne) SetNillableAggregateID(u *uuid.UUID) *OutboxEventUpdateOne {
+	if u != nil {
+		oeuo.SetAggregateID(*u)
 	}
-	return _u
+	return oeuo
 }
 
 // SetEventType sets the "event_type" field.
-func (_u *OutboxEventUpdateOne) SetEventType(v string) *OutboxEventUpdateOne {
-	_u.mutation.SetEventType(v)
-	return _u
+func (oeuo *OutboxEventUpdateOne) SetEventType(s string) *OutboxEventUpdateOne {
+	oeuo.mutation.SetEventType(s)
+	return oeuo
 }
 
 // SetNillableEventType sets the "event_type" field if the given value is not nil.
-func (_u *OutboxEventUpdateOne) SetNillableEventType(v *string) *OutboxEventUpdateOne {
-	if v != nil {
-		_u.SetEventType(*v)
+func (oeuo *OutboxEventUpdateOne) SetNillableEventType(s *string) *OutboxEventUpdateOne {
+	if s != nil {
+		oeuo.SetEventType(*s)
 	}
-	return _u
+	return oeuo
 }
 
 // SetPayload sets the "payload" field.
-func (_u *OutboxEventUpdateOne) SetPayload(v map[string]interface{}) *OutboxEventUpdateOne {
-	_u.mutation.SetPayload(v)
-	return _u
+func (oeuo *OutboxEventUpdateOne) SetPayload(m map[string]interface{}) *OutboxEventUpdateOne {
+	oeuo.mutation.SetPayload(m)
+	return oeuo
 }
 
 // ClearPayload clears the value of the "payload" field.
-func (_u *OutboxEventUpdateOne) ClearPayload() *OutboxEventUpdateOne {
-	_u.mutation.ClearPayload()
-	return _u
+func (oeuo *OutboxEventUpdateOne) ClearPayload() *OutboxEventUpdateOne {
+	oeuo.mutation.ClearPayload()
+	return oeuo
 }
 
 // SetStatus sets the "status" field.
-func (_u *OutboxEventUpdateOne) SetStatus(v string) *OutboxEventUpdateOne {
-	_u.mutation.SetStatus(v)
-	return _u
+func (oeuo *OutboxEventUpdateOne) SetStatus(s string) *OutboxEventUpdateOne {
+	oeuo.mutation.SetStatus(s)
+	return oeuo
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *OutboxEventUpdateOne) SetNillableStatus(v *string) *OutboxEventUpdateOne {
-	if v != nil {
-		_u.SetStatus(*v)
+func (oeuo *OutboxEventUpdateOne) SetNillableStatus(s *string) *OutboxEventUpdateOne {
+	if s != nil {
+		oeuo.SetStatus(*s)
 	}
-	return _u
+	return oeuo
 }
 
 // SetAttempts sets the "attempts" field.
-func (_u *OutboxEventUpdateOne) SetAttempts(v int) *OutboxEventUpdateOne {
-	_u.mutation.ResetAttempts()
-	_u.mutation.SetAttempts(v)
-	return _u
+func (oeuo *OutboxEventUpdateOne) SetAttempts(i int) *OutboxEventUpdateOne {
+	oeuo.mutation.ResetAttempts()
+	oeuo.mutation.SetAttempts(i)
+	return oeuo
 }
 
 // SetNillableAttempts sets the "attempts" field if the given value is not nil.
-func (_u *OutboxEventUpdateOne) SetNillableAttempts(v *int) *OutboxEventUpdateOne {
-	if v != nil {
-		_u.SetAttempts(*v)
+func (oeuo *OutboxEventUpdateOne) SetNillableAttempts(i *int) *OutboxEventUpdateOne {
+	if i != nil {
+		oeuo.SetAttempts(*i)
 	}
-	return _u
+	return oeuo
 }
 
-// AddAttempts adds value to the "attempts" field.
-func (_u *OutboxEventUpdateOne) AddAttempts(v int) *OutboxEventUpdateOne {
-	_u.mutation.AddAttempts(v)
-	return _u
+// AddAttempts adds i to the "attempts" field.
+func (oeuo *OutboxEventUpdateOne) AddAttempts(i int) *OutboxEventUpdateOne {
+	oeuo.mutation.AddAttempts(i)
+	return oeuo
 }
 
 // SetLastAttemptAt sets the "last_attempt_at" field.
-func (_u *OutboxEventUpdateOne) SetLastAttemptAt(v time.Time) *OutboxEventUpdateOne {
-	_u.mutation.SetLastAttemptAt(v)
-	return _u
+func (oeuo *OutboxEventUpdateOne) SetLastAttemptAt(t time.Time) *OutboxEventUpdateOne {
+	oeuo.mutation.SetLastAttemptAt(t)
+	return oeuo
 }
 
 // SetNillableLastAttemptAt sets the "last_attempt_at" field if the given value is not nil.
-func (_u *OutboxEventUpdateOne) SetNillableLastAttemptAt(v *time.Time) *OutboxEventUpdateOne {
-	if v != nil {
-		_u.SetLastAttemptAt(*v)
+func (oeuo *OutboxEventUpdateOne) SetNillableLastAttemptAt(t *time.Time) *OutboxEventUpdateOne {
+	if t != nil {
+		oeuo.SetLastAttemptAt(*t)
 	}
-	return _u
+	return oeuo
 }
 
 // ClearLastAttemptAt clears the value of the "last_attempt_at" field.
-func (_u *OutboxEventUpdateOne) ClearLastAttemptAt() *OutboxEventUpdateOne {
-	_u.mutation.ClearLastAttemptAt()
-	return _u
+func (oeuo *OutboxEventUpdateOne) ClearLastAttemptAt() *OutboxEventUpdateOne {
+	oeuo.mutation.ClearLastAttemptAt()
+	return oeuo
 }
 
 // Mutation returns the OutboxEventMutation object of the builder.
-func (_u *OutboxEventUpdateOne) Mutation() *OutboxEventMutation {
-	return _u.mutation
+func (oeuo *OutboxEventUpdateOne) Mutation() *OutboxEventMutation {
+	return oeuo.mutation
 }
 
 // Where appends a list predicates to the OutboxEventUpdate builder.
-func (_u *OutboxEventUpdateOne) Where(ps ...predicate.OutboxEvent) *OutboxEventUpdateOne {
-	_u.mutation.Where(ps...)
-	return _u
+func (oeuo *OutboxEventUpdateOne) Where(ps ...predicate.OutboxEvent) *OutboxEventUpdateOne {
+	oeuo.mutation.Where(ps...)
+	return oeuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *OutboxEventUpdateOne) Select(field string, fields ...string) *OutboxEventUpdateOne {
-	_u.fields = append([]string{field}, fields...)
-	return _u
+func (oeuo *OutboxEventUpdateOne) Select(field string, fields ...string) *OutboxEventUpdateOne {
+	oeuo.fields = append([]string{field}, fields...)
+	return oeuo
 }
 
 // Save executes the query and returns the updated OutboxEvent entity.
-func (_u *OutboxEventUpdateOne) Save(ctx context.Context) (*OutboxEvent, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (oeuo *OutboxEventUpdateOne) Save(ctx context.Context) (*OutboxEvent, error) {
+	return withHooks(ctx, oeuo.sqlSave, oeuo.mutation, oeuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *OutboxEventUpdateOne) SaveX(ctx context.Context) *OutboxEvent {
-	node, err := _u.Save(ctx)
+func (oeuo *OutboxEventUpdateOne) SaveX(ctx context.Context) *OutboxEvent {
+	node, err := oeuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -420,26 +420,26 @@ func (_u *OutboxEventUpdateOne) SaveX(ctx context.Context) *OutboxEvent {
 }
 
 // Exec executes the query on the entity.
-func (_u *OutboxEventUpdateOne) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (oeuo *OutboxEventUpdateOne) Exec(ctx context.Context) error {
+	_, err := oeuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *OutboxEventUpdateOne) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (oeuo *OutboxEventUpdateOne) ExecX(ctx context.Context) {
+	if err := oeuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *OutboxEventUpdateOne) check() error {
-	if v, ok := _u.mutation.AggregateType(); ok {
+func (oeuo *OutboxEventUpdateOne) check() error {
+	if v, ok := oeuo.mutation.AggregateType(); ok {
 		if err := outboxevent.AggregateTypeValidator(v); err != nil {
 			return &ValidationError{Name: "aggregate_type", err: fmt.Errorf(`ent: validator failed for field "OutboxEvent.aggregate_type": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.EventType(); ok {
+	if v, ok := oeuo.mutation.EventType(); ok {
 		if err := outboxevent.EventTypeValidator(v); err != nil {
 			return &ValidationError{Name: "event_type", err: fmt.Errorf(`ent: validator failed for field "OutboxEvent.event_type": %w`, err)}
 		}
@@ -447,17 +447,17 @@ func (_u *OutboxEventUpdateOne) check() error {
 	return nil
 }
 
-func (_u *OutboxEventUpdateOne) sqlSave(ctx context.Context) (_node *OutboxEvent, err error) {
-	if err := _u.check(); err != nil {
+func (oeuo *OutboxEventUpdateOne) sqlSave(ctx context.Context) (_node *OutboxEvent, err error) {
+	if err := oeuo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(outboxevent.Table, outboxevent.Columns, sqlgraph.NewFieldSpec(outboxevent.FieldID, field.TypeUUID))
-	id, ok := _u.mutation.ID()
+	id, ok := oeuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "OutboxEvent.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := _u.fields; len(fields) > 0 {
+	if fields := oeuo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, outboxevent.FieldID)
 		for _, f := range fields {
@@ -469,50 +469,50 @@ func (_u *OutboxEventUpdateOne) sqlSave(ctx context.Context) (_node *OutboxEvent
 			}
 		}
 	}
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := oeuo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := oeuo.mutation.TenantID(); ok {
 		_spec.SetField(outboxevent.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.AggregateType(); ok {
+	if value, ok := oeuo.mutation.AggregateType(); ok {
 		_spec.SetField(outboxevent.FieldAggregateType, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.AggregateID(); ok {
+	if value, ok := oeuo.mutation.AggregateID(); ok {
 		_spec.SetField(outboxevent.FieldAggregateID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.EventType(); ok {
+	if value, ok := oeuo.mutation.EventType(); ok {
 		_spec.SetField(outboxevent.FieldEventType, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Payload(); ok {
+	if value, ok := oeuo.mutation.Payload(); ok {
 		_spec.SetField(outboxevent.FieldPayload, field.TypeJSON, value)
 	}
-	if _u.mutation.PayloadCleared() {
+	if oeuo.mutation.PayloadCleared() {
 		_spec.ClearField(outboxevent.FieldPayload, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.Status(); ok {
+	if value, ok := oeuo.mutation.Status(); ok {
 		_spec.SetField(outboxevent.FieldStatus, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Attempts(); ok {
+	if value, ok := oeuo.mutation.Attempts(); ok {
 		_spec.SetField(outboxevent.FieldAttempts, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.AddedAttempts(); ok {
+	if value, ok := oeuo.mutation.AddedAttempts(); ok {
 		_spec.AddField(outboxevent.FieldAttempts, field.TypeInt, value)
 	}
-	if value, ok := _u.mutation.LastAttemptAt(); ok {
+	if value, ok := oeuo.mutation.LastAttemptAt(); ok {
 		_spec.SetField(outboxevent.FieldLastAttemptAt, field.TypeTime, value)
 	}
-	if _u.mutation.LastAttemptAtCleared() {
+	if oeuo.mutation.LastAttemptAtCleared() {
 		_spec.ClearField(outboxevent.FieldLastAttemptAt, field.TypeTime)
 	}
-	_node = &OutboxEvent{config: _u.config}
+	_node = &OutboxEvent{config: oeuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, oeuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{outboxevent.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -520,6 +520,6 @@ func (_u *OutboxEventUpdateOne) sqlSave(ctx context.Context) (_node *OutboxEvent
 		}
 		return nil, err
 	}
-	_u.mutation.done = true
+	oeuo.mutation.done = true
 	return _node, nil
 }

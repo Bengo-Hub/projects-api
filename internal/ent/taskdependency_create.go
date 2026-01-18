@@ -23,78 +23,78 @@ type TaskDependencyCreate struct {
 }
 
 // SetTaskID sets the "task_id" field.
-func (_c *TaskDependencyCreate) SetTaskID(v uuid.UUID) *TaskDependencyCreate {
-	_c.mutation.SetTaskID(v)
-	return _c
+func (tdc *TaskDependencyCreate) SetTaskID(u uuid.UUID) *TaskDependencyCreate {
+	tdc.mutation.SetTaskID(u)
+	return tdc
 }
 
 // SetDependsOnTaskID sets the "depends_on_task_id" field.
-func (_c *TaskDependencyCreate) SetDependsOnTaskID(v uuid.UUID) *TaskDependencyCreate {
-	_c.mutation.SetDependsOnTaskID(v)
-	return _c
+func (tdc *TaskDependencyCreate) SetDependsOnTaskID(u uuid.UUID) *TaskDependencyCreate {
+	tdc.mutation.SetDependsOnTaskID(u)
+	return tdc
 }
 
 // SetDependencyType sets the "dependency_type" field.
-func (_c *TaskDependencyCreate) SetDependencyType(v string) *TaskDependencyCreate {
-	_c.mutation.SetDependencyType(v)
-	return _c
+func (tdc *TaskDependencyCreate) SetDependencyType(s string) *TaskDependencyCreate {
+	tdc.mutation.SetDependencyType(s)
+	return tdc
 }
 
 // SetNillableDependencyType sets the "dependency_type" field if the given value is not nil.
-func (_c *TaskDependencyCreate) SetNillableDependencyType(v *string) *TaskDependencyCreate {
-	if v != nil {
-		_c.SetDependencyType(*v)
+func (tdc *TaskDependencyCreate) SetNillableDependencyType(s *string) *TaskDependencyCreate {
+	if s != nil {
+		tdc.SetDependencyType(*s)
 	}
-	return _c
+	return tdc
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_c *TaskDependencyCreate) SetCreatedAt(v time.Time) *TaskDependencyCreate {
-	_c.mutation.SetCreatedAt(v)
-	return _c
+func (tdc *TaskDependencyCreate) SetCreatedAt(t time.Time) *TaskDependencyCreate {
+	tdc.mutation.SetCreatedAt(t)
+	return tdc
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_c *TaskDependencyCreate) SetNillableCreatedAt(v *time.Time) *TaskDependencyCreate {
-	if v != nil {
-		_c.SetCreatedAt(*v)
+func (tdc *TaskDependencyCreate) SetNillableCreatedAt(t *time.Time) *TaskDependencyCreate {
+	if t != nil {
+		tdc.SetCreatedAt(*t)
 	}
-	return _c
+	return tdc
 }
 
 // SetID sets the "id" field.
-func (_c *TaskDependencyCreate) SetID(v uuid.UUID) *TaskDependencyCreate {
-	_c.mutation.SetID(v)
-	return _c
+func (tdc *TaskDependencyCreate) SetID(u uuid.UUID) *TaskDependencyCreate {
+	tdc.mutation.SetID(u)
+	return tdc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (_c *TaskDependencyCreate) SetNillableID(v *uuid.UUID) *TaskDependencyCreate {
-	if v != nil {
-		_c.SetID(*v)
+func (tdc *TaskDependencyCreate) SetNillableID(u *uuid.UUID) *TaskDependencyCreate {
+	if u != nil {
+		tdc.SetID(*u)
 	}
-	return _c
+	return tdc
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (_c *TaskDependencyCreate) SetTask(v *Task) *TaskDependencyCreate {
-	return _c.SetTaskID(v.ID)
+func (tdc *TaskDependencyCreate) SetTask(t *Task) *TaskDependencyCreate {
+	return tdc.SetTaskID(t.ID)
 }
 
 // Mutation returns the TaskDependencyMutation object of the builder.
-func (_c *TaskDependencyCreate) Mutation() *TaskDependencyMutation {
-	return _c.mutation
+func (tdc *TaskDependencyCreate) Mutation() *TaskDependencyMutation {
+	return tdc.mutation
 }
 
 // Save creates the TaskDependency in the database.
-func (_c *TaskDependencyCreate) Save(ctx context.Context) (*TaskDependency, error) {
-	_c.defaults()
-	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
+func (tdc *TaskDependencyCreate) Save(ctx context.Context) (*TaskDependency, error) {
+	tdc.defaults()
+	return withHooks(ctx, tdc.sqlSave, tdc.mutation, tdc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *TaskDependencyCreate) SaveX(ctx context.Context) *TaskDependency {
-	v, err := _c.Save(ctx)
+func (tdc *TaskDependencyCreate) SaveX(ctx context.Context) *TaskDependency {
+	v, err := tdc.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -102,60 +102,60 @@ func (_c *TaskDependencyCreate) SaveX(ctx context.Context) *TaskDependency {
 }
 
 // Exec executes the query.
-func (_c *TaskDependencyCreate) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (tdc *TaskDependencyCreate) Exec(ctx context.Context) error {
+	_, err := tdc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *TaskDependencyCreate) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (tdc *TaskDependencyCreate) ExecX(ctx context.Context) {
+	if err := tdc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *TaskDependencyCreate) defaults() {
-	if _, ok := _c.mutation.DependencyType(); !ok {
+func (tdc *TaskDependencyCreate) defaults() {
+	if _, ok := tdc.mutation.DependencyType(); !ok {
 		v := taskdependency.DefaultDependencyType
-		_c.mutation.SetDependencyType(v)
+		tdc.mutation.SetDependencyType(v)
 	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+	if _, ok := tdc.mutation.CreatedAt(); !ok {
 		v := taskdependency.DefaultCreatedAt()
-		_c.mutation.SetCreatedAt(v)
+		tdc.mutation.SetCreatedAt(v)
 	}
-	if _, ok := _c.mutation.ID(); !ok {
+	if _, ok := tdc.mutation.ID(); !ok {
 		v := taskdependency.DefaultID()
-		_c.mutation.SetID(v)
+		tdc.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *TaskDependencyCreate) check() error {
-	if _, ok := _c.mutation.TaskID(); !ok {
+func (tdc *TaskDependencyCreate) check() error {
+	if _, ok := tdc.mutation.TaskID(); !ok {
 		return &ValidationError{Name: "task_id", err: errors.New(`ent: missing required field "TaskDependency.task_id"`)}
 	}
-	if _, ok := _c.mutation.DependsOnTaskID(); !ok {
+	if _, ok := tdc.mutation.DependsOnTaskID(); !ok {
 		return &ValidationError{Name: "depends_on_task_id", err: errors.New(`ent: missing required field "TaskDependency.depends_on_task_id"`)}
 	}
-	if _, ok := _c.mutation.DependencyType(); !ok {
+	if _, ok := tdc.mutation.DependencyType(); !ok {
 		return &ValidationError{Name: "dependency_type", err: errors.New(`ent: missing required field "TaskDependency.dependency_type"`)}
 	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+	if _, ok := tdc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "TaskDependency.created_at"`)}
 	}
-	if len(_c.mutation.TaskIDs()) == 0 {
+	if _, ok := tdc.mutation.TaskID(); !ok {
 		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "TaskDependency.task"`)}
 	}
 	return nil
 }
 
-func (_c *TaskDependencyCreate) sqlSave(ctx context.Context) (*TaskDependency, error) {
-	if err := _c.check(); err != nil {
+func (tdc *TaskDependencyCreate) sqlSave(ctx context.Context) (*TaskDependency, error) {
+	if err := tdc.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := _c.createSpec()
-	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
+	_node, _spec := tdc.createSpec()
+	if err := sqlgraph.CreateNode(ctx, tdc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -168,33 +168,33 @@ func (_c *TaskDependencyCreate) sqlSave(ctx context.Context) (*TaskDependency, e
 			return nil, err
 		}
 	}
-	_c.mutation.id = &_node.ID
-	_c.mutation.done = true
+	tdc.mutation.id = &_node.ID
+	tdc.mutation.done = true
 	return _node, nil
 }
 
-func (_c *TaskDependencyCreate) createSpec() (*TaskDependency, *sqlgraph.CreateSpec) {
+func (tdc *TaskDependencyCreate) createSpec() (*TaskDependency, *sqlgraph.CreateSpec) {
 	var (
-		_node = &TaskDependency{config: _c.config}
+		_node = &TaskDependency{config: tdc.config}
 		_spec = sqlgraph.NewCreateSpec(taskdependency.Table, sqlgraph.NewFieldSpec(taskdependency.FieldID, field.TypeUUID))
 	)
-	if id, ok := _c.mutation.ID(); ok {
+	if id, ok := tdc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.DependsOnTaskID(); ok {
+	if value, ok := tdc.mutation.DependsOnTaskID(); ok {
 		_spec.SetField(taskdependency.FieldDependsOnTaskID, field.TypeUUID, value)
 		_node.DependsOnTaskID = value
 	}
-	if value, ok := _c.mutation.DependencyType(); ok {
+	if value, ok := tdc.mutation.DependencyType(); ok {
 		_spec.SetField(taskdependency.FieldDependencyType, field.TypeString, value)
 		_node.DependencyType = value
 	}
-	if value, ok := _c.mutation.CreatedAt(); ok {
+	if value, ok := tdc.mutation.CreatedAt(); ok {
 		_spec.SetField(taskdependency.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if nodes := _c.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := tdc.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -222,16 +222,16 @@ type TaskDependencyCreateBulk struct {
 }
 
 // Save creates the TaskDependency entities in the database.
-func (_c *TaskDependencyCreateBulk) Save(ctx context.Context) ([]*TaskDependency, error) {
-	if _c.err != nil {
-		return nil, _c.err
+func (tdcb *TaskDependencyCreateBulk) Save(ctx context.Context) ([]*TaskDependency, error) {
+	if tdcb.err != nil {
+		return nil, tdcb.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*TaskDependency, len(_c.builders))
-	mutators := make([]Mutator, len(_c.builders))
-	for i := range _c.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(tdcb.builders))
+	nodes := make([]*TaskDependency, len(tdcb.builders))
+	mutators := make([]Mutator, len(tdcb.builders))
+	for i := range tdcb.builders {
 		func(i int, root context.Context) {
-			builder := _c.builders[i]
+			builder := tdcb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TaskDependencyMutation)
@@ -245,11 +245,11 @@ func (_c *TaskDependencyCreateBulk) Save(ctx context.Context) ([]*TaskDependency
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, tdcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, tdcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -269,7 +269,7 @@ func (_c *TaskDependencyCreateBulk) Save(ctx context.Context) ([]*TaskDependency
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, tdcb.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -277,8 +277,8 @@ func (_c *TaskDependencyCreateBulk) Save(ctx context.Context) ([]*TaskDependency
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *TaskDependencyCreateBulk) SaveX(ctx context.Context) []*TaskDependency {
-	v, err := _c.Save(ctx)
+func (tdcb *TaskDependencyCreateBulk) SaveX(ctx context.Context) []*TaskDependency {
+	v, err := tdcb.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -286,14 +286,14 @@ func (_c *TaskDependencyCreateBulk) SaveX(ctx context.Context) []*TaskDependency
 }
 
 // Exec executes the query.
-func (_c *TaskDependencyCreateBulk) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (tdcb *TaskDependencyCreateBulk) Exec(ctx context.Context) error {
+	_, err := tdcb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *TaskDependencyCreateBulk) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (tdcb *TaskDependencyCreateBulk) ExecX(ctx context.Context) {
+	if err := tdcb.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

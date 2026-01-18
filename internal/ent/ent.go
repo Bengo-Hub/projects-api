@@ -82,8 +82,8 @@ var (
 	columnCheck sql.ColumnCheck
 )
 
-// checkColumn checks if the column exists in the given table.
-func checkColumn(t, c string) error {
+// columnChecker checks if the column exists in the given table.
+func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			activity.Table:        activity.ValidColumn,
@@ -102,7 +102,7 @@ func checkColumn(t, c string) error {
 			userrole.Table:        userrole.ValidColumn,
 		})
 	})
-	return columnCheck(t, c)
+	return columnCheck(table, column)
 }
 
 // Asc applies the given fields in ASC order.

@@ -24,123 +24,123 @@ type CommentCreate struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_c *CommentCreate) SetTenantID(v uuid.UUID) *CommentCreate {
-	_c.mutation.SetTenantID(v)
-	return _c
+func (cc *CommentCreate) SetTenantID(u uuid.UUID) *CommentCreate {
+	cc.mutation.SetTenantID(u)
+	return cc
 }
 
 // SetProjectID sets the "project_id" field.
-func (_c *CommentCreate) SetProjectID(v uuid.UUID) *CommentCreate {
-	_c.mutation.SetProjectID(v)
-	return _c
+func (cc *CommentCreate) SetProjectID(u uuid.UUID) *CommentCreate {
+	cc.mutation.SetProjectID(u)
+	return cc
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_c *CommentCreate) SetNillableProjectID(v *uuid.UUID) *CommentCreate {
-	if v != nil {
-		_c.SetProjectID(*v)
+func (cc *CommentCreate) SetNillableProjectID(u *uuid.UUID) *CommentCreate {
+	if u != nil {
+		cc.SetProjectID(*u)
 	}
-	return _c
+	return cc
 }
 
 // SetTaskID sets the "task_id" field.
-func (_c *CommentCreate) SetTaskID(v uuid.UUID) *CommentCreate {
-	_c.mutation.SetTaskID(v)
-	return _c
+func (cc *CommentCreate) SetTaskID(u uuid.UUID) *CommentCreate {
+	cc.mutation.SetTaskID(u)
+	return cc
 }
 
 // SetNillableTaskID sets the "task_id" field if the given value is not nil.
-func (_c *CommentCreate) SetNillableTaskID(v *uuid.UUID) *CommentCreate {
-	if v != nil {
-		_c.SetTaskID(*v)
+func (cc *CommentCreate) SetNillableTaskID(u *uuid.UUID) *CommentCreate {
+	if u != nil {
+		cc.SetTaskID(*u)
 	}
-	return _c
+	return cc
 }
 
 // SetUserID sets the "user_id" field.
-func (_c *CommentCreate) SetUserID(v uuid.UUID) *CommentCreate {
-	_c.mutation.SetUserID(v)
-	return _c
+func (cc *CommentCreate) SetUserID(u uuid.UUID) *CommentCreate {
+	cc.mutation.SetUserID(u)
+	return cc
 }
 
 // SetContent sets the "content" field.
-func (_c *CommentCreate) SetContent(v string) *CommentCreate {
-	_c.mutation.SetContent(v)
-	return _c
+func (cc *CommentCreate) SetContent(s string) *CommentCreate {
+	cc.mutation.SetContent(s)
+	return cc
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_c *CommentCreate) SetCreatedAt(v time.Time) *CommentCreate {
-	_c.mutation.SetCreatedAt(v)
-	return _c
+func (cc *CommentCreate) SetCreatedAt(t time.Time) *CommentCreate {
+	cc.mutation.SetCreatedAt(t)
+	return cc
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_c *CommentCreate) SetNillableCreatedAt(v *time.Time) *CommentCreate {
-	if v != nil {
-		_c.SetCreatedAt(*v)
+func (cc *CommentCreate) SetNillableCreatedAt(t *time.Time) *CommentCreate {
+	if t != nil {
+		cc.SetCreatedAt(*t)
 	}
-	return _c
+	return cc
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_c *CommentCreate) SetUpdatedAt(v time.Time) *CommentCreate {
-	_c.mutation.SetUpdatedAt(v)
-	return _c
+func (cc *CommentCreate) SetUpdatedAt(t time.Time) *CommentCreate {
+	cc.mutation.SetUpdatedAt(t)
+	return cc
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (_c *CommentCreate) SetNillableUpdatedAt(v *time.Time) *CommentCreate {
-	if v != nil {
-		_c.SetUpdatedAt(*v)
+func (cc *CommentCreate) SetNillableUpdatedAt(t *time.Time) *CommentCreate {
+	if t != nil {
+		cc.SetUpdatedAt(*t)
 	}
-	return _c
+	return cc
 }
 
 // SetMetadata sets the "metadata" field.
-func (_c *CommentCreate) SetMetadata(v map[string]interface{}) *CommentCreate {
-	_c.mutation.SetMetadata(v)
-	return _c
+func (cc *CommentCreate) SetMetadata(m map[string]interface{}) *CommentCreate {
+	cc.mutation.SetMetadata(m)
+	return cc
 }
 
 // SetID sets the "id" field.
-func (_c *CommentCreate) SetID(v uuid.UUID) *CommentCreate {
-	_c.mutation.SetID(v)
-	return _c
+func (cc *CommentCreate) SetID(u uuid.UUID) *CommentCreate {
+	cc.mutation.SetID(u)
+	return cc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (_c *CommentCreate) SetNillableID(v *uuid.UUID) *CommentCreate {
-	if v != nil {
-		_c.SetID(*v)
+func (cc *CommentCreate) SetNillableID(u *uuid.UUID) *CommentCreate {
+	if u != nil {
+		cc.SetID(*u)
 	}
-	return _c
+	return cc
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_c *CommentCreate) SetProject(v *Project) *CommentCreate {
-	return _c.SetProjectID(v.ID)
+func (cc *CommentCreate) SetProject(p *Project) *CommentCreate {
+	return cc.SetProjectID(p.ID)
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (_c *CommentCreate) SetTask(v *Task) *CommentCreate {
-	return _c.SetTaskID(v.ID)
+func (cc *CommentCreate) SetTask(t *Task) *CommentCreate {
+	return cc.SetTaskID(t.ID)
 }
 
 // Mutation returns the CommentMutation object of the builder.
-func (_c *CommentCreate) Mutation() *CommentMutation {
-	return _c.mutation
+func (cc *CommentCreate) Mutation() *CommentMutation {
+	return cc.mutation
 }
 
 // Save creates the Comment in the database.
-func (_c *CommentCreate) Save(ctx context.Context) (*Comment, error) {
-	_c.defaults()
-	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
+func (cc *CommentCreate) Save(ctx context.Context) (*Comment, error) {
+	cc.defaults()
+	return withHooks(ctx, cc.sqlSave, cc.mutation, cc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *CommentCreate) SaveX(ctx context.Context) *Comment {
-	v, err := _c.Save(ctx)
+func (cc *CommentCreate) SaveX(ctx context.Context) *Comment {
+	v, err := cc.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -148,65 +148,65 @@ func (_c *CommentCreate) SaveX(ctx context.Context) *Comment {
 }
 
 // Exec executes the query.
-func (_c *CommentCreate) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (cc *CommentCreate) Exec(ctx context.Context) error {
+	_, err := cc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *CommentCreate) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (cc *CommentCreate) ExecX(ctx context.Context) {
+	if err := cc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *CommentCreate) defaults() {
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+func (cc *CommentCreate) defaults() {
+	if _, ok := cc.mutation.CreatedAt(); !ok {
 		v := comment.DefaultCreatedAt()
-		_c.mutation.SetCreatedAt(v)
+		cc.mutation.SetCreatedAt(v)
 	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
+	if _, ok := cc.mutation.UpdatedAt(); !ok {
 		v := comment.DefaultUpdatedAt()
-		_c.mutation.SetUpdatedAt(v)
+		cc.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.ID(); !ok {
+	if _, ok := cc.mutation.ID(); !ok {
 		v := comment.DefaultID()
-		_c.mutation.SetID(v)
+		cc.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *CommentCreate) check() error {
-	if _, ok := _c.mutation.TenantID(); !ok {
+func (cc *CommentCreate) check() error {
+	if _, ok := cc.mutation.TenantID(); !ok {
 		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Comment.tenant_id"`)}
 	}
-	if _, ok := _c.mutation.UserID(); !ok {
+	if _, ok := cc.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Comment.user_id"`)}
 	}
-	if _, ok := _c.mutation.Content(); !ok {
+	if _, ok := cc.mutation.Content(); !ok {
 		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "Comment.content"`)}
 	}
-	if v, ok := _c.mutation.Content(); ok {
+	if v, ok := cc.mutation.Content(); ok {
 		if err := comment.ContentValidator(v); err != nil {
 			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Comment.content": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.CreatedAt(); !ok {
+	if _, ok := cc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Comment.created_at"`)}
 	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
+	if _, ok := cc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Comment.updated_at"`)}
 	}
 	return nil
 }
 
-func (_c *CommentCreate) sqlSave(ctx context.Context) (*Comment, error) {
-	if err := _c.check(); err != nil {
+func (cc *CommentCreate) sqlSave(ctx context.Context) (*Comment, error) {
+	if err := cc.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := _c.createSpec()
-	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
+	_node, _spec := cc.createSpec()
+	if err := sqlgraph.CreateNode(ctx, cc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -219,45 +219,45 @@ func (_c *CommentCreate) sqlSave(ctx context.Context) (*Comment, error) {
 			return nil, err
 		}
 	}
-	_c.mutation.id = &_node.ID
-	_c.mutation.done = true
+	cc.mutation.id = &_node.ID
+	cc.mutation.done = true
 	return _node, nil
 }
 
-func (_c *CommentCreate) createSpec() (*Comment, *sqlgraph.CreateSpec) {
+func (cc *CommentCreate) createSpec() (*Comment, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Comment{config: _c.config}
+		_node = &Comment{config: cc.config}
 		_spec = sqlgraph.NewCreateSpec(comment.Table, sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID))
 	)
-	if id, ok := _c.mutation.ID(); ok {
+	if id, ok := cc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.TenantID(); ok {
+	if value, ok := cc.mutation.TenantID(); ok {
 		_spec.SetField(comment.FieldTenantID, field.TypeUUID, value)
 		_node.TenantID = value
 	}
-	if value, ok := _c.mutation.UserID(); ok {
+	if value, ok := cc.mutation.UserID(); ok {
 		_spec.SetField(comment.FieldUserID, field.TypeUUID, value)
 		_node.UserID = value
 	}
-	if value, ok := _c.mutation.Content(); ok {
+	if value, ok := cc.mutation.Content(); ok {
 		_spec.SetField(comment.FieldContent, field.TypeString, value)
 		_node.Content = value
 	}
-	if value, ok := _c.mutation.CreatedAt(); ok {
+	if value, ok := cc.mutation.CreatedAt(); ok {
 		_spec.SetField(comment.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := _c.mutation.UpdatedAt(); ok {
+	if value, ok := cc.mutation.UpdatedAt(); ok {
 		_spec.SetField(comment.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := _c.mutation.Metadata(); ok {
+	if value, ok := cc.mutation.Metadata(); ok {
 		_spec.SetField(comment.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
 	}
-	if nodes := _c.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := cc.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -274,7 +274,7 @@ func (_c *CommentCreate) createSpec() (*Comment, *sqlgraph.CreateSpec) {
 		_node.ProjectID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := cc.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -302,16 +302,16 @@ type CommentCreateBulk struct {
 }
 
 // Save creates the Comment entities in the database.
-func (_c *CommentCreateBulk) Save(ctx context.Context) ([]*Comment, error) {
-	if _c.err != nil {
-		return nil, _c.err
+func (ccb *CommentCreateBulk) Save(ctx context.Context) ([]*Comment, error) {
+	if ccb.err != nil {
+		return nil, ccb.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*Comment, len(_c.builders))
-	mutators := make([]Mutator, len(_c.builders))
-	for i := range _c.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(ccb.builders))
+	nodes := make([]*Comment, len(ccb.builders))
+	mutators := make([]Mutator, len(ccb.builders))
+	for i := range ccb.builders {
 		func(i int, root context.Context) {
-			builder := _c.builders[i]
+			builder := ccb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*CommentMutation)
@@ -325,11 +325,11 @@ func (_c *CommentCreateBulk) Save(ctx context.Context) ([]*Comment, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, ccb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, ccb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -349,7 +349,7 @@ func (_c *CommentCreateBulk) Save(ctx context.Context) ([]*Comment, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, ccb.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -357,8 +357,8 @@ func (_c *CommentCreateBulk) Save(ctx context.Context) ([]*Comment, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *CommentCreateBulk) SaveX(ctx context.Context) []*Comment {
-	v, err := _c.Save(ctx)
+func (ccb *CommentCreateBulk) SaveX(ctx context.Context) []*Comment {
+	v, err := ccb.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -366,14 +366,14 @@ func (_c *CommentCreateBulk) SaveX(ctx context.Context) []*Comment {
 }
 
 // Exec executes the query.
-func (_c *CommentCreateBulk) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (ccb *CommentCreateBulk) Exec(ctx context.Context) error {
+	_, err := ccb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *CommentCreateBulk) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (ccb *CommentCreateBulk) ExecX(ctx context.Context) {
+	if err := ccb.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

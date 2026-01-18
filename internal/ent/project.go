@@ -146,7 +146,7 @@ func (*Project) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Project fields.
-func (_m *Project) assignValues(columns []string, values []any) error {
+func (pr *Project) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -156,84 +156,84 @@ func (_m *Project) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				pr.ID = *value
 			}
 		case project.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				pr.TenantID = *value
 			}
 		case project.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				_m.Name = value.String
+				pr.Name = value.String
 			}
 		case project.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
-				_m.Description = value.String
+				pr.Description = value.String
 			}
 		case project.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
-				_m.Status = value.String
+				pr.Status = value.String
 			}
 		case project.FieldStartDate:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field start_date", values[i])
 			} else if value.Valid {
-				_m.StartDate = value.Time
+				pr.StartDate = value.Time
 			}
 		case project.FieldEndDate:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field end_date", values[i])
 			} else if value.Valid {
-				_m.EndDate = value.Time
+				pr.EndDate = value.Time
 			}
 		case project.FieldBudget:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field budget", values[i])
 			} else if value.Valid {
-				_m.Budget = value.Float64
+				pr.Budget = value.Float64
 			}
 		case project.FieldCurrency:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field currency", values[i])
 			} else if value.Valid {
-				_m.Currency = value.String
+				pr.Currency = value.String
 			}
 		case project.FieldOwnerID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field owner_id", values[i])
 			} else if value != nil {
-				_m.OwnerID = *value
+				pr.OwnerID = *value
 			}
 		case project.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				_m.CreatedAt = value.Time
+				pr.CreatedAt = value.Time
 			}
 		case project.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				_m.UpdatedAt = value.Time
+				pr.UpdatedAt = value.Time
 			}
 		case project.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Metadata); err != nil {
+				if err := json.Unmarshal(*value, &pr.Metadata); err != nil {
 					return fmt.Errorf("unmarshal field metadata: %w", err)
 				}
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			pr.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -241,98 +241,98 @@ func (_m *Project) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Project.
 // This includes values selected through modifiers, order, etc.
-func (_m *Project) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (pr *Project) Value(name string) (ent.Value, error) {
+	return pr.selectValues.Get(name)
 }
 
 // QueryTasks queries the "tasks" edge of the Project entity.
-func (_m *Project) QueryTasks() *TaskQuery {
-	return NewProjectClient(_m.config).QueryTasks(_m)
+func (pr *Project) QueryTasks() *TaskQuery {
+	return NewProjectClient(pr.config).QueryTasks(pr)
 }
 
 // QueryMembers queries the "members" edge of the Project entity.
-func (_m *Project) QueryMembers() *ProjectMemberQuery {
-	return NewProjectClient(_m.config).QueryMembers(_m)
+func (pr *Project) QueryMembers() *ProjectMemberQuery {
+	return NewProjectClient(pr.config).QueryMembers(pr)
 }
 
 // QueryMilestones queries the "milestones" edge of the Project entity.
-func (_m *Project) QueryMilestones() *MilestoneQuery {
-	return NewProjectClient(_m.config).QueryMilestones(_m)
+func (pr *Project) QueryMilestones() *MilestoneQuery {
+	return NewProjectClient(pr.config).QueryMilestones(pr)
 }
 
 // QueryComments queries the "comments" edge of the Project entity.
-func (_m *Project) QueryComments() *CommentQuery {
-	return NewProjectClient(_m.config).QueryComments(_m)
+func (pr *Project) QueryComments() *CommentQuery {
+	return NewProjectClient(pr.config).QueryComments(pr)
 }
 
 // QueryActivities queries the "activities" edge of the Project entity.
-func (_m *Project) QueryActivities() *ActivityQuery {
-	return NewProjectClient(_m.config).QueryActivities(_m)
+func (pr *Project) QueryActivities() *ActivityQuery {
+	return NewProjectClient(pr.config).QueryActivities(pr)
 }
 
 // QueryAttachments queries the "attachments" edge of the Project entity.
-func (_m *Project) QueryAttachments() *AttachmentQuery {
-	return NewProjectClient(_m.config).QueryAttachments(_m)
+func (pr *Project) QueryAttachments() *AttachmentQuery {
+	return NewProjectClient(pr.config).QueryAttachments(pr)
 }
 
 // Update returns a builder for updating this Project.
 // Note that you need to call Project.Unwrap() before calling this method if this Project
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *Project) Update() *ProjectUpdateOne {
-	return NewProjectClient(_m.config).UpdateOne(_m)
+func (pr *Project) Update() *ProjectUpdateOne {
+	return NewProjectClient(pr.config).UpdateOne(pr)
 }
 
 // Unwrap unwraps the Project entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *Project) Unwrap() *Project {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (pr *Project) Unwrap() *Project {
+	_tx, ok := pr.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Project is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	pr.config.driver = _tx.drv
+	return pr
 }
 
 // String implements the fmt.Stringer.
-func (_m *Project) String() string {
+func (pr *Project) String() string {
 	var builder strings.Builder
 	builder.WriteString("Project(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", pr.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", pr.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(_m.Name)
+	builder.WriteString(pr.Name)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
-	builder.WriteString(_m.Description)
+	builder.WriteString(pr.Description)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
-	builder.WriteString(_m.Status)
+	builder.WriteString(pr.Status)
 	builder.WriteString(", ")
 	builder.WriteString("start_date=")
-	builder.WriteString(_m.StartDate.Format(time.ANSIC))
+	builder.WriteString(pr.StartDate.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("end_date=")
-	builder.WriteString(_m.EndDate.Format(time.ANSIC))
+	builder.WriteString(pr.EndDate.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("budget=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Budget))
+	builder.WriteString(fmt.Sprintf("%v", pr.Budget))
 	builder.WriteString(", ")
 	builder.WriteString("currency=")
-	builder.WriteString(_m.Currency)
+	builder.WriteString(pr.Currency)
 	builder.WriteString(", ")
 	builder.WriteString("owner_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.OwnerID))
+	builder.WriteString(fmt.Sprintf("%v", pr.OwnerID))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(pr.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(pr.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))
+	builder.WriteString(fmt.Sprintf("%v", pr.Metadata))
 	builder.WriteByte(')')
 	return builder.String()
 }

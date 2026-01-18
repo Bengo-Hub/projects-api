@@ -20,56 +20,56 @@ type MilestoneDelete struct {
 }
 
 // Where appends a list predicates to the MilestoneDelete builder.
-func (_d *MilestoneDelete) Where(ps ...predicate.Milestone) *MilestoneDelete {
-	_d.mutation.Where(ps...)
-	return _d
+func (md *MilestoneDelete) Where(ps ...predicate.Milestone) *MilestoneDelete {
+	md.mutation.Where(ps...)
+	return md
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *MilestoneDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
+func (md *MilestoneDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, md.sqlExec, md.mutation, md.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *MilestoneDelete) ExecX(ctx context.Context) int {
-	n, err := _d.Exec(ctx)
+func (md *MilestoneDelete) ExecX(ctx context.Context) int {
+	n, err := md.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (_d *MilestoneDelete) sqlExec(ctx context.Context) (int, error) {
+func (md *MilestoneDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(milestone.Table, sqlgraph.NewFieldSpec(milestone.FieldID, field.TypeUUID))
-	if ps := _d.mutation.predicates; len(ps) > 0 {
+	if ps := md.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, md.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	_d.mutation.done = true
+	md.mutation.done = true
 	return affected, err
 }
 
 // MilestoneDeleteOne is the builder for deleting a single Milestone entity.
 type MilestoneDeleteOne struct {
-	_d *MilestoneDelete
+	md *MilestoneDelete
 }
 
 // Where appends a list predicates to the MilestoneDelete builder.
-func (_d *MilestoneDeleteOne) Where(ps ...predicate.Milestone) *MilestoneDeleteOne {
-	_d._d.mutation.Where(ps...)
-	return _d
+func (mdo *MilestoneDeleteOne) Where(ps ...predicate.Milestone) *MilestoneDeleteOne {
+	mdo.md.mutation.Where(ps...)
+	return mdo
 }
 
 // Exec executes the deletion query.
-func (_d *MilestoneDeleteOne) Exec(ctx context.Context) error {
-	n, err := _d._d.Exec(ctx)
+func (mdo *MilestoneDeleteOne) Exec(ctx context.Context) error {
+	n, err := mdo.md.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -81,8 +81,8 @@ func (_d *MilestoneDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *MilestoneDeleteOne) ExecX(ctx context.Context) {
-	if err := _d.Exec(ctx); err != nil {
+func (mdo *MilestoneDeleteOne) ExecX(ctx context.Context) {
+	if err := mdo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

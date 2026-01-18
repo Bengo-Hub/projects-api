@@ -96,7 +96,7 @@ func (*Activity) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Activity fields.
-func (_m *Activity) assignValues(columns []string, values []any) error {
+func (a *Activity) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -106,43 +106,43 @@ func (_m *Activity) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				a.ID = *value
 			}
 		case activity.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				a.TenantID = *value
 			}
 		case activity.FieldProjectID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field project_id", values[i])
 			} else if value != nil {
-				_m.ProjectID = *value
+				a.ProjectID = *value
 			}
 		case activity.FieldTaskID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field task_id", values[i])
 			} else if value != nil {
-				_m.TaskID = *value
+				a.TaskID = *value
 			}
 		case activity.FieldUserID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field user_id", values[i])
 			} else if value != nil {
-				_m.UserID = *value
+				a.UserID = *value
 			}
 		case activity.FieldActivityType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field activity_type", values[i])
 			} else if value.Valid {
-				_m.ActivityType = value.String
+				a.ActivityType = value.String
 			}
 		case activity.FieldPayload:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field payload", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Payload); err != nil {
+				if err := json.Unmarshal(*value, &a.Payload); err != nil {
 					return fmt.Errorf("unmarshal field payload: %w", err)
 				}
 			}
@@ -150,10 +150,10 @@ func (_m *Activity) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field occurred_at", values[i])
 			} else if value.Valid {
-				_m.OccurredAt = value.Time
+				a.OccurredAt = value.Time
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -161,63 +161,63 @@ func (_m *Activity) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Activity.
 // This includes values selected through modifiers, order, etc.
-func (_m *Activity) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (a *Activity) Value(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
 }
 
 // QueryProject queries the "project" edge of the Activity entity.
-func (_m *Activity) QueryProject() *ProjectQuery {
-	return NewActivityClient(_m.config).QueryProject(_m)
+func (a *Activity) QueryProject() *ProjectQuery {
+	return NewActivityClient(a.config).QueryProject(a)
 }
 
 // QueryTask queries the "task" edge of the Activity entity.
-func (_m *Activity) QueryTask() *TaskQuery {
-	return NewActivityClient(_m.config).QueryTask(_m)
+func (a *Activity) QueryTask() *TaskQuery {
+	return NewActivityClient(a.config).QueryTask(a)
 }
 
 // Update returns a builder for updating this Activity.
 // Note that you need to call Activity.Unwrap() before calling this method if this Activity
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *Activity) Update() *ActivityUpdateOne {
-	return NewActivityClient(_m.config).UpdateOne(_m)
+func (a *Activity) Update() *ActivityUpdateOne {
+	return NewActivityClient(a.config).UpdateOne(a)
 }
 
 // Unwrap unwraps the Activity entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *Activity) Unwrap() *Activity {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (a *Activity) Unwrap() *Activity {
+	_tx, ok := a.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Activity is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	a.config.driver = _tx.drv
+	return a
 }
 
 // String implements the fmt.Stringer.
-func (_m *Activity) String() string {
+func (a *Activity) String() string {
 	var builder strings.Builder
 	builder.WriteString("Activity(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", a.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", a.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("project_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ProjectID))
+	builder.WriteString(fmt.Sprintf("%v", a.ProjectID))
 	builder.WriteString(", ")
 	builder.WriteString("task_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TaskID))
+	builder.WriteString(fmt.Sprintf("%v", a.TaskID))
 	builder.WriteString(", ")
 	builder.WriteString("user_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString(fmt.Sprintf("%v", a.UserID))
 	builder.WriteString(", ")
 	builder.WriteString("activity_type=")
-	builder.WriteString(_m.ActivityType)
+	builder.WriteString(a.ActivityType)
 	builder.WriteString(", ")
 	builder.WriteString("payload=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Payload))
+	builder.WriteString(fmt.Sprintf("%v", a.Payload))
 	builder.WriteString(", ")
 	builder.WriteString("occurred_at=")
-	builder.WriteString(_m.OccurredAt.Format(time.ANSIC))
+	builder.WriteString(a.OccurredAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

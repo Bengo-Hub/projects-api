@@ -87,7 +87,7 @@ func (*Role) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Role fields.
-func (_m *Role) assignValues(columns []string, values []any) error {
+func (r *Role) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -97,31 +97,31 @@ func (_m *Role) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value.Valid {
-				_m.ID = value.String
+				r.ID = value.String
 			}
 		case role.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				_m.Name = value.String
+				r.Name = value.String
 			}
 		case role.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
-				_m.Description = value.String
+				r.Description = value.String
 			}
 		case role.FieldIsSystem:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field is_system", values[i])
 			} else if value.Valid {
-				_m.IsSystem = value.Bool
+				r.IsSystem = value.Bool
 			}
 		case role.FieldPermissions:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field permissions", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Permissions); err != nil {
+				if err := json.Unmarshal(*value, &r.Permissions); err != nil {
 					return fmt.Errorf("unmarshal field permissions: %w", err)
 				}
 			}
@@ -129,16 +129,16 @@ func (_m *Role) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				_m.CreatedAt = value.Time
+				r.CreatedAt = value.Time
 			}
 		case role.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				_m.UpdatedAt = value.Time
+				r.UpdatedAt = value.Time
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			r.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -146,60 +146,60 @@ func (_m *Role) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Role.
 // This includes values selected through modifiers, order, etc.
-func (_m *Role) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (r *Role) Value(name string) (ent.Value, error) {
+	return r.selectValues.Get(name)
 }
 
 // QueryUserRoles queries the "user_roles" edge of the Role entity.
-func (_m *Role) QueryUserRoles() *UserRoleQuery {
-	return NewRoleClient(_m.config).QueryUserRoles(_m)
+func (r *Role) QueryUserRoles() *UserRoleQuery {
+	return NewRoleClient(r.config).QueryUserRoles(r)
 }
 
 // QueryRolePermissions queries the "role_permissions" edge of the Role entity.
-func (_m *Role) QueryRolePermissions() *RolePermissionQuery {
-	return NewRoleClient(_m.config).QueryRolePermissions(_m)
+func (r *Role) QueryRolePermissions() *RolePermissionQuery {
+	return NewRoleClient(r.config).QueryRolePermissions(r)
 }
 
 // Update returns a builder for updating this Role.
 // Note that you need to call Role.Unwrap() before calling this method if this Role
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *Role) Update() *RoleUpdateOne {
-	return NewRoleClient(_m.config).UpdateOne(_m)
+func (r *Role) Update() *RoleUpdateOne {
+	return NewRoleClient(r.config).UpdateOne(r)
 }
 
 // Unwrap unwraps the Role entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *Role) Unwrap() *Role {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (r *Role) Unwrap() *Role {
+	_tx, ok := r.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Role is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	r.config.driver = _tx.drv
+	return r
 }
 
 // String implements the fmt.Stringer.
-func (_m *Role) String() string {
+func (r *Role) String() string {
 	var builder strings.Builder
 	builder.WriteString("Role(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", r.ID))
 	builder.WriteString("name=")
-	builder.WriteString(_m.Name)
+	builder.WriteString(r.Name)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
-	builder.WriteString(_m.Description)
+	builder.WriteString(r.Description)
 	builder.WriteString(", ")
 	builder.WriteString("is_system=")
-	builder.WriteString(fmt.Sprintf("%v", _m.IsSystem))
+	builder.WriteString(fmt.Sprintf("%v", r.IsSystem))
 	builder.WriteString(", ")
 	builder.WriteString("permissions=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Permissions))
+	builder.WriteString(fmt.Sprintf("%v", r.Permissions))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(r.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(r.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

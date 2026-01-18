@@ -25,129 +25,129 @@ type UserRoleUpdate struct {
 }
 
 // Where appends a list predicates to the UserRoleUpdate builder.
-func (_u *UserRoleUpdate) Where(ps ...predicate.UserRole) *UserRoleUpdate {
-	_u.mutation.Where(ps...)
-	return _u
+func (uru *UserRoleUpdate) Where(ps ...predicate.UserRole) *UserRoleUpdate {
+	uru.mutation.Where(ps...)
+	return uru
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *UserRoleUpdate) SetTenantID(v uuid.UUID) *UserRoleUpdate {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (uru *UserRoleUpdate) SetTenantID(u uuid.UUID) *UserRoleUpdate {
+	uru.mutation.SetTenantID(u)
+	return uru
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *UserRoleUpdate) SetNillableTenantID(v *uuid.UUID) *UserRoleUpdate {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (uru *UserRoleUpdate) SetNillableTenantID(u *uuid.UUID) *UserRoleUpdate {
+	if u != nil {
+		uru.SetTenantID(*u)
 	}
-	return _u
+	return uru
 }
 
 // SetUserID sets the "user_id" field.
-func (_u *UserRoleUpdate) SetUserID(v uuid.UUID) *UserRoleUpdate {
-	_u.mutation.SetUserID(v)
-	return _u
+func (uru *UserRoleUpdate) SetUserID(u uuid.UUID) *UserRoleUpdate {
+	uru.mutation.SetUserID(u)
+	return uru
 }
 
 // SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *UserRoleUpdate) SetNillableUserID(v *uuid.UUID) *UserRoleUpdate {
-	if v != nil {
-		_u.SetUserID(*v)
+func (uru *UserRoleUpdate) SetNillableUserID(u *uuid.UUID) *UserRoleUpdate {
+	if u != nil {
+		uru.SetUserID(*u)
 	}
-	return _u
+	return uru
 }
 
 // SetRoleCode sets the "role_code" field.
-func (_u *UserRoleUpdate) SetRoleCode(v string) *UserRoleUpdate {
-	_u.mutation.SetRoleCode(v)
-	return _u
+func (uru *UserRoleUpdate) SetRoleCode(s string) *UserRoleUpdate {
+	uru.mutation.SetRoleCode(s)
+	return uru
 }
 
 // SetNillableRoleCode sets the "role_code" field if the given value is not nil.
-func (_u *UserRoleUpdate) SetNillableRoleCode(v *string) *UserRoleUpdate {
-	if v != nil {
-		_u.SetRoleCode(*v)
+func (uru *UserRoleUpdate) SetNillableRoleCode(s *string) *UserRoleUpdate {
+	if s != nil {
+		uru.SetRoleCode(*s)
 	}
-	return _u
+	return uru
 }
 
 // SetAssignedAt sets the "assigned_at" field.
-func (_u *UserRoleUpdate) SetAssignedAt(v time.Time) *UserRoleUpdate {
-	_u.mutation.SetAssignedAt(v)
-	return _u
+func (uru *UserRoleUpdate) SetAssignedAt(t time.Time) *UserRoleUpdate {
+	uru.mutation.SetAssignedAt(t)
+	return uru
 }
 
 // SetNillableAssignedAt sets the "assigned_at" field if the given value is not nil.
-func (_u *UserRoleUpdate) SetNillableAssignedAt(v *time.Time) *UserRoleUpdate {
-	if v != nil {
-		_u.SetAssignedAt(*v)
+func (uru *UserRoleUpdate) SetNillableAssignedAt(t *time.Time) *UserRoleUpdate {
+	if t != nil {
+		uru.SetAssignedAt(*t)
 	}
-	return _u
+	return uru
 }
 
 // SetAssignedBy sets the "assigned_by" field.
-func (_u *UserRoleUpdate) SetAssignedBy(v uuid.UUID) *UserRoleUpdate {
-	_u.mutation.SetAssignedBy(v)
-	return _u
+func (uru *UserRoleUpdate) SetAssignedBy(u uuid.UUID) *UserRoleUpdate {
+	uru.mutation.SetAssignedBy(u)
+	return uru
 }
 
 // SetNillableAssignedBy sets the "assigned_by" field if the given value is not nil.
-func (_u *UserRoleUpdate) SetNillableAssignedBy(v *uuid.UUID) *UserRoleUpdate {
-	if v != nil {
-		_u.SetAssignedBy(*v)
+func (uru *UserRoleUpdate) SetNillableAssignedBy(u *uuid.UUID) *UserRoleUpdate {
+	if u != nil {
+		uru.SetAssignedBy(*u)
 	}
-	return _u
+	return uru
 }
 
 // ClearAssignedBy clears the value of the "assigned_by" field.
-func (_u *UserRoleUpdate) ClearAssignedBy() *UserRoleUpdate {
-	_u.mutation.ClearAssignedBy()
-	return _u
+func (uru *UserRoleUpdate) ClearAssignedBy() *UserRoleUpdate {
+	uru.mutation.ClearAssignedBy()
+	return uru
 }
 
 // SetMetadata sets the "metadata" field.
-func (_u *UserRoleUpdate) SetMetadata(v map[string]interface{}) *UserRoleUpdate {
-	_u.mutation.SetMetadata(v)
-	return _u
+func (uru *UserRoleUpdate) SetMetadata(m map[string]interface{}) *UserRoleUpdate {
+	uru.mutation.SetMetadata(m)
+	return uru
 }
 
 // ClearMetadata clears the value of the "metadata" field.
-func (_u *UserRoleUpdate) ClearMetadata() *UserRoleUpdate {
-	_u.mutation.ClearMetadata()
-	return _u
+func (uru *UserRoleUpdate) ClearMetadata() *UserRoleUpdate {
+	uru.mutation.ClearMetadata()
+	return uru
 }
 
 // SetRoleID sets the "role" edge to the Role entity by ID.
-func (_u *UserRoleUpdate) SetRoleID(id string) *UserRoleUpdate {
-	_u.mutation.SetRoleID(id)
-	return _u
+func (uru *UserRoleUpdate) SetRoleID(id string) *UserRoleUpdate {
+	uru.mutation.SetRoleID(id)
+	return uru
 }
 
 // SetRole sets the "role" edge to the Role entity.
-func (_u *UserRoleUpdate) SetRole(v *Role) *UserRoleUpdate {
-	return _u.SetRoleID(v.ID)
+func (uru *UserRoleUpdate) SetRole(r *Role) *UserRoleUpdate {
+	return uru.SetRoleID(r.ID)
 }
 
 // Mutation returns the UserRoleMutation object of the builder.
-func (_u *UserRoleUpdate) Mutation() *UserRoleMutation {
-	return _u.mutation
+func (uru *UserRoleUpdate) Mutation() *UserRoleMutation {
+	return uru.mutation
 }
 
 // ClearRole clears the "role" edge to the Role entity.
-func (_u *UserRoleUpdate) ClearRole() *UserRoleUpdate {
-	_u.mutation.ClearRole()
-	return _u
+func (uru *UserRoleUpdate) ClearRole() *UserRoleUpdate {
+	uru.mutation.ClearRole()
+	return uru
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *UserRoleUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (uru *UserRoleUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, uru.sqlSave, uru.mutation, uru.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *UserRoleUpdate) SaveX(ctx context.Context) int {
-	affected, err := _u.Save(ctx)
+func (uru *UserRoleUpdate) SaveX(ctx context.Context) int {
+	affected, err := uru.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -155,60 +155,60 @@ func (_u *UserRoleUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *UserRoleUpdate) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (uru *UserRoleUpdate) Exec(ctx context.Context) error {
+	_, err := uru.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *UserRoleUpdate) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (uru *UserRoleUpdate) ExecX(ctx context.Context) {
+	if err := uru.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *UserRoleUpdate) check() error {
-	if _u.mutation.RoleCleared() && len(_u.mutation.RoleIDs()) > 0 {
+func (uru *UserRoleUpdate) check() error {
+	if _, ok := uru.mutation.RoleID(); uru.mutation.RoleCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "UserRole.role"`)
 	}
 	return nil
 }
 
-func (_u *UserRoleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
+func (uru *UserRoleUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := uru.check(); err != nil {
+		return n, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(userrole.Table, userrole.Columns, sqlgraph.NewFieldSpec(userrole.FieldID, field.TypeUUID))
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := uru.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := uru.mutation.TenantID(); ok {
 		_spec.SetField(userrole.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.UserID(); ok {
+	if value, ok := uru.mutation.UserID(); ok {
 		_spec.SetField(userrole.FieldUserID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.AssignedAt(); ok {
+	if value, ok := uru.mutation.AssignedAt(); ok {
 		_spec.SetField(userrole.FieldAssignedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.AssignedBy(); ok {
+	if value, ok := uru.mutation.AssignedBy(); ok {
 		_spec.SetField(userrole.FieldAssignedBy, field.TypeUUID, value)
 	}
-	if _u.mutation.AssignedByCleared() {
+	if uru.mutation.AssignedByCleared() {
 		_spec.ClearField(userrole.FieldAssignedBy, field.TypeUUID)
 	}
-	if value, ok := _u.mutation.Metadata(); ok {
+	if value, ok := uru.mutation.Metadata(); ok {
 		_spec.SetField(userrole.FieldMetadata, field.TypeJSON, value)
 	}
-	if _u.mutation.MetadataCleared() {
+	if uru.mutation.MetadataCleared() {
 		_spec.ClearField(userrole.FieldMetadata, field.TypeJSON)
 	}
-	if _u.mutation.RoleCleared() {
+	if uru.mutation.RoleCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -221,7 +221,7 @@ func (_u *UserRoleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RoleIDs(); len(nodes) > 0 {
+	if nodes := uru.mutation.RoleIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -237,7 +237,7 @@ func (_u *UserRoleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, uru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userrole.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -245,8 +245,8 @@ func (_u *UserRoleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		return 0, err
 	}
-	_u.mutation.done = true
-	return _node, nil
+	uru.mutation.done = true
+	return n, nil
 }
 
 // UserRoleUpdateOne is the builder for updating a single UserRole entity.
@@ -258,136 +258,136 @@ type UserRoleUpdateOne struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *UserRoleUpdateOne) SetTenantID(v uuid.UUID) *UserRoleUpdateOne {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (uruo *UserRoleUpdateOne) SetTenantID(u uuid.UUID) *UserRoleUpdateOne {
+	uruo.mutation.SetTenantID(u)
+	return uruo
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *UserRoleUpdateOne) SetNillableTenantID(v *uuid.UUID) *UserRoleUpdateOne {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (uruo *UserRoleUpdateOne) SetNillableTenantID(u *uuid.UUID) *UserRoleUpdateOne {
+	if u != nil {
+		uruo.SetTenantID(*u)
 	}
-	return _u
+	return uruo
 }
 
 // SetUserID sets the "user_id" field.
-func (_u *UserRoleUpdateOne) SetUserID(v uuid.UUID) *UserRoleUpdateOne {
-	_u.mutation.SetUserID(v)
-	return _u
+func (uruo *UserRoleUpdateOne) SetUserID(u uuid.UUID) *UserRoleUpdateOne {
+	uruo.mutation.SetUserID(u)
+	return uruo
 }
 
 // SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *UserRoleUpdateOne) SetNillableUserID(v *uuid.UUID) *UserRoleUpdateOne {
-	if v != nil {
-		_u.SetUserID(*v)
+func (uruo *UserRoleUpdateOne) SetNillableUserID(u *uuid.UUID) *UserRoleUpdateOne {
+	if u != nil {
+		uruo.SetUserID(*u)
 	}
-	return _u
+	return uruo
 }
 
 // SetRoleCode sets the "role_code" field.
-func (_u *UserRoleUpdateOne) SetRoleCode(v string) *UserRoleUpdateOne {
-	_u.mutation.SetRoleCode(v)
-	return _u
+func (uruo *UserRoleUpdateOne) SetRoleCode(s string) *UserRoleUpdateOne {
+	uruo.mutation.SetRoleCode(s)
+	return uruo
 }
 
 // SetNillableRoleCode sets the "role_code" field if the given value is not nil.
-func (_u *UserRoleUpdateOne) SetNillableRoleCode(v *string) *UserRoleUpdateOne {
-	if v != nil {
-		_u.SetRoleCode(*v)
+func (uruo *UserRoleUpdateOne) SetNillableRoleCode(s *string) *UserRoleUpdateOne {
+	if s != nil {
+		uruo.SetRoleCode(*s)
 	}
-	return _u
+	return uruo
 }
 
 // SetAssignedAt sets the "assigned_at" field.
-func (_u *UserRoleUpdateOne) SetAssignedAt(v time.Time) *UserRoleUpdateOne {
-	_u.mutation.SetAssignedAt(v)
-	return _u
+func (uruo *UserRoleUpdateOne) SetAssignedAt(t time.Time) *UserRoleUpdateOne {
+	uruo.mutation.SetAssignedAt(t)
+	return uruo
 }
 
 // SetNillableAssignedAt sets the "assigned_at" field if the given value is not nil.
-func (_u *UserRoleUpdateOne) SetNillableAssignedAt(v *time.Time) *UserRoleUpdateOne {
-	if v != nil {
-		_u.SetAssignedAt(*v)
+func (uruo *UserRoleUpdateOne) SetNillableAssignedAt(t *time.Time) *UserRoleUpdateOne {
+	if t != nil {
+		uruo.SetAssignedAt(*t)
 	}
-	return _u
+	return uruo
 }
 
 // SetAssignedBy sets the "assigned_by" field.
-func (_u *UserRoleUpdateOne) SetAssignedBy(v uuid.UUID) *UserRoleUpdateOne {
-	_u.mutation.SetAssignedBy(v)
-	return _u
+func (uruo *UserRoleUpdateOne) SetAssignedBy(u uuid.UUID) *UserRoleUpdateOne {
+	uruo.mutation.SetAssignedBy(u)
+	return uruo
 }
 
 // SetNillableAssignedBy sets the "assigned_by" field if the given value is not nil.
-func (_u *UserRoleUpdateOne) SetNillableAssignedBy(v *uuid.UUID) *UserRoleUpdateOne {
-	if v != nil {
-		_u.SetAssignedBy(*v)
+func (uruo *UserRoleUpdateOne) SetNillableAssignedBy(u *uuid.UUID) *UserRoleUpdateOne {
+	if u != nil {
+		uruo.SetAssignedBy(*u)
 	}
-	return _u
+	return uruo
 }
 
 // ClearAssignedBy clears the value of the "assigned_by" field.
-func (_u *UserRoleUpdateOne) ClearAssignedBy() *UserRoleUpdateOne {
-	_u.mutation.ClearAssignedBy()
-	return _u
+func (uruo *UserRoleUpdateOne) ClearAssignedBy() *UserRoleUpdateOne {
+	uruo.mutation.ClearAssignedBy()
+	return uruo
 }
 
 // SetMetadata sets the "metadata" field.
-func (_u *UserRoleUpdateOne) SetMetadata(v map[string]interface{}) *UserRoleUpdateOne {
-	_u.mutation.SetMetadata(v)
-	return _u
+func (uruo *UserRoleUpdateOne) SetMetadata(m map[string]interface{}) *UserRoleUpdateOne {
+	uruo.mutation.SetMetadata(m)
+	return uruo
 }
 
 // ClearMetadata clears the value of the "metadata" field.
-func (_u *UserRoleUpdateOne) ClearMetadata() *UserRoleUpdateOne {
-	_u.mutation.ClearMetadata()
-	return _u
+func (uruo *UserRoleUpdateOne) ClearMetadata() *UserRoleUpdateOne {
+	uruo.mutation.ClearMetadata()
+	return uruo
 }
 
 // SetRoleID sets the "role" edge to the Role entity by ID.
-func (_u *UserRoleUpdateOne) SetRoleID(id string) *UserRoleUpdateOne {
-	_u.mutation.SetRoleID(id)
-	return _u
+func (uruo *UserRoleUpdateOne) SetRoleID(id string) *UserRoleUpdateOne {
+	uruo.mutation.SetRoleID(id)
+	return uruo
 }
 
 // SetRole sets the "role" edge to the Role entity.
-func (_u *UserRoleUpdateOne) SetRole(v *Role) *UserRoleUpdateOne {
-	return _u.SetRoleID(v.ID)
+func (uruo *UserRoleUpdateOne) SetRole(r *Role) *UserRoleUpdateOne {
+	return uruo.SetRoleID(r.ID)
 }
 
 // Mutation returns the UserRoleMutation object of the builder.
-func (_u *UserRoleUpdateOne) Mutation() *UserRoleMutation {
-	return _u.mutation
+func (uruo *UserRoleUpdateOne) Mutation() *UserRoleMutation {
+	return uruo.mutation
 }
 
 // ClearRole clears the "role" edge to the Role entity.
-func (_u *UserRoleUpdateOne) ClearRole() *UserRoleUpdateOne {
-	_u.mutation.ClearRole()
-	return _u
+func (uruo *UserRoleUpdateOne) ClearRole() *UserRoleUpdateOne {
+	uruo.mutation.ClearRole()
+	return uruo
 }
 
 // Where appends a list predicates to the UserRoleUpdate builder.
-func (_u *UserRoleUpdateOne) Where(ps ...predicate.UserRole) *UserRoleUpdateOne {
-	_u.mutation.Where(ps...)
-	return _u
+func (uruo *UserRoleUpdateOne) Where(ps ...predicate.UserRole) *UserRoleUpdateOne {
+	uruo.mutation.Where(ps...)
+	return uruo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *UserRoleUpdateOne) Select(field string, fields ...string) *UserRoleUpdateOne {
-	_u.fields = append([]string{field}, fields...)
-	return _u
+func (uruo *UserRoleUpdateOne) Select(field string, fields ...string) *UserRoleUpdateOne {
+	uruo.fields = append([]string{field}, fields...)
+	return uruo
 }
 
 // Save executes the query and returns the updated UserRole entity.
-func (_u *UserRoleUpdateOne) Save(ctx context.Context) (*UserRole, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (uruo *UserRoleUpdateOne) Save(ctx context.Context) (*UserRole, error) {
+	return withHooks(ctx, uruo.sqlSave, uruo.mutation, uruo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *UserRoleUpdateOne) SaveX(ctx context.Context) *UserRole {
-	node, err := _u.Save(ctx)
+func (uruo *UserRoleUpdateOne) SaveX(ctx context.Context) *UserRole {
+	node, err := uruo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -395,37 +395,37 @@ func (_u *UserRoleUpdateOne) SaveX(ctx context.Context) *UserRole {
 }
 
 // Exec executes the query on the entity.
-func (_u *UserRoleUpdateOne) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (uruo *UserRoleUpdateOne) Exec(ctx context.Context) error {
+	_, err := uruo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *UserRoleUpdateOne) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (uruo *UserRoleUpdateOne) ExecX(ctx context.Context) {
+	if err := uruo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *UserRoleUpdateOne) check() error {
-	if _u.mutation.RoleCleared() && len(_u.mutation.RoleIDs()) > 0 {
+func (uruo *UserRoleUpdateOne) check() error {
+	if _, ok := uruo.mutation.RoleID(); uruo.mutation.RoleCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "UserRole.role"`)
 	}
 	return nil
 }
 
-func (_u *UserRoleUpdateOne) sqlSave(ctx context.Context) (_node *UserRole, err error) {
-	if err := _u.check(); err != nil {
+func (uruo *UserRoleUpdateOne) sqlSave(ctx context.Context) (_node *UserRole, err error) {
+	if err := uruo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(userrole.Table, userrole.Columns, sqlgraph.NewFieldSpec(userrole.FieldID, field.TypeUUID))
-	id, ok := _u.mutation.ID()
+	id, ok := uruo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "UserRole.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := _u.fields; len(fields) > 0 {
+	if fields := uruo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, userrole.FieldID)
 		for _, f := range fields {
@@ -437,35 +437,35 @@ func (_u *UserRoleUpdateOne) sqlSave(ctx context.Context) (_node *UserRole, err 
 			}
 		}
 	}
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := uruo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := uruo.mutation.TenantID(); ok {
 		_spec.SetField(userrole.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.UserID(); ok {
+	if value, ok := uruo.mutation.UserID(); ok {
 		_spec.SetField(userrole.FieldUserID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.AssignedAt(); ok {
+	if value, ok := uruo.mutation.AssignedAt(); ok {
 		_spec.SetField(userrole.FieldAssignedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.AssignedBy(); ok {
+	if value, ok := uruo.mutation.AssignedBy(); ok {
 		_spec.SetField(userrole.FieldAssignedBy, field.TypeUUID, value)
 	}
-	if _u.mutation.AssignedByCleared() {
+	if uruo.mutation.AssignedByCleared() {
 		_spec.ClearField(userrole.FieldAssignedBy, field.TypeUUID)
 	}
-	if value, ok := _u.mutation.Metadata(); ok {
+	if value, ok := uruo.mutation.Metadata(); ok {
 		_spec.SetField(userrole.FieldMetadata, field.TypeJSON, value)
 	}
-	if _u.mutation.MetadataCleared() {
+	if uruo.mutation.MetadataCleared() {
 		_spec.ClearField(userrole.FieldMetadata, field.TypeJSON)
 	}
-	if _u.mutation.RoleCleared() {
+	if uruo.mutation.RoleCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -478,7 +478,7 @@ func (_u *UserRoleUpdateOne) sqlSave(ctx context.Context) (_node *UserRole, err 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RoleIDs(); len(nodes) > 0 {
+	if nodes := uruo.mutation.RoleIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -494,10 +494,10 @@ func (_u *UserRoleUpdateOne) sqlSave(ctx context.Context) (_node *UserRole, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &UserRole{config: _u.config}
+	_node = &UserRole{config: uruo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, uruo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userrole.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -505,6 +505,6 @@ func (_u *UserRoleUpdateOne) sqlSave(ctx context.Context) (_node *UserRole, err 
 		}
 		return nil, err
 	}
-	_u.mutation.done = true
+	uruo.mutation.done = true
 	return _node, nil
 }

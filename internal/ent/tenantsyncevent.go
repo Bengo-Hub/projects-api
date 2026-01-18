@@ -56,7 +56,7 @@ func (*TenantSyncEvent) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the TenantSyncEvent fields.
-func (_m *TenantSyncEvent) assignValues(columns []string, values []any) error {
+func (tse *TenantSyncEvent) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -66,31 +66,31 @@ func (_m *TenantSyncEvent) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				tse.ID = *value
 			}
 		case tenantsyncevent.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				tse.TenantID = *value
 			}
 		case tenantsyncevent.FieldTenantSlug:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_slug", values[i])
 			} else if value.Valid {
-				_m.TenantSlug = value.String
+				tse.TenantSlug = value.String
 			}
 		case tenantsyncevent.FieldSourceService:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field source_service", values[i])
 			} else if value.Valid {
-				_m.SourceService = value.String
+				tse.SourceService = value.String
 			}
 		case tenantsyncevent.FieldPayload:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field payload", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Payload); err != nil {
+				if err := json.Unmarshal(*value, &tse.Payload); err != nil {
 					return fmt.Errorf("unmarshal field payload: %w", err)
 				}
 			}
@@ -98,16 +98,16 @@ func (_m *TenantSyncEvent) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field synced_at", values[i])
 			} else if value.Valid {
-				_m.SyncedAt = value.Time
+				tse.SyncedAt = value.Time
 			}
 		case tenantsyncevent.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
-				_m.Status = value.String
+				tse.Status = value.String
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			tse.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -115,50 +115,50 @@ func (_m *TenantSyncEvent) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the TenantSyncEvent.
 // This includes values selected through modifiers, order, etc.
-func (_m *TenantSyncEvent) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (tse *TenantSyncEvent) Value(name string) (ent.Value, error) {
+	return tse.selectValues.Get(name)
 }
 
 // Update returns a builder for updating this TenantSyncEvent.
 // Note that you need to call TenantSyncEvent.Unwrap() before calling this method if this TenantSyncEvent
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *TenantSyncEvent) Update() *TenantSyncEventUpdateOne {
-	return NewTenantSyncEventClient(_m.config).UpdateOne(_m)
+func (tse *TenantSyncEvent) Update() *TenantSyncEventUpdateOne {
+	return NewTenantSyncEventClient(tse.config).UpdateOne(tse)
 }
 
 // Unwrap unwraps the TenantSyncEvent entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *TenantSyncEvent) Unwrap() *TenantSyncEvent {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (tse *TenantSyncEvent) Unwrap() *TenantSyncEvent {
+	_tx, ok := tse.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: TenantSyncEvent is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	tse.config.driver = _tx.drv
+	return tse
 }
 
 // String implements the fmt.Stringer.
-func (_m *TenantSyncEvent) String() string {
+func (tse *TenantSyncEvent) String() string {
 	var builder strings.Builder
 	builder.WriteString("TenantSyncEvent(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", tse.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", tse.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("tenant_slug=")
-	builder.WriteString(_m.TenantSlug)
+	builder.WriteString(tse.TenantSlug)
 	builder.WriteString(", ")
 	builder.WriteString("source_service=")
-	builder.WriteString(_m.SourceService)
+	builder.WriteString(tse.SourceService)
 	builder.WriteString(", ")
 	builder.WriteString("payload=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Payload))
+	builder.WriteString(fmt.Sprintf("%v", tse.Payload))
 	builder.WriteString(", ")
 	builder.WriteString("synced_at=")
-	builder.WriteString(_m.SyncedAt.Format(time.ANSIC))
+	builder.WriteString(tse.SyncedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
-	builder.WriteString(_m.Status)
+	builder.WriteString(tse.Status)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -26,147 +26,147 @@ type CommentUpdate struct {
 }
 
 // Where appends a list predicates to the CommentUpdate builder.
-func (_u *CommentUpdate) Where(ps ...predicate.Comment) *CommentUpdate {
-	_u.mutation.Where(ps...)
-	return _u
+func (cu *CommentUpdate) Where(ps ...predicate.Comment) *CommentUpdate {
+	cu.mutation.Where(ps...)
+	return cu
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *CommentUpdate) SetTenantID(v uuid.UUID) *CommentUpdate {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (cu *CommentUpdate) SetTenantID(u uuid.UUID) *CommentUpdate {
+	cu.mutation.SetTenantID(u)
+	return cu
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *CommentUpdate) SetNillableTenantID(v *uuid.UUID) *CommentUpdate {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (cu *CommentUpdate) SetNillableTenantID(u *uuid.UUID) *CommentUpdate {
+	if u != nil {
+		cu.SetTenantID(*u)
 	}
-	return _u
+	return cu
 }
 
 // SetProjectID sets the "project_id" field.
-func (_u *CommentUpdate) SetProjectID(v uuid.UUID) *CommentUpdate {
-	_u.mutation.SetProjectID(v)
-	return _u
+func (cu *CommentUpdate) SetProjectID(u uuid.UUID) *CommentUpdate {
+	cu.mutation.SetProjectID(u)
+	return cu
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_u *CommentUpdate) SetNillableProjectID(v *uuid.UUID) *CommentUpdate {
-	if v != nil {
-		_u.SetProjectID(*v)
+func (cu *CommentUpdate) SetNillableProjectID(u *uuid.UUID) *CommentUpdate {
+	if u != nil {
+		cu.SetProjectID(*u)
 	}
-	return _u
+	return cu
 }
 
 // ClearProjectID clears the value of the "project_id" field.
-func (_u *CommentUpdate) ClearProjectID() *CommentUpdate {
-	_u.mutation.ClearProjectID()
-	return _u
+func (cu *CommentUpdate) ClearProjectID() *CommentUpdate {
+	cu.mutation.ClearProjectID()
+	return cu
 }
 
 // SetTaskID sets the "task_id" field.
-func (_u *CommentUpdate) SetTaskID(v uuid.UUID) *CommentUpdate {
-	_u.mutation.SetTaskID(v)
-	return _u
+func (cu *CommentUpdate) SetTaskID(u uuid.UUID) *CommentUpdate {
+	cu.mutation.SetTaskID(u)
+	return cu
 }
 
 // SetNillableTaskID sets the "task_id" field if the given value is not nil.
-func (_u *CommentUpdate) SetNillableTaskID(v *uuid.UUID) *CommentUpdate {
-	if v != nil {
-		_u.SetTaskID(*v)
+func (cu *CommentUpdate) SetNillableTaskID(u *uuid.UUID) *CommentUpdate {
+	if u != nil {
+		cu.SetTaskID(*u)
 	}
-	return _u
+	return cu
 }
 
 // ClearTaskID clears the value of the "task_id" field.
-func (_u *CommentUpdate) ClearTaskID() *CommentUpdate {
-	_u.mutation.ClearTaskID()
-	return _u
+func (cu *CommentUpdate) ClearTaskID() *CommentUpdate {
+	cu.mutation.ClearTaskID()
+	return cu
 }
 
 // SetUserID sets the "user_id" field.
-func (_u *CommentUpdate) SetUserID(v uuid.UUID) *CommentUpdate {
-	_u.mutation.SetUserID(v)
-	return _u
+func (cu *CommentUpdate) SetUserID(u uuid.UUID) *CommentUpdate {
+	cu.mutation.SetUserID(u)
+	return cu
 }
 
 // SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *CommentUpdate) SetNillableUserID(v *uuid.UUID) *CommentUpdate {
-	if v != nil {
-		_u.SetUserID(*v)
+func (cu *CommentUpdate) SetNillableUserID(u *uuid.UUID) *CommentUpdate {
+	if u != nil {
+		cu.SetUserID(*u)
 	}
-	return _u
+	return cu
 }
 
 // SetContent sets the "content" field.
-func (_u *CommentUpdate) SetContent(v string) *CommentUpdate {
-	_u.mutation.SetContent(v)
-	return _u
+func (cu *CommentUpdate) SetContent(s string) *CommentUpdate {
+	cu.mutation.SetContent(s)
+	return cu
 }
 
 // SetNillableContent sets the "content" field if the given value is not nil.
-func (_u *CommentUpdate) SetNillableContent(v *string) *CommentUpdate {
-	if v != nil {
-		_u.SetContent(*v)
+func (cu *CommentUpdate) SetNillableContent(s *string) *CommentUpdate {
+	if s != nil {
+		cu.SetContent(*s)
 	}
-	return _u
+	return cu
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *CommentUpdate) SetUpdatedAt(v time.Time) *CommentUpdate {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
+func (cu *CommentUpdate) SetUpdatedAt(t time.Time) *CommentUpdate {
+	cu.mutation.SetUpdatedAt(t)
+	return cu
 }
 
 // SetMetadata sets the "metadata" field.
-func (_u *CommentUpdate) SetMetadata(v map[string]interface{}) *CommentUpdate {
-	_u.mutation.SetMetadata(v)
-	return _u
+func (cu *CommentUpdate) SetMetadata(m map[string]interface{}) *CommentUpdate {
+	cu.mutation.SetMetadata(m)
+	return cu
 }
 
 // ClearMetadata clears the value of the "metadata" field.
-func (_u *CommentUpdate) ClearMetadata() *CommentUpdate {
-	_u.mutation.ClearMetadata()
-	return _u
+func (cu *CommentUpdate) ClearMetadata() *CommentUpdate {
+	cu.mutation.ClearMetadata()
+	return cu
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_u *CommentUpdate) SetProject(v *Project) *CommentUpdate {
-	return _u.SetProjectID(v.ID)
+func (cu *CommentUpdate) SetProject(p *Project) *CommentUpdate {
+	return cu.SetProjectID(p.ID)
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (_u *CommentUpdate) SetTask(v *Task) *CommentUpdate {
-	return _u.SetTaskID(v.ID)
+func (cu *CommentUpdate) SetTask(t *Task) *CommentUpdate {
+	return cu.SetTaskID(t.ID)
 }
 
 // Mutation returns the CommentMutation object of the builder.
-func (_u *CommentUpdate) Mutation() *CommentMutation {
-	return _u.mutation
+func (cu *CommentUpdate) Mutation() *CommentMutation {
+	return cu.mutation
 }
 
 // ClearProject clears the "project" edge to the Project entity.
-func (_u *CommentUpdate) ClearProject() *CommentUpdate {
-	_u.mutation.ClearProject()
-	return _u
+func (cu *CommentUpdate) ClearProject() *CommentUpdate {
+	cu.mutation.ClearProject()
+	return cu
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (_u *CommentUpdate) ClearTask() *CommentUpdate {
-	_u.mutation.ClearTask()
-	return _u
+func (cu *CommentUpdate) ClearTask() *CommentUpdate {
+	cu.mutation.ClearTask()
+	return cu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *CommentUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (cu *CommentUpdate) Save(ctx context.Context) (int, error) {
+	cu.defaults()
+	return withHooks(ctx, cu.sqlSave, cu.mutation, cu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *CommentUpdate) SaveX(ctx context.Context) int {
-	affected, err := _u.Save(ctx)
+func (cu *CommentUpdate) SaveX(ctx context.Context) int {
+	affected, err := cu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -174,29 +174,29 @@ func (_u *CommentUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *CommentUpdate) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (cu *CommentUpdate) Exec(ctx context.Context) error {
+	_, err := cu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *CommentUpdate) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (cu *CommentUpdate) ExecX(ctx context.Context) {
+	if err := cu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *CommentUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
+func (cu *CommentUpdate) defaults() {
+	if _, ok := cu.mutation.UpdatedAt(); !ok {
 		v := comment.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
+		cu.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *CommentUpdate) check() error {
-	if v, ok := _u.mutation.Content(); ok {
+func (cu *CommentUpdate) check() error {
+	if v, ok := cu.mutation.Content(); ok {
 		if err := comment.ContentValidator(v); err != nil {
 			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Comment.content": %w`, err)}
 		}
@@ -204,37 +204,37 @@ func (_u *CommentUpdate) check() error {
 	return nil
 }
 
-func (_u *CommentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
+func (cu *CommentUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := cu.check(); err != nil {
+		return n, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(comment.Table, comment.Columns, sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID))
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := cu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := cu.mutation.TenantID(); ok {
 		_spec.SetField(comment.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.UserID(); ok {
+	if value, ok := cu.mutation.UserID(); ok {
 		_spec.SetField(comment.FieldUserID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.Content(); ok {
+	if value, ok := cu.mutation.Content(); ok {
 		_spec.SetField(comment.FieldContent, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
+	if value, ok := cu.mutation.UpdatedAt(); ok {
 		_spec.SetField(comment.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.Metadata(); ok {
+	if value, ok := cu.mutation.Metadata(); ok {
 		_spec.SetField(comment.FieldMetadata, field.TypeJSON, value)
 	}
-	if _u.mutation.MetadataCleared() {
+	if cu.mutation.MetadataCleared() {
 		_spec.ClearField(comment.FieldMetadata, field.TypeJSON)
 	}
-	if _u.mutation.ProjectCleared() {
+	if cu.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -247,7 +247,7 @@ func (_u *CommentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := cu.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -263,7 +263,7 @@ func (_u *CommentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.TaskCleared() {
+	if cu.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -276,7 +276,7 @@ func (_u *CommentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := cu.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -292,7 +292,7 @@ func (_u *CommentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, cu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{comment.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -300,8 +300,8 @@ func (_u *CommentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		return 0, err
 	}
-	_u.mutation.done = true
-	return _node, nil
+	cu.mutation.done = true
+	return n, nil
 }
 
 // CommentUpdateOne is the builder for updating a single Comment entity.
@@ -313,154 +313,154 @@ type CommentUpdateOne struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *CommentUpdateOne) SetTenantID(v uuid.UUID) *CommentUpdateOne {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (cuo *CommentUpdateOne) SetTenantID(u uuid.UUID) *CommentUpdateOne {
+	cuo.mutation.SetTenantID(u)
+	return cuo
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *CommentUpdateOne) SetNillableTenantID(v *uuid.UUID) *CommentUpdateOne {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (cuo *CommentUpdateOne) SetNillableTenantID(u *uuid.UUID) *CommentUpdateOne {
+	if u != nil {
+		cuo.SetTenantID(*u)
 	}
-	return _u
+	return cuo
 }
 
 // SetProjectID sets the "project_id" field.
-func (_u *CommentUpdateOne) SetProjectID(v uuid.UUID) *CommentUpdateOne {
-	_u.mutation.SetProjectID(v)
-	return _u
+func (cuo *CommentUpdateOne) SetProjectID(u uuid.UUID) *CommentUpdateOne {
+	cuo.mutation.SetProjectID(u)
+	return cuo
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_u *CommentUpdateOne) SetNillableProjectID(v *uuid.UUID) *CommentUpdateOne {
-	if v != nil {
-		_u.SetProjectID(*v)
+func (cuo *CommentUpdateOne) SetNillableProjectID(u *uuid.UUID) *CommentUpdateOne {
+	if u != nil {
+		cuo.SetProjectID(*u)
 	}
-	return _u
+	return cuo
 }
 
 // ClearProjectID clears the value of the "project_id" field.
-func (_u *CommentUpdateOne) ClearProjectID() *CommentUpdateOne {
-	_u.mutation.ClearProjectID()
-	return _u
+func (cuo *CommentUpdateOne) ClearProjectID() *CommentUpdateOne {
+	cuo.mutation.ClearProjectID()
+	return cuo
 }
 
 // SetTaskID sets the "task_id" field.
-func (_u *CommentUpdateOne) SetTaskID(v uuid.UUID) *CommentUpdateOne {
-	_u.mutation.SetTaskID(v)
-	return _u
+func (cuo *CommentUpdateOne) SetTaskID(u uuid.UUID) *CommentUpdateOne {
+	cuo.mutation.SetTaskID(u)
+	return cuo
 }
 
 // SetNillableTaskID sets the "task_id" field if the given value is not nil.
-func (_u *CommentUpdateOne) SetNillableTaskID(v *uuid.UUID) *CommentUpdateOne {
-	if v != nil {
-		_u.SetTaskID(*v)
+func (cuo *CommentUpdateOne) SetNillableTaskID(u *uuid.UUID) *CommentUpdateOne {
+	if u != nil {
+		cuo.SetTaskID(*u)
 	}
-	return _u
+	return cuo
 }
 
 // ClearTaskID clears the value of the "task_id" field.
-func (_u *CommentUpdateOne) ClearTaskID() *CommentUpdateOne {
-	_u.mutation.ClearTaskID()
-	return _u
+func (cuo *CommentUpdateOne) ClearTaskID() *CommentUpdateOne {
+	cuo.mutation.ClearTaskID()
+	return cuo
 }
 
 // SetUserID sets the "user_id" field.
-func (_u *CommentUpdateOne) SetUserID(v uuid.UUID) *CommentUpdateOne {
-	_u.mutation.SetUserID(v)
-	return _u
+func (cuo *CommentUpdateOne) SetUserID(u uuid.UUID) *CommentUpdateOne {
+	cuo.mutation.SetUserID(u)
+	return cuo
 }
 
 // SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *CommentUpdateOne) SetNillableUserID(v *uuid.UUID) *CommentUpdateOne {
-	if v != nil {
-		_u.SetUserID(*v)
+func (cuo *CommentUpdateOne) SetNillableUserID(u *uuid.UUID) *CommentUpdateOne {
+	if u != nil {
+		cuo.SetUserID(*u)
 	}
-	return _u
+	return cuo
 }
 
 // SetContent sets the "content" field.
-func (_u *CommentUpdateOne) SetContent(v string) *CommentUpdateOne {
-	_u.mutation.SetContent(v)
-	return _u
+func (cuo *CommentUpdateOne) SetContent(s string) *CommentUpdateOne {
+	cuo.mutation.SetContent(s)
+	return cuo
 }
 
 // SetNillableContent sets the "content" field if the given value is not nil.
-func (_u *CommentUpdateOne) SetNillableContent(v *string) *CommentUpdateOne {
-	if v != nil {
-		_u.SetContent(*v)
+func (cuo *CommentUpdateOne) SetNillableContent(s *string) *CommentUpdateOne {
+	if s != nil {
+		cuo.SetContent(*s)
 	}
-	return _u
+	return cuo
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *CommentUpdateOne) SetUpdatedAt(v time.Time) *CommentUpdateOne {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
+func (cuo *CommentUpdateOne) SetUpdatedAt(t time.Time) *CommentUpdateOne {
+	cuo.mutation.SetUpdatedAt(t)
+	return cuo
 }
 
 // SetMetadata sets the "metadata" field.
-func (_u *CommentUpdateOne) SetMetadata(v map[string]interface{}) *CommentUpdateOne {
-	_u.mutation.SetMetadata(v)
-	return _u
+func (cuo *CommentUpdateOne) SetMetadata(m map[string]interface{}) *CommentUpdateOne {
+	cuo.mutation.SetMetadata(m)
+	return cuo
 }
 
 // ClearMetadata clears the value of the "metadata" field.
-func (_u *CommentUpdateOne) ClearMetadata() *CommentUpdateOne {
-	_u.mutation.ClearMetadata()
-	return _u
+func (cuo *CommentUpdateOne) ClearMetadata() *CommentUpdateOne {
+	cuo.mutation.ClearMetadata()
+	return cuo
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_u *CommentUpdateOne) SetProject(v *Project) *CommentUpdateOne {
-	return _u.SetProjectID(v.ID)
+func (cuo *CommentUpdateOne) SetProject(p *Project) *CommentUpdateOne {
+	return cuo.SetProjectID(p.ID)
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (_u *CommentUpdateOne) SetTask(v *Task) *CommentUpdateOne {
-	return _u.SetTaskID(v.ID)
+func (cuo *CommentUpdateOne) SetTask(t *Task) *CommentUpdateOne {
+	return cuo.SetTaskID(t.ID)
 }
 
 // Mutation returns the CommentMutation object of the builder.
-func (_u *CommentUpdateOne) Mutation() *CommentMutation {
-	return _u.mutation
+func (cuo *CommentUpdateOne) Mutation() *CommentMutation {
+	return cuo.mutation
 }
 
 // ClearProject clears the "project" edge to the Project entity.
-func (_u *CommentUpdateOne) ClearProject() *CommentUpdateOne {
-	_u.mutation.ClearProject()
-	return _u
+func (cuo *CommentUpdateOne) ClearProject() *CommentUpdateOne {
+	cuo.mutation.ClearProject()
+	return cuo
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (_u *CommentUpdateOne) ClearTask() *CommentUpdateOne {
-	_u.mutation.ClearTask()
-	return _u
+func (cuo *CommentUpdateOne) ClearTask() *CommentUpdateOne {
+	cuo.mutation.ClearTask()
+	return cuo
 }
 
 // Where appends a list predicates to the CommentUpdate builder.
-func (_u *CommentUpdateOne) Where(ps ...predicate.Comment) *CommentUpdateOne {
-	_u.mutation.Where(ps...)
-	return _u
+func (cuo *CommentUpdateOne) Where(ps ...predicate.Comment) *CommentUpdateOne {
+	cuo.mutation.Where(ps...)
+	return cuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *CommentUpdateOne) Select(field string, fields ...string) *CommentUpdateOne {
-	_u.fields = append([]string{field}, fields...)
-	return _u
+func (cuo *CommentUpdateOne) Select(field string, fields ...string) *CommentUpdateOne {
+	cuo.fields = append([]string{field}, fields...)
+	return cuo
 }
 
 // Save executes the query and returns the updated Comment entity.
-func (_u *CommentUpdateOne) Save(ctx context.Context) (*Comment, error) {
-	_u.defaults()
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (cuo *CommentUpdateOne) Save(ctx context.Context) (*Comment, error) {
+	cuo.defaults()
+	return withHooks(ctx, cuo.sqlSave, cuo.mutation, cuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *CommentUpdateOne) SaveX(ctx context.Context) *Comment {
-	node, err := _u.Save(ctx)
+func (cuo *CommentUpdateOne) SaveX(ctx context.Context) *Comment {
+	node, err := cuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -468,29 +468,29 @@ func (_u *CommentUpdateOne) SaveX(ctx context.Context) *Comment {
 }
 
 // Exec executes the query on the entity.
-func (_u *CommentUpdateOne) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (cuo *CommentUpdateOne) Exec(ctx context.Context) error {
+	_, err := cuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *CommentUpdateOne) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (cuo *CommentUpdateOne) ExecX(ctx context.Context) {
+	if err := cuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *CommentUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
+func (cuo *CommentUpdateOne) defaults() {
+	if _, ok := cuo.mutation.UpdatedAt(); !ok {
 		v := comment.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
+		cuo.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *CommentUpdateOne) check() error {
-	if v, ok := _u.mutation.Content(); ok {
+func (cuo *CommentUpdateOne) check() error {
+	if v, ok := cuo.mutation.Content(); ok {
 		if err := comment.ContentValidator(v); err != nil {
 			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Comment.content": %w`, err)}
 		}
@@ -498,17 +498,17 @@ func (_u *CommentUpdateOne) check() error {
 	return nil
 }
 
-func (_u *CommentUpdateOne) sqlSave(ctx context.Context) (_node *Comment, err error) {
-	if err := _u.check(); err != nil {
+func (cuo *CommentUpdateOne) sqlSave(ctx context.Context) (_node *Comment, err error) {
+	if err := cuo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(comment.Table, comment.Columns, sqlgraph.NewFieldSpec(comment.FieldID, field.TypeUUID))
-	id, ok := _u.mutation.ID()
+	id, ok := cuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Comment.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := _u.fields; len(fields) > 0 {
+	if fields := cuo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, comment.FieldID)
 		for _, f := range fields {
@@ -520,32 +520,32 @@ func (_u *CommentUpdateOne) sqlSave(ctx context.Context) (_node *Comment, err er
 			}
 		}
 	}
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := cuo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := cuo.mutation.TenantID(); ok {
 		_spec.SetField(comment.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.UserID(); ok {
+	if value, ok := cuo.mutation.UserID(); ok {
 		_spec.SetField(comment.FieldUserID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.Content(); ok {
+	if value, ok := cuo.mutation.Content(); ok {
 		_spec.SetField(comment.FieldContent, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
+	if value, ok := cuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(comment.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.Metadata(); ok {
+	if value, ok := cuo.mutation.Metadata(); ok {
 		_spec.SetField(comment.FieldMetadata, field.TypeJSON, value)
 	}
-	if _u.mutation.MetadataCleared() {
+	if cuo.mutation.MetadataCleared() {
 		_spec.ClearField(comment.FieldMetadata, field.TypeJSON)
 	}
-	if _u.mutation.ProjectCleared() {
+	if cuo.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -558,7 +558,7 @@ func (_u *CommentUpdateOne) sqlSave(ctx context.Context) (_node *Comment, err er
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := cuo.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -574,7 +574,7 @@ func (_u *CommentUpdateOne) sqlSave(ctx context.Context) (_node *Comment, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.TaskCleared() {
+	if cuo.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -587,7 +587,7 @@ func (_u *CommentUpdateOne) sqlSave(ctx context.Context) (_node *Comment, err er
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := cuo.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -603,10 +603,10 @@ func (_u *CommentUpdateOne) sqlSave(ctx context.Context) (_node *Comment, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Comment{config: _u.config}
+	_node = &Comment{config: cuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, cuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{comment.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -614,6 +614,6 @@ func (_u *CommentUpdateOne) sqlSave(ctx context.Context) (_node *Comment, err er
 		}
 		return nil, err
 	}
-	_u.mutation.done = true
+	cuo.mutation.done = true
 	return _node, nil
 }

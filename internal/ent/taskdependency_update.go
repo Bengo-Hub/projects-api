@@ -24,77 +24,77 @@ type TaskDependencyUpdate struct {
 }
 
 // Where appends a list predicates to the TaskDependencyUpdate builder.
-func (_u *TaskDependencyUpdate) Where(ps ...predicate.TaskDependency) *TaskDependencyUpdate {
-	_u.mutation.Where(ps...)
-	return _u
+func (tdu *TaskDependencyUpdate) Where(ps ...predicate.TaskDependency) *TaskDependencyUpdate {
+	tdu.mutation.Where(ps...)
+	return tdu
 }
 
 // SetTaskID sets the "task_id" field.
-func (_u *TaskDependencyUpdate) SetTaskID(v uuid.UUID) *TaskDependencyUpdate {
-	_u.mutation.SetTaskID(v)
-	return _u
+func (tdu *TaskDependencyUpdate) SetTaskID(u uuid.UUID) *TaskDependencyUpdate {
+	tdu.mutation.SetTaskID(u)
+	return tdu
 }
 
 // SetNillableTaskID sets the "task_id" field if the given value is not nil.
-func (_u *TaskDependencyUpdate) SetNillableTaskID(v *uuid.UUID) *TaskDependencyUpdate {
-	if v != nil {
-		_u.SetTaskID(*v)
+func (tdu *TaskDependencyUpdate) SetNillableTaskID(u *uuid.UUID) *TaskDependencyUpdate {
+	if u != nil {
+		tdu.SetTaskID(*u)
 	}
-	return _u
+	return tdu
 }
 
 // SetDependsOnTaskID sets the "depends_on_task_id" field.
-func (_u *TaskDependencyUpdate) SetDependsOnTaskID(v uuid.UUID) *TaskDependencyUpdate {
-	_u.mutation.SetDependsOnTaskID(v)
-	return _u
+func (tdu *TaskDependencyUpdate) SetDependsOnTaskID(u uuid.UUID) *TaskDependencyUpdate {
+	tdu.mutation.SetDependsOnTaskID(u)
+	return tdu
 }
 
 // SetNillableDependsOnTaskID sets the "depends_on_task_id" field if the given value is not nil.
-func (_u *TaskDependencyUpdate) SetNillableDependsOnTaskID(v *uuid.UUID) *TaskDependencyUpdate {
-	if v != nil {
-		_u.SetDependsOnTaskID(*v)
+func (tdu *TaskDependencyUpdate) SetNillableDependsOnTaskID(u *uuid.UUID) *TaskDependencyUpdate {
+	if u != nil {
+		tdu.SetDependsOnTaskID(*u)
 	}
-	return _u
+	return tdu
 }
 
 // SetDependencyType sets the "dependency_type" field.
-func (_u *TaskDependencyUpdate) SetDependencyType(v string) *TaskDependencyUpdate {
-	_u.mutation.SetDependencyType(v)
-	return _u
+func (tdu *TaskDependencyUpdate) SetDependencyType(s string) *TaskDependencyUpdate {
+	tdu.mutation.SetDependencyType(s)
+	return tdu
 }
 
 // SetNillableDependencyType sets the "dependency_type" field if the given value is not nil.
-func (_u *TaskDependencyUpdate) SetNillableDependencyType(v *string) *TaskDependencyUpdate {
-	if v != nil {
-		_u.SetDependencyType(*v)
+func (tdu *TaskDependencyUpdate) SetNillableDependencyType(s *string) *TaskDependencyUpdate {
+	if s != nil {
+		tdu.SetDependencyType(*s)
 	}
-	return _u
+	return tdu
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (_u *TaskDependencyUpdate) SetTask(v *Task) *TaskDependencyUpdate {
-	return _u.SetTaskID(v.ID)
+func (tdu *TaskDependencyUpdate) SetTask(t *Task) *TaskDependencyUpdate {
+	return tdu.SetTaskID(t.ID)
 }
 
 // Mutation returns the TaskDependencyMutation object of the builder.
-func (_u *TaskDependencyUpdate) Mutation() *TaskDependencyMutation {
-	return _u.mutation
+func (tdu *TaskDependencyUpdate) Mutation() *TaskDependencyMutation {
+	return tdu.mutation
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (_u *TaskDependencyUpdate) ClearTask() *TaskDependencyUpdate {
-	_u.mutation.ClearTask()
-	return _u
+func (tdu *TaskDependencyUpdate) ClearTask() *TaskDependencyUpdate {
+	tdu.mutation.ClearTask()
+	return tdu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *TaskDependencyUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (tdu *TaskDependencyUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, tdu.sqlSave, tdu.mutation, tdu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *TaskDependencyUpdate) SaveX(ctx context.Context) int {
-	affected, err := _u.Save(ctx)
+func (tdu *TaskDependencyUpdate) SaveX(ctx context.Context) int {
+	affected, err := tdu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -102,45 +102,45 @@ func (_u *TaskDependencyUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *TaskDependencyUpdate) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (tdu *TaskDependencyUpdate) Exec(ctx context.Context) error {
+	_, err := tdu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *TaskDependencyUpdate) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (tdu *TaskDependencyUpdate) ExecX(ctx context.Context) {
+	if err := tdu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *TaskDependencyUpdate) check() error {
-	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
+func (tdu *TaskDependencyUpdate) check() error {
+	if _, ok := tdu.mutation.TaskID(); tdu.mutation.TaskCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "TaskDependency.task"`)
 	}
 	return nil
 }
 
-func (_u *TaskDependencyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
+func (tdu *TaskDependencyUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := tdu.check(); err != nil {
+		return n, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(taskdependency.Table, taskdependency.Columns, sqlgraph.NewFieldSpec(taskdependency.FieldID, field.TypeUUID))
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := tdu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.DependsOnTaskID(); ok {
+	if value, ok := tdu.mutation.DependsOnTaskID(); ok {
 		_spec.SetField(taskdependency.FieldDependsOnTaskID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.DependencyType(); ok {
+	if value, ok := tdu.mutation.DependencyType(); ok {
 		_spec.SetField(taskdependency.FieldDependencyType, field.TypeString, value)
 	}
-	if _u.mutation.TaskCleared() {
+	if tdu.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -153,7 +153,7 @@ func (_u *TaskDependencyUpdate) sqlSave(ctx context.Context) (_node int, err err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := tdu.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -169,7 +169,7 @@ func (_u *TaskDependencyUpdate) sqlSave(ctx context.Context) (_node int, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, tdu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{taskdependency.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -177,8 +177,8 @@ func (_u *TaskDependencyUpdate) sqlSave(ctx context.Context) (_node int, err err
 		}
 		return 0, err
 	}
-	_u.mutation.done = true
-	return _node, nil
+	tdu.mutation.done = true
+	return n, nil
 }
 
 // TaskDependencyUpdateOne is the builder for updating a single TaskDependency entity.
@@ -190,84 +190,84 @@ type TaskDependencyUpdateOne struct {
 }
 
 // SetTaskID sets the "task_id" field.
-func (_u *TaskDependencyUpdateOne) SetTaskID(v uuid.UUID) *TaskDependencyUpdateOne {
-	_u.mutation.SetTaskID(v)
-	return _u
+func (tduo *TaskDependencyUpdateOne) SetTaskID(u uuid.UUID) *TaskDependencyUpdateOne {
+	tduo.mutation.SetTaskID(u)
+	return tduo
 }
 
 // SetNillableTaskID sets the "task_id" field if the given value is not nil.
-func (_u *TaskDependencyUpdateOne) SetNillableTaskID(v *uuid.UUID) *TaskDependencyUpdateOne {
-	if v != nil {
-		_u.SetTaskID(*v)
+func (tduo *TaskDependencyUpdateOne) SetNillableTaskID(u *uuid.UUID) *TaskDependencyUpdateOne {
+	if u != nil {
+		tduo.SetTaskID(*u)
 	}
-	return _u
+	return tduo
 }
 
 // SetDependsOnTaskID sets the "depends_on_task_id" field.
-func (_u *TaskDependencyUpdateOne) SetDependsOnTaskID(v uuid.UUID) *TaskDependencyUpdateOne {
-	_u.mutation.SetDependsOnTaskID(v)
-	return _u
+func (tduo *TaskDependencyUpdateOne) SetDependsOnTaskID(u uuid.UUID) *TaskDependencyUpdateOne {
+	tduo.mutation.SetDependsOnTaskID(u)
+	return tduo
 }
 
 // SetNillableDependsOnTaskID sets the "depends_on_task_id" field if the given value is not nil.
-func (_u *TaskDependencyUpdateOne) SetNillableDependsOnTaskID(v *uuid.UUID) *TaskDependencyUpdateOne {
-	if v != nil {
-		_u.SetDependsOnTaskID(*v)
+func (tduo *TaskDependencyUpdateOne) SetNillableDependsOnTaskID(u *uuid.UUID) *TaskDependencyUpdateOne {
+	if u != nil {
+		tduo.SetDependsOnTaskID(*u)
 	}
-	return _u
+	return tduo
 }
 
 // SetDependencyType sets the "dependency_type" field.
-func (_u *TaskDependencyUpdateOne) SetDependencyType(v string) *TaskDependencyUpdateOne {
-	_u.mutation.SetDependencyType(v)
-	return _u
+func (tduo *TaskDependencyUpdateOne) SetDependencyType(s string) *TaskDependencyUpdateOne {
+	tduo.mutation.SetDependencyType(s)
+	return tduo
 }
 
 // SetNillableDependencyType sets the "dependency_type" field if the given value is not nil.
-func (_u *TaskDependencyUpdateOne) SetNillableDependencyType(v *string) *TaskDependencyUpdateOne {
-	if v != nil {
-		_u.SetDependencyType(*v)
+func (tduo *TaskDependencyUpdateOne) SetNillableDependencyType(s *string) *TaskDependencyUpdateOne {
+	if s != nil {
+		tduo.SetDependencyType(*s)
 	}
-	return _u
+	return tduo
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (_u *TaskDependencyUpdateOne) SetTask(v *Task) *TaskDependencyUpdateOne {
-	return _u.SetTaskID(v.ID)
+func (tduo *TaskDependencyUpdateOne) SetTask(t *Task) *TaskDependencyUpdateOne {
+	return tduo.SetTaskID(t.ID)
 }
 
 // Mutation returns the TaskDependencyMutation object of the builder.
-func (_u *TaskDependencyUpdateOne) Mutation() *TaskDependencyMutation {
-	return _u.mutation
+func (tduo *TaskDependencyUpdateOne) Mutation() *TaskDependencyMutation {
+	return tduo.mutation
 }
 
 // ClearTask clears the "task" edge to the Task entity.
-func (_u *TaskDependencyUpdateOne) ClearTask() *TaskDependencyUpdateOne {
-	_u.mutation.ClearTask()
-	return _u
+func (tduo *TaskDependencyUpdateOne) ClearTask() *TaskDependencyUpdateOne {
+	tduo.mutation.ClearTask()
+	return tduo
 }
 
 // Where appends a list predicates to the TaskDependencyUpdate builder.
-func (_u *TaskDependencyUpdateOne) Where(ps ...predicate.TaskDependency) *TaskDependencyUpdateOne {
-	_u.mutation.Where(ps...)
-	return _u
+func (tduo *TaskDependencyUpdateOne) Where(ps ...predicate.TaskDependency) *TaskDependencyUpdateOne {
+	tduo.mutation.Where(ps...)
+	return tduo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *TaskDependencyUpdateOne) Select(field string, fields ...string) *TaskDependencyUpdateOne {
-	_u.fields = append([]string{field}, fields...)
-	return _u
+func (tduo *TaskDependencyUpdateOne) Select(field string, fields ...string) *TaskDependencyUpdateOne {
+	tduo.fields = append([]string{field}, fields...)
+	return tduo
 }
 
 // Save executes the query and returns the updated TaskDependency entity.
-func (_u *TaskDependencyUpdateOne) Save(ctx context.Context) (*TaskDependency, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (tduo *TaskDependencyUpdateOne) Save(ctx context.Context) (*TaskDependency, error) {
+	return withHooks(ctx, tduo.sqlSave, tduo.mutation, tduo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *TaskDependencyUpdateOne) SaveX(ctx context.Context) *TaskDependency {
-	node, err := _u.Save(ctx)
+func (tduo *TaskDependencyUpdateOne) SaveX(ctx context.Context) *TaskDependency {
+	node, err := tduo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -275,37 +275,37 @@ func (_u *TaskDependencyUpdateOne) SaveX(ctx context.Context) *TaskDependency {
 }
 
 // Exec executes the query on the entity.
-func (_u *TaskDependencyUpdateOne) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (tduo *TaskDependencyUpdateOne) Exec(ctx context.Context) error {
+	_, err := tduo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *TaskDependencyUpdateOne) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (tduo *TaskDependencyUpdateOne) ExecX(ctx context.Context) {
+	if err := tduo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *TaskDependencyUpdateOne) check() error {
-	if _u.mutation.TaskCleared() && len(_u.mutation.TaskIDs()) > 0 {
+func (tduo *TaskDependencyUpdateOne) check() error {
+	if _, ok := tduo.mutation.TaskID(); tduo.mutation.TaskCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "TaskDependency.task"`)
 	}
 	return nil
 }
 
-func (_u *TaskDependencyUpdateOne) sqlSave(ctx context.Context) (_node *TaskDependency, err error) {
-	if err := _u.check(); err != nil {
+func (tduo *TaskDependencyUpdateOne) sqlSave(ctx context.Context) (_node *TaskDependency, err error) {
+	if err := tduo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(taskdependency.Table, taskdependency.Columns, sqlgraph.NewFieldSpec(taskdependency.FieldID, field.TypeUUID))
-	id, ok := _u.mutation.ID()
+	id, ok := tduo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "TaskDependency.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := _u.fields; len(fields) > 0 {
+	if fields := tduo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, taskdependency.FieldID)
 		for _, f := range fields {
@@ -317,20 +317,20 @@ func (_u *TaskDependencyUpdateOne) sqlSave(ctx context.Context) (_node *TaskDepe
 			}
 		}
 	}
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := tduo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.DependsOnTaskID(); ok {
+	if value, ok := tduo.mutation.DependsOnTaskID(); ok {
 		_spec.SetField(taskdependency.FieldDependsOnTaskID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.DependencyType(); ok {
+	if value, ok := tduo.mutation.DependencyType(); ok {
 		_spec.SetField(taskdependency.FieldDependencyType, field.TypeString, value)
 	}
-	if _u.mutation.TaskCleared() {
+	if tduo.mutation.TaskCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -343,7 +343,7 @@ func (_u *TaskDependencyUpdateOne) sqlSave(ctx context.Context) (_node *TaskDepe
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := tduo.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -359,10 +359,10 @@ func (_u *TaskDependencyUpdateOne) sqlSave(ctx context.Context) (_node *TaskDepe
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &TaskDependency{config: _u.config}
+	_node = &TaskDependency{config: tduo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, tduo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{taskdependency.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -370,6 +370,6 @@ func (_u *TaskDependencyUpdateOne) sqlSave(ctx context.Context) (_node *TaskDepe
 		}
 		return nil, err
 	}
-	_u.mutation.done = true
+	tduo.mutation.done = true
 	return _node, nil
 }

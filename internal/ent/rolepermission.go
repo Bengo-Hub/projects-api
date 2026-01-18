@@ -85,7 +85,7 @@ func (*RolePermission) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the RolePermission fields.
-func (_m *RolePermission) assignValues(columns []string, values []any) error {
+func (rp *RolePermission) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -95,28 +95,28 @@ func (_m *RolePermission) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				rp.ID = *value
 			}
 		case rolepermission.FieldRoleCode:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field role_code", values[i])
 			} else if value.Valid {
-				_m.RoleCode = value.String
+				rp.RoleCode = value.String
 			}
 		case rolepermission.FieldPermissionID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field permission_id", values[i])
 			} else if value != nil {
-				_m.PermissionID = *value
+				rp.PermissionID = *value
 			}
 		case rolepermission.FieldAssignedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field assigned_at", values[i])
 			} else if value.Valid {
-				_m.AssignedAt = value.Time
+				rp.AssignedAt = value.Time
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			rp.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -124,51 +124,51 @@ func (_m *RolePermission) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the RolePermission.
 // This includes values selected through modifiers, order, etc.
-func (_m *RolePermission) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (rp *RolePermission) Value(name string) (ent.Value, error) {
+	return rp.selectValues.Get(name)
 }
 
 // QueryRole queries the "role" edge of the RolePermission entity.
-func (_m *RolePermission) QueryRole() *RoleQuery {
-	return NewRolePermissionClient(_m.config).QueryRole(_m)
+func (rp *RolePermission) QueryRole() *RoleQuery {
+	return NewRolePermissionClient(rp.config).QueryRole(rp)
 }
 
 // QueryPermission queries the "permission" edge of the RolePermission entity.
-func (_m *RolePermission) QueryPermission() *PermissionQuery {
-	return NewRolePermissionClient(_m.config).QueryPermission(_m)
+func (rp *RolePermission) QueryPermission() *PermissionQuery {
+	return NewRolePermissionClient(rp.config).QueryPermission(rp)
 }
 
 // Update returns a builder for updating this RolePermission.
 // Note that you need to call RolePermission.Unwrap() before calling this method if this RolePermission
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *RolePermission) Update() *RolePermissionUpdateOne {
-	return NewRolePermissionClient(_m.config).UpdateOne(_m)
+func (rp *RolePermission) Update() *RolePermissionUpdateOne {
+	return NewRolePermissionClient(rp.config).UpdateOne(rp)
 }
 
 // Unwrap unwraps the RolePermission entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *RolePermission) Unwrap() *RolePermission {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (rp *RolePermission) Unwrap() *RolePermission {
+	_tx, ok := rp.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: RolePermission is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	rp.config.driver = _tx.drv
+	return rp
 }
 
 // String implements the fmt.Stringer.
-func (_m *RolePermission) String() string {
+func (rp *RolePermission) String() string {
 	var builder strings.Builder
 	builder.WriteString("RolePermission(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", rp.ID))
 	builder.WriteString("role_code=")
-	builder.WriteString(_m.RoleCode)
+	builder.WriteString(rp.RoleCode)
 	builder.WriteString(", ")
 	builder.WriteString("permission_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.PermissionID))
+	builder.WriteString(fmt.Sprintf("%v", rp.PermissionID))
 	builder.WriteString(", ")
 	builder.WriteString("assigned_at=")
-	builder.WriteString(_m.AssignedAt.Format(time.ANSIC))
+	builder.WriteString(rp.AssignedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

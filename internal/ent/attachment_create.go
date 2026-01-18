@@ -24,135 +24,135 @@ type AttachmentCreate struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_c *AttachmentCreate) SetTenantID(v uuid.UUID) *AttachmentCreate {
-	_c.mutation.SetTenantID(v)
-	return _c
+func (ac *AttachmentCreate) SetTenantID(u uuid.UUID) *AttachmentCreate {
+	ac.mutation.SetTenantID(u)
+	return ac
 }
 
 // SetProjectID sets the "project_id" field.
-func (_c *AttachmentCreate) SetProjectID(v uuid.UUID) *AttachmentCreate {
-	_c.mutation.SetProjectID(v)
-	return _c
+func (ac *AttachmentCreate) SetProjectID(u uuid.UUID) *AttachmentCreate {
+	ac.mutation.SetProjectID(u)
+	return ac
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_c *AttachmentCreate) SetNillableProjectID(v *uuid.UUID) *AttachmentCreate {
-	if v != nil {
-		_c.SetProjectID(*v)
+func (ac *AttachmentCreate) SetNillableProjectID(u *uuid.UUID) *AttachmentCreate {
+	if u != nil {
+		ac.SetProjectID(*u)
 	}
-	return _c
+	return ac
 }
 
 // SetTaskID sets the "task_id" field.
-func (_c *AttachmentCreate) SetTaskID(v uuid.UUID) *AttachmentCreate {
-	_c.mutation.SetTaskID(v)
-	return _c
+func (ac *AttachmentCreate) SetTaskID(u uuid.UUID) *AttachmentCreate {
+	ac.mutation.SetTaskID(u)
+	return ac
 }
 
 // SetNillableTaskID sets the "task_id" field if the given value is not nil.
-func (_c *AttachmentCreate) SetNillableTaskID(v *uuid.UUID) *AttachmentCreate {
-	if v != nil {
-		_c.SetTaskID(*v)
+func (ac *AttachmentCreate) SetNillableTaskID(u *uuid.UUID) *AttachmentCreate {
+	if u != nil {
+		ac.SetTaskID(*u)
 	}
-	return _c
+	return ac
 }
 
 // SetFileURL sets the "file_url" field.
-func (_c *AttachmentCreate) SetFileURL(v string) *AttachmentCreate {
-	_c.mutation.SetFileURL(v)
-	return _c
+func (ac *AttachmentCreate) SetFileURL(s string) *AttachmentCreate {
+	ac.mutation.SetFileURL(s)
+	return ac
 }
 
 // SetFileName sets the "file_name" field.
-func (_c *AttachmentCreate) SetFileName(v string) *AttachmentCreate {
-	_c.mutation.SetFileName(v)
-	return _c
+func (ac *AttachmentCreate) SetFileName(s string) *AttachmentCreate {
+	ac.mutation.SetFileName(s)
+	return ac
 }
 
 // SetFileSize sets the "file_size" field.
-func (_c *AttachmentCreate) SetFileSize(v int64) *AttachmentCreate {
-	_c.mutation.SetFileSize(v)
-	return _c
+func (ac *AttachmentCreate) SetFileSize(i int64) *AttachmentCreate {
+	ac.mutation.SetFileSize(i)
+	return ac
 }
 
 // SetMimeType sets the "mime_type" field.
-func (_c *AttachmentCreate) SetMimeType(v string) *AttachmentCreate {
-	_c.mutation.SetMimeType(v)
-	return _c
+func (ac *AttachmentCreate) SetMimeType(s string) *AttachmentCreate {
+	ac.mutation.SetMimeType(s)
+	return ac
 }
 
 // SetNillableMimeType sets the "mime_type" field if the given value is not nil.
-func (_c *AttachmentCreate) SetNillableMimeType(v *string) *AttachmentCreate {
-	if v != nil {
-		_c.SetMimeType(*v)
+func (ac *AttachmentCreate) SetNillableMimeType(s *string) *AttachmentCreate {
+	if s != nil {
+		ac.SetMimeType(*s)
 	}
-	return _c
+	return ac
 }
 
 // SetUploadedBy sets the "uploaded_by" field.
-func (_c *AttachmentCreate) SetUploadedBy(v uuid.UUID) *AttachmentCreate {
-	_c.mutation.SetUploadedBy(v)
-	return _c
+func (ac *AttachmentCreate) SetUploadedBy(u uuid.UUID) *AttachmentCreate {
+	ac.mutation.SetUploadedBy(u)
+	return ac
 }
 
 // SetUploadedAt sets the "uploaded_at" field.
-func (_c *AttachmentCreate) SetUploadedAt(v time.Time) *AttachmentCreate {
-	_c.mutation.SetUploadedAt(v)
-	return _c
+func (ac *AttachmentCreate) SetUploadedAt(t time.Time) *AttachmentCreate {
+	ac.mutation.SetUploadedAt(t)
+	return ac
 }
 
 // SetNillableUploadedAt sets the "uploaded_at" field if the given value is not nil.
-func (_c *AttachmentCreate) SetNillableUploadedAt(v *time.Time) *AttachmentCreate {
-	if v != nil {
-		_c.SetUploadedAt(*v)
+func (ac *AttachmentCreate) SetNillableUploadedAt(t *time.Time) *AttachmentCreate {
+	if t != nil {
+		ac.SetUploadedAt(*t)
 	}
-	return _c
+	return ac
 }
 
 // SetMetadata sets the "metadata" field.
-func (_c *AttachmentCreate) SetMetadata(v map[string]interface{}) *AttachmentCreate {
-	_c.mutation.SetMetadata(v)
-	return _c
+func (ac *AttachmentCreate) SetMetadata(m map[string]interface{}) *AttachmentCreate {
+	ac.mutation.SetMetadata(m)
+	return ac
 }
 
 // SetID sets the "id" field.
-func (_c *AttachmentCreate) SetID(v uuid.UUID) *AttachmentCreate {
-	_c.mutation.SetID(v)
-	return _c
+func (ac *AttachmentCreate) SetID(u uuid.UUID) *AttachmentCreate {
+	ac.mutation.SetID(u)
+	return ac
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (_c *AttachmentCreate) SetNillableID(v *uuid.UUID) *AttachmentCreate {
-	if v != nil {
-		_c.SetID(*v)
+func (ac *AttachmentCreate) SetNillableID(u *uuid.UUID) *AttachmentCreate {
+	if u != nil {
+		ac.SetID(*u)
 	}
-	return _c
+	return ac
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_c *AttachmentCreate) SetProject(v *Project) *AttachmentCreate {
-	return _c.SetProjectID(v.ID)
+func (ac *AttachmentCreate) SetProject(p *Project) *AttachmentCreate {
+	return ac.SetProjectID(p.ID)
 }
 
 // SetTask sets the "task" edge to the Task entity.
-func (_c *AttachmentCreate) SetTask(v *Task) *AttachmentCreate {
-	return _c.SetTaskID(v.ID)
+func (ac *AttachmentCreate) SetTask(t *Task) *AttachmentCreate {
+	return ac.SetTaskID(t.ID)
 }
 
 // Mutation returns the AttachmentMutation object of the builder.
-func (_c *AttachmentCreate) Mutation() *AttachmentMutation {
-	return _c.mutation
+func (ac *AttachmentCreate) Mutation() *AttachmentMutation {
+	return ac.mutation
 }
 
 // Save creates the Attachment in the database.
-func (_c *AttachmentCreate) Save(ctx context.Context) (*Attachment, error) {
-	_c.defaults()
-	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
+func (ac *AttachmentCreate) Save(ctx context.Context) (*Attachment, error) {
+	ac.defaults()
+	return withHooks(ctx, ac.sqlSave, ac.mutation, ac.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *AttachmentCreate) SaveX(ctx context.Context) *Attachment {
-	v, err := _c.Save(ctx)
+func (ac *AttachmentCreate) SaveX(ctx context.Context) *Attachment {
+	v, err := ac.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -160,69 +160,69 @@ func (_c *AttachmentCreate) SaveX(ctx context.Context) *Attachment {
 }
 
 // Exec executes the query.
-func (_c *AttachmentCreate) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (ac *AttachmentCreate) Exec(ctx context.Context) error {
+	_, err := ac.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *AttachmentCreate) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (ac *AttachmentCreate) ExecX(ctx context.Context) {
+	if err := ac.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *AttachmentCreate) defaults() {
-	if _, ok := _c.mutation.UploadedAt(); !ok {
+func (ac *AttachmentCreate) defaults() {
+	if _, ok := ac.mutation.UploadedAt(); !ok {
 		v := attachment.DefaultUploadedAt()
-		_c.mutation.SetUploadedAt(v)
+		ac.mutation.SetUploadedAt(v)
 	}
-	if _, ok := _c.mutation.ID(); !ok {
+	if _, ok := ac.mutation.ID(); !ok {
 		v := attachment.DefaultID()
-		_c.mutation.SetID(v)
+		ac.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *AttachmentCreate) check() error {
-	if _, ok := _c.mutation.TenantID(); !ok {
+func (ac *AttachmentCreate) check() error {
+	if _, ok := ac.mutation.TenantID(); !ok {
 		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "Attachment.tenant_id"`)}
 	}
-	if _, ok := _c.mutation.FileURL(); !ok {
+	if _, ok := ac.mutation.FileURL(); !ok {
 		return &ValidationError{Name: "file_url", err: errors.New(`ent: missing required field "Attachment.file_url"`)}
 	}
-	if v, ok := _c.mutation.FileURL(); ok {
+	if v, ok := ac.mutation.FileURL(); ok {
 		if err := attachment.FileURLValidator(v); err != nil {
 			return &ValidationError{Name: "file_url", err: fmt.Errorf(`ent: validator failed for field "Attachment.file_url": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.FileName(); !ok {
+	if _, ok := ac.mutation.FileName(); !ok {
 		return &ValidationError{Name: "file_name", err: errors.New(`ent: missing required field "Attachment.file_name"`)}
 	}
-	if v, ok := _c.mutation.FileName(); ok {
+	if v, ok := ac.mutation.FileName(); ok {
 		if err := attachment.FileNameValidator(v); err != nil {
 			return &ValidationError{Name: "file_name", err: fmt.Errorf(`ent: validator failed for field "Attachment.file_name": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.FileSize(); !ok {
+	if _, ok := ac.mutation.FileSize(); !ok {
 		return &ValidationError{Name: "file_size", err: errors.New(`ent: missing required field "Attachment.file_size"`)}
 	}
-	if _, ok := _c.mutation.UploadedBy(); !ok {
+	if _, ok := ac.mutation.UploadedBy(); !ok {
 		return &ValidationError{Name: "uploaded_by", err: errors.New(`ent: missing required field "Attachment.uploaded_by"`)}
 	}
-	if _, ok := _c.mutation.UploadedAt(); !ok {
+	if _, ok := ac.mutation.UploadedAt(); !ok {
 		return &ValidationError{Name: "uploaded_at", err: errors.New(`ent: missing required field "Attachment.uploaded_at"`)}
 	}
 	return nil
 }
 
-func (_c *AttachmentCreate) sqlSave(ctx context.Context) (*Attachment, error) {
-	if err := _c.check(); err != nil {
+func (ac *AttachmentCreate) sqlSave(ctx context.Context) (*Attachment, error) {
+	if err := ac.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := _c.createSpec()
-	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
+	_node, _spec := ac.createSpec()
+	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -235,53 +235,53 @@ func (_c *AttachmentCreate) sqlSave(ctx context.Context) (*Attachment, error) {
 			return nil, err
 		}
 	}
-	_c.mutation.id = &_node.ID
-	_c.mutation.done = true
+	ac.mutation.id = &_node.ID
+	ac.mutation.done = true
 	return _node, nil
 }
 
-func (_c *AttachmentCreate) createSpec() (*Attachment, *sqlgraph.CreateSpec) {
+func (ac *AttachmentCreate) createSpec() (*Attachment, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Attachment{config: _c.config}
+		_node = &Attachment{config: ac.config}
 		_spec = sqlgraph.NewCreateSpec(attachment.Table, sqlgraph.NewFieldSpec(attachment.FieldID, field.TypeUUID))
 	)
-	if id, ok := _c.mutation.ID(); ok {
+	if id, ok := ac.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.TenantID(); ok {
+	if value, ok := ac.mutation.TenantID(); ok {
 		_spec.SetField(attachment.FieldTenantID, field.TypeUUID, value)
 		_node.TenantID = value
 	}
-	if value, ok := _c.mutation.FileURL(); ok {
+	if value, ok := ac.mutation.FileURL(); ok {
 		_spec.SetField(attachment.FieldFileURL, field.TypeString, value)
 		_node.FileURL = value
 	}
-	if value, ok := _c.mutation.FileName(); ok {
+	if value, ok := ac.mutation.FileName(); ok {
 		_spec.SetField(attachment.FieldFileName, field.TypeString, value)
 		_node.FileName = value
 	}
-	if value, ok := _c.mutation.FileSize(); ok {
+	if value, ok := ac.mutation.FileSize(); ok {
 		_spec.SetField(attachment.FieldFileSize, field.TypeInt64, value)
 		_node.FileSize = value
 	}
-	if value, ok := _c.mutation.MimeType(); ok {
+	if value, ok := ac.mutation.MimeType(); ok {
 		_spec.SetField(attachment.FieldMimeType, field.TypeString, value)
 		_node.MimeType = value
 	}
-	if value, ok := _c.mutation.UploadedBy(); ok {
+	if value, ok := ac.mutation.UploadedBy(); ok {
 		_spec.SetField(attachment.FieldUploadedBy, field.TypeUUID, value)
 		_node.UploadedBy = value
 	}
-	if value, ok := _c.mutation.UploadedAt(); ok {
+	if value, ok := ac.mutation.UploadedAt(); ok {
 		_spec.SetField(attachment.FieldUploadedAt, field.TypeTime, value)
 		_node.UploadedAt = value
 	}
-	if value, ok := _c.mutation.Metadata(); ok {
+	if value, ok := ac.mutation.Metadata(); ok {
 		_spec.SetField(attachment.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
 	}
-	if nodes := _c.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := ac.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -298,7 +298,7 @@ func (_c *AttachmentCreate) createSpec() (*Attachment, *sqlgraph.CreateSpec) {
 		_node.ProjectID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.TaskIDs(); len(nodes) > 0 {
+	if nodes := ac.mutation.TaskIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -326,16 +326,16 @@ type AttachmentCreateBulk struct {
 }
 
 // Save creates the Attachment entities in the database.
-func (_c *AttachmentCreateBulk) Save(ctx context.Context) ([]*Attachment, error) {
-	if _c.err != nil {
-		return nil, _c.err
+func (acb *AttachmentCreateBulk) Save(ctx context.Context) ([]*Attachment, error) {
+	if acb.err != nil {
+		return nil, acb.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*Attachment, len(_c.builders))
-	mutators := make([]Mutator, len(_c.builders))
-	for i := range _c.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(acb.builders))
+	nodes := make([]*Attachment, len(acb.builders))
+	mutators := make([]Mutator, len(acb.builders))
+	for i := range acb.builders {
 		func(i int, root context.Context) {
-			builder := _c.builders[i]
+			builder := acb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*AttachmentMutation)
@@ -349,11 +349,11 @@ func (_c *AttachmentCreateBulk) Save(ctx context.Context) ([]*Attachment, error)
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, acb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -373,7 +373,7 @@ func (_c *AttachmentCreateBulk) Save(ctx context.Context) ([]*Attachment, error)
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, acb.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -381,8 +381,8 @@ func (_c *AttachmentCreateBulk) Save(ctx context.Context) ([]*Attachment, error)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *AttachmentCreateBulk) SaveX(ctx context.Context) []*Attachment {
-	v, err := _c.Save(ctx)
+func (acb *AttachmentCreateBulk) SaveX(ctx context.Context) []*Attachment {
+	v, err := acb.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -390,14 +390,14 @@ func (_c *AttachmentCreateBulk) SaveX(ctx context.Context) []*Attachment {
 }
 
 // Exec executes the query.
-func (_c *AttachmentCreateBulk) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (acb *AttachmentCreateBulk) Exec(ctx context.Context) error {
+	_, err := acb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *AttachmentCreateBulk) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (acb *AttachmentCreateBulk) ExecX(ctx context.Context) {
+	if err := acb.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

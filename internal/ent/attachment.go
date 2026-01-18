@@ -104,7 +104,7 @@ func (*Attachment) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Attachment fields.
-func (_m *Attachment) assignValues(columns []string, values []any) error {
+func (a *Attachment) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -114,72 +114,72 @@ func (_m *Attachment) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				a.ID = *value
 			}
 		case attachment.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				a.TenantID = *value
 			}
 		case attachment.FieldProjectID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field project_id", values[i])
 			} else if value != nil {
-				_m.ProjectID = *value
+				a.ProjectID = *value
 			}
 		case attachment.FieldTaskID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field task_id", values[i])
 			} else if value != nil {
-				_m.TaskID = *value
+				a.TaskID = *value
 			}
 		case attachment.FieldFileURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field file_url", values[i])
 			} else if value.Valid {
-				_m.FileURL = value.String
+				a.FileURL = value.String
 			}
 		case attachment.FieldFileName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field file_name", values[i])
 			} else if value.Valid {
-				_m.FileName = value.String
+				a.FileName = value.String
 			}
 		case attachment.FieldFileSize:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field file_size", values[i])
 			} else if value.Valid {
-				_m.FileSize = value.Int64
+				a.FileSize = value.Int64
 			}
 		case attachment.FieldMimeType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field mime_type", values[i])
 			} else if value.Valid {
-				_m.MimeType = value.String
+				a.MimeType = value.String
 			}
 		case attachment.FieldUploadedBy:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field uploaded_by", values[i])
 			} else if value != nil {
-				_m.UploadedBy = *value
+				a.UploadedBy = *value
 			}
 		case attachment.FieldUploadedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field uploaded_at", values[i])
 			} else if value.Valid {
-				_m.UploadedAt = value.Time
+				a.UploadedAt = value.Time
 			}
 		case attachment.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Metadata); err != nil {
+				if err := json.Unmarshal(*value, &a.Metadata); err != nil {
 					return fmt.Errorf("unmarshal field metadata: %w", err)
 				}
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			a.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -187,72 +187,72 @@ func (_m *Attachment) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Attachment.
 // This includes values selected through modifiers, order, etc.
-func (_m *Attachment) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (a *Attachment) Value(name string) (ent.Value, error) {
+	return a.selectValues.Get(name)
 }
 
 // QueryProject queries the "project" edge of the Attachment entity.
-func (_m *Attachment) QueryProject() *ProjectQuery {
-	return NewAttachmentClient(_m.config).QueryProject(_m)
+func (a *Attachment) QueryProject() *ProjectQuery {
+	return NewAttachmentClient(a.config).QueryProject(a)
 }
 
 // QueryTask queries the "task" edge of the Attachment entity.
-func (_m *Attachment) QueryTask() *TaskQuery {
-	return NewAttachmentClient(_m.config).QueryTask(_m)
+func (a *Attachment) QueryTask() *TaskQuery {
+	return NewAttachmentClient(a.config).QueryTask(a)
 }
 
 // Update returns a builder for updating this Attachment.
 // Note that you need to call Attachment.Unwrap() before calling this method if this Attachment
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *Attachment) Update() *AttachmentUpdateOne {
-	return NewAttachmentClient(_m.config).UpdateOne(_m)
+func (a *Attachment) Update() *AttachmentUpdateOne {
+	return NewAttachmentClient(a.config).UpdateOne(a)
 }
 
 // Unwrap unwraps the Attachment entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *Attachment) Unwrap() *Attachment {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (a *Attachment) Unwrap() *Attachment {
+	_tx, ok := a.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Attachment is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	a.config.driver = _tx.drv
+	return a
 }
 
 // String implements the fmt.Stringer.
-func (_m *Attachment) String() string {
+func (a *Attachment) String() string {
 	var builder strings.Builder
 	builder.WriteString("Attachment(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", a.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", a.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("project_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ProjectID))
+	builder.WriteString(fmt.Sprintf("%v", a.ProjectID))
 	builder.WriteString(", ")
 	builder.WriteString("task_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TaskID))
+	builder.WriteString(fmt.Sprintf("%v", a.TaskID))
 	builder.WriteString(", ")
 	builder.WriteString("file_url=")
-	builder.WriteString(_m.FileURL)
+	builder.WriteString(a.FileURL)
 	builder.WriteString(", ")
 	builder.WriteString("file_name=")
-	builder.WriteString(_m.FileName)
+	builder.WriteString(a.FileName)
 	builder.WriteString(", ")
 	builder.WriteString("file_size=")
-	builder.WriteString(fmt.Sprintf("%v", _m.FileSize))
+	builder.WriteString(fmt.Sprintf("%v", a.FileSize))
 	builder.WriteString(", ")
 	builder.WriteString("mime_type=")
-	builder.WriteString(_m.MimeType)
+	builder.WriteString(a.MimeType)
 	builder.WriteString(", ")
 	builder.WriteString("uploaded_by=")
-	builder.WriteString(fmt.Sprintf("%v", _m.UploadedBy))
+	builder.WriteString(fmt.Sprintf("%v", a.UploadedBy))
 	builder.WriteString(", ")
 	builder.WriteString("uploaded_at=")
-	builder.WriteString(_m.UploadedAt.Format(time.ANSIC))
+	builder.WriteString(a.UploadedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))
+	builder.WriteString(fmt.Sprintf("%v", a.Metadata))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -24,106 +24,106 @@ type TenantSyncEventUpdate struct {
 }
 
 // Where appends a list predicates to the TenantSyncEventUpdate builder.
-func (_u *TenantSyncEventUpdate) Where(ps ...predicate.TenantSyncEvent) *TenantSyncEventUpdate {
-	_u.mutation.Where(ps...)
-	return _u
+func (tseu *TenantSyncEventUpdate) Where(ps ...predicate.TenantSyncEvent) *TenantSyncEventUpdate {
+	tseu.mutation.Where(ps...)
+	return tseu
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *TenantSyncEventUpdate) SetTenantID(v uuid.UUID) *TenantSyncEventUpdate {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (tseu *TenantSyncEventUpdate) SetTenantID(u uuid.UUID) *TenantSyncEventUpdate {
+	tseu.mutation.SetTenantID(u)
+	return tseu
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *TenantSyncEventUpdate) SetNillableTenantID(v *uuid.UUID) *TenantSyncEventUpdate {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (tseu *TenantSyncEventUpdate) SetNillableTenantID(u *uuid.UUID) *TenantSyncEventUpdate {
+	if u != nil {
+		tseu.SetTenantID(*u)
 	}
-	return _u
+	return tseu
 }
 
 // SetTenantSlug sets the "tenant_slug" field.
-func (_u *TenantSyncEventUpdate) SetTenantSlug(v string) *TenantSyncEventUpdate {
-	_u.mutation.SetTenantSlug(v)
-	return _u
+func (tseu *TenantSyncEventUpdate) SetTenantSlug(s string) *TenantSyncEventUpdate {
+	tseu.mutation.SetTenantSlug(s)
+	return tseu
 }
 
 // SetNillableTenantSlug sets the "tenant_slug" field if the given value is not nil.
-func (_u *TenantSyncEventUpdate) SetNillableTenantSlug(v *string) *TenantSyncEventUpdate {
-	if v != nil {
-		_u.SetTenantSlug(*v)
+func (tseu *TenantSyncEventUpdate) SetNillableTenantSlug(s *string) *TenantSyncEventUpdate {
+	if s != nil {
+		tseu.SetTenantSlug(*s)
 	}
-	return _u
+	return tseu
 }
 
 // SetSourceService sets the "source_service" field.
-func (_u *TenantSyncEventUpdate) SetSourceService(v string) *TenantSyncEventUpdate {
-	_u.mutation.SetSourceService(v)
-	return _u
+func (tseu *TenantSyncEventUpdate) SetSourceService(s string) *TenantSyncEventUpdate {
+	tseu.mutation.SetSourceService(s)
+	return tseu
 }
 
 // SetNillableSourceService sets the "source_service" field if the given value is not nil.
-func (_u *TenantSyncEventUpdate) SetNillableSourceService(v *string) *TenantSyncEventUpdate {
-	if v != nil {
-		_u.SetSourceService(*v)
+func (tseu *TenantSyncEventUpdate) SetNillableSourceService(s *string) *TenantSyncEventUpdate {
+	if s != nil {
+		tseu.SetSourceService(*s)
 	}
-	return _u
+	return tseu
 }
 
 // SetPayload sets the "payload" field.
-func (_u *TenantSyncEventUpdate) SetPayload(v map[string]interface{}) *TenantSyncEventUpdate {
-	_u.mutation.SetPayload(v)
-	return _u
+func (tseu *TenantSyncEventUpdate) SetPayload(m map[string]interface{}) *TenantSyncEventUpdate {
+	tseu.mutation.SetPayload(m)
+	return tseu
 }
 
 // ClearPayload clears the value of the "payload" field.
-func (_u *TenantSyncEventUpdate) ClearPayload() *TenantSyncEventUpdate {
-	_u.mutation.ClearPayload()
-	return _u
+func (tseu *TenantSyncEventUpdate) ClearPayload() *TenantSyncEventUpdate {
+	tseu.mutation.ClearPayload()
+	return tseu
 }
 
 // SetSyncedAt sets the "synced_at" field.
-func (_u *TenantSyncEventUpdate) SetSyncedAt(v time.Time) *TenantSyncEventUpdate {
-	_u.mutation.SetSyncedAt(v)
-	return _u
+func (tseu *TenantSyncEventUpdate) SetSyncedAt(t time.Time) *TenantSyncEventUpdate {
+	tseu.mutation.SetSyncedAt(t)
+	return tseu
 }
 
 // SetNillableSyncedAt sets the "synced_at" field if the given value is not nil.
-func (_u *TenantSyncEventUpdate) SetNillableSyncedAt(v *time.Time) *TenantSyncEventUpdate {
-	if v != nil {
-		_u.SetSyncedAt(*v)
+func (tseu *TenantSyncEventUpdate) SetNillableSyncedAt(t *time.Time) *TenantSyncEventUpdate {
+	if t != nil {
+		tseu.SetSyncedAt(*t)
 	}
-	return _u
+	return tseu
 }
 
 // SetStatus sets the "status" field.
-func (_u *TenantSyncEventUpdate) SetStatus(v string) *TenantSyncEventUpdate {
-	_u.mutation.SetStatus(v)
-	return _u
+func (tseu *TenantSyncEventUpdate) SetStatus(s string) *TenantSyncEventUpdate {
+	tseu.mutation.SetStatus(s)
+	return tseu
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *TenantSyncEventUpdate) SetNillableStatus(v *string) *TenantSyncEventUpdate {
-	if v != nil {
-		_u.SetStatus(*v)
+func (tseu *TenantSyncEventUpdate) SetNillableStatus(s *string) *TenantSyncEventUpdate {
+	if s != nil {
+		tseu.SetStatus(*s)
 	}
-	return _u
+	return tseu
 }
 
 // Mutation returns the TenantSyncEventMutation object of the builder.
-func (_u *TenantSyncEventUpdate) Mutation() *TenantSyncEventMutation {
-	return _u.mutation
+func (tseu *TenantSyncEventUpdate) Mutation() *TenantSyncEventMutation {
+	return tseu.mutation
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *TenantSyncEventUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (tseu *TenantSyncEventUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, tseu.sqlSave, tseu.mutation, tseu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *TenantSyncEventUpdate) SaveX(ctx context.Context) int {
-	affected, err := _u.Save(ctx)
+func (tseu *TenantSyncEventUpdate) SaveX(ctx context.Context) int {
+	affected, err := tseu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -131,26 +131,26 @@ func (_u *TenantSyncEventUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *TenantSyncEventUpdate) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (tseu *TenantSyncEventUpdate) Exec(ctx context.Context) error {
+	_, err := tseu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *TenantSyncEventUpdate) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (tseu *TenantSyncEventUpdate) ExecX(ctx context.Context) {
+	if err := tseu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *TenantSyncEventUpdate) check() error {
-	if v, ok := _u.mutation.TenantSlug(); ok {
+func (tseu *TenantSyncEventUpdate) check() error {
+	if v, ok := tseu.mutation.TenantSlug(); ok {
 		if err := tenantsyncevent.TenantSlugValidator(v); err != nil {
 			return &ValidationError{Name: "tenant_slug", err: fmt.Errorf(`ent: validator failed for field "TenantSyncEvent.tenant_slug": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.SourceService(); ok {
+	if v, ok := tseu.mutation.SourceService(); ok {
 		if err := tenantsyncevent.SourceServiceValidator(v); err != nil {
 			return &ValidationError{Name: "source_service", err: fmt.Errorf(`ent: validator failed for field "TenantSyncEvent.source_service": %w`, err)}
 		}
@@ -158,40 +158,40 @@ func (_u *TenantSyncEventUpdate) check() error {
 	return nil
 }
 
-func (_u *TenantSyncEventUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
+func (tseu *TenantSyncEventUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := tseu.check(); err != nil {
+		return n, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(tenantsyncevent.Table, tenantsyncevent.Columns, sqlgraph.NewFieldSpec(tenantsyncevent.FieldID, field.TypeUUID))
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := tseu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := tseu.mutation.TenantID(); ok {
 		_spec.SetField(tenantsyncevent.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.TenantSlug(); ok {
+	if value, ok := tseu.mutation.TenantSlug(); ok {
 		_spec.SetField(tenantsyncevent.FieldTenantSlug, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.SourceService(); ok {
+	if value, ok := tseu.mutation.SourceService(); ok {
 		_spec.SetField(tenantsyncevent.FieldSourceService, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Payload(); ok {
+	if value, ok := tseu.mutation.Payload(); ok {
 		_spec.SetField(tenantsyncevent.FieldPayload, field.TypeJSON, value)
 	}
-	if _u.mutation.PayloadCleared() {
+	if tseu.mutation.PayloadCleared() {
 		_spec.ClearField(tenantsyncevent.FieldPayload, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.SyncedAt(); ok {
+	if value, ok := tseu.mutation.SyncedAt(); ok {
 		_spec.SetField(tenantsyncevent.FieldSyncedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.Status(); ok {
+	if value, ok := tseu.mutation.Status(); ok {
 		_spec.SetField(tenantsyncevent.FieldStatus, field.TypeString, value)
 	}
-	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, tseu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tenantsyncevent.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -199,8 +199,8 @@ func (_u *TenantSyncEventUpdate) sqlSave(ctx context.Context) (_node int, err er
 		}
 		return 0, err
 	}
-	_u.mutation.done = true
-	return _node, nil
+	tseu.mutation.done = true
+	return n, nil
 }
 
 // TenantSyncEventUpdateOne is the builder for updating a single TenantSyncEvent entity.
@@ -212,113 +212,113 @@ type TenantSyncEventUpdateOne struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *TenantSyncEventUpdateOne) SetTenantID(v uuid.UUID) *TenantSyncEventUpdateOne {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (tseuo *TenantSyncEventUpdateOne) SetTenantID(u uuid.UUID) *TenantSyncEventUpdateOne {
+	tseuo.mutation.SetTenantID(u)
+	return tseuo
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *TenantSyncEventUpdateOne) SetNillableTenantID(v *uuid.UUID) *TenantSyncEventUpdateOne {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (tseuo *TenantSyncEventUpdateOne) SetNillableTenantID(u *uuid.UUID) *TenantSyncEventUpdateOne {
+	if u != nil {
+		tseuo.SetTenantID(*u)
 	}
-	return _u
+	return tseuo
 }
 
 // SetTenantSlug sets the "tenant_slug" field.
-func (_u *TenantSyncEventUpdateOne) SetTenantSlug(v string) *TenantSyncEventUpdateOne {
-	_u.mutation.SetTenantSlug(v)
-	return _u
+func (tseuo *TenantSyncEventUpdateOne) SetTenantSlug(s string) *TenantSyncEventUpdateOne {
+	tseuo.mutation.SetTenantSlug(s)
+	return tseuo
 }
 
 // SetNillableTenantSlug sets the "tenant_slug" field if the given value is not nil.
-func (_u *TenantSyncEventUpdateOne) SetNillableTenantSlug(v *string) *TenantSyncEventUpdateOne {
-	if v != nil {
-		_u.SetTenantSlug(*v)
+func (tseuo *TenantSyncEventUpdateOne) SetNillableTenantSlug(s *string) *TenantSyncEventUpdateOne {
+	if s != nil {
+		tseuo.SetTenantSlug(*s)
 	}
-	return _u
+	return tseuo
 }
 
 // SetSourceService sets the "source_service" field.
-func (_u *TenantSyncEventUpdateOne) SetSourceService(v string) *TenantSyncEventUpdateOne {
-	_u.mutation.SetSourceService(v)
-	return _u
+func (tseuo *TenantSyncEventUpdateOne) SetSourceService(s string) *TenantSyncEventUpdateOne {
+	tseuo.mutation.SetSourceService(s)
+	return tseuo
 }
 
 // SetNillableSourceService sets the "source_service" field if the given value is not nil.
-func (_u *TenantSyncEventUpdateOne) SetNillableSourceService(v *string) *TenantSyncEventUpdateOne {
-	if v != nil {
-		_u.SetSourceService(*v)
+func (tseuo *TenantSyncEventUpdateOne) SetNillableSourceService(s *string) *TenantSyncEventUpdateOne {
+	if s != nil {
+		tseuo.SetSourceService(*s)
 	}
-	return _u
+	return tseuo
 }
 
 // SetPayload sets the "payload" field.
-func (_u *TenantSyncEventUpdateOne) SetPayload(v map[string]interface{}) *TenantSyncEventUpdateOne {
-	_u.mutation.SetPayload(v)
-	return _u
+func (tseuo *TenantSyncEventUpdateOne) SetPayload(m map[string]interface{}) *TenantSyncEventUpdateOne {
+	tseuo.mutation.SetPayload(m)
+	return tseuo
 }
 
 // ClearPayload clears the value of the "payload" field.
-func (_u *TenantSyncEventUpdateOne) ClearPayload() *TenantSyncEventUpdateOne {
-	_u.mutation.ClearPayload()
-	return _u
+func (tseuo *TenantSyncEventUpdateOne) ClearPayload() *TenantSyncEventUpdateOne {
+	tseuo.mutation.ClearPayload()
+	return tseuo
 }
 
 // SetSyncedAt sets the "synced_at" field.
-func (_u *TenantSyncEventUpdateOne) SetSyncedAt(v time.Time) *TenantSyncEventUpdateOne {
-	_u.mutation.SetSyncedAt(v)
-	return _u
+func (tseuo *TenantSyncEventUpdateOne) SetSyncedAt(t time.Time) *TenantSyncEventUpdateOne {
+	tseuo.mutation.SetSyncedAt(t)
+	return tseuo
 }
 
 // SetNillableSyncedAt sets the "synced_at" field if the given value is not nil.
-func (_u *TenantSyncEventUpdateOne) SetNillableSyncedAt(v *time.Time) *TenantSyncEventUpdateOne {
-	if v != nil {
-		_u.SetSyncedAt(*v)
+func (tseuo *TenantSyncEventUpdateOne) SetNillableSyncedAt(t *time.Time) *TenantSyncEventUpdateOne {
+	if t != nil {
+		tseuo.SetSyncedAt(*t)
 	}
-	return _u
+	return tseuo
 }
 
 // SetStatus sets the "status" field.
-func (_u *TenantSyncEventUpdateOne) SetStatus(v string) *TenantSyncEventUpdateOne {
-	_u.mutation.SetStatus(v)
-	return _u
+func (tseuo *TenantSyncEventUpdateOne) SetStatus(s string) *TenantSyncEventUpdateOne {
+	tseuo.mutation.SetStatus(s)
+	return tseuo
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *TenantSyncEventUpdateOne) SetNillableStatus(v *string) *TenantSyncEventUpdateOne {
-	if v != nil {
-		_u.SetStatus(*v)
+func (tseuo *TenantSyncEventUpdateOne) SetNillableStatus(s *string) *TenantSyncEventUpdateOne {
+	if s != nil {
+		tseuo.SetStatus(*s)
 	}
-	return _u
+	return tseuo
 }
 
 // Mutation returns the TenantSyncEventMutation object of the builder.
-func (_u *TenantSyncEventUpdateOne) Mutation() *TenantSyncEventMutation {
-	return _u.mutation
+func (tseuo *TenantSyncEventUpdateOne) Mutation() *TenantSyncEventMutation {
+	return tseuo.mutation
 }
 
 // Where appends a list predicates to the TenantSyncEventUpdate builder.
-func (_u *TenantSyncEventUpdateOne) Where(ps ...predicate.TenantSyncEvent) *TenantSyncEventUpdateOne {
-	_u.mutation.Where(ps...)
-	return _u
+func (tseuo *TenantSyncEventUpdateOne) Where(ps ...predicate.TenantSyncEvent) *TenantSyncEventUpdateOne {
+	tseuo.mutation.Where(ps...)
+	return tseuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *TenantSyncEventUpdateOne) Select(field string, fields ...string) *TenantSyncEventUpdateOne {
-	_u.fields = append([]string{field}, fields...)
-	return _u
+func (tseuo *TenantSyncEventUpdateOne) Select(field string, fields ...string) *TenantSyncEventUpdateOne {
+	tseuo.fields = append([]string{field}, fields...)
+	return tseuo
 }
 
 // Save executes the query and returns the updated TenantSyncEvent entity.
-func (_u *TenantSyncEventUpdateOne) Save(ctx context.Context) (*TenantSyncEvent, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (tseuo *TenantSyncEventUpdateOne) Save(ctx context.Context) (*TenantSyncEvent, error) {
+	return withHooks(ctx, tseuo.sqlSave, tseuo.mutation, tseuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *TenantSyncEventUpdateOne) SaveX(ctx context.Context) *TenantSyncEvent {
-	node, err := _u.Save(ctx)
+func (tseuo *TenantSyncEventUpdateOne) SaveX(ctx context.Context) *TenantSyncEvent {
+	node, err := tseuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -326,26 +326,26 @@ func (_u *TenantSyncEventUpdateOne) SaveX(ctx context.Context) *TenantSyncEvent 
 }
 
 // Exec executes the query on the entity.
-func (_u *TenantSyncEventUpdateOne) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (tseuo *TenantSyncEventUpdateOne) Exec(ctx context.Context) error {
+	_, err := tseuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *TenantSyncEventUpdateOne) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (tseuo *TenantSyncEventUpdateOne) ExecX(ctx context.Context) {
+	if err := tseuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *TenantSyncEventUpdateOne) check() error {
-	if v, ok := _u.mutation.TenantSlug(); ok {
+func (tseuo *TenantSyncEventUpdateOne) check() error {
+	if v, ok := tseuo.mutation.TenantSlug(); ok {
 		if err := tenantsyncevent.TenantSlugValidator(v); err != nil {
 			return &ValidationError{Name: "tenant_slug", err: fmt.Errorf(`ent: validator failed for field "TenantSyncEvent.tenant_slug": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.SourceService(); ok {
+	if v, ok := tseuo.mutation.SourceService(); ok {
 		if err := tenantsyncevent.SourceServiceValidator(v); err != nil {
 			return &ValidationError{Name: "source_service", err: fmt.Errorf(`ent: validator failed for field "TenantSyncEvent.source_service": %w`, err)}
 		}
@@ -353,17 +353,17 @@ func (_u *TenantSyncEventUpdateOne) check() error {
 	return nil
 }
 
-func (_u *TenantSyncEventUpdateOne) sqlSave(ctx context.Context) (_node *TenantSyncEvent, err error) {
-	if err := _u.check(); err != nil {
+func (tseuo *TenantSyncEventUpdateOne) sqlSave(ctx context.Context) (_node *TenantSyncEvent, err error) {
+	if err := tseuo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(tenantsyncevent.Table, tenantsyncevent.Columns, sqlgraph.NewFieldSpec(tenantsyncevent.FieldID, field.TypeUUID))
-	id, ok := _u.mutation.ID()
+	id, ok := tseuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "TenantSyncEvent.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := _u.fields; len(fields) > 0 {
+	if fields := tseuo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, tenantsyncevent.FieldID)
 		for _, f := range fields {
@@ -375,38 +375,38 @@ func (_u *TenantSyncEventUpdateOne) sqlSave(ctx context.Context) (_node *TenantS
 			}
 		}
 	}
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := tseuo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := tseuo.mutation.TenantID(); ok {
 		_spec.SetField(tenantsyncevent.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.TenantSlug(); ok {
+	if value, ok := tseuo.mutation.TenantSlug(); ok {
 		_spec.SetField(tenantsyncevent.FieldTenantSlug, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.SourceService(); ok {
+	if value, ok := tseuo.mutation.SourceService(); ok {
 		_spec.SetField(tenantsyncevent.FieldSourceService, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Payload(); ok {
+	if value, ok := tseuo.mutation.Payload(); ok {
 		_spec.SetField(tenantsyncevent.FieldPayload, field.TypeJSON, value)
 	}
-	if _u.mutation.PayloadCleared() {
+	if tseuo.mutation.PayloadCleared() {
 		_spec.ClearField(tenantsyncevent.FieldPayload, field.TypeJSON)
 	}
-	if value, ok := _u.mutation.SyncedAt(); ok {
+	if value, ok := tseuo.mutation.SyncedAt(); ok {
 		_spec.SetField(tenantsyncevent.FieldSyncedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.Status(); ok {
+	if value, ok := tseuo.mutation.Status(); ok {
 		_spec.SetField(tenantsyncevent.FieldStatus, field.TypeString, value)
 	}
-	_node = &TenantSyncEvent{config: _u.config}
+	_node = &TenantSyncEvent{config: tseuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, tseuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tenantsyncevent.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -414,6 +414,6 @@ func (_u *TenantSyncEventUpdateOne) sqlSave(ctx context.Context) (_node *TenantS
 		}
 		return nil, err
 	}
-	_u.mutation.done = true
+	tseuo.mutation.done = true
 	return _node, nil
 }

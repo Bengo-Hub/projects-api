@@ -23,96 +23,96 @@ type ProjectMemberCreate struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_c *ProjectMemberCreate) SetTenantID(v uuid.UUID) *ProjectMemberCreate {
-	_c.mutation.SetTenantID(v)
-	return _c
+func (pmc *ProjectMemberCreate) SetTenantID(u uuid.UUID) *ProjectMemberCreate {
+	pmc.mutation.SetTenantID(u)
+	return pmc
 }
 
 // SetProjectID sets the "project_id" field.
-func (_c *ProjectMemberCreate) SetProjectID(v uuid.UUID) *ProjectMemberCreate {
-	_c.mutation.SetProjectID(v)
-	return _c
+func (pmc *ProjectMemberCreate) SetProjectID(u uuid.UUID) *ProjectMemberCreate {
+	pmc.mutation.SetProjectID(u)
+	return pmc
 }
 
 // SetUserID sets the "user_id" field.
-func (_c *ProjectMemberCreate) SetUserID(v uuid.UUID) *ProjectMemberCreate {
-	_c.mutation.SetUserID(v)
-	return _c
+func (pmc *ProjectMemberCreate) SetUserID(u uuid.UUID) *ProjectMemberCreate {
+	pmc.mutation.SetUserID(u)
+	return pmc
 }
 
 // SetRoleCode sets the "role_code" field.
-func (_c *ProjectMemberCreate) SetRoleCode(v string) *ProjectMemberCreate {
-	_c.mutation.SetRoleCode(v)
-	return _c
+func (pmc *ProjectMemberCreate) SetRoleCode(s string) *ProjectMemberCreate {
+	pmc.mutation.SetRoleCode(s)
+	return pmc
 }
 
 // SetJoinedAt sets the "joined_at" field.
-func (_c *ProjectMemberCreate) SetJoinedAt(v time.Time) *ProjectMemberCreate {
-	_c.mutation.SetJoinedAt(v)
-	return _c
+func (pmc *ProjectMemberCreate) SetJoinedAt(t time.Time) *ProjectMemberCreate {
+	pmc.mutation.SetJoinedAt(t)
+	return pmc
 }
 
 // SetNillableJoinedAt sets the "joined_at" field if the given value is not nil.
-func (_c *ProjectMemberCreate) SetNillableJoinedAt(v *time.Time) *ProjectMemberCreate {
-	if v != nil {
-		_c.SetJoinedAt(*v)
+func (pmc *ProjectMemberCreate) SetNillableJoinedAt(t *time.Time) *ProjectMemberCreate {
+	if t != nil {
+		pmc.SetJoinedAt(*t)
 	}
-	return _c
+	return pmc
 }
 
 // SetLeftAt sets the "left_at" field.
-func (_c *ProjectMemberCreate) SetLeftAt(v time.Time) *ProjectMemberCreate {
-	_c.mutation.SetLeftAt(v)
-	return _c
+func (pmc *ProjectMemberCreate) SetLeftAt(t time.Time) *ProjectMemberCreate {
+	pmc.mutation.SetLeftAt(t)
+	return pmc
 }
 
 // SetNillableLeftAt sets the "left_at" field if the given value is not nil.
-func (_c *ProjectMemberCreate) SetNillableLeftAt(v *time.Time) *ProjectMemberCreate {
-	if v != nil {
-		_c.SetLeftAt(*v)
+func (pmc *ProjectMemberCreate) SetNillableLeftAt(t *time.Time) *ProjectMemberCreate {
+	if t != nil {
+		pmc.SetLeftAt(*t)
 	}
-	return _c
+	return pmc
 }
 
 // SetMetadata sets the "metadata" field.
-func (_c *ProjectMemberCreate) SetMetadata(v map[string]interface{}) *ProjectMemberCreate {
-	_c.mutation.SetMetadata(v)
-	return _c
+func (pmc *ProjectMemberCreate) SetMetadata(m map[string]interface{}) *ProjectMemberCreate {
+	pmc.mutation.SetMetadata(m)
+	return pmc
 }
 
 // SetID sets the "id" field.
-func (_c *ProjectMemberCreate) SetID(v uuid.UUID) *ProjectMemberCreate {
-	_c.mutation.SetID(v)
-	return _c
+func (pmc *ProjectMemberCreate) SetID(u uuid.UUID) *ProjectMemberCreate {
+	pmc.mutation.SetID(u)
+	return pmc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (_c *ProjectMemberCreate) SetNillableID(v *uuid.UUID) *ProjectMemberCreate {
-	if v != nil {
-		_c.SetID(*v)
+func (pmc *ProjectMemberCreate) SetNillableID(u *uuid.UUID) *ProjectMemberCreate {
+	if u != nil {
+		pmc.SetID(*u)
 	}
-	return _c
+	return pmc
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_c *ProjectMemberCreate) SetProject(v *Project) *ProjectMemberCreate {
-	return _c.SetProjectID(v.ID)
+func (pmc *ProjectMemberCreate) SetProject(p *Project) *ProjectMemberCreate {
+	return pmc.SetProjectID(p.ID)
 }
 
 // Mutation returns the ProjectMemberMutation object of the builder.
-func (_c *ProjectMemberCreate) Mutation() *ProjectMemberMutation {
-	return _c.mutation
+func (pmc *ProjectMemberCreate) Mutation() *ProjectMemberMutation {
+	return pmc.mutation
 }
 
 // Save creates the ProjectMember in the database.
-func (_c *ProjectMemberCreate) Save(ctx context.Context) (*ProjectMember, error) {
-	_c.defaults()
-	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
+func (pmc *ProjectMemberCreate) Save(ctx context.Context) (*ProjectMember, error) {
+	pmc.defaults()
+	return withHooks(ctx, pmc.sqlSave, pmc.mutation, pmc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *ProjectMemberCreate) SaveX(ctx context.Context) *ProjectMember {
-	v, err := _c.Save(ctx)
+func (pmc *ProjectMemberCreate) SaveX(ctx context.Context) *ProjectMember {
+	v, err := pmc.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -120,59 +120,59 @@ func (_c *ProjectMemberCreate) SaveX(ctx context.Context) *ProjectMember {
 }
 
 // Exec executes the query.
-func (_c *ProjectMemberCreate) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (pmc *ProjectMemberCreate) Exec(ctx context.Context) error {
+	_, err := pmc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *ProjectMemberCreate) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (pmc *ProjectMemberCreate) ExecX(ctx context.Context) {
+	if err := pmc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *ProjectMemberCreate) defaults() {
-	if _, ok := _c.mutation.JoinedAt(); !ok {
+func (pmc *ProjectMemberCreate) defaults() {
+	if _, ok := pmc.mutation.JoinedAt(); !ok {
 		v := projectmember.DefaultJoinedAt()
-		_c.mutation.SetJoinedAt(v)
+		pmc.mutation.SetJoinedAt(v)
 	}
-	if _, ok := _c.mutation.ID(); !ok {
+	if _, ok := pmc.mutation.ID(); !ok {
 		v := projectmember.DefaultID()
-		_c.mutation.SetID(v)
+		pmc.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *ProjectMemberCreate) check() error {
-	if _, ok := _c.mutation.TenantID(); !ok {
+func (pmc *ProjectMemberCreate) check() error {
+	if _, ok := pmc.mutation.TenantID(); !ok {
 		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "ProjectMember.tenant_id"`)}
 	}
-	if _, ok := _c.mutation.ProjectID(); !ok {
+	if _, ok := pmc.mutation.ProjectID(); !ok {
 		return &ValidationError{Name: "project_id", err: errors.New(`ent: missing required field "ProjectMember.project_id"`)}
 	}
-	if _, ok := _c.mutation.UserID(); !ok {
+	if _, ok := pmc.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "ProjectMember.user_id"`)}
 	}
-	if _, ok := _c.mutation.RoleCode(); !ok {
+	if _, ok := pmc.mutation.RoleCode(); !ok {
 		return &ValidationError{Name: "role_code", err: errors.New(`ent: missing required field "ProjectMember.role_code"`)}
 	}
-	if _, ok := _c.mutation.JoinedAt(); !ok {
+	if _, ok := pmc.mutation.JoinedAt(); !ok {
 		return &ValidationError{Name: "joined_at", err: errors.New(`ent: missing required field "ProjectMember.joined_at"`)}
 	}
-	if len(_c.mutation.ProjectIDs()) == 0 {
+	if _, ok := pmc.mutation.ProjectID(); !ok {
 		return &ValidationError{Name: "project", err: errors.New(`ent: missing required edge "ProjectMember.project"`)}
 	}
 	return nil
 }
 
-func (_c *ProjectMemberCreate) sqlSave(ctx context.Context) (*ProjectMember, error) {
-	if err := _c.check(); err != nil {
+func (pmc *ProjectMemberCreate) sqlSave(ctx context.Context) (*ProjectMember, error) {
+	if err := pmc.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := _c.createSpec()
-	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
+	_node, _spec := pmc.createSpec()
+	if err := sqlgraph.CreateNode(ctx, pmc.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -185,45 +185,45 @@ func (_c *ProjectMemberCreate) sqlSave(ctx context.Context) (*ProjectMember, err
 			return nil, err
 		}
 	}
-	_c.mutation.id = &_node.ID
-	_c.mutation.done = true
+	pmc.mutation.id = &_node.ID
+	pmc.mutation.done = true
 	return _node, nil
 }
 
-func (_c *ProjectMemberCreate) createSpec() (*ProjectMember, *sqlgraph.CreateSpec) {
+func (pmc *ProjectMemberCreate) createSpec() (*ProjectMember, *sqlgraph.CreateSpec) {
 	var (
-		_node = &ProjectMember{config: _c.config}
+		_node = &ProjectMember{config: pmc.config}
 		_spec = sqlgraph.NewCreateSpec(projectmember.Table, sqlgraph.NewFieldSpec(projectmember.FieldID, field.TypeUUID))
 	)
-	if id, ok := _c.mutation.ID(); ok {
+	if id, ok := pmc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.TenantID(); ok {
+	if value, ok := pmc.mutation.TenantID(); ok {
 		_spec.SetField(projectmember.FieldTenantID, field.TypeUUID, value)
 		_node.TenantID = value
 	}
-	if value, ok := _c.mutation.UserID(); ok {
+	if value, ok := pmc.mutation.UserID(); ok {
 		_spec.SetField(projectmember.FieldUserID, field.TypeUUID, value)
 		_node.UserID = value
 	}
-	if value, ok := _c.mutation.RoleCode(); ok {
+	if value, ok := pmc.mutation.RoleCode(); ok {
 		_spec.SetField(projectmember.FieldRoleCode, field.TypeString, value)
 		_node.RoleCode = value
 	}
-	if value, ok := _c.mutation.JoinedAt(); ok {
+	if value, ok := pmc.mutation.JoinedAt(); ok {
 		_spec.SetField(projectmember.FieldJoinedAt, field.TypeTime, value)
 		_node.JoinedAt = value
 	}
-	if value, ok := _c.mutation.LeftAt(); ok {
+	if value, ok := pmc.mutation.LeftAt(); ok {
 		_spec.SetField(projectmember.FieldLeftAt, field.TypeTime, value)
 		_node.LeftAt = value
 	}
-	if value, ok := _c.mutation.Metadata(); ok {
+	if value, ok := pmc.mutation.Metadata(); ok {
 		_spec.SetField(projectmember.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
 	}
-	if nodes := _c.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := pmc.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -251,16 +251,16 @@ type ProjectMemberCreateBulk struct {
 }
 
 // Save creates the ProjectMember entities in the database.
-func (_c *ProjectMemberCreateBulk) Save(ctx context.Context) ([]*ProjectMember, error) {
-	if _c.err != nil {
-		return nil, _c.err
+func (pmcb *ProjectMemberCreateBulk) Save(ctx context.Context) ([]*ProjectMember, error) {
+	if pmcb.err != nil {
+		return nil, pmcb.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*ProjectMember, len(_c.builders))
-	mutators := make([]Mutator, len(_c.builders))
-	for i := range _c.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(pmcb.builders))
+	nodes := make([]*ProjectMember, len(pmcb.builders))
+	mutators := make([]Mutator, len(pmcb.builders))
+	for i := range pmcb.builders {
 		func(i int, root context.Context) {
-			builder := _c.builders[i]
+			builder := pmcb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*ProjectMemberMutation)
@@ -274,11 +274,11 @@ func (_c *ProjectMemberCreateBulk) Save(ctx context.Context) ([]*ProjectMember, 
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, pmcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, pmcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -298,7 +298,7 @@ func (_c *ProjectMemberCreateBulk) Save(ctx context.Context) ([]*ProjectMember, 
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, pmcb.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -306,8 +306,8 @@ func (_c *ProjectMemberCreateBulk) Save(ctx context.Context) ([]*ProjectMember, 
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *ProjectMemberCreateBulk) SaveX(ctx context.Context) []*ProjectMember {
-	v, err := _c.Save(ctx)
+func (pmcb *ProjectMemberCreateBulk) SaveX(ctx context.Context) []*ProjectMember {
+	v, err := pmcb.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -315,14 +315,14 @@ func (_c *ProjectMemberCreateBulk) SaveX(ctx context.Context) []*ProjectMember {
 }
 
 // Exec executes the query.
-func (_c *ProjectMemberCreateBulk) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (pmcb *ProjectMemberCreateBulk) Exec(ctx context.Context) error {
+	_, err := pmcb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *ProjectMemberCreateBulk) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (pmcb *ProjectMemberCreateBulk) ExecX(ctx context.Context) {
+	if err := pmcb.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

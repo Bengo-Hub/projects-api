@@ -82,7 +82,7 @@ func (*ProjectMember) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the ProjectMember fields.
-func (_m *ProjectMember) assignValues(columns []string, values []any) error {
+func (pm *ProjectMember) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -92,54 +92,54 @@ func (_m *ProjectMember) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				pm.ID = *value
 			}
 		case projectmember.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				pm.TenantID = *value
 			}
 		case projectmember.FieldProjectID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field project_id", values[i])
 			} else if value != nil {
-				_m.ProjectID = *value
+				pm.ProjectID = *value
 			}
 		case projectmember.FieldUserID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field user_id", values[i])
 			} else if value != nil {
-				_m.UserID = *value
+				pm.UserID = *value
 			}
 		case projectmember.FieldRoleCode:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field role_code", values[i])
 			} else if value.Valid {
-				_m.RoleCode = value.String
+				pm.RoleCode = value.String
 			}
 		case projectmember.FieldJoinedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field joined_at", values[i])
 			} else if value.Valid {
-				_m.JoinedAt = value.Time
+				pm.JoinedAt = value.Time
 			}
 		case projectmember.FieldLeftAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field left_at", values[i])
 			} else if value.Valid {
-				_m.LeftAt = value.Time
+				pm.LeftAt = value.Time
 			}
 		case projectmember.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Metadata); err != nil {
+				if err := json.Unmarshal(*value, &pm.Metadata); err != nil {
 					return fmt.Errorf("unmarshal field metadata: %w", err)
 				}
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			pm.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -147,58 +147,58 @@ func (_m *ProjectMember) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the ProjectMember.
 // This includes values selected through modifiers, order, etc.
-func (_m *ProjectMember) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (pm *ProjectMember) Value(name string) (ent.Value, error) {
+	return pm.selectValues.Get(name)
 }
 
 // QueryProject queries the "project" edge of the ProjectMember entity.
-func (_m *ProjectMember) QueryProject() *ProjectQuery {
-	return NewProjectMemberClient(_m.config).QueryProject(_m)
+func (pm *ProjectMember) QueryProject() *ProjectQuery {
+	return NewProjectMemberClient(pm.config).QueryProject(pm)
 }
 
 // Update returns a builder for updating this ProjectMember.
 // Note that you need to call ProjectMember.Unwrap() before calling this method if this ProjectMember
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *ProjectMember) Update() *ProjectMemberUpdateOne {
-	return NewProjectMemberClient(_m.config).UpdateOne(_m)
+func (pm *ProjectMember) Update() *ProjectMemberUpdateOne {
+	return NewProjectMemberClient(pm.config).UpdateOne(pm)
 }
 
 // Unwrap unwraps the ProjectMember entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *ProjectMember) Unwrap() *ProjectMember {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (pm *ProjectMember) Unwrap() *ProjectMember {
+	_tx, ok := pm.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: ProjectMember is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	pm.config.driver = _tx.drv
+	return pm
 }
 
 // String implements the fmt.Stringer.
-func (_m *ProjectMember) String() string {
+func (pm *ProjectMember) String() string {
 	var builder strings.Builder
 	builder.WriteString("ProjectMember(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", pm.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", pm.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("project_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ProjectID))
+	builder.WriteString(fmt.Sprintf("%v", pm.ProjectID))
 	builder.WriteString(", ")
 	builder.WriteString("user_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString(fmt.Sprintf("%v", pm.UserID))
 	builder.WriteString(", ")
 	builder.WriteString("role_code=")
-	builder.WriteString(_m.RoleCode)
+	builder.WriteString(pm.RoleCode)
 	builder.WriteString(", ")
 	builder.WriteString("joined_at=")
-	builder.WriteString(_m.JoinedAt.Format(time.ANSIC))
+	builder.WriteString(pm.JoinedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("left_at=")
-	builder.WriteString(_m.LeftAt.Format(time.ANSIC))
+	builder.WriteString(pm.LeftAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))
+	builder.WriteString(fmt.Sprintf("%v", pm.Metadata))
 	builder.WriteByte(')')
 	return builder.String()
 }

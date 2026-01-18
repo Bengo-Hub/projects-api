@@ -76,7 +76,7 @@ func (*Permission) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Permission fields.
-func (_m *Permission) assignValues(columns []string, values []any) error {
+func (pe *Permission) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -86,52 +86,52 @@ func (_m *Permission) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				pe.ID = *value
 			}
 		case permission.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				pe.TenantID = *value
 			}
 		case permission.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				_m.Name = value.String
+				pe.Name = value.String
 			}
 		case permission.FieldModule:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field module", values[i])
 			} else if value.Valid {
-				_m.Module = value.String
+				pe.Module = value.String
 			}
 		case permission.FieldAction:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field action", values[i])
 			} else if value.Valid {
-				_m.Action = value.String
+				pe.Action = value.String
 			}
 		case permission.FieldResource:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field resource", values[i])
 			} else if value.Valid {
-				_m.Resource = value.String
+				pe.Resource = value.String
 			}
 		case permission.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
-				_m.Description = value.String
+				pe.Description = value.String
 			}
 		case permission.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				_m.CreatedAt = value.Time
+				pe.CreatedAt = value.Time
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			pe.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -139,58 +139,58 @@ func (_m *Permission) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Permission.
 // This includes values selected through modifiers, order, etc.
-func (_m *Permission) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (pe *Permission) Value(name string) (ent.Value, error) {
+	return pe.selectValues.Get(name)
 }
 
 // QueryRolePermissions queries the "role_permissions" edge of the Permission entity.
-func (_m *Permission) QueryRolePermissions() *RolePermissionQuery {
-	return NewPermissionClient(_m.config).QueryRolePermissions(_m)
+func (pe *Permission) QueryRolePermissions() *RolePermissionQuery {
+	return NewPermissionClient(pe.config).QueryRolePermissions(pe)
 }
 
 // Update returns a builder for updating this Permission.
 // Note that you need to call Permission.Unwrap() before calling this method if this Permission
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *Permission) Update() *PermissionUpdateOne {
-	return NewPermissionClient(_m.config).UpdateOne(_m)
+func (pe *Permission) Update() *PermissionUpdateOne {
+	return NewPermissionClient(pe.config).UpdateOne(pe)
 }
 
 // Unwrap unwraps the Permission entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *Permission) Unwrap() *Permission {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (pe *Permission) Unwrap() *Permission {
+	_tx, ok := pe.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: Permission is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	pe.config.driver = _tx.drv
+	return pe
 }
 
 // String implements the fmt.Stringer.
-func (_m *Permission) String() string {
+func (pe *Permission) String() string {
 	var builder strings.Builder
 	builder.WriteString("Permission(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", pe.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", pe.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(_m.Name)
+	builder.WriteString(pe.Name)
 	builder.WriteString(", ")
 	builder.WriteString("module=")
-	builder.WriteString(_m.Module)
+	builder.WriteString(pe.Module)
 	builder.WriteString(", ")
 	builder.WriteString("action=")
-	builder.WriteString(_m.Action)
+	builder.WriteString(pe.Action)
 	builder.WriteString(", ")
 	builder.WriteString("resource=")
-	builder.WriteString(_m.Resource)
+	builder.WriteString(pe.Resource)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
-	builder.WriteString(_m.Description)
+	builder.WriteString(pe.Description)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(pe.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

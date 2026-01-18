@@ -20,56 +20,56 @@ type AttachmentDelete struct {
 }
 
 // Where appends a list predicates to the AttachmentDelete builder.
-func (_d *AttachmentDelete) Where(ps ...predicate.Attachment) *AttachmentDelete {
-	_d.mutation.Where(ps...)
-	return _d
+func (ad *AttachmentDelete) Where(ps ...predicate.Attachment) *AttachmentDelete {
+	ad.mutation.Where(ps...)
+	return ad
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *AttachmentDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
+func (ad *AttachmentDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, ad.sqlExec, ad.mutation, ad.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *AttachmentDelete) ExecX(ctx context.Context) int {
-	n, err := _d.Exec(ctx)
+func (ad *AttachmentDelete) ExecX(ctx context.Context) int {
+	n, err := ad.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (_d *AttachmentDelete) sqlExec(ctx context.Context) (int, error) {
+func (ad *AttachmentDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(attachment.Table, sqlgraph.NewFieldSpec(attachment.FieldID, field.TypeUUID))
-	if ps := _d.mutation.predicates; len(ps) > 0 {
+	if ps := ad.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, ad.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	_d.mutation.done = true
+	ad.mutation.done = true
 	return affected, err
 }
 
 // AttachmentDeleteOne is the builder for deleting a single Attachment entity.
 type AttachmentDeleteOne struct {
-	_d *AttachmentDelete
+	ad *AttachmentDelete
 }
 
 // Where appends a list predicates to the AttachmentDelete builder.
-func (_d *AttachmentDeleteOne) Where(ps ...predicate.Attachment) *AttachmentDeleteOne {
-	_d._d.mutation.Where(ps...)
-	return _d
+func (ado *AttachmentDeleteOne) Where(ps ...predicate.Attachment) *AttachmentDeleteOne {
+	ado.ad.mutation.Where(ps...)
+	return ado
 }
 
 // Exec executes the deletion query.
-func (_d *AttachmentDeleteOne) Exec(ctx context.Context) error {
-	n, err := _d._d.Exec(ctx)
+func (ado *AttachmentDeleteOne) Exec(ctx context.Context) error {
+	n, err := ado.ad.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -81,8 +81,8 @@ func (_d *AttachmentDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *AttachmentDeleteOne) ExecX(ctx context.Context) {
-	if err := _d.Exec(ctx); err != nil {
+func (ado *AttachmentDeleteOne) ExecX(ctx context.Context) {
+	if err := ado.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

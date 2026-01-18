@@ -22,85 +22,85 @@ type TenantSyncEventCreate struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_c *TenantSyncEventCreate) SetTenantID(v uuid.UUID) *TenantSyncEventCreate {
-	_c.mutation.SetTenantID(v)
-	return _c
+func (tsec *TenantSyncEventCreate) SetTenantID(u uuid.UUID) *TenantSyncEventCreate {
+	tsec.mutation.SetTenantID(u)
+	return tsec
 }
 
 // SetTenantSlug sets the "tenant_slug" field.
-func (_c *TenantSyncEventCreate) SetTenantSlug(v string) *TenantSyncEventCreate {
-	_c.mutation.SetTenantSlug(v)
-	return _c
+func (tsec *TenantSyncEventCreate) SetTenantSlug(s string) *TenantSyncEventCreate {
+	tsec.mutation.SetTenantSlug(s)
+	return tsec
 }
 
 // SetSourceService sets the "source_service" field.
-func (_c *TenantSyncEventCreate) SetSourceService(v string) *TenantSyncEventCreate {
-	_c.mutation.SetSourceService(v)
-	return _c
+func (tsec *TenantSyncEventCreate) SetSourceService(s string) *TenantSyncEventCreate {
+	tsec.mutation.SetSourceService(s)
+	return tsec
 }
 
 // SetPayload sets the "payload" field.
-func (_c *TenantSyncEventCreate) SetPayload(v map[string]interface{}) *TenantSyncEventCreate {
-	_c.mutation.SetPayload(v)
-	return _c
+func (tsec *TenantSyncEventCreate) SetPayload(m map[string]interface{}) *TenantSyncEventCreate {
+	tsec.mutation.SetPayload(m)
+	return tsec
 }
 
 // SetSyncedAt sets the "synced_at" field.
-func (_c *TenantSyncEventCreate) SetSyncedAt(v time.Time) *TenantSyncEventCreate {
-	_c.mutation.SetSyncedAt(v)
-	return _c
+func (tsec *TenantSyncEventCreate) SetSyncedAt(t time.Time) *TenantSyncEventCreate {
+	tsec.mutation.SetSyncedAt(t)
+	return tsec
 }
 
 // SetNillableSyncedAt sets the "synced_at" field if the given value is not nil.
-func (_c *TenantSyncEventCreate) SetNillableSyncedAt(v *time.Time) *TenantSyncEventCreate {
-	if v != nil {
-		_c.SetSyncedAt(*v)
+func (tsec *TenantSyncEventCreate) SetNillableSyncedAt(t *time.Time) *TenantSyncEventCreate {
+	if t != nil {
+		tsec.SetSyncedAt(*t)
 	}
-	return _c
+	return tsec
 }
 
 // SetStatus sets the "status" field.
-func (_c *TenantSyncEventCreate) SetStatus(v string) *TenantSyncEventCreate {
-	_c.mutation.SetStatus(v)
-	return _c
+func (tsec *TenantSyncEventCreate) SetStatus(s string) *TenantSyncEventCreate {
+	tsec.mutation.SetStatus(s)
+	return tsec
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_c *TenantSyncEventCreate) SetNillableStatus(v *string) *TenantSyncEventCreate {
-	if v != nil {
-		_c.SetStatus(*v)
+func (tsec *TenantSyncEventCreate) SetNillableStatus(s *string) *TenantSyncEventCreate {
+	if s != nil {
+		tsec.SetStatus(*s)
 	}
-	return _c
+	return tsec
 }
 
 // SetID sets the "id" field.
-func (_c *TenantSyncEventCreate) SetID(v uuid.UUID) *TenantSyncEventCreate {
-	_c.mutation.SetID(v)
-	return _c
+func (tsec *TenantSyncEventCreate) SetID(u uuid.UUID) *TenantSyncEventCreate {
+	tsec.mutation.SetID(u)
+	return tsec
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (_c *TenantSyncEventCreate) SetNillableID(v *uuid.UUID) *TenantSyncEventCreate {
-	if v != nil {
-		_c.SetID(*v)
+func (tsec *TenantSyncEventCreate) SetNillableID(u *uuid.UUID) *TenantSyncEventCreate {
+	if u != nil {
+		tsec.SetID(*u)
 	}
-	return _c
+	return tsec
 }
 
 // Mutation returns the TenantSyncEventMutation object of the builder.
-func (_c *TenantSyncEventCreate) Mutation() *TenantSyncEventMutation {
-	return _c.mutation
+func (tsec *TenantSyncEventCreate) Mutation() *TenantSyncEventMutation {
+	return tsec.mutation
 }
 
 // Save creates the TenantSyncEvent in the database.
-func (_c *TenantSyncEventCreate) Save(ctx context.Context) (*TenantSyncEvent, error) {
-	_c.defaults()
-	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
+func (tsec *TenantSyncEventCreate) Save(ctx context.Context) (*TenantSyncEvent, error) {
+	tsec.defaults()
+	return withHooks(ctx, tsec.sqlSave, tsec.mutation, tsec.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *TenantSyncEventCreate) SaveX(ctx context.Context) *TenantSyncEvent {
-	v, err := _c.Save(ctx)
+func (tsec *TenantSyncEventCreate) SaveX(ctx context.Context) *TenantSyncEvent {
+	v, err := tsec.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -108,70 +108,70 @@ func (_c *TenantSyncEventCreate) SaveX(ctx context.Context) *TenantSyncEvent {
 }
 
 // Exec executes the query.
-func (_c *TenantSyncEventCreate) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (tsec *TenantSyncEventCreate) Exec(ctx context.Context) error {
+	_, err := tsec.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *TenantSyncEventCreate) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (tsec *TenantSyncEventCreate) ExecX(ctx context.Context) {
+	if err := tsec.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *TenantSyncEventCreate) defaults() {
-	if _, ok := _c.mutation.SyncedAt(); !ok {
+func (tsec *TenantSyncEventCreate) defaults() {
+	if _, ok := tsec.mutation.SyncedAt(); !ok {
 		v := tenantsyncevent.DefaultSyncedAt()
-		_c.mutation.SetSyncedAt(v)
+		tsec.mutation.SetSyncedAt(v)
 	}
-	if _, ok := _c.mutation.Status(); !ok {
+	if _, ok := tsec.mutation.Status(); !ok {
 		v := tenantsyncevent.DefaultStatus
-		_c.mutation.SetStatus(v)
+		tsec.mutation.SetStatus(v)
 	}
-	if _, ok := _c.mutation.ID(); !ok {
+	if _, ok := tsec.mutation.ID(); !ok {
 		v := tenantsyncevent.DefaultID()
-		_c.mutation.SetID(v)
+		tsec.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *TenantSyncEventCreate) check() error {
-	if _, ok := _c.mutation.TenantID(); !ok {
+func (tsec *TenantSyncEventCreate) check() error {
+	if _, ok := tsec.mutation.TenantID(); !ok {
 		return &ValidationError{Name: "tenant_id", err: errors.New(`ent: missing required field "TenantSyncEvent.tenant_id"`)}
 	}
-	if _, ok := _c.mutation.TenantSlug(); !ok {
+	if _, ok := tsec.mutation.TenantSlug(); !ok {
 		return &ValidationError{Name: "tenant_slug", err: errors.New(`ent: missing required field "TenantSyncEvent.tenant_slug"`)}
 	}
-	if v, ok := _c.mutation.TenantSlug(); ok {
+	if v, ok := tsec.mutation.TenantSlug(); ok {
 		if err := tenantsyncevent.TenantSlugValidator(v); err != nil {
 			return &ValidationError{Name: "tenant_slug", err: fmt.Errorf(`ent: validator failed for field "TenantSyncEvent.tenant_slug": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.SourceService(); !ok {
+	if _, ok := tsec.mutation.SourceService(); !ok {
 		return &ValidationError{Name: "source_service", err: errors.New(`ent: missing required field "TenantSyncEvent.source_service"`)}
 	}
-	if v, ok := _c.mutation.SourceService(); ok {
+	if v, ok := tsec.mutation.SourceService(); ok {
 		if err := tenantsyncevent.SourceServiceValidator(v); err != nil {
 			return &ValidationError{Name: "source_service", err: fmt.Errorf(`ent: validator failed for field "TenantSyncEvent.source_service": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.SyncedAt(); !ok {
+	if _, ok := tsec.mutation.SyncedAt(); !ok {
 		return &ValidationError{Name: "synced_at", err: errors.New(`ent: missing required field "TenantSyncEvent.synced_at"`)}
 	}
-	if _, ok := _c.mutation.Status(); !ok {
+	if _, ok := tsec.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "TenantSyncEvent.status"`)}
 	}
 	return nil
 }
 
-func (_c *TenantSyncEventCreate) sqlSave(ctx context.Context) (*TenantSyncEvent, error) {
-	if err := _c.check(); err != nil {
+func (tsec *TenantSyncEventCreate) sqlSave(ctx context.Context) (*TenantSyncEvent, error) {
+	if err := tsec.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := _c.createSpec()
-	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
+	_node, _spec := tsec.createSpec()
+	if err := sqlgraph.CreateNode(ctx, tsec.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -184,41 +184,41 @@ func (_c *TenantSyncEventCreate) sqlSave(ctx context.Context) (*TenantSyncEvent,
 			return nil, err
 		}
 	}
-	_c.mutation.id = &_node.ID
-	_c.mutation.done = true
+	tsec.mutation.id = &_node.ID
+	tsec.mutation.done = true
 	return _node, nil
 }
 
-func (_c *TenantSyncEventCreate) createSpec() (*TenantSyncEvent, *sqlgraph.CreateSpec) {
+func (tsec *TenantSyncEventCreate) createSpec() (*TenantSyncEvent, *sqlgraph.CreateSpec) {
 	var (
-		_node = &TenantSyncEvent{config: _c.config}
+		_node = &TenantSyncEvent{config: tsec.config}
 		_spec = sqlgraph.NewCreateSpec(tenantsyncevent.Table, sqlgraph.NewFieldSpec(tenantsyncevent.FieldID, field.TypeUUID))
 	)
-	if id, ok := _c.mutation.ID(); ok {
+	if id, ok := tsec.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.TenantID(); ok {
+	if value, ok := tsec.mutation.TenantID(); ok {
 		_spec.SetField(tenantsyncevent.FieldTenantID, field.TypeUUID, value)
 		_node.TenantID = value
 	}
-	if value, ok := _c.mutation.TenantSlug(); ok {
+	if value, ok := tsec.mutation.TenantSlug(); ok {
 		_spec.SetField(tenantsyncevent.FieldTenantSlug, field.TypeString, value)
 		_node.TenantSlug = value
 	}
-	if value, ok := _c.mutation.SourceService(); ok {
+	if value, ok := tsec.mutation.SourceService(); ok {
 		_spec.SetField(tenantsyncevent.FieldSourceService, field.TypeString, value)
 		_node.SourceService = value
 	}
-	if value, ok := _c.mutation.Payload(); ok {
+	if value, ok := tsec.mutation.Payload(); ok {
 		_spec.SetField(tenantsyncevent.FieldPayload, field.TypeJSON, value)
 		_node.Payload = value
 	}
-	if value, ok := _c.mutation.SyncedAt(); ok {
+	if value, ok := tsec.mutation.SyncedAt(); ok {
 		_spec.SetField(tenantsyncevent.FieldSyncedAt, field.TypeTime, value)
 		_node.SyncedAt = value
 	}
-	if value, ok := _c.mutation.Status(); ok {
+	if value, ok := tsec.mutation.Status(); ok {
 		_spec.SetField(tenantsyncevent.FieldStatus, field.TypeString, value)
 		_node.Status = value
 	}
@@ -233,16 +233,16 @@ type TenantSyncEventCreateBulk struct {
 }
 
 // Save creates the TenantSyncEvent entities in the database.
-func (_c *TenantSyncEventCreateBulk) Save(ctx context.Context) ([]*TenantSyncEvent, error) {
-	if _c.err != nil {
-		return nil, _c.err
+func (tsecb *TenantSyncEventCreateBulk) Save(ctx context.Context) ([]*TenantSyncEvent, error) {
+	if tsecb.err != nil {
+		return nil, tsecb.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*TenantSyncEvent, len(_c.builders))
-	mutators := make([]Mutator, len(_c.builders))
-	for i := range _c.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(tsecb.builders))
+	nodes := make([]*TenantSyncEvent, len(tsecb.builders))
+	mutators := make([]Mutator, len(tsecb.builders))
+	for i := range tsecb.builders {
 		func(i int, root context.Context) {
-			builder := _c.builders[i]
+			builder := tsecb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*TenantSyncEventMutation)
@@ -256,11 +256,11 @@ func (_c *TenantSyncEventCreateBulk) Save(ctx context.Context) ([]*TenantSyncEve
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, tsecb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, tsecb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -280,7 +280,7 @@ func (_c *TenantSyncEventCreateBulk) Save(ctx context.Context) ([]*TenantSyncEve
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, tsecb.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -288,8 +288,8 @@ func (_c *TenantSyncEventCreateBulk) Save(ctx context.Context) ([]*TenantSyncEve
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *TenantSyncEventCreateBulk) SaveX(ctx context.Context) []*TenantSyncEvent {
-	v, err := _c.Save(ctx)
+func (tsecb *TenantSyncEventCreateBulk) SaveX(ctx context.Context) []*TenantSyncEvent {
+	v, err := tsecb.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -297,14 +297,14 @@ func (_c *TenantSyncEventCreateBulk) SaveX(ctx context.Context) []*TenantSyncEve
 }
 
 // Exec executes the query.
-func (_c *TenantSyncEventCreateBulk) Exec(ctx context.Context) error {
-	_, err := _c.Save(ctx)
+func (tsecb *TenantSyncEventCreateBulk) Exec(ctx context.Context) error {
+	_, err := tsecb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *TenantSyncEventCreateBulk) ExecX(ctx context.Context) {
-	if err := _c.Exec(ctx); err != nil {
+func (tsecb *TenantSyncEventCreateBulk) ExecX(ctx context.Context) {
+	if err := tsecb.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

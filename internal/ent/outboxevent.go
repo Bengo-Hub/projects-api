@@ -64,7 +64,7 @@ func (*OutboxEvent) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the OutboxEvent fields.
-func (_m *OutboxEvent) assignValues(columns []string, values []any) error {
+func (oe *OutboxEvent) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -74,37 +74,37 @@ func (_m *OutboxEvent) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				oe.ID = *value
 			}
 		case outboxevent.FieldTenantID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value != nil {
-				_m.TenantID = *value
+				oe.TenantID = *value
 			}
 		case outboxevent.FieldAggregateType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field aggregate_type", values[i])
 			} else if value.Valid {
-				_m.AggregateType = value.String
+				oe.AggregateType = value.String
 			}
 		case outboxevent.FieldAggregateID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field aggregate_id", values[i])
 			} else if value != nil {
-				_m.AggregateID = *value
+				oe.AggregateID = *value
 			}
 		case outboxevent.FieldEventType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field event_type", values[i])
 			} else if value.Valid {
-				_m.EventType = value.String
+				oe.EventType = value.String
 			}
 		case outboxevent.FieldPayload:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field payload", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.Payload); err != nil {
+				if err := json.Unmarshal(*value, &oe.Payload); err != nil {
 					return fmt.Errorf("unmarshal field payload: %w", err)
 				}
 			}
@@ -112,28 +112,28 @@ func (_m *OutboxEvent) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
-				_m.Status = value.String
+				oe.Status = value.String
 			}
 		case outboxevent.FieldAttempts:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field attempts", values[i])
 			} else if value.Valid {
-				_m.Attempts = int(value.Int64)
+				oe.Attempts = int(value.Int64)
 			}
 		case outboxevent.FieldLastAttemptAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_attempt_at", values[i])
 			} else if value.Valid {
-				_m.LastAttemptAt = value.Time
+				oe.LastAttemptAt = value.Time
 			}
 		case outboxevent.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				_m.CreatedAt = value.Time
+				oe.CreatedAt = value.Time
 			}
 		default:
-			_m.selectValues.Set(columns[i], values[i])
+			oe.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -141,59 +141,59 @@ func (_m *OutboxEvent) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the OutboxEvent.
 // This includes values selected through modifiers, order, etc.
-func (_m *OutboxEvent) Value(name string) (ent.Value, error) {
-	return _m.selectValues.Get(name)
+func (oe *OutboxEvent) Value(name string) (ent.Value, error) {
+	return oe.selectValues.Get(name)
 }
 
 // Update returns a builder for updating this OutboxEvent.
 // Note that you need to call OutboxEvent.Unwrap() before calling this method if this OutboxEvent
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *OutboxEvent) Update() *OutboxEventUpdateOne {
-	return NewOutboxEventClient(_m.config).UpdateOne(_m)
+func (oe *OutboxEvent) Update() *OutboxEventUpdateOne {
+	return NewOutboxEventClient(oe.config).UpdateOne(oe)
 }
 
 // Unwrap unwraps the OutboxEvent entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *OutboxEvent) Unwrap() *OutboxEvent {
-	_tx, ok := _m.config.driver.(*txDriver)
+func (oe *OutboxEvent) Unwrap() *OutboxEvent {
+	_tx, ok := oe.config.driver.(*txDriver)
 	if !ok {
 		panic("ent: OutboxEvent is not a transactional entity")
 	}
-	_m.config.driver = _tx.drv
-	return _m
+	oe.config.driver = _tx.drv
+	return oe
 }
 
 // String implements the fmt.Stringer.
-func (_m *OutboxEvent) String() string {
+func (oe *OutboxEvent) String() string {
 	var builder strings.Builder
 	builder.WriteString("OutboxEvent(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", oe.ID))
 	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.TenantID))
+	builder.WriteString(fmt.Sprintf("%v", oe.TenantID))
 	builder.WriteString(", ")
 	builder.WriteString("aggregate_type=")
-	builder.WriteString(_m.AggregateType)
+	builder.WriteString(oe.AggregateType)
 	builder.WriteString(", ")
 	builder.WriteString("aggregate_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.AggregateID))
+	builder.WriteString(fmt.Sprintf("%v", oe.AggregateID))
 	builder.WriteString(", ")
 	builder.WriteString("event_type=")
-	builder.WriteString(_m.EventType)
+	builder.WriteString(oe.EventType)
 	builder.WriteString(", ")
 	builder.WriteString("payload=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Payload))
+	builder.WriteString(fmt.Sprintf("%v", oe.Payload))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
-	builder.WriteString(_m.Status)
+	builder.WriteString(oe.Status)
 	builder.WriteString(", ")
 	builder.WriteString("attempts=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Attempts))
+	builder.WriteString(fmt.Sprintf("%v", oe.Attempts))
 	builder.WriteString(", ")
 	builder.WriteString("last_attempt_at=")
-	builder.WriteString(_m.LastAttemptAt.Format(time.ANSIC))
+	builder.WriteString(oe.LastAttemptAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
-	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(oe.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

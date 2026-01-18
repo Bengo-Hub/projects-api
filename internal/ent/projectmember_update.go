@@ -25,137 +25,137 @@ type ProjectMemberUpdate struct {
 }
 
 // Where appends a list predicates to the ProjectMemberUpdate builder.
-func (_u *ProjectMemberUpdate) Where(ps ...predicate.ProjectMember) *ProjectMemberUpdate {
-	_u.mutation.Where(ps...)
-	return _u
+func (pmu *ProjectMemberUpdate) Where(ps ...predicate.ProjectMember) *ProjectMemberUpdate {
+	pmu.mutation.Where(ps...)
+	return pmu
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *ProjectMemberUpdate) SetTenantID(v uuid.UUID) *ProjectMemberUpdate {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (pmu *ProjectMemberUpdate) SetTenantID(u uuid.UUID) *ProjectMemberUpdate {
+	pmu.mutation.SetTenantID(u)
+	return pmu
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *ProjectMemberUpdate) SetNillableTenantID(v *uuid.UUID) *ProjectMemberUpdate {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (pmu *ProjectMemberUpdate) SetNillableTenantID(u *uuid.UUID) *ProjectMemberUpdate {
+	if u != nil {
+		pmu.SetTenantID(*u)
 	}
-	return _u
+	return pmu
 }
 
 // SetProjectID sets the "project_id" field.
-func (_u *ProjectMemberUpdate) SetProjectID(v uuid.UUID) *ProjectMemberUpdate {
-	_u.mutation.SetProjectID(v)
-	return _u
+func (pmu *ProjectMemberUpdate) SetProjectID(u uuid.UUID) *ProjectMemberUpdate {
+	pmu.mutation.SetProjectID(u)
+	return pmu
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_u *ProjectMemberUpdate) SetNillableProjectID(v *uuid.UUID) *ProjectMemberUpdate {
-	if v != nil {
-		_u.SetProjectID(*v)
+func (pmu *ProjectMemberUpdate) SetNillableProjectID(u *uuid.UUID) *ProjectMemberUpdate {
+	if u != nil {
+		pmu.SetProjectID(*u)
 	}
-	return _u
+	return pmu
 }
 
 // SetUserID sets the "user_id" field.
-func (_u *ProjectMemberUpdate) SetUserID(v uuid.UUID) *ProjectMemberUpdate {
-	_u.mutation.SetUserID(v)
-	return _u
+func (pmu *ProjectMemberUpdate) SetUserID(u uuid.UUID) *ProjectMemberUpdate {
+	pmu.mutation.SetUserID(u)
+	return pmu
 }
 
 // SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *ProjectMemberUpdate) SetNillableUserID(v *uuid.UUID) *ProjectMemberUpdate {
-	if v != nil {
-		_u.SetUserID(*v)
+func (pmu *ProjectMemberUpdate) SetNillableUserID(u *uuid.UUID) *ProjectMemberUpdate {
+	if u != nil {
+		pmu.SetUserID(*u)
 	}
-	return _u
+	return pmu
 }
 
 // SetRoleCode sets the "role_code" field.
-func (_u *ProjectMemberUpdate) SetRoleCode(v string) *ProjectMemberUpdate {
-	_u.mutation.SetRoleCode(v)
-	return _u
+func (pmu *ProjectMemberUpdate) SetRoleCode(s string) *ProjectMemberUpdate {
+	pmu.mutation.SetRoleCode(s)
+	return pmu
 }
 
 // SetNillableRoleCode sets the "role_code" field if the given value is not nil.
-func (_u *ProjectMemberUpdate) SetNillableRoleCode(v *string) *ProjectMemberUpdate {
-	if v != nil {
-		_u.SetRoleCode(*v)
+func (pmu *ProjectMemberUpdate) SetNillableRoleCode(s *string) *ProjectMemberUpdate {
+	if s != nil {
+		pmu.SetRoleCode(*s)
 	}
-	return _u
+	return pmu
 }
 
 // SetJoinedAt sets the "joined_at" field.
-func (_u *ProjectMemberUpdate) SetJoinedAt(v time.Time) *ProjectMemberUpdate {
-	_u.mutation.SetJoinedAt(v)
-	return _u
+func (pmu *ProjectMemberUpdate) SetJoinedAt(t time.Time) *ProjectMemberUpdate {
+	pmu.mutation.SetJoinedAt(t)
+	return pmu
 }
 
 // SetNillableJoinedAt sets the "joined_at" field if the given value is not nil.
-func (_u *ProjectMemberUpdate) SetNillableJoinedAt(v *time.Time) *ProjectMemberUpdate {
-	if v != nil {
-		_u.SetJoinedAt(*v)
+func (pmu *ProjectMemberUpdate) SetNillableJoinedAt(t *time.Time) *ProjectMemberUpdate {
+	if t != nil {
+		pmu.SetJoinedAt(*t)
 	}
-	return _u
+	return pmu
 }
 
 // SetLeftAt sets the "left_at" field.
-func (_u *ProjectMemberUpdate) SetLeftAt(v time.Time) *ProjectMemberUpdate {
-	_u.mutation.SetLeftAt(v)
-	return _u
+func (pmu *ProjectMemberUpdate) SetLeftAt(t time.Time) *ProjectMemberUpdate {
+	pmu.mutation.SetLeftAt(t)
+	return pmu
 }
 
 // SetNillableLeftAt sets the "left_at" field if the given value is not nil.
-func (_u *ProjectMemberUpdate) SetNillableLeftAt(v *time.Time) *ProjectMemberUpdate {
-	if v != nil {
-		_u.SetLeftAt(*v)
+func (pmu *ProjectMemberUpdate) SetNillableLeftAt(t *time.Time) *ProjectMemberUpdate {
+	if t != nil {
+		pmu.SetLeftAt(*t)
 	}
-	return _u
+	return pmu
 }
 
 // ClearLeftAt clears the value of the "left_at" field.
-func (_u *ProjectMemberUpdate) ClearLeftAt() *ProjectMemberUpdate {
-	_u.mutation.ClearLeftAt()
-	return _u
+func (pmu *ProjectMemberUpdate) ClearLeftAt() *ProjectMemberUpdate {
+	pmu.mutation.ClearLeftAt()
+	return pmu
 }
 
 // SetMetadata sets the "metadata" field.
-func (_u *ProjectMemberUpdate) SetMetadata(v map[string]interface{}) *ProjectMemberUpdate {
-	_u.mutation.SetMetadata(v)
-	return _u
+func (pmu *ProjectMemberUpdate) SetMetadata(m map[string]interface{}) *ProjectMemberUpdate {
+	pmu.mutation.SetMetadata(m)
+	return pmu
 }
 
 // ClearMetadata clears the value of the "metadata" field.
-func (_u *ProjectMemberUpdate) ClearMetadata() *ProjectMemberUpdate {
-	_u.mutation.ClearMetadata()
-	return _u
+func (pmu *ProjectMemberUpdate) ClearMetadata() *ProjectMemberUpdate {
+	pmu.mutation.ClearMetadata()
+	return pmu
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_u *ProjectMemberUpdate) SetProject(v *Project) *ProjectMemberUpdate {
-	return _u.SetProjectID(v.ID)
+func (pmu *ProjectMemberUpdate) SetProject(p *Project) *ProjectMemberUpdate {
+	return pmu.SetProjectID(p.ID)
 }
 
 // Mutation returns the ProjectMemberMutation object of the builder.
-func (_u *ProjectMemberUpdate) Mutation() *ProjectMemberMutation {
-	return _u.mutation
+func (pmu *ProjectMemberUpdate) Mutation() *ProjectMemberMutation {
+	return pmu.mutation
 }
 
 // ClearProject clears the "project" edge to the Project entity.
-func (_u *ProjectMemberUpdate) ClearProject() *ProjectMemberUpdate {
-	_u.mutation.ClearProject()
-	return _u
+func (pmu *ProjectMemberUpdate) ClearProject() *ProjectMemberUpdate {
+	pmu.mutation.ClearProject()
+	return pmu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *ProjectMemberUpdate) Save(ctx context.Context) (int, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (pmu *ProjectMemberUpdate) Save(ctx context.Context) (int, error) {
+	return withHooks(ctx, pmu.sqlSave, pmu.mutation, pmu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *ProjectMemberUpdate) SaveX(ctx context.Context) int {
-	affected, err := _u.Save(ctx)
+func (pmu *ProjectMemberUpdate) SaveX(ctx context.Context) int {
+	affected, err := pmu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -163,63 +163,63 @@ func (_u *ProjectMemberUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *ProjectMemberUpdate) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (pmu *ProjectMemberUpdate) Exec(ctx context.Context) error {
+	_, err := pmu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *ProjectMemberUpdate) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (pmu *ProjectMemberUpdate) ExecX(ctx context.Context) {
+	if err := pmu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *ProjectMemberUpdate) check() error {
-	if _u.mutation.ProjectCleared() && len(_u.mutation.ProjectIDs()) > 0 {
+func (pmu *ProjectMemberUpdate) check() error {
+	if _, ok := pmu.mutation.ProjectID(); pmu.mutation.ProjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "ProjectMember.project"`)
 	}
 	return nil
 }
 
-func (_u *ProjectMemberUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
+func (pmu *ProjectMemberUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := pmu.check(); err != nil {
+		return n, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(projectmember.Table, projectmember.Columns, sqlgraph.NewFieldSpec(projectmember.FieldID, field.TypeUUID))
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := pmu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := pmu.mutation.TenantID(); ok {
 		_spec.SetField(projectmember.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.UserID(); ok {
+	if value, ok := pmu.mutation.UserID(); ok {
 		_spec.SetField(projectmember.FieldUserID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.RoleCode(); ok {
+	if value, ok := pmu.mutation.RoleCode(); ok {
 		_spec.SetField(projectmember.FieldRoleCode, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.JoinedAt(); ok {
+	if value, ok := pmu.mutation.JoinedAt(); ok {
 		_spec.SetField(projectmember.FieldJoinedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.LeftAt(); ok {
+	if value, ok := pmu.mutation.LeftAt(); ok {
 		_spec.SetField(projectmember.FieldLeftAt, field.TypeTime, value)
 	}
-	if _u.mutation.LeftAtCleared() {
+	if pmu.mutation.LeftAtCleared() {
 		_spec.ClearField(projectmember.FieldLeftAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Metadata(); ok {
+	if value, ok := pmu.mutation.Metadata(); ok {
 		_spec.SetField(projectmember.FieldMetadata, field.TypeJSON, value)
 	}
-	if _u.mutation.MetadataCleared() {
+	if pmu.mutation.MetadataCleared() {
 		_spec.ClearField(projectmember.FieldMetadata, field.TypeJSON)
 	}
-	if _u.mutation.ProjectCleared() {
+	if pmu.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -232,7 +232,7 @@ func (_u *ProjectMemberUpdate) sqlSave(ctx context.Context) (_node int, err erro
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := pmu.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -248,7 +248,7 @@ func (_u *ProjectMemberUpdate) sqlSave(ctx context.Context) (_node int, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, pmu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{projectmember.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -256,8 +256,8 @@ func (_u *ProjectMemberUpdate) sqlSave(ctx context.Context) (_node int, err erro
 		}
 		return 0, err
 	}
-	_u.mutation.done = true
-	return _node, nil
+	pmu.mutation.done = true
+	return n, nil
 }
 
 // ProjectMemberUpdateOne is the builder for updating a single ProjectMember entity.
@@ -269,144 +269,144 @@ type ProjectMemberUpdateOne struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *ProjectMemberUpdateOne) SetTenantID(v uuid.UUID) *ProjectMemberUpdateOne {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (pmuo *ProjectMemberUpdateOne) SetTenantID(u uuid.UUID) *ProjectMemberUpdateOne {
+	pmuo.mutation.SetTenantID(u)
+	return pmuo
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *ProjectMemberUpdateOne) SetNillableTenantID(v *uuid.UUID) *ProjectMemberUpdateOne {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (pmuo *ProjectMemberUpdateOne) SetNillableTenantID(u *uuid.UUID) *ProjectMemberUpdateOne {
+	if u != nil {
+		pmuo.SetTenantID(*u)
 	}
-	return _u
+	return pmuo
 }
 
 // SetProjectID sets the "project_id" field.
-func (_u *ProjectMemberUpdateOne) SetProjectID(v uuid.UUID) *ProjectMemberUpdateOne {
-	_u.mutation.SetProjectID(v)
-	return _u
+func (pmuo *ProjectMemberUpdateOne) SetProjectID(u uuid.UUID) *ProjectMemberUpdateOne {
+	pmuo.mutation.SetProjectID(u)
+	return pmuo
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_u *ProjectMemberUpdateOne) SetNillableProjectID(v *uuid.UUID) *ProjectMemberUpdateOne {
-	if v != nil {
-		_u.SetProjectID(*v)
+func (pmuo *ProjectMemberUpdateOne) SetNillableProjectID(u *uuid.UUID) *ProjectMemberUpdateOne {
+	if u != nil {
+		pmuo.SetProjectID(*u)
 	}
-	return _u
+	return pmuo
 }
 
 // SetUserID sets the "user_id" field.
-func (_u *ProjectMemberUpdateOne) SetUserID(v uuid.UUID) *ProjectMemberUpdateOne {
-	_u.mutation.SetUserID(v)
-	return _u
+func (pmuo *ProjectMemberUpdateOne) SetUserID(u uuid.UUID) *ProjectMemberUpdateOne {
+	pmuo.mutation.SetUserID(u)
+	return pmuo
 }
 
 // SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *ProjectMemberUpdateOne) SetNillableUserID(v *uuid.UUID) *ProjectMemberUpdateOne {
-	if v != nil {
-		_u.SetUserID(*v)
+func (pmuo *ProjectMemberUpdateOne) SetNillableUserID(u *uuid.UUID) *ProjectMemberUpdateOne {
+	if u != nil {
+		pmuo.SetUserID(*u)
 	}
-	return _u
+	return pmuo
 }
 
 // SetRoleCode sets the "role_code" field.
-func (_u *ProjectMemberUpdateOne) SetRoleCode(v string) *ProjectMemberUpdateOne {
-	_u.mutation.SetRoleCode(v)
-	return _u
+func (pmuo *ProjectMemberUpdateOne) SetRoleCode(s string) *ProjectMemberUpdateOne {
+	pmuo.mutation.SetRoleCode(s)
+	return pmuo
 }
 
 // SetNillableRoleCode sets the "role_code" field if the given value is not nil.
-func (_u *ProjectMemberUpdateOne) SetNillableRoleCode(v *string) *ProjectMemberUpdateOne {
-	if v != nil {
-		_u.SetRoleCode(*v)
+func (pmuo *ProjectMemberUpdateOne) SetNillableRoleCode(s *string) *ProjectMemberUpdateOne {
+	if s != nil {
+		pmuo.SetRoleCode(*s)
 	}
-	return _u
+	return pmuo
 }
 
 // SetJoinedAt sets the "joined_at" field.
-func (_u *ProjectMemberUpdateOne) SetJoinedAt(v time.Time) *ProjectMemberUpdateOne {
-	_u.mutation.SetJoinedAt(v)
-	return _u
+func (pmuo *ProjectMemberUpdateOne) SetJoinedAt(t time.Time) *ProjectMemberUpdateOne {
+	pmuo.mutation.SetJoinedAt(t)
+	return pmuo
 }
 
 // SetNillableJoinedAt sets the "joined_at" field if the given value is not nil.
-func (_u *ProjectMemberUpdateOne) SetNillableJoinedAt(v *time.Time) *ProjectMemberUpdateOne {
-	if v != nil {
-		_u.SetJoinedAt(*v)
+func (pmuo *ProjectMemberUpdateOne) SetNillableJoinedAt(t *time.Time) *ProjectMemberUpdateOne {
+	if t != nil {
+		pmuo.SetJoinedAt(*t)
 	}
-	return _u
+	return pmuo
 }
 
 // SetLeftAt sets the "left_at" field.
-func (_u *ProjectMemberUpdateOne) SetLeftAt(v time.Time) *ProjectMemberUpdateOne {
-	_u.mutation.SetLeftAt(v)
-	return _u
+func (pmuo *ProjectMemberUpdateOne) SetLeftAt(t time.Time) *ProjectMemberUpdateOne {
+	pmuo.mutation.SetLeftAt(t)
+	return pmuo
 }
 
 // SetNillableLeftAt sets the "left_at" field if the given value is not nil.
-func (_u *ProjectMemberUpdateOne) SetNillableLeftAt(v *time.Time) *ProjectMemberUpdateOne {
-	if v != nil {
-		_u.SetLeftAt(*v)
+func (pmuo *ProjectMemberUpdateOne) SetNillableLeftAt(t *time.Time) *ProjectMemberUpdateOne {
+	if t != nil {
+		pmuo.SetLeftAt(*t)
 	}
-	return _u
+	return pmuo
 }
 
 // ClearLeftAt clears the value of the "left_at" field.
-func (_u *ProjectMemberUpdateOne) ClearLeftAt() *ProjectMemberUpdateOne {
-	_u.mutation.ClearLeftAt()
-	return _u
+func (pmuo *ProjectMemberUpdateOne) ClearLeftAt() *ProjectMemberUpdateOne {
+	pmuo.mutation.ClearLeftAt()
+	return pmuo
 }
 
 // SetMetadata sets the "metadata" field.
-func (_u *ProjectMemberUpdateOne) SetMetadata(v map[string]interface{}) *ProjectMemberUpdateOne {
-	_u.mutation.SetMetadata(v)
-	return _u
+func (pmuo *ProjectMemberUpdateOne) SetMetadata(m map[string]interface{}) *ProjectMemberUpdateOne {
+	pmuo.mutation.SetMetadata(m)
+	return pmuo
 }
 
 // ClearMetadata clears the value of the "metadata" field.
-func (_u *ProjectMemberUpdateOne) ClearMetadata() *ProjectMemberUpdateOne {
-	_u.mutation.ClearMetadata()
-	return _u
+func (pmuo *ProjectMemberUpdateOne) ClearMetadata() *ProjectMemberUpdateOne {
+	pmuo.mutation.ClearMetadata()
+	return pmuo
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_u *ProjectMemberUpdateOne) SetProject(v *Project) *ProjectMemberUpdateOne {
-	return _u.SetProjectID(v.ID)
+func (pmuo *ProjectMemberUpdateOne) SetProject(p *Project) *ProjectMemberUpdateOne {
+	return pmuo.SetProjectID(p.ID)
 }
 
 // Mutation returns the ProjectMemberMutation object of the builder.
-func (_u *ProjectMemberUpdateOne) Mutation() *ProjectMemberMutation {
-	return _u.mutation
+func (pmuo *ProjectMemberUpdateOne) Mutation() *ProjectMemberMutation {
+	return pmuo.mutation
 }
 
 // ClearProject clears the "project" edge to the Project entity.
-func (_u *ProjectMemberUpdateOne) ClearProject() *ProjectMemberUpdateOne {
-	_u.mutation.ClearProject()
-	return _u
+func (pmuo *ProjectMemberUpdateOne) ClearProject() *ProjectMemberUpdateOne {
+	pmuo.mutation.ClearProject()
+	return pmuo
 }
 
 // Where appends a list predicates to the ProjectMemberUpdate builder.
-func (_u *ProjectMemberUpdateOne) Where(ps ...predicate.ProjectMember) *ProjectMemberUpdateOne {
-	_u.mutation.Where(ps...)
-	return _u
+func (pmuo *ProjectMemberUpdateOne) Where(ps ...predicate.ProjectMember) *ProjectMemberUpdateOne {
+	pmuo.mutation.Where(ps...)
+	return pmuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *ProjectMemberUpdateOne) Select(field string, fields ...string) *ProjectMemberUpdateOne {
-	_u.fields = append([]string{field}, fields...)
-	return _u
+func (pmuo *ProjectMemberUpdateOne) Select(field string, fields ...string) *ProjectMemberUpdateOne {
+	pmuo.fields = append([]string{field}, fields...)
+	return pmuo
 }
 
 // Save executes the query and returns the updated ProjectMember entity.
-func (_u *ProjectMemberUpdateOne) Save(ctx context.Context) (*ProjectMember, error) {
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (pmuo *ProjectMemberUpdateOne) Save(ctx context.Context) (*ProjectMember, error) {
+	return withHooks(ctx, pmuo.sqlSave, pmuo.mutation, pmuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *ProjectMemberUpdateOne) SaveX(ctx context.Context) *ProjectMember {
-	node, err := _u.Save(ctx)
+func (pmuo *ProjectMemberUpdateOne) SaveX(ctx context.Context) *ProjectMember {
+	node, err := pmuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -414,37 +414,37 @@ func (_u *ProjectMemberUpdateOne) SaveX(ctx context.Context) *ProjectMember {
 }
 
 // Exec executes the query on the entity.
-func (_u *ProjectMemberUpdateOne) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (pmuo *ProjectMemberUpdateOne) Exec(ctx context.Context) error {
+	_, err := pmuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *ProjectMemberUpdateOne) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (pmuo *ProjectMemberUpdateOne) ExecX(ctx context.Context) {
+	if err := pmuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *ProjectMemberUpdateOne) check() error {
-	if _u.mutation.ProjectCleared() && len(_u.mutation.ProjectIDs()) > 0 {
+func (pmuo *ProjectMemberUpdateOne) check() error {
+	if _, ok := pmuo.mutation.ProjectID(); pmuo.mutation.ProjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "ProjectMember.project"`)
 	}
 	return nil
 }
 
-func (_u *ProjectMemberUpdateOne) sqlSave(ctx context.Context) (_node *ProjectMember, err error) {
-	if err := _u.check(); err != nil {
+func (pmuo *ProjectMemberUpdateOne) sqlSave(ctx context.Context) (_node *ProjectMember, err error) {
+	if err := pmuo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(projectmember.Table, projectmember.Columns, sqlgraph.NewFieldSpec(projectmember.FieldID, field.TypeUUID))
-	id, ok := _u.mutation.ID()
+	id, ok := pmuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "ProjectMember.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := _u.fields; len(fields) > 0 {
+	if fields := pmuo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, projectmember.FieldID)
 		for _, f := range fields {
@@ -456,38 +456,38 @@ func (_u *ProjectMemberUpdateOne) sqlSave(ctx context.Context) (_node *ProjectMe
 			}
 		}
 	}
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := pmuo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := pmuo.mutation.TenantID(); ok {
 		_spec.SetField(projectmember.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.UserID(); ok {
+	if value, ok := pmuo.mutation.UserID(); ok {
 		_spec.SetField(projectmember.FieldUserID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.RoleCode(); ok {
+	if value, ok := pmuo.mutation.RoleCode(); ok {
 		_spec.SetField(projectmember.FieldRoleCode, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.JoinedAt(); ok {
+	if value, ok := pmuo.mutation.JoinedAt(); ok {
 		_spec.SetField(projectmember.FieldJoinedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.LeftAt(); ok {
+	if value, ok := pmuo.mutation.LeftAt(); ok {
 		_spec.SetField(projectmember.FieldLeftAt, field.TypeTime, value)
 	}
-	if _u.mutation.LeftAtCleared() {
+	if pmuo.mutation.LeftAtCleared() {
 		_spec.ClearField(projectmember.FieldLeftAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Metadata(); ok {
+	if value, ok := pmuo.mutation.Metadata(); ok {
 		_spec.SetField(projectmember.FieldMetadata, field.TypeJSON, value)
 	}
-	if _u.mutation.MetadataCleared() {
+	if pmuo.mutation.MetadataCleared() {
 		_spec.ClearField(projectmember.FieldMetadata, field.TypeJSON)
 	}
-	if _u.mutation.ProjectCleared() {
+	if pmuo.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -500,7 +500,7 @@ func (_u *ProjectMemberUpdateOne) sqlSave(ctx context.Context) (_node *ProjectMe
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := pmuo.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -516,10 +516,10 @@ func (_u *ProjectMemberUpdateOne) sqlSave(ctx context.Context) (_node *ProjectMe
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &ProjectMember{config: _u.config}
+	_node = &ProjectMember{config: pmuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, pmuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{projectmember.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -527,6 +527,6 @@ func (_u *ProjectMemberUpdateOne) sqlSave(ctx context.Context) (_node *ProjectMe
 		}
 		return nil, err
 	}
-	_u.mutation.done = true
+	pmuo.mutation.done = true
 	return _node, nil
 }

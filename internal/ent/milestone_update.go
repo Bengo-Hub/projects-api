@@ -25,158 +25,158 @@ type MilestoneUpdate struct {
 }
 
 // Where appends a list predicates to the MilestoneUpdate builder.
-func (_u *MilestoneUpdate) Where(ps ...predicate.Milestone) *MilestoneUpdate {
-	_u.mutation.Where(ps...)
-	return _u
+func (mu *MilestoneUpdate) Where(ps ...predicate.Milestone) *MilestoneUpdate {
+	mu.mutation.Where(ps...)
+	return mu
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *MilestoneUpdate) SetTenantID(v uuid.UUID) *MilestoneUpdate {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (mu *MilestoneUpdate) SetTenantID(u uuid.UUID) *MilestoneUpdate {
+	mu.mutation.SetTenantID(u)
+	return mu
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *MilestoneUpdate) SetNillableTenantID(v *uuid.UUID) *MilestoneUpdate {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (mu *MilestoneUpdate) SetNillableTenantID(u *uuid.UUID) *MilestoneUpdate {
+	if u != nil {
+		mu.SetTenantID(*u)
 	}
-	return _u
+	return mu
 }
 
 // SetProjectID sets the "project_id" field.
-func (_u *MilestoneUpdate) SetProjectID(v uuid.UUID) *MilestoneUpdate {
-	_u.mutation.SetProjectID(v)
-	return _u
+func (mu *MilestoneUpdate) SetProjectID(u uuid.UUID) *MilestoneUpdate {
+	mu.mutation.SetProjectID(u)
+	return mu
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_u *MilestoneUpdate) SetNillableProjectID(v *uuid.UUID) *MilestoneUpdate {
-	if v != nil {
-		_u.SetProjectID(*v)
+func (mu *MilestoneUpdate) SetNillableProjectID(u *uuid.UUID) *MilestoneUpdate {
+	if u != nil {
+		mu.SetProjectID(*u)
 	}
-	return _u
+	return mu
 }
 
 // SetName sets the "name" field.
-func (_u *MilestoneUpdate) SetName(v string) *MilestoneUpdate {
-	_u.mutation.SetName(v)
-	return _u
+func (mu *MilestoneUpdate) SetName(s string) *MilestoneUpdate {
+	mu.mutation.SetName(s)
+	return mu
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (_u *MilestoneUpdate) SetNillableName(v *string) *MilestoneUpdate {
-	if v != nil {
-		_u.SetName(*v)
+func (mu *MilestoneUpdate) SetNillableName(s *string) *MilestoneUpdate {
+	if s != nil {
+		mu.SetName(*s)
 	}
-	return _u
+	return mu
 }
 
 // SetDescription sets the "description" field.
-func (_u *MilestoneUpdate) SetDescription(v string) *MilestoneUpdate {
-	_u.mutation.SetDescription(v)
-	return _u
+func (mu *MilestoneUpdate) SetDescription(s string) *MilestoneUpdate {
+	mu.mutation.SetDescription(s)
+	return mu
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (_u *MilestoneUpdate) SetNillableDescription(v *string) *MilestoneUpdate {
-	if v != nil {
-		_u.SetDescription(*v)
+func (mu *MilestoneUpdate) SetNillableDescription(s *string) *MilestoneUpdate {
+	if s != nil {
+		mu.SetDescription(*s)
 	}
-	return _u
+	return mu
 }
 
 // ClearDescription clears the value of the "description" field.
-func (_u *MilestoneUpdate) ClearDescription() *MilestoneUpdate {
-	_u.mutation.ClearDescription()
-	return _u
+func (mu *MilestoneUpdate) ClearDescription() *MilestoneUpdate {
+	mu.mutation.ClearDescription()
+	return mu
 }
 
 // SetTargetDate sets the "target_date" field.
-func (_u *MilestoneUpdate) SetTargetDate(v time.Time) *MilestoneUpdate {
-	_u.mutation.SetTargetDate(v)
-	return _u
+func (mu *MilestoneUpdate) SetTargetDate(t time.Time) *MilestoneUpdate {
+	mu.mutation.SetTargetDate(t)
+	return mu
 }
 
 // SetNillableTargetDate sets the "target_date" field if the given value is not nil.
-func (_u *MilestoneUpdate) SetNillableTargetDate(v *time.Time) *MilestoneUpdate {
-	if v != nil {
-		_u.SetTargetDate(*v)
+func (mu *MilestoneUpdate) SetNillableTargetDate(t *time.Time) *MilestoneUpdate {
+	if t != nil {
+		mu.SetTargetDate(*t)
 	}
-	return _u
+	return mu
 }
 
 // ClearTargetDate clears the value of the "target_date" field.
-func (_u *MilestoneUpdate) ClearTargetDate() *MilestoneUpdate {
-	_u.mutation.ClearTargetDate()
-	return _u
+func (mu *MilestoneUpdate) ClearTargetDate() *MilestoneUpdate {
+	mu.mutation.ClearTargetDate()
+	return mu
 }
 
 // SetStatus sets the "status" field.
-func (_u *MilestoneUpdate) SetStatus(v string) *MilestoneUpdate {
-	_u.mutation.SetStatus(v)
-	return _u
+func (mu *MilestoneUpdate) SetStatus(s string) *MilestoneUpdate {
+	mu.mutation.SetStatus(s)
+	return mu
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *MilestoneUpdate) SetNillableStatus(v *string) *MilestoneUpdate {
-	if v != nil {
-		_u.SetStatus(*v)
+func (mu *MilestoneUpdate) SetNillableStatus(s *string) *MilestoneUpdate {
+	if s != nil {
+		mu.SetStatus(*s)
 	}
-	return _u
+	return mu
 }
 
 // SetCompletedAt sets the "completed_at" field.
-func (_u *MilestoneUpdate) SetCompletedAt(v time.Time) *MilestoneUpdate {
-	_u.mutation.SetCompletedAt(v)
-	return _u
+func (mu *MilestoneUpdate) SetCompletedAt(t time.Time) *MilestoneUpdate {
+	mu.mutation.SetCompletedAt(t)
+	return mu
 }
 
 // SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
-func (_u *MilestoneUpdate) SetNillableCompletedAt(v *time.Time) *MilestoneUpdate {
-	if v != nil {
-		_u.SetCompletedAt(*v)
+func (mu *MilestoneUpdate) SetNillableCompletedAt(t *time.Time) *MilestoneUpdate {
+	if t != nil {
+		mu.SetCompletedAt(*t)
 	}
-	return _u
+	return mu
 }
 
 // ClearCompletedAt clears the value of the "completed_at" field.
-func (_u *MilestoneUpdate) ClearCompletedAt() *MilestoneUpdate {
-	_u.mutation.ClearCompletedAt()
-	return _u
+func (mu *MilestoneUpdate) ClearCompletedAt() *MilestoneUpdate {
+	mu.mutation.ClearCompletedAt()
+	return mu
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *MilestoneUpdate) SetUpdatedAt(v time.Time) *MilestoneUpdate {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
+func (mu *MilestoneUpdate) SetUpdatedAt(t time.Time) *MilestoneUpdate {
+	mu.mutation.SetUpdatedAt(t)
+	return mu
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_u *MilestoneUpdate) SetProject(v *Project) *MilestoneUpdate {
-	return _u.SetProjectID(v.ID)
+func (mu *MilestoneUpdate) SetProject(p *Project) *MilestoneUpdate {
+	return mu.SetProjectID(p.ID)
 }
 
 // Mutation returns the MilestoneMutation object of the builder.
-func (_u *MilestoneUpdate) Mutation() *MilestoneMutation {
-	return _u.mutation
+func (mu *MilestoneUpdate) Mutation() *MilestoneMutation {
+	return mu.mutation
 }
 
 // ClearProject clears the "project" edge to the Project entity.
-func (_u *MilestoneUpdate) ClearProject() *MilestoneUpdate {
-	_u.mutation.ClearProject()
-	return _u
+func (mu *MilestoneUpdate) ClearProject() *MilestoneUpdate {
+	mu.mutation.ClearProject()
+	return mu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *MilestoneUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (mu *MilestoneUpdate) Save(ctx context.Context) (int, error) {
+	mu.defaults()
+	return withHooks(ctx, mu.sqlSave, mu.mutation, mu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *MilestoneUpdate) SaveX(ctx context.Context) int {
-	affected, err := _u.Save(ctx)
+func (mu *MilestoneUpdate) SaveX(ctx context.Context) int {
+	affected, err := mu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -184,82 +184,82 @@ func (_u *MilestoneUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *MilestoneUpdate) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (mu *MilestoneUpdate) Exec(ctx context.Context) error {
+	_, err := mu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *MilestoneUpdate) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (mu *MilestoneUpdate) ExecX(ctx context.Context) {
+	if err := mu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *MilestoneUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
+func (mu *MilestoneUpdate) defaults() {
+	if _, ok := mu.mutation.UpdatedAt(); !ok {
 		v := milestone.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
+		mu.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *MilestoneUpdate) check() error {
-	if v, ok := _u.mutation.Name(); ok {
+func (mu *MilestoneUpdate) check() error {
+	if v, ok := mu.mutation.Name(); ok {
 		if err := milestone.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Milestone.name": %w`, err)}
 		}
 	}
-	if _u.mutation.ProjectCleared() && len(_u.mutation.ProjectIDs()) > 0 {
+	if _, ok := mu.mutation.ProjectID(); mu.mutation.ProjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Milestone.project"`)
 	}
 	return nil
 }
 
-func (_u *MilestoneUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
+func (mu *MilestoneUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := mu.check(); err != nil {
+		return n, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(milestone.Table, milestone.Columns, sqlgraph.NewFieldSpec(milestone.FieldID, field.TypeUUID))
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := mu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := mu.mutation.TenantID(); ok {
 		_spec.SetField(milestone.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.Name(); ok {
+	if value, ok := mu.mutation.Name(); ok {
 		_spec.SetField(milestone.FieldName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Description(); ok {
+	if value, ok := mu.mutation.Description(); ok {
 		_spec.SetField(milestone.FieldDescription, field.TypeString, value)
 	}
-	if _u.mutation.DescriptionCleared() {
+	if mu.mutation.DescriptionCleared() {
 		_spec.ClearField(milestone.FieldDescription, field.TypeString)
 	}
-	if value, ok := _u.mutation.TargetDate(); ok {
+	if value, ok := mu.mutation.TargetDate(); ok {
 		_spec.SetField(milestone.FieldTargetDate, field.TypeTime, value)
 	}
-	if _u.mutation.TargetDateCleared() {
+	if mu.mutation.TargetDateCleared() {
 		_spec.ClearField(milestone.FieldTargetDate, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Status(); ok {
+	if value, ok := mu.mutation.Status(); ok {
 		_spec.SetField(milestone.FieldStatus, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.CompletedAt(); ok {
+	if value, ok := mu.mutation.CompletedAt(); ok {
 		_spec.SetField(milestone.FieldCompletedAt, field.TypeTime, value)
 	}
-	if _u.mutation.CompletedAtCleared() {
+	if mu.mutation.CompletedAtCleared() {
 		_spec.ClearField(milestone.FieldCompletedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
+	if value, ok := mu.mutation.UpdatedAt(); ok {
 		_spec.SetField(milestone.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.ProjectCleared() {
+	if mu.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -272,7 +272,7 @@ func (_u *MilestoneUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := mu.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -288,7 +288,7 @@ func (_u *MilestoneUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, mu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{milestone.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -296,8 +296,8 @@ func (_u *MilestoneUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		return 0, err
 	}
-	_u.mutation.done = true
-	return _node, nil
+	mu.mutation.done = true
+	return n, nil
 }
 
 // MilestoneUpdateOne is the builder for updating a single Milestone entity.
@@ -309,165 +309,165 @@ type MilestoneUpdateOne struct {
 }
 
 // SetTenantID sets the "tenant_id" field.
-func (_u *MilestoneUpdateOne) SetTenantID(v uuid.UUID) *MilestoneUpdateOne {
-	_u.mutation.SetTenantID(v)
-	return _u
+func (muo *MilestoneUpdateOne) SetTenantID(u uuid.UUID) *MilestoneUpdateOne {
+	muo.mutation.SetTenantID(u)
+	return muo
 }
 
 // SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
-func (_u *MilestoneUpdateOne) SetNillableTenantID(v *uuid.UUID) *MilestoneUpdateOne {
-	if v != nil {
-		_u.SetTenantID(*v)
+func (muo *MilestoneUpdateOne) SetNillableTenantID(u *uuid.UUID) *MilestoneUpdateOne {
+	if u != nil {
+		muo.SetTenantID(*u)
 	}
-	return _u
+	return muo
 }
 
 // SetProjectID sets the "project_id" field.
-func (_u *MilestoneUpdateOne) SetProjectID(v uuid.UUID) *MilestoneUpdateOne {
-	_u.mutation.SetProjectID(v)
-	return _u
+func (muo *MilestoneUpdateOne) SetProjectID(u uuid.UUID) *MilestoneUpdateOne {
+	muo.mutation.SetProjectID(u)
+	return muo
 }
 
 // SetNillableProjectID sets the "project_id" field if the given value is not nil.
-func (_u *MilestoneUpdateOne) SetNillableProjectID(v *uuid.UUID) *MilestoneUpdateOne {
-	if v != nil {
-		_u.SetProjectID(*v)
+func (muo *MilestoneUpdateOne) SetNillableProjectID(u *uuid.UUID) *MilestoneUpdateOne {
+	if u != nil {
+		muo.SetProjectID(*u)
 	}
-	return _u
+	return muo
 }
 
 // SetName sets the "name" field.
-func (_u *MilestoneUpdateOne) SetName(v string) *MilestoneUpdateOne {
-	_u.mutation.SetName(v)
-	return _u
+func (muo *MilestoneUpdateOne) SetName(s string) *MilestoneUpdateOne {
+	muo.mutation.SetName(s)
+	return muo
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (_u *MilestoneUpdateOne) SetNillableName(v *string) *MilestoneUpdateOne {
-	if v != nil {
-		_u.SetName(*v)
+func (muo *MilestoneUpdateOne) SetNillableName(s *string) *MilestoneUpdateOne {
+	if s != nil {
+		muo.SetName(*s)
 	}
-	return _u
+	return muo
 }
 
 // SetDescription sets the "description" field.
-func (_u *MilestoneUpdateOne) SetDescription(v string) *MilestoneUpdateOne {
-	_u.mutation.SetDescription(v)
-	return _u
+func (muo *MilestoneUpdateOne) SetDescription(s string) *MilestoneUpdateOne {
+	muo.mutation.SetDescription(s)
+	return muo
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (_u *MilestoneUpdateOne) SetNillableDescription(v *string) *MilestoneUpdateOne {
-	if v != nil {
-		_u.SetDescription(*v)
+func (muo *MilestoneUpdateOne) SetNillableDescription(s *string) *MilestoneUpdateOne {
+	if s != nil {
+		muo.SetDescription(*s)
 	}
-	return _u
+	return muo
 }
 
 // ClearDescription clears the value of the "description" field.
-func (_u *MilestoneUpdateOne) ClearDescription() *MilestoneUpdateOne {
-	_u.mutation.ClearDescription()
-	return _u
+func (muo *MilestoneUpdateOne) ClearDescription() *MilestoneUpdateOne {
+	muo.mutation.ClearDescription()
+	return muo
 }
 
 // SetTargetDate sets the "target_date" field.
-func (_u *MilestoneUpdateOne) SetTargetDate(v time.Time) *MilestoneUpdateOne {
-	_u.mutation.SetTargetDate(v)
-	return _u
+func (muo *MilestoneUpdateOne) SetTargetDate(t time.Time) *MilestoneUpdateOne {
+	muo.mutation.SetTargetDate(t)
+	return muo
 }
 
 // SetNillableTargetDate sets the "target_date" field if the given value is not nil.
-func (_u *MilestoneUpdateOne) SetNillableTargetDate(v *time.Time) *MilestoneUpdateOne {
-	if v != nil {
-		_u.SetTargetDate(*v)
+func (muo *MilestoneUpdateOne) SetNillableTargetDate(t *time.Time) *MilestoneUpdateOne {
+	if t != nil {
+		muo.SetTargetDate(*t)
 	}
-	return _u
+	return muo
 }
 
 // ClearTargetDate clears the value of the "target_date" field.
-func (_u *MilestoneUpdateOne) ClearTargetDate() *MilestoneUpdateOne {
-	_u.mutation.ClearTargetDate()
-	return _u
+func (muo *MilestoneUpdateOne) ClearTargetDate() *MilestoneUpdateOne {
+	muo.mutation.ClearTargetDate()
+	return muo
 }
 
 // SetStatus sets the "status" field.
-func (_u *MilestoneUpdateOne) SetStatus(v string) *MilestoneUpdateOne {
-	_u.mutation.SetStatus(v)
-	return _u
+func (muo *MilestoneUpdateOne) SetStatus(s string) *MilestoneUpdateOne {
+	muo.mutation.SetStatus(s)
+	return muo
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *MilestoneUpdateOne) SetNillableStatus(v *string) *MilestoneUpdateOne {
-	if v != nil {
-		_u.SetStatus(*v)
+func (muo *MilestoneUpdateOne) SetNillableStatus(s *string) *MilestoneUpdateOne {
+	if s != nil {
+		muo.SetStatus(*s)
 	}
-	return _u
+	return muo
 }
 
 // SetCompletedAt sets the "completed_at" field.
-func (_u *MilestoneUpdateOne) SetCompletedAt(v time.Time) *MilestoneUpdateOne {
-	_u.mutation.SetCompletedAt(v)
-	return _u
+func (muo *MilestoneUpdateOne) SetCompletedAt(t time.Time) *MilestoneUpdateOne {
+	muo.mutation.SetCompletedAt(t)
+	return muo
 }
 
 // SetNillableCompletedAt sets the "completed_at" field if the given value is not nil.
-func (_u *MilestoneUpdateOne) SetNillableCompletedAt(v *time.Time) *MilestoneUpdateOne {
-	if v != nil {
-		_u.SetCompletedAt(*v)
+func (muo *MilestoneUpdateOne) SetNillableCompletedAt(t *time.Time) *MilestoneUpdateOne {
+	if t != nil {
+		muo.SetCompletedAt(*t)
 	}
-	return _u
+	return muo
 }
 
 // ClearCompletedAt clears the value of the "completed_at" field.
-func (_u *MilestoneUpdateOne) ClearCompletedAt() *MilestoneUpdateOne {
-	_u.mutation.ClearCompletedAt()
-	return _u
+func (muo *MilestoneUpdateOne) ClearCompletedAt() *MilestoneUpdateOne {
+	muo.mutation.ClearCompletedAt()
+	return muo
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *MilestoneUpdateOne) SetUpdatedAt(v time.Time) *MilestoneUpdateOne {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
+func (muo *MilestoneUpdateOne) SetUpdatedAt(t time.Time) *MilestoneUpdateOne {
+	muo.mutation.SetUpdatedAt(t)
+	return muo
 }
 
 // SetProject sets the "project" edge to the Project entity.
-func (_u *MilestoneUpdateOne) SetProject(v *Project) *MilestoneUpdateOne {
-	return _u.SetProjectID(v.ID)
+func (muo *MilestoneUpdateOne) SetProject(p *Project) *MilestoneUpdateOne {
+	return muo.SetProjectID(p.ID)
 }
 
 // Mutation returns the MilestoneMutation object of the builder.
-func (_u *MilestoneUpdateOne) Mutation() *MilestoneMutation {
-	return _u.mutation
+func (muo *MilestoneUpdateOne) Mutation() *MilestoneMutation {
+	return muo.mutation
 }
 
 // ClearProject clears the "project" edge to the Project entity.
-func (_u *MilestoneUpdateOne) ClearProject() *MilestoneUpdateOne {
-	_u.mutation.ClearProject()
-	return _u
+func (muo *MilestoneUpdateOne) ClearProject() *MilestoneUpdateOne {
+	muo.mutation.ClearProject()
+	return muo
 }
 
 // Where appends a list predicates to the MilestoneUpdate builder.
-func (_u *MilestoneUpdateOne) Where(ps ...predicate.Milestone) *MilestoneUpdateOne {
-	_u.mutation.Where(ps...)
-	return _u
+func (muo *MilestoneUpdateOne) Where(ps ...predicate.Milestone) *MilestoneUpdateOne {
+	muo.mutation.Where(ps...)
+	return muo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *MilestoneUpdateOne) Select(field string, fields ...string) *MilestoneUpdateOne {
-	_u.fields = append([]string{field}, fields...)
-	return _u
+func (muo *MilestoneUpdateOne) Select(field string, fields ...string) *MilestoneUpdateOne {
+	muo.fields = append([]string{field}, fields...)
+	return muo
 }
 
 // Save executes the query and returns the updated Milestone entity.
-func (_u *MilestoneUpdateOne) Save(ctx context.Context) (*Milestone, error) {
-	_u.defaults()
-	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
+func (muo *MilestoneUpdateOne) Save(ctx context.Context) (*Milestone, error) {
+	muo.defaults()
+	return withHooks(ctx, muo.sqlSave, muo.mutation, muo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *MilestoneUpdateOne) SaveX(ctx context.Context) *Milestone {
-	node, err := _u.Save(ctx)
+func (muo *MilestoneUpdateOne) SaveX(ctx context.Context) *Milestone {
+	node, err := muo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -475,50 +475,50 @@ func (_u *MilestoneUpdateOne) SaveX(ctx context.Context) *Milestone {
 }
 
 // Exec executes the query on the entity.
-func (_u *MilestoneUpdateOne) Exec(ctx context.Context) error {
-	_, err := _u.Save(ctx)
+func (muo *MilestoneUpdateOne) Exec(ctx context.Context) error {
+	_, err := muo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *MilestoneUpdateOne) ExecX(ctx context.Context) {
-	if err := _u.Exec(ctx); err != nil {
+func (muo *MilestoneUpdateOne) ExecX(ctx context.Context) {
+	if err := muo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *MilestoneUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
+func (muo *MilestoneUpdateOne) defaults() {
+	if _, ok := muo.mutation.UpdatedAt(); !ok {
 		v := milestone.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
+		muo.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *MilestoneUpdateOne) check() error {
-	if v, ok := _u.mutation.Name(); ok {
+func (muo *MilestoneUpdateOne) check() error {
+	if v, ok := muo.mutation.Name(); ok {
 		if err := milestone.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Milestone.name": %w`, err)}
 		}
 	}
-	if _u.mutation.ProjectCleared() && len(_u.mutation.ProjectIDs()) > 0 {
+	if _, ok := muo.mutation.ProjectID(); muo.mutation.ProjectCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Milestone.project"`)
 	}
 	return nil
 }
 
-func (_u *MilestoneUpdateOne) sqlSave(ctx context.Context) (_node *Milestone, err error) {
-	if err := _u.check(); err != nil {
+func (muo *MilestoneUpdateOne) sqlSave(ctx context.Context) (_node *Milestone, err error) {
+	if err := muo.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(milestone.Table, milestone.Columns, sqlgraph.NewFieldSpec(milestone.FieldID, field.TypeUUID))
-	id, ok := _u.mutation.ID()
+	id, ok := muo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Milestone.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := _u.fields; len(fields) > 0 {
+	if fields := muo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, milestone.FieldID)
 		for _, f := range fields {
@@ -530,44 +530,44 @@ func (_u *MilestoneUpdateOne) sqlSave(ctx context.Context) (_node *Milestone, er
 			}
 		}
 	}
-	if ps := _u.mutation.predicates; len(ps) > 0 {
+	if ps := muo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := _u.mutation.TenantID(); ok {
+	if value, ok := muo.mutation.TenantID(); ok {
 		_spec.SetField(milestone.FieldTenantID, field.TypeUUID, value)
 	}
-	if value, ok := _u.mutation.Name(); ok {
+	if value, ok := muo.mutation.Name(); ok {
 		_spec.SetField(milestone.FieldName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Description(); ok {
+	if value, ok := muo.mutation.Description(); ok {
 		_spec.SetField(milestone.FieldDescription, field.TypeString, value)
 	}
-	if _u.mutation.DescriptionCleared() {
+	if muo.mutation.DescriptionCleared() {
 		_spec.ClearField(milestone.FieldDescription, field.TypeString)
 	}
-	if value, ok := _u.mutation.TargetDate(); ok {
+	if value, ok := muo.mutation.TargetDate(); ok {
 		_spec.SetField(milestone.FieldTargetDate, field.TypeTime, value)
 	}
-	if _u.mutation.TargetDateCleared() {
+	if muo.mutation.TargetDateCleared() {
 		_spec.ClearField(milestone.FieldTargetDate, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Status(); ok {
+	if value, ok := muo.mutation.Status(); ok {
 		_spec.SetField(milestone.FieldStatus, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.CompletedAt(); ok {
+	if value, ok := muo.mutation.CompletedAt(); ok {
 		_spec.SetField(milestone.FieldCompletedAt, field.TypeTime, value)
 	}
-	if _u.mutation.CompletedAtCleared() {
+	if muo.mutation.CompletedAtCleared() {
 		_spec.ClearField(milestone.FieldCompletedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
+	if value, ok := muo.mutation.UpdatedAt(); ok {
 		_spec.SetField(milestone.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.ProjectCleared() {
+	if muo.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -580,7 +580,7 @@ func (_u *MilestoneUpdateOne) sqlSave(ctx context.Context) (_node *Milestone, er
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := muo.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
@@ -596,10 +596,10 @@ func (_u *MilestoneUpdateOne) sqlSave(ctx context.Context) (_node *Milestone, er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Milestone{config: _u.config}
+	_node = &Milestone{config: muo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, muo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{milestone.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -607,6 +607,6 @@ func (_u *MilestoneUpdateOne) sqlSave(ctx context.Context) (_node *Milestone, er
 		}
 		return nil, err
 	}
-	_u.mutation.done = true
+	muo.mutation.done = true
 	return _node, nil
 }

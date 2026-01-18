@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -33,44 +32,44 @@ type RolePermissionQuery struct {
 }
 
 // Where adds a new predicate for the RolePermissionQuery builder.
-func (_q *RolePermissionQuery) Where(ps ...predicate.RolePermission) *RolePermissionQuery {
-	_q.predicates = append(_q.predicates, ps...)
-	return _q
+func (rpq *RolePermissionQuery) Where(ps ...predicate.RolePermission) *RolePermissionQuery {
+	rpq.predicates = append(rpq.predicates, ps...)
+	return rpq
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *RolePermissionQuery) Limit(limit int) *RolePermissionQuery {
-	_q.ctx.Limit = &limit
-	return _q
+func (rpq *RolePermissionQuery) Limit(limit int) *RolePermissionQuery {
+	rpq.ctx.Limit = &limit
+	return rpq
 }
 
 // Offset to start from.
-func (_q *RolePermissionQuery) Offset(offset int) *RolePermissionQuery {
-	_q.ctx.Offset = &offset
-	return _q
+func (rpq *RolePermissionQuery) Offset(offset int) *RolePermissionQuery {
+	rpq.ctx.Offset = &offset
+	return rpq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *RolePermissionQuery) Unique(unique bool) *RolePermissionQuery {
-	_q.ctx.Unique = &unique
-	return _q
+func (rpq *RolePermissionQuery) Unique(unique bool) *RolePermissionQuery {
+	rpq.ctx.Unique = &unique
+	return rpq
 }
 
 // Order specifies how the records should be ordered.
-func (_q *RolePermissionQuery) Order(o ...rolepermission.OrderOption) *RolePermissionQuery {
-	_q.order = append(_q.order, o...)
-	return _q
+func (rpq *RolePermissionQuery) Order(o ...rolepermission.OrderOption) *RolePermissionQuery {
+	rpq.order = append(rpq.order, o...)
+	return rpq
 }
 
 // QueryRole chains the current query on the "role" edge.
-func (_q *RolePermissionQuery) QueryRole() *RoleQuery {
-	query := (&RoleClient{config: _q.config}).Query()
+func (rpq *RolePermissionQuery) QueryRole() *RoleQuery {
+	query := (&RoleClient{config: rpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
+		if err := rpq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := _q.sqlQuery(ctx)
+		selector := rpq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -79,20 +78,20 @@ func (_q *RolePermissionQuery) QueryRole() *RoleQuery {
 			sqlgraph.To(role.Table, role.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, rolepermission.RoleTable, rolepermission.RoleColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(rpq.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
 }
 
 // QueryPermission chains the current query on the "permission" edge.
-func (_q *RolePermissionQuery) QueryPermission() *PermissionQuery {
-	query := (&PermissionClient{config: _q.config}).Query()
+func (rpq *RolePermissionQuery) QueryPermission() *PermissionQuery {
+	query := (&PermissionClient{config: rpq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
+		if err := rpq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := _q.sqlQuery(ctx)
+		selector := rpq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -101,7 +100,7 @@ func (_q *RolePermissionQuery) QueryPermission() *PermissionQuery {
 			sqlgraph.To(permission.Table, permission.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, rolepermission.PermissionTable, rolepermission.PermissionColumn),
 		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		fromU = sqlgraph.SetNeighbors(rpq.driver.Dialect(), step)
 		return fromU, nil
 	}
 	return query
@@ -109,8 +108,8 @@ func (_q *RolePermissionQuery) QueryPermission() *PermissionQuery {
 
 // First returns the first RolePermission entity from the query.
 // Returns a *NotFoundError when no RolePermission was found.
-func (_q *RolePermissionQuery) First(ctx context.Context) (*RolePermission, error) {
-	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
+func (rpq *RolePermissionQuery) First(ctx context.Context) (*RolePermission, error) {
+	nodes, err := rpq.Limit(1).All(setContextOp(ctx, rpq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +120,8 @@ func (_q *RolePermissionQuery) First(ctx context.Context) (*RolePermission, erro
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *RolePermissionQuery) FirstX(ctx context.Context) *RolePermission {
-	node, err := _q.First(ctx)
+func (rpq *RolePermissionQuery) FirstX(ctx context.Context) *RolePermission {
+	node, err := rpq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -131,9 +130,9 @@ func (_q *RolePermissionQuery) FirstX(ctx context.Context) *RolePermission {
 
 // FirstID returns the first RolePermission ID from the query.
 // Returns a *NotFoundError when no RolePermission ID was found.
-func (_q *RolePermissionQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+func (rpq *RolePermissionQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = rpq.Limit(1).IDs(setContextOp(ctx, rpq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -144,8 +143,8 @@ func (_q *RolePermissionQuery) FirstID(ctx context.Context) (id uuid.UUID, err e
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *RolePermissionQuery) FirstIDX(ctx context.Context) uuid.UUID {
-	id, err := _q.FirstID(ctx)
+func (rpq *RolePermissionQuery) FirstIDX(ctx context.Context) uuid.UUID {
+	id, err := rpq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
@@ -155,8 +154,8 @@ func (_q *RolePermissionQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Only returns a single RolePermission entity found by the query, ensuring it only returns one.
 // Returns a *NotSingularError when more than one RolePermission entity is found.
 // Returns a *NotFoundError when no RolePermission entities are found.
-func (_q *RolePermissionQuery) Only(ctx context.Context) (*RolePermission, error) {
-	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
+func (rpq *RolePermissionQuery) Only(ctx context.Context) (*RolePermission, error) {
+	nodes, err := rpq.Limit(2).All(setContextOp(ctx, rpq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -171,8 +170,8 @@ func (_q *RolePermissionQuery) Only(ctx context.Context) (*RolePermission, error
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *RolePermissionQuery) OnlyX(ctx context.Context) *RolePermission {
-	node, err := _q.Only(ctx)
+func (rpq *RolePermissionQuery) OnlyX(ctx context.Context) *RolePermission {
+	node, err := rpq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -182,9 +181,9 @@ func (_q *RolePermissionQuery) OnlyX(ctx context.Context) *RolePermission {
 // OnlyID is like Only, but returns the only RolePermission ID in the query.
 // Returns a *NotSingularError when more than one RolePermission ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *RolePermissionQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (rpq *RolePermissionQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = rpq.Limit(2).IDs(setContextOp(ctx, rpq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -199,8 +198,8 @@ func (_q *RolePermissionQuery) OnlyID(ctx context.Context) (id uuid.UUID, err er
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *RolePermissionQuery) OnlyIDX(ctx context.Context) uuid.UUID {
-	id, err := _q.OnlyID(ctx)
+func (rpq *RolePermissionQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+	id, err := rpq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -208,18 +207,18 @@ func (_q *RolePermissionQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 }
 
 // All executes the query and returns a list of RolePermissions.
-func (_q *RolePermissionQuery) All(ctx context.Context) ([]*RolePermission, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
-	if err := _q.prepareQuery(ctx); err != nil {
+func (rpq *RolePermissionQuery) All(ctx context.Context) ([]*RolePermission, error) {
+	ctx = setContextOp(ctx, rpq.ctx, "All")
+	if err := rpq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
 	qr := querierAll[[]*RolePermission, *RolePermissionQuery]()
-	return withInterceptors[[]*RolePermission](ctx, _q, qr, _q.inters)
+	return withInterceptors[[]*RolePermission](ctx, rpq, qr, rpq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *RolePermissionQuery) AllX(ctx context.Context) []*RolePermission {
-	nodes, err := _q.All(ctx)
+func (rpq *RolePermissionQuery) AllX(ctx context.Context) []*RolePermission {
+	nodes, err := rpq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -227,20 +226,20 @@ func (_q *RolePermissionQuery) AllX(ctx context.Context) []*RolePermission {
 }
 
 // IDs executes the query and returns a list of RolePermission IDs.
-func (_q *RolePermissionQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
-	if _q.ctx.Unique == nil && _q.path != nil {
-		_q.Unique(true)
+func (rpq *RolePermissionQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if rpq.ctx.Unique == nil && rpq.path != nil {
+		rpq.Unique(true)
 	}
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(rolepermission.FieldID).Scan(ctx, &ids); err != nil {
+	ctx = setContextOp(ctx, rpq.ctx, "IDs")
+	if err = rpq.Select(rolepermission.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *RolePermissionQuery) IDsX(ctx context.Context) []uuid.UUID {
-	ids, err := _q.IDs(ctx)
+func (rpq *RolePermissionQuery) IDsX(ctx context.Context) []uuid.UUID {
+	ids, err := rpq.IDs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -248,17 +247,17 @@ func (_q *RolePermissionQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *RolePermissionQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
-	if err := _q.prepareQuery(ctx); err != nil {
+func (rpq *RolePermissionQuery) Count(ctx context.Context) (int, error) {
+	ctx = setContextOp(ctx, rpq.ctx, "Count")
+	if err := rpq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*RolePermissionQuery](), _q.inters)
+	return withInterceptors[int](ctx, rpq, querierCount[*RolePermissionQuery](), rpq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *RolePermissionQuery) CountX(ctx context.Context) int {
-	count, err := _q.Count(ctx)
+func (rpq *RolePermissionQuery) CountX(ctx context.Context) int {
+	count, err := rpq.Count(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -266,9 +265,9 @@ func (_q *RolePermissionQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *RolePermissionQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
-	switch _, err := _q.FirstID(ctx); {
+func (rpq *RolePermissionQuery) Exist(ctx context.Context) (bool, error) {
+	ctx = setContextOp(ctx, rpq.ctx, "Exist")
+	switch _, err := rpq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -279,8 +278,8 @@ func (_q *RolePermissionQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *RolePermissionQuery) ExistX(ctx context.Context) bool {
-	exist, err := _q.Exist(ctx)
+func (rpq *RolePermissionQuery) ExistX(ctx context.Context) bool {
+	exist, err := rpq.Exist(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -289,44 +288,44 @@ func (_q *RolePermissionQuery) ExistX(ctx context.Context) bool {
 
 // Clone returns a duplicate of the RolePermissionQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *RolePermissionQuery) Clone() *RolePermissionQuery {
-	if _q == nil {
+func (rpq *RolePermissionQuery) Clone() *RolePermissionQuery {
+	if rpq == nil {
 		return nil
 	}
 	return &RolePermissionQuery{
-		config:         _q.config,
-		ctx:            _q.ctx.Clone(),
-		order:          append([]rolepermission.OrderOption{}, _q.order...),
-		inters:         append([]Interceptor{}, _q.inters...),
-		predicates:     append([]predicate.RolePermission{}, _q.predicates...),
-		withRole:       _q.withRole.Clone(),
-		withPermission: _q.withPermission.Clone(),
+		config:         rpq.config,
+		ctx:            rpq.ctx.Clone(),
+		order:          append([]rolepermission.OrderOption{}, rpq.order...),
+		inters:         append([]Interceptor{}, rpq.inters...),
+		predicates:     append([]predicate.RolePermission{}, rpq.predicates...),
+		withRole:       rpq.withRole.Clone(),
+		withPermission: rpq.withPermission.Clone(),
 		// clone intermediate query.
-		sql:  _q.sql.Clone(),
-		path: _q.path,
+		sql:  rpq.sql.Clone(),
+		path: rpq.path,
 	}
 }
 
 // WithRole tells the query-builder to eager-load the nodes that are connected to
 // the "role" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *RolePermissionQuery) WithRole(opts ...func(*RoleQuery)) *RolePermissionQuery {
-	query := (&RoleClient{config: _q.config}).Query()
+func (rpq *RolePermissionQuery) WithRole(opts ...func(*RoleQuery)) *RolePermissionQuery {
+	query := (&RoleClient{config: rpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withRole = query
-	return _q
+	rpq.withRole = query
+	return rpq
 }
 
 // WithPermission tells the query-builder to eager-load the nodes that are connected to
 // the "permission" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *RolePermissionQuery) WithPermission(opts ...func(*PermissionQuery)) *RolePermissionQuery {
-	query := (&PermissionClient{config: _q.config}).Query()
+func (rpq *RolePermissionQuery) WithPermission(opts ...func(*PermissionQuery)) *RolePermissionQuery {
+	query := (&PermissionClient{config: rpq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withPermission = query
-	return _q
+	rpq.withPermission = query
+	return rpq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -343,10 +342,10 @@ func (_q *RolePermissionQuery) WithPermission(opts ...func(*PermissionQuery)) *R
 //		GroupBy(rolepermission.FieldRoleCode).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *RolePermissionQuery) GroupBy(field string, fields ...string) *RolePermissionGroupBy {
-	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &RolePermissionGroupBy{build: _q}
-	grbuild.flds = &_q.ctx.Fields
+func (rpq *RolePermissionQuery) GroupBy(field string, fields ...string) *RolePermissionGroupBy {
+	rpq.ctx.Fields = append([]string{field}, fields...)
+	grbuild := &RolePermissionGroupBy{build: rpq}
+	grbuild.flds = &rpq.ctx.Fields
 	grbuild.label = rolepermission.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
@@ -364,59 +363,59 @@ func (_q *RolePermissionQuery) GroupBy(field string, fields ...string) *RolePerm
 //	client.RolePermission.Query().
 //		Select(rolepermission.FieldRoleCode).
 //		Scan(ctx, &v)
-func (_q *RolePermissionQuery) Select(fields ...string) *RolePermissionSelect {
-	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &RolePermissionSelect{RolePermissionQuery: _q}
+func (rpq *RolePermissionQuery) Select(fields ...string) *RolePermissionSelect {
+	rpq.ctx.Fields = append(rpq.ctx.Fields, fields...)
+	sbuild := &RolePermissionSelect{RolePermissionQuery: rpq}
 	sbuild.label = rolepermission.Label
-	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
+	sbuild.flds, sbuild.scan = &rpq.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
 // Aggregate returns a RolePermissionSelect configured with the given aggregations.
-func (_q *RolePermissionQuery) Aggregate(fns ...AggregateFunc) *RolePermissionSelect {
-	return _q.Select().Aggregate(fns...)
+func (rpq *RolePermissionQuery) Aggregate(fns ...AggregateFunc) *RolePermissionSelect {
+	return rpq.Select().Aggregate(fns...)
 }
 
-func (_q *RolePermissionQuery) prepareQuery(ctx context.Context) error {
-	for _, inter := range _q.inters {
+func (rpq *RolePermissionQuery) prepareQuery(ctx context.Context) error {
+	for _, inter := range rpq.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
 		}
 		if trv, ok := inter.(Traverser); ok {
-			if err := trv.Traverse(ctx, _q); err != nil {
+			if err := trv.Traverse(ctx, rpq); err != nil {
 				return err
 			}
 		}
 	}
-	for _, f := range _q.ctx.Fields {
+	for _, f := range rpq.ctx.Fields {
 		if !rolepermission.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
-	if _q.path != nil {
-		prev, err := _q.path(ctx)
+	if rpq.path != nil {
+		prev, err := rpq.path(ctx)
 		if err != nil {
 			return err
 		}
-		_q.sql = prev
+		rpq.sql = prev
 	}
 	return nil
 }
 
-func (_q *RolePermissionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*RolePermission, error) {
+func (rpq *RolePermissionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*RolePermission, error) {
 	var (
 		nodes       = []*RolePermission{}
-		_spec       = _q.querySpec()
+		_spec       = rpq.querySpec()
 		loadedTypes = [2]bool{
-			_q.withRole != nil,
-			_q.withPermission != nil,
+			rpq.withRole != nil,
+			rpq.withPermission != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*RolePermission).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &RolePermission{config: _q.config}
+		node := &RolePermission{config: rpq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -424,20 +423,20 @@ func (_q *RolePermissionQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
-	if err := sqlgraph.QueryNodes(ctx, _q.driver, _spec); err != nil {
+	if err := sqlgraph.QueryNodes(ctx, rpq.driver, _spec); err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withRole; query != nil {
-		if err := _q.loadRole(ctx, query, nodes, nil,
+	if query := rpq.withRole; query != nil {
+		if err := rpq.loadRole(ctx, query, nodes, nil,
 			func(n *RolePermission, e *Role) { n.Edges.Role = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := _q.withPermission; query != nil {
-		if err := _q.loadPermission(ctx, query, nodes, nil,
+	if query := rpq.withPermission; query != nil {
+		if err := rpq.loadPermission(ctx, query, nodes, nil,
 			func(n *RolePermission, e *Permission) { n.Edges.Permission = e }); err != nil {
 			return nil, err
 		}
@@ -445,7 +444,7 @@ func (_q *RolePermissionQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	return nodes, nil
 }
 
-func (_q *RolePermissionQuery) loadRole(ctx context.Context, query *RoleQuery, nodes []*RolePermission, init func(*RolePermission), assign func(*RolePermission, *Role)) error {
+func (rpq *RolePermissionQuery) loadRole(ctx context.Context, query *RoleQuery, nodes []*RolePermission, init func(*RolePermission), assign func(*RolePermission, *Role)) error {
 	ids := make([]string, 0, len(nodes))
 	nodeids := make(map[string][]*RolePermission)
 	for i := range nodes {
@@ -474,7 +473,7 @@ func (_q *RolePermissionQuery) loadRole(ctx context.Context, query *RoleQuery, n
 	}
 	return nil
 }
-func (_q *RolePermissionQuery) loadPermission(ctx context.Context, query *PermissionQuery, nodes []*RolePermission, init func(*RolePermission), assign func(*RolePermission, *Permission)) error {
+func (rpq *RolePermissionQuery) loadPermission(ctx context.Context, query *PermissionQuery, nodes []*RolePermission, init func(*RolePermission), assign func(*RolePermission, *Permission)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*RolePermission)
 	for i := range nodes {
@@ -504,24 +503,24 @@ func (_q *RolePermissionQuery) loadPermission(ctx context.Context, query *Permis
 	return nil
 }
 
-func (_q *RolePermissionQuery) sqlCount(ctx context.Context) (int, error) {
-	_spec := _q.querySpec()
-	_spec.Node.Columns = _q.ctx.Fields
-	if len(_q.ctx.Fields) > 0 {
-		_spec.Unique = _q.ctx.Unique != nil && *_q.ctx.Unique
+func (rpq *RolePermissionQuery) sqlCount(ctx context.Context) (int, error) {
+	_spec := rpq.querySpec()
+	_spec.Node.Columns = rpq.ctx.Fields
+	if len(rpq.ctx.Fields) > 0 {
+		_spec.Unique = rpq.ctx.Unique != nil && *rpq.ctx.Unique
 	}
-	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
+	return sqlgraph.CountNodes(ctx, rpq.driver, _spec)
 }
 
-func (_q *RolePermissionQuery) querySpec() *sqlgraph.QuerySpec {
+func (rpq *RolePermissionQuery) querySpec() *sqlgraph.QuerySpec {
 	_spec := sqlgraph.NewQuerySpec(rolepermission.Table, rolepermission.Columns, sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID))
-	_spec.From = _q.sql
-	if unique := _q.ctx.Unique; unique != nil {
+	_spec.From = rpq.sql
+	if unique := rpq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
-	} else if _q.path != nil {
+	} else if rpq.path != nil {
 		_spec.Unique = true
 	}
-	if fields := _q.ctx.Fields; len(fields) > 0 {
+	if fields := rpq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, rolepermission.FieldID)
 		for i := range fields {
@@ -529,27 +528,27 @@ func (_q *RolePermissionQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withRole != nil {
+		if rpq.withRole != nil {
 			_spec.Node.AddColumnOnce(rolepermission.FieldRoleCode)
 		}
-		if _q.withPermission != nil {
+		if rpq.withPermission != nil {
 			_spec.Node.AddColumnOnce(rolepermission.FieldPermissionID)
 		}
 	}
-	if ps := _q.predicates; len(ps) > 0 {
+	if ps := rpq.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if limit := _q.ctx.Limit; limit != nil {
+	if limit := rpq.ctx.Limit; limit != nil {
 		_spec.Limit = *limit
 	}
-	if offset := _q.ctx.Offset; offset != nil {
+	if offset := rpq.ctx.Offset; offset != nil {
 		_spec.Offset = *offset
 	}
-	if ps := _q.order; len(ps) > 0 {
+	if ps := rpq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
@@ -559,33 +558,33 @@ func (_q *RolePermissionQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *RolePermissionQuery) sqlQuery(ctx context.Context) *sql.Selector {
-	builder := sql.Dialect(_q.driver.Dialect())
+func (rpq *RolePermissionQuery) sqlQuery(ctx context.Context) *sql.Selector {
+	builder := sql.Dialect(rpq.driver.Dialect())
 	t1 := builder.Table(rolepermission.Table)
-	columns := _q.ctx.Fields
+	columns := rpq.ctx.Fields
 	if len(columns) == 0 {
 		columns = rolepermission.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
-	if _q.sql != nil {
-		selector = _q.sql
+	if rpq.sql != nil {
+		selector = rpq.sql
 		selector.Select(selector.Columns(columns...)...)
 	}
-	if _q.ctx.Unique != nil && *_q.ctx.Unique {
+	if rpq.ctx.Unique != nil && *rpq.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, p := range _q.predicates {
+	for _, p := range rpq.predicates {
 		p(selector)
 	}
-	for _, p := range _q.order {
+	for _, p := range rpq.order {
 		p(selector)
 	}
-	if offset := _q.ctx.Offset; offset != nil {
+	if offset := rpq.ctx.Offset; offset != nil {
 		// limit is mandatory for offset clause. We start
 		// with default value, and override it below if needed.
 		selector.Offset(*offset).Limit(math.MaxInt32)
 	}
-	if limit := _q.ctx.Limit; limit != nil {
+	if limit := rpq.ctx.Limit; limit != nil {
 		selector.Limit(*limit)
 	}
 	return selector
@@ -598,41 +597,41 @@ type RolePermissionGroupBy struct {
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *RolePermissionGroupBy) Aggregate(fns ...AggregateFunc) *RolePermissionGroupBy {
-	_g.fns = append(_g.fns, fns...)
-	return _g
+func (rpgb *RolePermissionGroupBy) Aggregate(fns ...AggregateFunc) *RolePermissionGroupBy {
+	rpgb.fns = append(rpgb.fns, fns...)
+	return rpgb
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *RolePermissionGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
-	if err := _g.build.prepareQuery(ctx); err != nil {
+func (rpgb *RolePermissionGroupBy) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, rpgb.build.ctx, "GroupBy")
+	if err := rpgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*RolePermissionQuery, *RolePermissionGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*RolePermissionQuery, *RolePermissionGroupBy](ctx, rpgb.build, rpgb, rpgb.build.inters, v)
 }
 
-func (_g *RolePermissionGroupBy) sqlScan(ctx context.Context, root *RolePermissionQuery, v any) error {
+func (rpgb *RolePermissionGroupBy) sqlScan(ctx context.Context, root *RolePermissionQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
-	aggregation := make([]string, 0, len(_g.fns))
-	for _, fn := range _g.fns {
+	aggregation := make([]string, 0, len(rpgb.fns))
+	for _, fn := range rpgb.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
 	if len(selector.SelectedColumns()) == 0 {
-		columns := make([]string, 0, len(*_g.flds)+len(_g.fns))
-		for _, f := range *_g.flds {
+		columns := make([]string, 0, len(*rpgb.flds)+len(rpgb.fns))
+		for _, f := range *rpgb.flds {
 			columns = append(columns, selector.C(f))
 		}
 		columns = append(columns, aggregation...)
 		selector.Select(columns...)
 	}
-	selector.GroupBy(selector.Columns(*_g.flds...)...)
+	selector.GroupBy(selector.Columns(*rpgb.flds...)...)
 	if err := selector.Err(); err != nil {
 		return err
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := _g.build.driver.Query(ctx, query, args, rows); err != nil {
+	if err := rpgb.build.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
@@ -646,27 +645,27 @@ type RolePermissionSelect struct {
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *RolePermissionSelect) Aggregate(fns ...AggregateFunc) *RolePermissionSelect {
-	_s.fns = append(_s.fns, fns...)
-	return _s
+func (rps *RolePermissionSelect) Aggregate(fns ...AggregateFunc) *RolePermissionSelect {
+	rps.fns = append(rps.fns, fns...)
+	return rps
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *RolePermissionSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
-	if err := _s.prepareQuery(ctx); err != nil {
+func (rps *RolePermissionSelect) Scan(ctx context.Context, v any) error {
+	ctx = setContextOp(ctx, rps.ctx, "Select")
+	if err := rps.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*RolePermissionQuery, *RolePermissionSelect](ctx, _s.RolePermissionQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*RolePermissionQuery, *RolePermissionSelect](ctx, rps.RolePermissionQuery, rps, rps.inters, v)
 }
 
-func (_s *RolePermissionSelect) sqlScan(ctx context.Context, root *RolePermissionQuery, v any) error {
+func (rps *RolePermissionSelect) sqlScan(ctx context.Context, root *RolePermissionQuery, v any) error {
 	selector := root.sqlQuery(ctx)
-	aggregation := make([]string, 0, len(_s.fns))
-	for _, fn := range _s.fns {
+	aggregation := make([]string, 0, len(rps.fns))
+	for _, fn := range rps.fns {
 		aggregation = append(aggregation, fn(selector))
 	}
-	switch n := len(*_s.selector.flds); {
+	switch n := len(*rps.selector.flds); {
 	case n == 0 && len(aggregation) > 0:
 		selector.Select(aggregation...)
 	case n != 0 && len(aggregation) > 0:
@@ -674,7 +673,7 @@ func (_s *RolePermissionSelect) sqlScan(ctx context.Context, root *RolePermissio
 	}
 	rows := &sql.Rows{}
 	query, args := selector.Query()
-	if err := _s.driver.Query(ctx, query, args, rows); err != nil {
+	if err := rps.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()

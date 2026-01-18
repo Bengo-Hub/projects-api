@@ -13,8 +13,8 @@
 
 **Discovered Services**:
 - ✅ **auth-service** (Go) - SSO, JWT, user management
-- ✅ **treasury-app** (Go) - Payments, ledger, reconciliation
-- ✅ **notifications-app** (Go) - Multi-channel notifications
+- ✅ **treasury-api** (Go) - Payments, ledger, reconciliation
+- ✅ **notifications-api** (Go) - Multi-channel notifications
 - ✅ **logistics-service** (Go) - Dispatch, routing, deliveries
 - ✅ **inventory-service** (Go) - Inventory management
 - ✅ **iot-service** (Go) - IoT device management

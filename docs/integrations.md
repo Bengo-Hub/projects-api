@@ -540,6 +540,6 @@ This document provides detailed integration information for all external service
 ## References
 
 - [Auth Service Integration](../auth-service/auth-service/docs/integrations.md)
-- [Treasury App Integration](../finance-service/treasury-app/docs/integrations.md)
+- [Treasury App Integration](../finance-service/treasury-api/docs/integrations.md)
 - [Logistics Service Integration](../logistics-service/logistics-api/docs/integrations.md)
 - [Notifications Service Integration](../notifications-service/notifications-api/docs/integrations.md)

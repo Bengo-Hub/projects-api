@@ -12,10 +12,10 @@ This document provides a comprehensive matrix of all services and platforms that
 |---------|----------|--------|------------------|-----------|---------------|
 | **Auth Service** | `auth-service/` | ✅ Production | REST API + Events | Bi-directional | • JWT validation (JWKS)<br>• User synchronization<br>• Tenant management<br>• SSO authentication |
 | **HRM (ERP)** | `erp/erp-api/` | ✅ Production | REST API + Events | Projects → HRM (read)<br>HRM → Projects (events) | • Employee directory<br>• Organizational structure<br>• Leave calendar<br>• Skill matrix<br>• Performance linking |
-| **Treasury** | `treasury-app/` | ✅ Production | REST API + Events | Bi-directional | • Budget approval<br>• Voucher processing<br>• Payment tracking<br>• Expense recording<br>• Cost center allocation |
+| **Treasury** | `treasury-api/` | ✅ Production | REST API + Events | Bi-directional | • Budget approval<br>• Voucher processing<br>• Payment tracking<br>• Expense recording<br>• Cost center allocation |
 | **Finance (ERP)** | `erp/erp-api/` | ✅ Production | REST API | Projects → Finance (read) | • Invoice management<br>• Cost center lookup<br>• Financial reporting<br>• Budget integration |
 | **CRM (ERP)** | `erp/erp-api/` | ✅ Production | REST API + Events | Bi-directional | • Client information<br>• Opportunity tracking<br>• Contact management<br>• Client portal<br>• Feedback collection |
-| **Notifications** | `notifications-app/` | ✅ Production | Events (NATS) | Projects → Notifications | • Task assignments<br>• Deadline reminders<br>• Status changes<br>• Comment mentions<br>• Meeting reminders<br>• Budget alerts |
+| **Notifications** | `notifications-service/notifications-api/` | ✅ Production | Events (NATS) | Projects → Notifications | • Task assignments<br>• Deadline reminders<br>• Status changes<br>• Comment mentions<br>• Meeting reminders<br>• Budget alerts |
 | **Logistics** | `logistics-service/` | ⚙️ Development | REST API + Events | Bi-directional | • Delivery coordination<br>• Resource transportation<br>• Site logistics<br>• Proof of delivery |
 | **Inventory** | `inventory-service/` | ⚙️ Development | REST API + Events | Projects → Inventory | • Material requisition<br>• Equipment allocation<br>• Stock tracking<br>• Equipment reservation |
 | **IoT** | `iot-service/` | ⚙️ Development | Events (NATS) | IoT → Projects | • Site monitoring<br>• Equipment telemetry<br>• Environmental monitoring<br>• Security & access control |

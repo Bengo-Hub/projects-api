@@ -20,7 +20,6 @@ ENV_SECRET_NAME=${ENV_SECRET_NAME:-"projects-service-secrets"}
 DEPLOY=${DEPLOY:-true}
 SETUP_DATABASES=${SETUP_DATABASES:-true}
 DB_TYPES=${DB_TYPES:-postgres,redis}
-# Per-service database configuration
 SERVICE_DB_NAME=${SERVICE_DB_NAME:-projects}
 SERVICE_DB_USER=${SERVICE_DB_USER:-projects_user}
 
@@ -59,17 +58,8 @@ success "Prerequisite checks passed"
 info "Running Trivy filesystem scan"
 trivy fs . --exit-code "$TRIVY_ECODE" --format table || true
 
-info "Building Docker image"
-# Build from workspace root to include shared/auth-client
-# For local builds: docker build -f projects-service/Dockerfile -t projects-service:local .
-# For CI builds: build from service directory, but Dockerfile expects workspace root context
-if [[ -d "../shared/auth-client" ]]; then
-  # We're in the service directory, build from parent (workspace root)
-  DOCKER_BUILDKIT=1 docker build -f Dockerfile -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" ..
-else
-  # We're already at workspace root or in CI
-  DOCKER_BUILDKIT=1 docker build -f projects-service/Dockerfile -t "${IMAGE_REPO}:${GIT_COMMIT_ID}" .
-fi
+info "Building Docker image from service directory"
+DOCKER_BUILDKIT=1 docker build . -t "${IMAGE_REPO}:${GIT_COMMIT_ID}"
 success "Docker build complete"
 
 if [[ ${DEPLOY} != "true" ]]; then
@@ -106,16 +96,12 @@ if [[ -n ${REGISTRY_USERNAME:-} && -n ${REGISTRY_PASSWORD:-} ]]; then
     --dry-run=client -o yaml | kubectl apply -f - || warn "registry secret creation failed"
 fi
 
-# Create per-service database if SETUP_DATABASES is enabled
 if [[ "$SETUP_DATABASES" == "true" && -n "${KUBE_CONFIG:-}" ]]; then
-  # Wait for PostgreSQL to be ready in infra namespace
   if kubectl -n infra get statefulset postgresql >/dev/null 2>&1; then
     info "Waiting for PostgreSQL to be ready..."
     kubectl -n infra rollout status statefulset/postgresql --timeout=180s || warn "PostgreSQL not fully ready"
     
-    # Create service database using devops-k8s script
     if [[ -d "$DEVOPS_DIR" ]] || [[ -n "${DEVOPS_REPO:-}" ]]; then
-      # Ensure devops repo is cloned
       if [[ ! -d "$DEVOPS_DIR" ]]; then
         TOKEN="${GH_PAT:-${GIT_SECRET:-${GITHUB_TOKEN:-}}}"
         CLONE_URL="https://github.com/${DEVOPS_REPO}.git"
@@ -176,4 +162,3 @@ info "Deployment summary"
 echo "  Image      : ${IMAGE_REPO}:${GIT_COMMIT_ID}"
 echo "  Namespace  : ${NAMESPACE}"
 echo "  Databases  : ${SETUP_DATABASES} (${DB_TYPES})"
-

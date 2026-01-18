@@ -1,15 +1,14 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.24-alpine AS builder
+FROM golang:1.23-alpine AS builder
 WORKDIR /src
-# Copy shared auth-client first (needed for replace directive)
-# Build context should be from workspace root: docker build -f projects-service/Dockerfile -t projects-service:local .
-COPY shared/auth-client /shared/auth-client
-COPY projects-service/go.mod projects-service/go.sum ./
-RUN go mod download
-COPY projects-service .
+# go.mod uses remote replace directive for auth-client, no local copy needed
+# Build context is the service directory root
+COPY go.mod go.sum ./
 
-RUN CGO_ENABLED=0 go build -o /out/projects ./cmd/api
+RUN GOTOOLCHAIN=auto go mod download
+COPY . .
+RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/projects ./cmd/api
 
 FROM alpine:3.20
 RUN addgroup -S app && adduser -S app -G app
@@ -21,4 +20,3 @@ USER app
 EXPOSE 4005
 ENV PORT=4005
 ENTRYPOINT ["/app/service"]
-

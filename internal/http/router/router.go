@@ -9,20 +9,19 @@ import (
 	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 
+	httpware "github.com/Bengo-Hub/httpware"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
-	sharedmw "github.com/bengobox/projects-service/internal/shared/middleware"
 )
 
 func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.UserHandler, authMiddleware *authclient.AuthMiddleware) http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(sharedmw.RequestID)
-	r.Use(sharedmw.Tenant)
-	r.Use(sharedmw.Logging(log))
-	r.Use(sharedmw.Recover(log))
+	r.Use(httpware.RequestID)
+	r.Use(httpware.Tenant)
+	r.Use(httpware.Logging(log))
+	r.Use(httpware.Recover(log))
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},

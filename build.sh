@@ -103,7 +103,7 @@ if [[ "$SETUP_DATABASES" == "true" && -n "${KUBE_CONFIG:-}" ]]; then
     
     if [[ -d "$DEVOPS_DIR" ]] || [[ -n "${DEVOPS_REPO:-}" ]]; then
       if [[ ! -d "$DEVOPS_DIR" ]]; then
-        TOKEN="${GH_PAT:-${GIT_SECRET:-${GITHUB_TOKEN:-}}}"
+        TOKEN="${GH_PAT:-${GIT_SECRET:-${GIT_TOKEN:-}}}"
         CLONE_URL="https://github.com/${DEVOPS_REPO}.git"
         [[ -n $TOKEN ]] && CLONE_URL="https://x-access-token:${TOKEN}@github.com/${DEVOPS_REPO}.git"
         git clone "$CLONE_URL" "$DEVOPS_DIR" || { warn "Unable to clone devops repo for database setup"; }

@@ -36,6 +36,11 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 	r.Get("/readyz", health.Readiness)
 	r.Get("/metrics", health.Metrics)
 
+	// Redirect root path to Swagger documentation
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/v1/docs/", http.StatusMovedPermanently)
+	})
+
 	r.Route("/api/v1", func(api chi.Router) {
 		// Apply auth middleware to all v1 routes
 		if authMiddleware != nil {
@@ -58,4 +63,3 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 
 	return r
 }
-

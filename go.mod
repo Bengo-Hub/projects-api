@@ -5,6 +5,7 @@ go 1.24.0
 // Local development: replace with local path (remove when repo is created and tagged)
 // Map module path to correct GitHub repository
 replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.3.1
+
 // use tagged releases for other shared modules
 
 require (

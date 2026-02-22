@@ -139,12 +139,20 @@ if [[ "$SETUP_DATABASES" == "true" && -n "${KUBE_CONFIG:-}" ]]; then
   fi
 fi
 
+# Create service secrets using devops-k8s script if not exists
 if ! kubectl -n "$NAMESPACE" get secret "$ENV_SECRET_NAME" >/dev/null 2>&1; then
-  warn "Secret $ENV_SECRET_NAME not found - creating placeholder"
-  kubectl -n "$NAMESPACE" create secret generic "$ENV_SECRET_NAME" \
-    --from-literal=PROJECTS_POSTGRES_URL="postgresql://${SERVICE_DB_USER}:PASSWORD@postgresql.infra.svc.cluster.local:5432/${SERVICE_DB_NAME}?sslmode=disable" \
-    --from-literal=PROJECTS_REDIS_ADDR="redis-master.infra.svc.cluster.local:6379" \
-    --from-literal=PROJECTS_NATS_URL="nats://nats.messaging.svc.cluster.local:4222" || true
+  if [[ -d "$DEVOPS_DIR" && -f "$DEVOPS_DIR/scripts/infrastructure/create-service-secrets.sh" ]]; then
+    info "Creating secrets for ${APP_NAME} using devops-k8s script..."
+    SERVICE_NAME="$APP_NAME" \
+    NAMESPACE="$NAMESPACE" \
+    DB_NAME="$SERVICE_DB_NAME" \
+    DB_USER="$SERVICE_DB_USER" \
+    SECRET_NAME="$ENV_SECRET_NAME" \
+    bash "$DEVOPS_DIR/scripts/infrastructure/create-service-secrets.sh" || warn "Secret creation failed or already exists"
+  else
+    warn "Secret $ENV_SECRET_NAME not found and create-service-secrets.sh not available"
+    warn "Please create the secret manually or ensure devops-k8s repo is cloned"
+  fi
 fi
 
 # Update Helm values using centralized script

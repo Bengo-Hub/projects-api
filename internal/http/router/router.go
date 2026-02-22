@@ -14,7 +14,7 @@ import (
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 )
 
-func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.UserHandler, authMiddleware *authclient.AuthMiddleware) http.Handler {
+func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.UserHandler, authMiddleware *authclient.AuthMiddleware, allowedOrigins []string) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RealIP)
@@ -24,9 +24,9 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 	r.Use(httpware.Recover(log))
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Tenant-ID", "X-Request-ID"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Tenant-ID", "X-Tenant-Slug", "X-Request-ID"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,

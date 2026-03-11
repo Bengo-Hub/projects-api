@@ -8,7 +8,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-const namespace = "PROJECTS"
+// Empty namespace so common env keys match all Go backends: POSTGRES_URL, REDIS_ADDR, REDIS_PASSWORD.
+const namespace = ""
 
 // Config aggregates runtime configuration for the projects service.
 type Config struct {

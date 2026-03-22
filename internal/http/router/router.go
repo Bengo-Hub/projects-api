@@ -45,6 +45,8 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 		// Apply auth middleware to all v1 routes
 		if authMiddleware != nil {
 			api.Use(authMiddleware.RequireAuth)
+			// Layer 2: Subscription enforcement — reject expired/cancelled tenants
+			api.Use(authclient.RequireActiveSubscription())
 		}
 
 		api.Route("/{tenantID}", func(tenant chi.Router) {

@@ -8,6 +8,8 @@ github.com/Bengo-Hub/httpware v0.2.0 h1:a/WeP2LJ4X6rcLmTyHa5VPR83ldKxPucTya6bFlz
 github.com/Bengo-Hub/httpware v0.2.0/go.mod h1:iplyopAHMEyJL7lLlJoharGvb5uN04OcQEZjX85O8TU=
 github.com/Bengo-Hub/shared-events v0.1.1 h1:E3crk5RgGGvesAgmKPittDfu9jvw43gHzVMpKf5xvhM=
 github.com/Bengo-Hub/shared-events v0.1.1/go.mod h1:lUGlufCZcRz3pgkmEo552zOO5ove6s6ekf/SRvQ0/N0=
+github.com/Bengo-Hub/shared-events v0.2.0 h1:boWYHnssTEmUg1c4qd7/YiMoo0ShBqrg4xyUwxwKFsY=
+github.com/Bengo-Hub/shared-events v0.2.0/go.mod h1:lUGlufCZcRz3pgkmEo552zOO5ove6s6ekf/SRvQ0/N0=
 github.com/Bengo-Hub/shared-service-client v0.2.0 h1:fsRH1n/AdcHapwYAaT7yohWZgnFgDgC9Bh8IIi09JBI=
 github.com/Bengo-Hub/shared-service-client v0.2.0/go.mod h1:BAdnOxpjeWmoXiKVLPje5RQp0DX3Q8QE6F/rlBEiGSk=
 github.com/DATA-DOG/go-sqlmock v1.5.0 h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=

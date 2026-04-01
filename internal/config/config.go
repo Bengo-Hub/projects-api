@@ -40,11 +40,13 @@ type HTTPConfig struct {
 	AllowedOrigins []string      `envconfig:"HTTP_ALLOWED_ORIGINS" default:"https://accounts.codevertexitsolutions.com,https://ordersapp.codevertexitsolutions.com,https://pos.codevertexitsolutions.com"`
 }
 
+// PostgresConfig holds database configuration.
+// Defaults are conservative to prevent connection exhaustion on shared PostgreSQL (max_connections=100).
 type PostgresConfig struct {
 	URL             string        `envconfig:"POSTGRES_URL" default:"postgres://postgres:postgres@localhost:5432/projects?sslmode=disable"`
-	MaxOpenConns    int           `envconfig:"POSTGRES_MAX_OPEN_CONNS" default:"30"`
-	MaxIdleConns    int           `envconfig:"POSTGRES_MAX_IDLE_CONNS" default:"15"`
-	ConnMaxLifetime time.Duration `envconfig:"POSTGRES_CONN_MAX_LIFETIME" default:"45m"`
+	MaxOpenConns    int           `envconfig:"POSTGRES_MAX_OPEN_CONNS" default:"6"`
+	MaxIdleConns    int           `envconfig:"POSTGRES_MAX_IDLE_CONNS" default:"3"`
+	ConnMaxLifetime time.Duration `envconfig:"POSTGRES_CONN_MAX_LIFETIME" default:"15m"`
 }
 
 type RedisConfig struct {

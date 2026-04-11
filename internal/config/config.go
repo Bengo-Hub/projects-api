@@ -41,7 +41,7 @@ type HTTPConfig struct {
 }
 
 // PostgresConfig holds database configuration.
-// Defaults are conservative to prevent connection exhaustion on shared PostgreSQL (max_connections=100).
+// Defaults are conservative to prevent connection exhaustion on shared PostgreSQL (max_connections=200).
 type PostgresConfig struct {
 	URL             string        `envconfig:"POSTGRES_URL" default:"postgres://postgres:postgres@localhost:5432/projects?sslmode=disable"`
 	MaxOpenConns    int           `envconfig:"POSTGRES_MAX_OPEN_CONNS" default:"6"`

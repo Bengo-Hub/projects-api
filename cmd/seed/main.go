@@ -1,12 +1,16 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"log"
 
-	"github.com/bengobox/projects-service/internal/config"
-	"github.com/bengobox/projects-service/internal/platform/database"
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
+
+	"github.com/bengobox/projects-service/internal/config"
+	"github.com/bengobox/projects-service/internal/ent"
 )
 
 func main() {
@@ -15,17 +19,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("config: %v", err)
 	}
-	ctx := context.Background()
-	client, err := database.NewClient(ctx, cfg.Postgres)
-	if err != nil {
-		log.Fatalf("db: %v", err)
+
+	// Bypass PgBouncer for direct connection during seed.
+	dbURL := cfg.Postgres.URL
+	if cfg.Postgres.MigrateURL != "" {
+		dbURL = cfg.Postgres.MigrateURL
 	}
+
+	db, err := sql.Open("pgx", dbURL)
+	if err != nil {
+		log.Fatalf("open database: %v", err)
+	}
+	defer db.Close()
+
+	drv := entsql.OpenDB(dialect.Postgres, db)
+	client := ent.NewClient(ent.Driver(drv))
 	defer client.Close()
 
-	// Ensure schema exists
-	if err := database.RunMigrations(ctx, client); err != nil {
-		log.Fatalf("migrate: %v", err)
-	}
+	_ = client // use client for seeding once Ent schema is finalized
 
 	// Seed default roles
 	defaultRoles := []struct {
@@ -39,13 +50,9 @@ func main() {
 		{"viewer", "Viewer", "Read-only access to projects", []string{"projects:read"}},
 	}
 
-	// Note: Role seeding will be implemented after Ent code generation
-	// For now, just log that seeding is ready
-	log.Println("Role seeding ready (Ent code must be generated first)")
 	for _, r := range defaultRoles {
 		log.Printf("Would seed role: %s - %s", r.code, r.name)
 	}
 
 	log.Println("seed completed")
 }
-

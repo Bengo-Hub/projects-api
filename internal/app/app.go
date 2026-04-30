@@ -14,8 +14,10 @@ import (
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	eventslib "github.com/Bengo-Hub/shared-events"
-	
+
 	"github.com/bengobox/projects-service/internal/config"
+	"github.com/bengobox/projects-service/internal/ent"
+	"github.com/bengobox/projects-service/internal/ent/migrate"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 	router "github.com/bengobox/projects-service/internal/http/router"
 	"github.com/bengobox/projects-service/internal/modules/outbox"
@@ -25,7 +27,12 @@ import (
 	"github.com/bengobox/projects-service/internal/services/rbac"
 	"github.com/bengobox/projects-service/internal/services/usersync"
 	"github.com/bengobox/projects-service/internal/shared/logger"
+
 	"database/sql"
+
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/schema"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -53,6 +60,25 @@ func New(ctx context.Context) (*App, error) {
 	dbPool, err := database.NewPool(ctx, cfg.Postgres)
 	if err != nil {
 		return nil, fmt.Errorf("postgres init: %w", err)
+	}
+
+	if cfg.Postgres.RunMigrations {
+		migrateURL := cfg.Postgres.URL
+		if cfg.Postgres.MigrateURL != "" {
+			migrateURL = cfg.Postgres.MigrateURL
+		}
+		sqlDB, err := sql.Open("pgx", migrateURL)
+		if err != nil {
+			return nil, fmt.Errorf("sql open for migrations: %w", err)
+		}
+		defer sqlDB.Close()
+		drv := entsql.OpenDB(dialect.Postgres, sqlDB)
+		entClient := ent.NewClient(ent.Driver(drv))
+		defer entClient.Close()
+		if err := entClient.Schema.Create(ctx, schema.WithDir(migrate.Dir)); err != nil {
+			return nil, fmt.Errorf("ent migrate: %w", err)
+		}
+		log.Info("versioned migrations completed")
 	}
 
 	redisClient := cache.NewClient(cfg.Redis)

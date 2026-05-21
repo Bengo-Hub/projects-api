@@ -26,7 +26,7 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Tenant-ID", "X-Tenant-Slug", "X-Request-ID"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Tenant-ID", "X-Tenant-Slug", "X-Request-ID", "X-Outlet-ID"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -42,6 +42,16 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 	})
 
 	r.Route("/api/v1", func(api chi.Router) {
+		// Optional outlet context — extracts X-Outlet-ID if present
+		api.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if outletID := httpware.OutletHeader(r); outletID != "" {
+					r = r.WithContext(httpware.WithOutletID(r.Context(), outletID))
+				}
+				next.ServeHTTP(w, r)
+			})
+		})
+
 		// Apply auth middleware to all v1 routes
 		if authMiddleware != nil {
 			api.Use(authMiddleware.RequireAuth)

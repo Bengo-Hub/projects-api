@@ -51,6 +51,10 @@ const (
 	EdgeActivities = "activities"
 	// EdgeAttachments holds the string denoting the attachments edge name in mutations.
 	EdgeAttachments = "attachments"
+	// EdgeProjectBudget holds the string denoting the project_budget edge name in mutations.
+	EdgeProjectBudget = "project_budget"
+	// EdgeTimeLogs holds the string denoting the time_logs edge name in mutations.
+	EdgeTimeLogs = "time_logs"
 	// Table holds the table name of the project in the database.
 	Table = "projects"
 	// TasksTable is the table that holds the tasks relation/edge.
@@ -95,6 +99,20 @@ const (
 	AttachmentsInverseTable = "attachments"
 	// AttachmentsColumn is the table column denoting the attachments relation/edge.
 	AttachmentsColumn = "project_id"
+	// ProjectBudgetTable is the table that holds the project_budget relation/edge.
+	ProjectBudgetTable = "budgets"
+	// ProjectBudgetInverseTable is the table name for the Budget entity.
+	// It exists in this package in order to avoid circular dependency with the "budget" package.
+	ProjectBudgetInverseTable = "budgets"
+	// ProjectBudgetColumn is the table column denoting the project_budget relation/edge.
+	ProjectBudgetColumn = "project_id"
+	// TimeLogsTable is the table that holds the time_logs relation/edge.
+	TimeLogsTable = "time_logs"
+	// TimeLogsInverseTable is the table name for the TimeLog entity.
+	// It exists in this package in order to avoid circular dependency with the "timelog" package.
+	TimeLogsInverseTable = "time_logs"
+	// TimeLogsColumn is the table column denoting the time_logs relation/edge.
+	TimeLogsColumn = "project_id"
 )
 
 // Columns holds all SQL columns for project fields.
@@ -287,6 +305,34 @@ func ByAttachments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newAttachmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByProjectBudgetCount orders the results by project_budget count.
+func ByProjectBudgetCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newProjectBudgetStep(), opts...)
+	}
+}
+
+// ByProjectBudget orders the results by project_budget terms.
+func ByProjectBudget(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProjectBudgetStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByTimeLogsCount orders the results by time_logs count.
+func ByTimeLogsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTimeLogsStep(), opts...)
+	}
+}
+
+// ByTimeLogs orders the results by time_logs terms.
+func ByTimeLogs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTimeLogsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTasksStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -327,5 +373,19 @@ func newAttachmentsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AttachmentsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AttachmentsTable, AttachmentsColumn),
+	)
+}
+func newProjectBudgetStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProjectBudgetInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ProjectBudgetTable, ProjectBudgetColumn),
+	)
+}
+func newTimeLogsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TimeLogsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TimeLogsTable, TimeLogsColumn),
 	)
 }

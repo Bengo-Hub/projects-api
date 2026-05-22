@@ -16,8 +16,12 @@ type Tx struct {
 	Activity *ActivityClient
 	// Attachment is the client for interacting with the Attachment builders.
 	Attachment *AttachmentClient
+	// Budget is the client for interacting with the Budget builders.
+	Budget *BudgetClient
 	// Comment is the client for interacting with the Comment builders.
 	Comment *CommentClient
+	// Expense is the client for interacting with the Expense builders.
+	Expense *ExpenseClient
 	// Milestone is the client for interacting with the Milestone builders.
 	Milestone *MilestoneClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
@@ -38,6 +42,20 @@ type Tx struct {
 	TaskDependency *TaskDependencyClient
 	// TenantSyncEvent is the client for interacting with the TenantSyncEvent builders.
 	TenantSyncEvent *TenantSyncEventClient
+	// Tender is the client for interacting with the Tender builders.
+	Tender *TenderClient
+	// TenderCommittee is the client for interacting with the TenderCommittee builders.
+	TenderCommittee *TenderCommitteeClient
+	// TenderCommitteeMember is the client for interacting with the TenderCommitteeMember builders.
+	TenderCommitteeMember *TenderCommitteeMemberClient
+	// TenderDocument is the client for interacting with the TenderDocument builders.
+	TenderDocument *TenderDocumentClient
+	// TenderEvaluation is the client for interacting with the TenderEvaluation builders.
+	TenderEvaluation *TenderEvaluationClient
+	// TenderMeeting is the client for interacting with the TenderMeeting builders.
+	TenderMeeting *TenderMeetingClient
+	// TimeLog is the client for interacting with the TimeLog builders.
+	TimeLog *TimeLogClient
 	// UserRole is the client for interacting with the UserRole builders.
 	UserRole *UserRoleClient
 
@@ -173,7 +191,9 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Activity = NewActivityClient(tx.config)
 	tx.Attachment = NewAttachmentClient(tx.config)
+	tx.Budget = NewBudgetClient(tx.config)
 	tx.Comment = NewCommentClient(tx.config)
+	tx.Expense = NewExpenseClient(tx.config)
 	tx.Milestone = NewMilestoneClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
 	tx.Permission = NewPermissionClient(tx.config)
@@ -184,6 +204,13 @@ func (tx *Tx) init() {
 	tx.Task = NewTaskClient(tx.config)
 	tx.TaskDependency = NewTaskDependencyClient(tx.config)
 	tx.TenantSyncEvent = NewTenantSyncEventClient(tx.config)
+	tx.Tender = NewTenderClient(tx.config)
+	tx.TenderCommittee = NewTenderCommitteeClient(tx.config)
+	tx.TenderCommitteeMember = NewTenderCommitteeMemberClient(tx.config)
+	tx.TenderDocument = NewTenderDocumentClient(tx.config)
+	tx.TenderEvaluation = NewTenderEvaluationClient(tx.config)
+	tx.TenderMeeting = NewTenderMeetingClient(tx.config)
+	tx.TimeLog = NewTimeLogClient(tx.config)
 	tx.UserRole = NewUserRoleClient(tx.config)
 }
 

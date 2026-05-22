@@ -15,6 +15,7 @@ import (
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	eventslib "github.com/Bengo-Hub/shared-events"
 
+	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/config"
 	"github.com/bengobox/projects-service/internal/ent"
 	"github.com/bengobox/projects-service/internal/ent/migrate"
@@ -24,7 +25,13 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/cache"
 	"github.com/bengobox/projects-service/internal/platform/database"
 	"github.com/bengobox/projects-service/internal/platform/events"
+	"github.com/bengobox/projects-service/internal/services/comments"
+	"github.com/bengobox/projects-service/internal/services/members"
+	"github.com/bengobox/projects-service/internal/services/milestones"
+	projectssvc "github.com/bengobox/projects-service/internal/services/projects"
 	"github.com/bengobox/projects-service/internal/services/rbac"
+	"github.com/bengobox/projects-service/internal/services/tasks"
+	"github.com/bengobox/projects-service/internal/services/tenders"
 	"github.com/bengobox/projects-service/internal/services/usersync"
 	"github.com/bengobox/projects-service/internal/shared/logger"
 
@@ -90,10 +97,36 @@ func New(ctx context.Context) (*App, error) {
 
 	healthHandler := handlers.NewHealthHandler(log, dbPool, redisClient, natsConn)
 
-	// Initialize user management services
-	rbacService := rbac.NewService(log)
+	// Create a persistent ent client for runtime use (separate from migration client)
+	runtimeSQLDB, err := sql.Open("pgx", cfg.Postgres.URL)
+	if err != nil {
+		return nil, fmt.Errorf("sql open for runtime: %w", err)
+	}
+	runtimeDrv := entsql.OpenDB(dialect.Postgres, runtimeSQLDB)
+	entClient := ent.NewClient(ent.Driver(runtimeDrv))
+
+	// Initialize shared cache client
+	cacheClient := sharedcache.New(redisClient, log)
+
+	// Initialize all services
+	projectService := projectssvc.NewService(entClient, cacheClient, log)
+	taskService := tasks.NewService(entClient, cacheClient, log)
+	milestoneService := milestones.NewService(entClient, cacheClient, log)
+	memberService := members.NewService(entClient, cacheClient, log)
+	commentService := comments.NewService(entClient, cacheClient, log)
+	tenderService := tenders.NewService(entClient, cacheClient, log)
+	rbacService := rbac.NewService(entClient, cacheClient, log)
 	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
+
+	// Initialize handlers
 	userHandler := handlers.NewUserHandler(log, rbacService, syncService)
+	projectHandler := handlers.NewProjectHandler(log, projectService)
+	taskHandler := handlers.NewTaskHandler(log, taskService)
+	milestoneHandler := handlers.NewMilestoneHandler(log, milestoneService)
+	memberHandler := handlers.NewMemberHandler(log, memberService)
+	commentHandler := handlers.NewCommentHandler(log, commentService)
+	activityHandler := handlers.NewActivityHandler(log, entClient)
+	tenderHandler := handlers.NewTenderHandler(log, tenderService)
 
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
@@ -138,7 +171,10 @@ func New(ctx context.Context) (*App, error) {
 		}
 	}
 
-	chiRouter := router.New(log, healthHandler, userHandler, authMiddleware, cfg.HTTP.AllowedOrigins)
+	chiRouter := router.New(log, healthHandler, userHandler,
+		projectHandler, taskHandler, milestoneHandler, memberHandler,
+		commentHandler, activityHandler, tenderHandler,
+		authMiddleware, cfg.HTTP.AllowedOrigins)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

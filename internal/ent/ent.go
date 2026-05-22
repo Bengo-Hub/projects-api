@@ -14,7 +14,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
+	"github.com/bengobox/projects-service/internal/ent/budget"
 	"github.com/bengobox/projects-service/internal/ent/comment"
+	"github.com/bengobox/projects-service/internal/ent/expense"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
@@ -25,6 +27,13 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
 	"github.com/bengobox/projects-service/internal/ent/tenantsyncevent"
+	"github.com/bengobox/projects-service/internal/ent/tender"
+	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
+	"github.com/bengobox/projects-service/internal/ent/tendercommitteemember"
+	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
+	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
+	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	"github.com/bengobox/projects-service/internal/ent/timelog"
 	"github.com/bengobox/projects-service/internal/ent/userrole"
 )
 
@@ -86,20 +95,29 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			activity.Table:        activity.ValidColumn,
-			attachment.Table:      attachment.ValidColumn,
-			comment.Table:         comment.ValidColumn,
-			milestone.Table:       milestone.ValidColumn,
-			outboxevent.Table:     outboxevent.ValidColumn,
-			permission.Table:      permission.ValidColumn,
-			project.Table:         project.ValidColumn,
-			projectmember.Table:   projectmember.ValidColumn,
-			role.Table:            role.ValidColumn,
-			rolepermission.Table:  rolepermission.ValidColumn,
-			task.Table:            task.ValidColumn,
-			taskdependency.Table:  taskdependency.ValidColumn,
-			tenantsyncevent.Table: tenantsyncevent.ValidColumn,
-			userrole.Table:        userrole.ValidColumn,
+			activity.Table:              activity.ValidColumn,
+			attachment.Table:            attachment.ValidColumn,
+			budget.Table:                budget.ValidColumn,
+			comment.Table:               comment.ValidColumn,
+			expense.Table:               expense.ValidColumn,
+			milestone.Table:             milestone.ValidColumn,
+			outboxevent.Table:           outboxevent.ValidColumn,
+			permission.Table:            permission.ValidColumn,
+			project.Table:               project.ValidColumn,
+			projectmember.Table:         projectmember.ValidColumn,
+			role.Table:                  role.ValidColumn,
+			rolepermission.Table:        rolepermission.ValidColumn,
+			task.Table:                  task.ValidColumn,
+			taskdependency.Table:        taskdependency.ValidColumn,
+			tenantsyncevent.Table:       tenantsyncevent.ValidColumn,
+			tender.Table:                tender.ValidColumn,
+			tendercommittee.Table:       tendercommittee.ValidColumn,
+			tendercommitteemember.Table: tendercommitteemember.ValidColumn,
+			tenderdocument.Table:        tenderdocument.ValidColumn,
+			tenderevaluation.Table:      tenderevaluation.ValidColumn,
+			tendermeeting.Table:         tendermeeting.ValidColumn,
+			timelog.Table:               timelog.ValidColumn,
+			userrole.Table:              userrole.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

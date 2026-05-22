@@ -44,6 +44,10 @@ func (Task) Fields() []ent.Field {
 			UpdateDefault(time.Now),
 		field.JSON("metadata", map[string]any{}).
 			Optional(),
+		field.UUID("parent_id", uuid.UUID{}).
+			Optional(),
+		field.String("wbs_code").
+			Optional(),
 	}
 }
 

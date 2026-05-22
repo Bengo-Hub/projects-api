@@ -2,16 +2,16 @@ module github.com/bengobox/projects-service
 
 go 1.24.0
 
-// Local development: replace with local path (remove when repo is created and tagged)
 // Map module path to correct GitHub repository
-replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.6.0
+replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.6.1
 
 // use tagged releases for other shared modules
 
 require (
 	ariga.io/atlas v0.19.1-0.20240203083654-5948b60a8e43
 	entgo.io/ent v0.13.1
-	github.com/Bengo-Hub/httpware v0.2.0
+	github.com/Bengo-Hub/cache v0.2.0
+	github.com/Bengo-Hub/httpware v0.4.1
 	github.com/Bengo-Hub/shared-auth-client v0.3.1
 	github.com/Bengo-Hub/shared-events v0.2.0
 	github.com/Bengo-Hub/shared-service-client v0.2.0

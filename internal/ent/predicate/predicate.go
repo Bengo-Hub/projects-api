@@ -12,8 +12,14 @@ type Activity func(*sql.Selector)
 // Attachment is the predicate function for attachment builders.
 type Attachment func(*sql.Selector)
 
+// Budget is the predicate function for budget builders.
+type Budget func(*sql.Selector)
+
 // Comment is the predicate function for comment builders.
 type Comment func(*sql.Selector)
+
+// Expense is the predicate function for expense builders.
+type Expense func(*sql.Selector)
 
 // Milestone is the predicate function for milestone builders.
 type Milestone func(*sql.Selector)
@@ -44,6 +50,27 @@ type TaskDependency func(*sql.Selector)
 
 // TenantSyncEvent is the predicate function for tenantsyncevent builders.
 type TenantSyncEvent func(*sql.Selector)
+
+// Tender is the predicate function for tender builders.
+type Tender func(*sql.Selector)
+
+// TenderCommittee is the predicate function for tendercommittee builders.
+type TenderCommittee func(*sql.Selector)
+
+// TenderCommitteeMember is the predicate function for tendercommitteemember builders.
+type TenderCommitteeMember func(*sql.Selector)
+
+// TenderDocument is the predicate function for tenderdocument builders.
+type TenderDocument func(*sql.Selector)
+
+// TenderEvaluation is the predicate function for tenderevaluation builders.
+type TenderEvaluation func(*sql.Selector)
+
+// TenderMeeting is the predicate function for tendermeeting builders.
+type TenderMeeting func(*sql.Selector)
+
+// TimeLog is the predicate function for timelog builders.
+type TimeLog func(*sql.Selector)
 
 // UserRole is the predicate function for userrole builders.
 type UserRole func(*sql.Selector)

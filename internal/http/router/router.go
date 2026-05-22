@@ -14,7 +14,20 @@ import (
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 )
 
-func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.UserHandler, authMiddleware *authclient.AuthMiddleware, allowedOrigins []string) http.Handler {
+func New(
+	log *zap.Logger,
+	health *handlers.HealthHandler,
+	userHandler *handlers.UserHandler,
+	projectHandler *handlers.ProjectHandler,
+	taskHandler *handlers.TaskHandler,
+	milestoneHandler *handlers.MilestoneHandler,
+	memberHandler *handlers.MemberHandler,
+	commentHandler *handlers.CommentHandler,
+	activityHandler *handlers.ActivityHandler,
+	tenderHandler *handlers.TenderHandler,
+	authMiddleware *authclient.AuthMiddleware,
+	allowedOrigins []string,
+) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RealIP)
@@ -26,8 +39,8 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Tenant-ID", "X-Tenant-Slug", "X-Request-ID", "X-Outlet-ID"},
-		ExposedHeaders:   []string{"Link"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Tenant-ID", "X-Tenant-Slug", "X-Request-ID", "X-Outlet-ID", "X-API-Key"},
+		ExposedHeaders:   []string{"Link", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
@@ -79,16 +92,14 @@ func New(log *zap.Logger, health *handlers.HealthHandler, userHandler *handlers.
 		}
 
 		api.Route("/{tenantID}", func(tenant chi.Router) {
-			// User management routes
 			userHandler.RegisterRoutes(tenant)
-
-			tenant.Route("/projects", func(projects chi.Router) {
-				// Placeholder endpoints - to be implemented
-				projects.Get("/", func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusNotImplemented)
-					w.Write([]byte("Not implemented yet"))
-				})
-			})
+			projectHandler.RegisterRoutes(tenant)
+			taskHandler.RegisterRoutes(tenant)
+			milestoneHandler.RegisterRoutes(tenant)
+			memberHandler.RegisterRoutes(tenant)
+			commentHandler.RegisterRoutes(tenant)
+			activityHandler.RegisterRoutes(tenant)
+			tenderHandler.RegisterRoutes(tenant)
 		})
 	})
 

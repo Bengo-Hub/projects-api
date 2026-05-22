@@ -39,6 +39,10 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
+	// FieldParentID holds the string denoting the parent_id field in the database.
+	FieldParentID = "parent_id"
+	// FieldWbsCode holds the string denoting the wbs_code field in the database.
+	FieldWbsCode = "wbs_code"
 	// EdgeProject holds the string denoting the project edge name in mutations.
 	EdgeProject = "project"
 	// EdgeDependencies holds the string denoting the dependencies edge name in mutations.
@@ -103,6 +107,8 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldMetadata,
+	FieldParentID,
+	FieldWbsCode,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -193,6 +199,16 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByParentID orders the results by the parent_id field.
+func ByParentID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParentID, opts...).ToFunc()
+}
+
+// ByWbsCode orders the results by the wbs_code field.
+func ByWbsCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWbsCode, opts...).ToFunc()
 }
 
 // ByProjectField orders the results by project field.

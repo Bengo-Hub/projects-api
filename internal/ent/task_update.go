@@ -202,6 +202,46 @@ func (tu *TaskUpdate) ClearMetadata() *TaskUpdate {
 	return tu
 }
 
+// SetParentID sets the "parent_id" field.
+func (tu *TaskUpdate) SetParentID(u uuid.UUID) *TaskUpdate {
+	tu.mutation.SetParentID(u)
+	return tu
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableParentID(u *uuid.UUID) *TaskUpdate {
+	if u != nil {
+		tu.SetParentID(*u)
+	}
+	return tu
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (tu *TaskUpdate) ClearParentID() *TaskUpdate {
+	tu.mutation.ClearParentID()
+	return tu
+}
+
+// SetWbsCode sets the "wbs_code" field.
+func (tu *TaskUpdate) SetWbsCode(s string) *TaskUpdate {
+	tu.mutation.SetWbsCode(s)
+	return tu
+}
+
+// SetNillableWbsCode sets the "wbs_code" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableWbsCode(s *string) *TaskUpdate {
+	if s != nil {
+		tu.SetWbsCode(*s)
+	}
+	return tu
+}
+
+// ClearWbsCode clears the value of the "wbs_code" field.
+func (tu *TaskUpdate) ClearWbsCode() *TaskUpdate {
+	tu.mutation.ClearWbsCode()
+	return tu
+}
+
 // SetProject sets the "project" edge to the Project entity.
 func (tu *TaskUpdate) SetProject(p *Project) *TaskUpdate {
 	return tu.SetProjectID(p.ID)
@@ -467,6 +507,18 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if tu.mutation.MetadataCleared() {
 		_spec.ClearField(task.FieldMetadata, field.TypeJSON)
+	}
+	if value, ok := tu.mutation.ParentID(); ok {
+		_spec.SetField(task.FieldParentID, field.TypeUUID, value)
+	}
+	if tu.mutation.ParentIDCleared() {
+		_spec.ClearField(task.FieldParentID, field.TypeUUID)
+	}
+	if value, ok := tu.mutation.WbsCode(); ok {
+		_spec.SetField(task.FieldWbsCode, field.TypeString, value)
+	}
+	if tu.mutation.WbsCodeCleared() {
+		_spec.ClearField(task.FieldWbsCode, field.TypeString)
 	}
 	if tu.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -865,6 +917,46 @@ func (tuo *TaskUpdateOne) ClearMetadata() *TaskUpdateOne {
 	return tuo
 }
 
+// SetParentID sets the "parent_id" field.
+func (tuo *TaskUpdateOne) SetParentID(u uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.SetParentID(u)
+	return tuo
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableParentID(u *uuid.UUID) *TaskUpdateOne {
+	if u != nil {
+		tuo.SetParentID(*u)
+	}
+	return tuo
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (tuo *TaskUpdateOne) ClearParentID() *TaskUpdateOne {
+	tuo.mutation.ClearParentID()
+	return tuo
+}
+
+// SetWbsCode sets the "wbs_code" field.
+func (tuo *TaskUpdateOne) SetWbsCode(s string) *TaskUpdateOne {
+	tuo.mutation.SetWbsCode(s)
+	return tuo
+}
+
+// SetNillableWbsCode sets the "wbs_code" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableWbsCode(s *string) *TaskUpdateOne {
+	if s != nil {
+		tuo.SetWbsCode(*s)
+	}
+	return tuo
+}
+
+// ClearWbsCode clears the value of the "wbs_code" field.
+func (tuo *TaskUpdateOne) ClearWbsCode() *TaskUpdateOne {
+	tuo.mutation.ClearWbsCode()
+	return tuo
+}
+
 // SetProject sets the "project" edge to the Project entity.
 func (tuo *TaskUpdateOne) SetProject(p *Project) *TaskUpdateOne {
 	return tuo.SetProjectID(p.ID)
@@ -1160,6 +1252,18 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 	}
 	if tuo.mutation.MetadataCleared() {
 		_spec.ClearField(task.FieldMetadata, field.TypeJSON)
+	}
+	if value, ok := tuo.mutation.ParentID(); ok {
+		_spec.SetField(task.FieldParentID, field.TypeUUID, value)
+	}
+	if tuo.mutation.ParentIDCleared() {
+		_spec.ClearField(task.FieldParentID, field.TypeUUID)
+	}
+	if value, ok := tuo.mutation.WbsCode(); ok {
+		_spec.SetField(task.FieldWbsCode, field.TypeString, value)
+	}
+	if tuo.mutation.WbsCodeCleared() {
+		_spec.ClearField(task.FieldWbsCode, field.TypeString)
 	}
 	if tuo.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{

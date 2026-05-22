@@ -7,7 +7,9 @@ import (
 
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
+	"github.com/bengobox/projects-service/internal/ent/budget"
 	"github.com/bengobox/projects-service/internal/ent/comment"
+	"github.com/bengobox/projects-service/internal/ent/expense"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
@@ -19,6 +21,13 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
 	"github.com/bengobox/projects-service/internal/ent/tenantsyncevent"
+	"github.com/bengobox/projects-service/internal/ent/tender"
+	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
+	"github.com/bengobox/projects-service/internal/ent/tendercommitteemember"
+	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
+	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
+	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	"github.com/bengobox/projects-service/internal/ent/timelog"
 	"github.com/bengobox/projects-service/internal/ent/userrole"
 	"github.com/google/uuid"
 )
@@ -59,6 +68,38 @@ func init() {
 	attachmentDescID := attachmentFields[0].Descriptor()
 	// attachment.DefaultID holds the default value on creation for the id field.
 	attachment.DefaultID = attachmentDescID.Default.(func() uuid.UUID)
+	budgetFields := schema.Budget{}.Fields()
+	_ = budgetFields
+	// budgetDescTotalAmount is the schema descriptor for total_amount field.
+	budgetDescTotalAmount := budgetFields[3].Descriptor()
+	// budget.DefaultTotalAmount holds the default value on creation for the total_amount field.
+	budget.DefaultTotalAmount = budgetDescTotalAmount.Default.(float64)
+	// budgetDescSpentAmount is the schema descriptor for spent_amount field.
+	budgetDescSpentAmount := budgetFields[4].Descriptor()
+	// budget.DefaultSpentAmount holds the default value on creation for the spent_amount field.
+	budget.DefaultSpentAmount = budgetDescSpentAmount.Default.(float64)
+	// budgetDescCurrency is the schema descriptor for currency field.
+	budgetDescCurrency := budgetFields[5].Descriptor()
+	// budget.DefaultCurrency holds the default value on creation for the currency field.
+	budget.DefaultCurrency = budgetDescCurrency.Default.(string)
+	// budgetDescStatus is the schema descriptor for status field.
+	budgetDescStatus := budgetFields[6].Descriptor()
+	// budget.DefaultStatus holds the default value on creation for the status field.
+	budget.DefaultStatus = budgetDescStatus.Default.(string)
+	// budgetDescCreatedAt is the schema descriptor for created_at field.
+	budgetDescCreatedAt := budgetFields[7].Descriptor()
+	// budget.DefaultCreatedAt holds the default value on creation for the created_at field.
+	budget.DefaultCreatedAt = budgetDescCreatedAt.Default.(func() time.Time)
+	// budgetDescUpdatedAt is the schema descriptor for updated_at field.
+	budgetDescUpdatedAt := budgetFields[8].Descriptor()
+	// budget.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	budget.DefaultUpdatedAt = budgetDescUpdatedAt.Default.(func() time.Time)
+	// budget.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	budget.UpdateDefaultUpdatedAt = budgetDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// budgetDescID is the schema descriptor for id field.
+	budgetDescID := budgetFields[0].Descriptor()
+	// budget.DefaultID holds the default value on creation for the id field.
+	budget.DefaultID = budgetDescID.Default.(func() uuid.UUID)
 	commentFields := schema.Comment{}.Fields()
 	_ = commentFields
 	// commentDescContent is the schema descriptor for content field.
@@ -79,6 +120,34 @@ func init() {
 	commentDescID := commentFields[0].Descriptor()
 	// comment.DefaultID holds the default value on creation for the id field.
 	comment.DefaultID = commentDescID.Default.(func() uuid.UUID)
+	expenseFields := schema.Expense{}.Fields()
+	_ = expenseFields
+	// expenseDescDescription is the schema descriptor for description field.
+	expenseDescDescription := expenseFields[4].Descriptor()
+	// expense.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
+	expense.DescriptionValidator = expenseDescDescription.Validators[0].(func(string) error)
+	// expenseDescCurrency is the schema descriptor for currency field.
+	expenseDescCurrency := expenseFields[6].Descriptor()
+	// expense.DefaultCurrency holds the default value on creation for the currency field.
+	expense.DefaultCurrency = expenseDescCurrency.Default.(string)
+	// expenseDescStatus is the schema descriptor for status field.
+	expenseDescStatus := expenseFields[11].Descriptor()
+	// expense.DefaultStatus holds the default value on creation for the status field.
+	expense.DefaultStatus = expenseDescStatus.Default.(string)
+	// expenseDescCreatedAt is the schema descriptor for created_at field.
+	expenseDescCreatedAt := expenseFields[12].Descriptor()
+	// expense.DefaultCreatedAt holds the default value on creation for the created_at field.
+	expense.DefaultCreatedAt = expenseDescCreatedAt.Default.(func() time.Time)
+	// expenseDescUpdatedAt is the schema descriptor for updated_at field.
+	expenseDescUpdatedAt := expenseFields[13].Descriptor()
+	// expense.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	expense.DefaultUpdatedAt = expenseDescUpdatedAt.Default.(func() time.Time)
+	// expense.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	expense.UpdateDefaultUpdatedAt = expenseDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// expenseDescID is the schema descriptor for id field.
+	expenseDescID := expenseFields[0].Descriptor()
+	// expense.DefaultID holds the default value on creation for the id field.
+	expense.DefaultID = expenseDescID.Default.(func() uuid.UUID)
 	milestoneFields := schema.Milestone{}.Fields()
 	_ = milestoneFields
 	// milestoneDescName is the schema descriptor for name field.
@@ -283,6 +352,132 @@ func init() {
 	tenantsynceventDescID := tenantsynceventFields[0].Descriptor()
 	// tenantsyncevent.DefaultID holds the default value on creation for the id field.
 	tenantsyncevent.DefaultID = tenantsynceventDescID.Default.(func() uuid.UUID)
+	tenderFields := schema.Tender{}.Fields()
+	_ = tenderFields
+	// tenderDescTitle is the schema descriptor for title field.
+	tenderDescTitle := tenderFields[3].Descriptor()
+	// tender.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	tender.TitleValidator = tenderDescTitle.Validators[0].(func(string) error)
+	// tenderDescClientName is the schema descriptor for client_name field.
+	tenderDescClientName := tenderFields[4].Descriptor()
+	// tender.ClientNameValidator is a validator for the "client_name" field. It is called by the builders before save.
+	tender.ClientNameValidator = tenderDescClientName.Validators[0].(func(string) error)
+	// tenderDescStatus is the schema descriptor for status field.
+	tenderDescStatus := tenderFields[6].Descriptor()
+	// tender.DefaultStatus holds the default value on creation for the status field.
+	tender.DefaultStatus = tenderDescStatus.Default.(string)
+	// tenderDescPriority is the schema descriptor for priority field.
+	tenderDescPriority := tenderFields[7].Descriptor()
+	// tender.DefaultPriority holds the default value on creation for the priority field.
+	tender.DefaultPriority = tenderDescPriority.Default.(string)
+	// tenderDescCurrency is the schema descriptor for currency field.
+	tenderDescCurrency := tenderFields[9].Descriptor()
+	// tender.DefaultCurrency holds the default value on creation for the currency field.
+	tender.DefaultCurrency = tenderDescCurrency.Default.(string)
+	// tenderDescSubmissionType is the schema descriptor for submission_type field.
+	tenderDescSubmissionType := tenderFields[12].Descriptor()
+	// tender.DefaultSubmissionType holds the default value on creation for the submission_type field.
+	tender.DefaultSubmissionType = tenderDescSubmissionType.Default.(string)
+	// tenderDescCreatedAt is the schema descriptor for created_at field.
+	tenderDescCreatedAt := tenderFields[15].Descriptor()
+	// tender.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tender.DefaultCreatedAt = tenderDescCreatedAt.Default.(func() time.Time)
+	// tenderDescUpdatedAt is the schema descriptor for updated_at field.
+	tenderDescUpdatedAt := tenderFields[16].Descriptor()
+	// tender.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	tender.DefaultUpdatedAt = tenderDescUpdatedAt.Default.(func() time.Time)
+	// tender.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	tender.UpdateDefaultUpdatedAt = tenderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// tenderDescID is the schema descriptor for id field.
+	tenderDescID := tenderFields[0].Descriptor()
+	// tender.DefaultID holds the default value on creation for the id field.
+	tender.DefaultID = tenderDescID.Default.(func() uuid.UUID)
+	tendercommitteeFields := schema.TenderCommittee{}.Fields()
+	_ = tendercommitteeFields
+	// tendercommitteeDescName is the schema descriptor for name field.
+	tendercommitteeDescName := tendercommitteeFields[3].Descriptor()
+	// tendercommittee.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	tendercommittee.NameValidator = tendercommitteeDescName.Validators[0].(func(string) error)
+	// tendercommitteeDescCreatedAt is the schema descriptor for created_at field.
+	tendercommitteeDescCreatedAt := tendercommitteeFields[4].Descriptor()
+	// tendercommittee.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tendercommittee.DefaultCreatedAt = tendercommitteeDescCreatedAt.Default.(func() time.Time)
+	// tendercommitteeDescID is the schema descriptor for id field.
+	tendercommitteeDescID := tendercommitteeFields[0].Descriptor()
+	// tendercommittee.DefaultID holds the default value on creation for the id field.
+	tendercommittee.DefaultID = tendercommitteeDescID.Default.(func() uuid.UUID)
+	tendercommitteememberFields := schema.TenderCommitteeMember{}.Fields()
+	_ = tendercommitteememberFields
+	// tendercommitteememberDescRole is the schema descriptor for role field.
+	tendercommitteememberDescRole := tendercommitteememberFields[4].Descriptor()
+	// tendercommitteemember.DefaultRole holds the default value on creation for the role field.
+	tendercommitteemember.DefaultRole = tendercommitteememberDescRole.Default.(string)
+	// tendercommitteememberDescJoinedAt is the schema descriptor for joined_at field.
+	tendercommitteememberDescJoinedAt := tendercommitteememberFields[5].Descriptor()
+	// tendercommitteemember.DefaultJoinedAt holds the default value on creation for the joined_at field.
+	tendercommitteemember.DefaultJoinedAt = tendercommitteememberDescJoinedAt.Default.(func() time.Time)
+	// tendercommitteememberDescID is the schema descriptor for id field.
+	tendercommitteememberDescID := tendercommitteememberFields[0].Descriptor()
+	// tendercommitteemember.DefaultID holds the default value on creation for the id field.
+	tendercommitteemember.DefaultID = tendercommitteememberDescID.Default.(func() uuid.UUID)
+	tenderdocumentFields := schema.TenderDocument{}.Fields()
+	_ = tenderdocumentFields
+	// tenderdocumentDescUploadedAt is the schema descriptor for uploaded_at field.
+	tenderdocumentDescUploadedAt := tenderdocumentFields[8].Descriptor()
+	// tenderdocument.DefaultUploadedAt holds the default value on creation for the uploaded_at field.
+	tenderdocument.DefaultUploadedAt = tenderdocumentDescUploadedAt.Default.(func() time.Time)
+	// tenderdocumentDescID is the schema descriptor for id field.
+	tenderdocumentDescID := tenderdocumentFields[0].Descriptor()
+	// tenderdocument.DefaultID holds the default value on creation for the id field.
+	tenderdocument.DefaultID = tenderdocumentDescID.Default.(func() uuid.UUID)
+	tenderevaluationFields := schema.TenderEvaluation{}.Fields()
+	_ = tenderevaluationFields
+	// tenderevaluationDescEvaluatedAt is the schema descriptor for evaluated_at field.
+	tenderevaluationDescEvaluatedAt := tenderevaluationFields[7].Descriptor()
+	// tenderevaluation.DefaultEvaluatedAt holds the default value on creation for the evaluated_at field.
+	tenderevaluation.DefaultEvaluatedAt = tenderevaluationDescEvaluatedAt.Default.(func() time.Time)
+	// tenderevaluationDescID is the schema descriptor for id field.
+	tenderevaluationDescID := tenderevaluationFields[0].Descriptor()
+	// tenderevaluation.DefaultID holds the default value on creation for the id field.
+	tenderevaluation.DefaultID = tenderevaluationDescID.Default.(func() uuid.UUID)
+	tendermeetingFields := schema.TenderMeeting{}.Fields()
+	_ = tendermeetingFields
+	// tendermeetingDescTitle is the schema descriptor for title field.
+	tendermeetingDescTitle := tendermeetingFields[3].Descriptor()
+	// tendermeeting.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	tendermeeting.TitleValidator = tendermeetingDescTitle.Validators[0].(func(string) error)
+	// tendermeetingDescPlatform is the schema descriptor for platform field.
+	tendermeetingDescPlatform := tendermeetingFields[5].Descriptor()
+	// tendermeeting.DefaultPlatform holds the default value on creation for the platform field.
+	tendermeeting.DefaultPlatform = tendermeetingDescPlatform.Default.(string)
+	// tendermeetingDescCreatedAt is the schema descriptor for created_at field.
+	tendermeetingDescCreatedAt := tendermeetingFields[9].Descriptor()
+	// tendermeeting.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tendermeeting.DefaultCreatedAt = tendermeetingDescCreatedAt.Default.(func() time.Time)
+	// tendermeetingDescID is the schema descriptor for id field.
+	tendermeetingDescID := tendermeetingFields[0].Descriptor()
+	// tendermeeting.DefaultID holds the default value on creation for the id field.
+	tendermeeting.DefaultID = tendermeetingDescID.Default.(func() uuid.UUID)
+	timelogFields := schema.TimeLog{}.Fields()
+	_ = timelogFields
+	// timelogDescIsBillable is the schema descriptor for is_billable field.
+	timelogDescIsBillable := timelogFields[8].Descriptor()
+	// timelog.DefaultIsBillable holds the default value on creation for the is_billable field.
+	timelog.DefaultIsBillable = timelogDescIsBillable.Default.(bool)
+	// timelogDescCreatedAt is the schema descriptor for created_at field.
+	timelogDescCreatedAt := timelogFields[9].Descriptor()
+	// timelog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	timelog.DefaultCreatedAt = timelogDescCreatedAt.Default.(func() time.Time)
+	// timelogDescUpdatedAt is the schema descriptor for updated_at field.
+	timelogDescUpdatedAt := timelogFields[10].Descriptor()
+	// timelog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	timelog.DefaultUpdatedAt = timelogDescUpdatedAt.Default.(func() time.Time)
+	// timelog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	timelog.UpdateDefaultUpdatedAt = timelogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// timelogDescID is the schema descriptor for id field.
+	timelogDescID := timelogFields[0].Descriptor()
+	// timelog.DefaultID holds the default value on creation for the id field.
+	timelog.DefaultID = timelogDescID.Default.(func() uuid.UUID)
 	userroleFields := schema.UserRole{}.Fields()
 	_ = userroleFields
 	// userroleDescAssignedAt is the schema descriptor for assigned_at field.

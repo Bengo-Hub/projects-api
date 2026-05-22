@@ -73,6 +73,32 @@ var (
 			},
 		},
 	}
+	// BudgetsColumns holds the columns for the "budgets" table.
+	BudgetsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "total_amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "spent_amount", Type: field.TypeFloat64, Default: 0},
+		{Name: "currency", Type: field.TypeString, Default: "KES"},
+		{Name: "status", Type: field.TypeString, Default: "draft"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "project_id", Type: field.TypeUUID},
+	}
+	// BudgetsTable holds the schema information for the "budgets" table.
+	BudgetsTable = &schema.Table{
+		Name:       "budgets",
+		Columns:    BudgetsColumns,
+		PrimaryKey: []*schema.Column{BudgetsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "budgets_projects_project_budget",
+				Columns:    []*schema.Column{BudgetsColumns[8]},
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// CommentsColumns holds the columns for the "comments" table.
 	CommentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -102,6 +128,37 @@ var (
 				Columns:    []*schema.Column{CommentsColumns[8]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// ExpensesColumns holds the columns for the "expenses" table.
+	ExpensesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "project_id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "description", Type: field.TypeString},
+		{Name: "amount", Type: field.TypeFloat64},
+		{Name: "currency", Type: field.TypeString, Default: "KES"},
+		{Name: "category", Type: field.TypeString, Nullable: true},
+		{Name: "incurred_by", Type: field.TypeUUID},
+		{Name: "incurred_at", Type: field.TypeTime},
+		{Name: "receipt_url", Type: field.TypeString, Nullable: true},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "budget_id", Type: field.TypeUUID},
+	}
+	// ExpensesTable holds the schema information for the "expenses" table.
+	ExpensesTable = &schema.Table{
+		Name:       "expenses",
+		Columns:    ExpensesColumns,
+		PrimaryKey: []*schema.Column{ExpensesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "expenses_budgets_expenses",
+				Columns:    []*schema.Column{ExpensesColumns[13]},
+				RefColumns: []*schema.Column{BudgetsColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -272,6 +329,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "wbs_code", Type: field.TypeString, Nullable: true},
 		{Name: "project_id", Type: field.TypeUUID},
 	}
 	// TasksTable holds the schema information for the "tasks" table.
@@ -282,7 +341,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tasks_projects_tasks",
-				Columns:    []*schema.Column{TasksColumns[12]},
+				Columns:    []*schema.Column{TasksColumns[14]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -326,6 +385,208 @@ var (
 		Columns:    TenantSyncEventsColumns,
 		PrimaryKey: []*schema.Column{TenantSyncEventsColumns[0]},
 	}
+	// TendersColumns holds the columns for the "tenders" table.
+	TendersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "number", Type: field.TypeString, Unique: true},
+		{Name: "title", Type: field.TypeString},
+		{Name: "client_name", Type: field.TypeString},
+		{Name: "source", Type: field.TypeString, Nullable: true},
+		{Name: "status", Type: field.TypeString, Default: "draft"},
+		{Name: "priority", Type: field.TypeString, Default: "medium"},
+		{Name: "estimated_value", Type: field.TypeFloat64, Nullable: true},
+		{Name: "currency", Type: field.TypeString, Default: "KES"},
+		{Name: "deadline", Type: field.TypeTime, Nullable: true},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "submission_type", Type: field.TypeString, Default: "physical"},
+		{Name: "submitted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+	}
+	// TendersTable holds the schema information for the "tenders" table.
+	TendersTable = &schema.Table{
+		Name:       "tenders",
+		Columns:    TendersColumns,
+		PrimaryKey: []*schema.Column{TendersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tender_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{TendersColumns[1], TendersColumns[6]},
+			},
+			{
+				Name:    "tender_tenant_id_deadline",
+				Unique:  false,
+				Columns: []*schema.Column{TendersColumns[1], TendersColumns[10]},
+			},
+		},
+	}
+	// TenderCommitteesColumns holds the columns for the "tender_committees" table.
+	TenderCommitteesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "tender_id", Type: field.TypeUUID},
+	}
+	// TenderCommitteesTable holds the schema information for the "tender_committees" table.
+	TenderCommitteesTable = &schema.Table{
+		Name:       "tender_committees",
+		Columns:    TenderCommitteesColumns,
+		PrimaryKey: []*schema.Column{TenderCommitteesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tender_committees_tenders_committees",
+				Columns:    []*schema.Column{TenderCommitteesColumns[4]},
+				RefColumns: []*schema.Column{TendersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// TenderCommitteeMembersColumns holds the columns for the "tender_committee_members" table.
+	TenderCommitteeMembersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "role", Type: field.TypeString, Default: "member"},
+		{Name: "joined_at", Type: field.TypeTime},
+		{Name: "committee_id", Type: field.TypeUUID},
+	}
+	// TenderCommitteeMembersTable holds the schema information for the "tender_committee_members" table.
+	TenderCommitteeMembersTable = &schema.Table{
+		Name:       "tender_committee_members",
+		Columns:    TenderCommitteeMembersColumns,
+		PrimaryKey: []*schema.Column{TenderCommitteeMembersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tender_committee_members_tender_committees_members",
+				Columns:    []*schema.Column{TenderCommitteeMembersColumns[5]},
+				RefColumns: []*schema.Column{TenderCommitteesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// TenderDocumentsColumns holds the columns for the "tender_documents" table.
+	TenderDocumentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "file_url", Type: field.TypeString},
+		{Name: "file_name", Type: field.TypeString},
+		{Name: "file_size", Type: field.TypeInt64, Nullable: true},
+		{Name: "mime_type", Type: field.TypeString, Nullable: true},
+		{Name: "uploaded_by", Type: field.TypeUUID},
+		{Name: "uploaded_at", Type: field.TypeTime},
+		{Name: "tender_id", Type: field.TypeUUID},
+	}
+	// TenderDocumentsTable holds the schema information for the "tender_documents" table.
+	TenderDocumentsTable = &schema.Table{
+		Name:       "tender_documents",
+		Columns:    TenderDocumentsColumns,
+		PrimaryKey: []*schema.Column{TenderDocumentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tender_documents_tenders_documents",
+				Columns:    []*schema.Column{TenderDocumentsColumns[8]},
+				RefColumns: []*schema.Column{TendersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// TenderEvaluationsColumns holds the columns for the "tender_evaluations" table.
+	TenderEvaluationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "evaluator_id", Type: field.TypeUUID},
+		{Name: "score", Type: field.TypeFloat64},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "criteria", Type: field.TypeString, Nullable: true},
+		{Name: "evaluated_at", Type: field.TypeTime},
+		{Name: "tender_id", Type: field.TypeUUID},
+	}
+	// TenderEvaluationsTable holds the schema information for the "tender_evaluations" table.
+	TenderEvaluationsTable = &schema.Table{
+		Name:       "tender_evaluations",
+		Columns:    TenderEvaluationsColumns,
+		PrimaryKey: []*schema.Column{TenderEvaluationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tender_evaluations_tenders_evaluations",
+				Columns:    []*schema.Column{TenderEvaluationsColumns[7]},
+				RefColumns: []*schema.Column{TendersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// TenderMeetingsColumns holds the columns for the "tender_meetings" table.
+	TenderMeetingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "title", Type: field.TypeString},
+		{Name: "scheduled_at", Type: field.TypeTime},
+		{Name: "platform", Type: field.TypeString, Default: "physical"},
+		{Name: "meeting_url", Type: field.TypeString, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "tender_id", Type: field.TypeUUID},
+	}
+	// TenderMeetingsTable holds the schema information for the "tender_meetings" table.
+	TenderMeetingsTable = &schema.Table{
+		Name:       "tender_meetings",
+		Columns:    TenderMeetingsColumns,
+		PrimaryKey: []*schema.Column{TenderMeetingsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tender_meetings_tenders_meetings",
+				Columns:    []*schema.Column{TenderMeetingsColumns[9]},
+				RefColumns: []*schema.Column{TendersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// TimeLogsColumns holds the columns for the "time_logs" table.
+	TimeLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "task_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "hours", Type: field.TypeFloat64},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "logged_date", Type: field.TypeTime},
+		{Name: "is_billable", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "project_id", Type: field.TypeUUID},
+	}
+	// TimeLogsTable holds the schema information for the "time_logs" table.
+	TimeLogsTable = &schema.Table{
+		Name:       "time_logs",
+		Columns:    TimeLogsColumns,
+		PrimaryKey: []*schema.Column{TimeLogsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "time_logs_projects_time_logs",
+				Columns:    []*schema.Column{TimeLogsColumns[10]},
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "timelog_tenant_id_project_id",
+				Unique:  false,
+				Columns: []*schema.Column{TimeLogsColumns[2], TimeLogsColumns[10]},
+			},
+			{
+				Name:    "timelog_tenant_id_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{TimeLogsColumns[2], TimeLogsColumns[3]},
+			},
+		},
+	}
 	// UserRolesColumns holds the columns for the "user_roles" table.
 	UserRolesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -354,7 +615,9 @@ var (
 	Tables = []*schema.Table{
 		ActivitiesTable,
 		AttachmentsTable,
+		BudgetsTable,
 		CommentsTable,
+		ExpensesTable,
 		MilestonesTable,
 		OutboxEventsTable,
 		PermissionsTable,
@@ -365,6 +628,13 @@ var (
 		TasksTable,
 		TaskDependenciesTable,
 		TenantSyncEventsTable,
+		TendersTable,
+		TenderCommitteesTable,
+		TenderCommitteeMembersTable,
+		TenderDocumentsTable,
+		TenderEvaluationsTable,
+		TenderMeetingsTable,
+		TimeLogsTable,
 		UserRolesTable,
 	}
 )
@@ -374,13 +644,21 @@ func init() {
 	ActivitiesTable.ForeignKeys[1].RefTable = TasksTable
 	AttachmentsTable.ForeignKeys[0].RefTable = ProjectsTable
 	AttachmentsTable.ForeignKeys[1].RefTable = TasksTable
+	BudgetsTable.ForeignKeys[0].RefTable = ProjectsTable
 	CommentsTable.ForeignKeys[0].RefTable = ProjectsTable
 	CommentsTable.ForeignKeys[1].RefTable = TasksTable
+	ExpensesTable.ForeignKeys[0].RefTable = BudgetsTable
 	MilestonesTable.ForeignKeys[0].RefTable = ProjectsTable
 	ProjectMembersTable.ForeignKeys[0].RefTable = ProjectsTable
 	RolePermissionsTable.ForeignKeys[0].RefTable = PermissionsTable
 	RolePermissionsTable.ForeignKeys[1].RefTable = RolesTable
 	TasksTable.ForeignKeys[0].RefTable = ProjectsTable
 	TaskDependenciesTable.ForeignKeys[0].RefTable = TasksTable
+	TenderCommitteesTable.ForeignKeys[0].RefTable = TendersTable
+	TenderCommitteeMembersTable.ForeignKeys[0].RefTable = TenderCommitteesTable
+	TenderDocumentsTable.ForeignKeys[0].RefTable = TendersTable
+	TenderEvaluationsTable.ForeignKeys[0].RefTable = TendersTable
+	TenderMeetingsTable.ForeignKeys[0].RefTable = TendersTable
+	TimeLogsTable.ForeignKeys[0].RefTable = ProjectsTable
 	UserRolesTable.ForeignKeys[0].RefTable = RolesTable
 }

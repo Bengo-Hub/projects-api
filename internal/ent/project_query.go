@@ -13,28 +13,32 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
+	"github.com/bengobox/projects-service/internal/ent/budget"
 	"github.com/bengobox/projects-service/internal/ent/comment"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
 	"github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/ent/timelog"
 	"github.com/google/uuid"
 )
 
 // ProjectQuery is the builder for querying Project entities.
 type ProjectQuery struct {
 	config
-	ctx             *QueryContext
-	order           []project.OrderOption
-	inters          []Interceptor
-	predicates      []predicate.Project
-	withTasks       *TaskQuery
-	withMembers     *ProjectMemberQuery
-	withMilestones  *MilestoneQuery
-	withComments    *CommentQuery
-	withActivities  *ActivityQuery
-	withAttachments *AttachmentQuery
+	ctx               *QueryContext
+	order             []project.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.Project
+	withTasks         *TaskQuery
+	withMembers       *ProjectMemberQuery
+	withMilestones    *MilestoneQuery
+	withComments      *CommentQuery
+	withActivities    *ActivityQuery
+	withAttachments   *AttachmentQuery
+	withProjectBudget *BudgetQuery
+	withTimeLogs      *TimeLogQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -196,6 +200,50 @@ func (pq *ProjectQuery) QueryAttachments() *AttachmentQuery {
 			sqlgraph.From(project.Table, project.FieldID, selector),
 			sqlgraph.To(attachment.Table, attachment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, project.AttachmentsTable, project.AttachmentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProjectBudget chains the current query on the "project_budget" edge.
+func (pq *ProjectQuery) QueryProjectBudget() *BudgetQuery {
+	query := (&BudgetClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, selector),
+			sqlgraph.To(budget.Table, budget.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, project.ProjectBudgetTable, project.ProjectBudgetColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTimeLogs chains the current query on the "time_logs" edge.
+func (pq *ProjectQuery) QueryTimeLogs() *TimeLogQuery {
+	query := (&TimeLogClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, selector),
+			sqlgraph.To(timelog.Table, timelog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, project.TimeLogsTable, project.TimeLogsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -390,17 +438,19 @@ func (pq *ProjectQuery) Clone() *ProjectQuery {
 		return nil
 	}
 	return &ProjectQuery{
-		config:          pq.config,
-		ctx:             pq.ctx.Clone(),
-		order:           append([]project.OrderOption{}, pq.order...),
-		inters:          append([]Interceptor{}, pq.inters...),
-		predicates:      append([]predicate.Project{}, pq.predicates...),
-		withTasks:       pq.withTasks.Clone(),
-		withMembers:     pq.withMembers.Clone(),
-		withMilestones:  pq.withMilestones.Clone(),
-		withComments:    pq.withComments.Clone(),
-		withActivities:  pq.withActivities.Clone(),
-		withAttachments: pq.withAttachments.Clone(),
+		config:            pq.config,
+		ctx:               pq.ctx.Clone(),
+		order:             append([]project.OrderOption{}, pq.order...),
+		inters:            append([]Interceptor{}, pq.inters...),
+		predicates:        append([]predicate.Project{}, pq.predicates...),
+		withTasks:         pq.withTasks.Clone(),
+		withMembers:       pq.withMembers.Clone(),
+		withMilestones:    pq.withMilestones.Clone(),
+		withComments:      pq.withComments.Clone(),
+		withActivities:    pq.withActivities.Clone(),
+		withAttachments:   pq.withAttachments.Clone(),
+		withProjectBudget: pq.withProjectBudget.Clone(),
+		withTimeLogs:      pq.withTimeLogs.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -470,6 +520,28 @@ func (pq *ProjectQuery) WithAttachments(opts ...func(*AttachmentQuery)) *Project
 		opt(query)
 	}
 	pq.withAttachments = query
+	return pq
+}
+
+// WithProjectBudget tells the query-builder to eager-load the nodes that are connected to
+// the "project_budget" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProjectQuery) WithProjectBudget(opts ...func(*BudgetQuery)) *ProjectQuery {
+	query := (&BudgetClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withProjectBudget = query
+	return pq
+}
+
+// WithTimeLogs tells the query-builder to eager-load the nodes that are connected to
+// the "time_logs" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProjectQuery) WithTimeLogs(opts ...func(*TimeLogQuery)) *ProjectQuery {
+	query := (&TimeLogClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withTimeLogs = query
 	return pq
 }
 
@@ -551,13 +623,15 @@ func (pq *ProjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proj
 	var (
 		nodes       = []*Project{}
 		_spec       = pq.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [8]bool{
 			pq.withTasks != nil,
 			pq.withMembers != nil,
 			pq.withMilestones != nil,
 			pq.withComments != nil,
 			pq.withActivities != nil,
 			pq.withAttachments != nil,
+			pq.withProjectBudget != nil,
+			pq.withTimeLogs != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -617,6 +691,20 @@ func (pq *ProjectQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proj
 		if err := pq.loadAttachments(ctx, query, nodes,
 			func(n *Project) { n.Edges.Attachments = []*Attachment{} },
 			func(n *Project, e *Attachment) { n.Edges.Attachments = append(n.Edges.Attachments, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withProjectBudget; query != nil {
+		if err := pq.loadProjectBudget(ctx, query, nodes,
+			func(n *Project) { n.Edges.ProjectBudget = []*Budget{} },
+			func(n *Project, e *Budget) { n.Edges.ProjectBudget = append(n.Edges.ProjectBudget, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withTimeLogs; query != nil {
+		if err := pq.loadTimeLogs(ctx, query, nodes,
+			func(n *Project) { n.Edges.TimeLogs = []*TimeLog{} },
+			func(n *Project, e *TimeLog) { n.Edges.TimeLogs = append(n.Edges.TimeLogs, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -788,6 +876,66 @@ func (pq *ProjectQuery) loadAttachments(ctx context.Context, query *AttachmentQu
 	}
 	query.Where(predicate.Attachment(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(project.AttachmentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProjectID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "project_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (pq *ProjectQuery) loadProjectBudget(ctx context.Context, query *BudgetQuery, nodes []*Project, init func(*Project), assign func(*Project, *Budget)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Project)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(budget.FieldProjectID)
+	}
+	query.Where(predicate.Budget(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(project.ProjectBudgetColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProjectID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "project_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (pq *ProjectQuery) loadTimeLogs(ctx context.Context, query *TimeLogQuery, nodes []*Project, init func(*Project), assign func(*Project, *TimeLog)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Project)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(timelog.FieldProjectID)
+	}
+	query.Where(predicate.TimeLog(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(project.TimeLogsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

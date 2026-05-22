@@ -13,12 +13,14 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
+	"github.com/bengobox/projects-service/internal/ent/budget"
 	"github.com/bengobox/projects-service/internal/ent/comment"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
 	"github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/ent/timelog"
 	"github.com/google/uuid"
 )
 
@@ -300,6 +302,36 @@ func (pu *ProjectUpdate) AddAttachments(a ...*Attachment) *ProjectUpdate {
 	return pu.AddAttachmentIDs(ids...)
 }
 
+// AddProjectBudgetIDs adds the "project_budget" edge to the Budget entity by IDs.
+func (pu *ProjectUpdate) AddProjectBudgetIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.AddProjectBudgetIDs(ids...)
+	return pu
+}
+
+// AddProjectBudget adds the "project_budget" edges to the Budget entity.
+func (pu *ProjectUpdate) AddProjectBudget(b ...*Budget) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return pu.AddProjectBudgetIDs(ids...)
+}
+
+// AddTimeLogIDs adds the "time_logs" edge to the TimeLog entity by IDs.
+func (pu *ProjectUpdate) AddTimeLogIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.AddTimeLogIDs(ids...)
+	return pu
+}
+
+// AddTimeLogs adds the "time_logs" edges to the TimeLog entity.
+func (pu *ProjectUpdate) AddTimeLogs(t ...*TimeLog) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return pu.AddTimeLogIDs(ids...)
+}
+
 // Mutation returns the ProjectMutation object of the builder.
 func (pu *ProjectUpdate) Mutation() *ProjectMutation {
 	return pu.mutation
@@ -429,6 +461,48 @@ func (pu *ProjectUpdate) RemoveAttachments(a ...*Attachment) *ProjectUpdate {
 		ids[i] = a[i].ID
 	}
 	return pu.RemoveAttachmentIDs(ids...)
+}
+
+// ClearProjectBudget clears all "project_budget" edges to the Budget entity.
+func (pu *ProjectUpdate) ClearProjectBudget() *ProjectUpdate {
+	pu.mutation.ClearProjectBudget()
+	return pu
+}
+
+// RemoveProjectBudgetIDs removes the "project_budget" edge to Budget entities by IDs.
+func (pu *ProjectUpdate) RemoveProjectBudgetIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.RemoveProjectBudgetIDs(ids...)
+	return pu
+}
+
+// RemoveProjectBudget removes "project_budget" edges to Budget entities.
+func (pu *ProjectUpdate) RemoveProjectBudget(b ...*Budget) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return pu.RemoveProjectBudgetIDs(ids...)
+}
+
+// ClearTimeLogs clears all "time_logs" edges to the TimeLog entity.
+func (pu *ProjectUpdate) ClearTimeLogs() *ProjectUpdate {
+	pu.mutation.ClearTimeLogs()
+	return pu
+}
+
+// RemoveTimeLogIDs removes the "time_logs" edge to TimeLog entities by IDs.
+func (pu *ProjectUpdate) RemoveTimeLogIDs(ids ...uuid.UUID) *ProjectUpdate {
+	pu.mutation.RemoveTimeLogIDs(ids...)
+	return pu
+}
+
+// RemoveTimeLogs removes "time_logs" edges to TimeLog entities.
+func (pu *ProjectUpdate) RemoveTimeLogs(t ...*TimeLog) *ProjectUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return pu.RemoveTimeLogIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -810,6 +884,96 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.ProjectBudgetCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ProjectBudgetTable,
+			Columns: []string{project.ProjectBudgetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(budget.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedProjectBudgetIDs(); len(nodes) > 0 && !pu.mutation.ProjectBudgetCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ProjectBudgetTable,
+			Columns: []string{project.ProjectBudgetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(budget.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.ProjectBudgetIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ProjectBudgetTable,
+			Columns: []string{project.ProjectBudgetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(budget.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.TimeLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.TimeLogsTable,
+			Columns: []string{project.TimeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(timelog.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedTimeLogsIDs(); len(nodes) > 0 && !pu.mutation.TimeLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.TimeLogsTable,
+			Columns: []string{project.TimeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(timelog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.TimeLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.TimeLogsTable,
+			Columns: []string{project.TimeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(timelog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{project.Label}
@@ -1095,6 +1259,36 @@ func (puo *ProjectUpdateOne) AddAttachments(a ...*Attachment) *ProjectUpdateOne 
 	return puo.AddAttachmentIDs(ids...)
 }
 
+// AddProjectBudgetIDs adds the "project_budget" edge to the Budget entity by IDs.
+func (puo *ProjectUpdateOne) AddProjectBudgetIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.AddProjectBudgetIDs(ids...)
+	return puo
+}
+
+// AddProjectBudget adds the "project_budget" edges to the Budget entity.
+func (puo *ProjectUpdateOne) AddProjectBudget(b ...*Budget) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return puo.AddProjectBudgetIDs(ids...)
+}
+
+// AddTimeLogIDs adds the "time_logs" edge to the TimeLog entity by IDs.
+func (puo *ProjectUpdateOne) AddTimeLogIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.AddTimeLogIDs(ids...)
+	return puo
+}
+
+// AddTimeLogs adds the "time_logs" edges to the TimeLog entity.
+func (puo *ProjectUpdateOne) AddTimeLogs(t ...*TimeLog) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return puo.AddTimeLogIDs(ids...)
+}
+
 // Mutation returns the ProjectMutation object of the builder.
 func (puo *ProjectUpdateOne) Mutation() *ProjectMutation {
 	return puo.mutation
@@ -1224,6 +1418,48 @@ func (puo *ProjectUpdateOne) RemoveAttachments(a ...*Attachment) *ProjectUpdateO
 		ids[i] = a[i].ID
 	}
 	return puo.RemoveAttachmentIDs(ids...)
+}
+
+// ClearProjectBudget clears all "project_budget" edges to the Budget entity.
+func (puo *ProjectUpdateOne) ClearProjectBudget() *ProjectUpdateOne {
+	puo.mutation.ClearProjectBudget()
+	return puo
+}
+
+// RemoveProjectBudgetIDs removes the "project_budget" edge to Budget entities by IDs.
+func (puo *ProjectUpdateOne) RemoveProjectBudgetIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.RemoveProjectBudgetIDs(ids...)
+	return puo
+}
+
+// RemoveProjectBudget removes "project_budget" edges to Budget entities.
+func (puo *ProjectUpdateOne) RemoveProjectBudget(b ...*Budget) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return puo.RemoveProjectBudgetIDs(ids...)
+}
+
+// ClearTimeLogs clears all "time_logs" edges to the TimeLog entity.
+func (puo *ProjectUpdateOne) ClearTimeLogs() *ProjectUpdateOne {
+	puo.mutation.ClearTimeLogs()
+	return puo
+}
+
+// RemoveTimeLogIDs removes the "time_logs" edge to TimeLog entities by IDs.
+func (puo *ProjectUpdateOne) RemoveTimeLogIDs(ids ...uuid.UUID) *ProjectUpdateOne {
+	puo.mutation.RemoveTimeLogIDs(ids...)
+	return puo
+}
+
+// RemoveTimeLogs removes "time_logs" edges to TimeLog entities.
+func (puo *ProjectUpdateOne) RemoveTimeLogs(t ...*TimeLog) *ProjectUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return puo.RemoveTimeLogIDs(ids...)
 }
 
 // Where appends a list predicates to the ProjectUpdate builder.
@@ -1628,6 +1864,96 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (_node *Project, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(attachment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.ProjectBudgetCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ProjectBudgetTable,
+			Columns: []string{project.ProjectBudgetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(budget.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedProjectBudgetIDs(); len(nodes) > 0 && !puo.mutation.ProjectBudgetCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ProjectBudgetTable,
+			Columns: []string{project.ProjectBudgetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(budget.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.ProjectBudgetIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ProjectBudgetTable,
+			Columns: []string{project.ProjectBudgetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(budget.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.TimeLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.TimeLogsTable,
+			Columns: []string{project.TimeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(timelog.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedTimeLogsIDs(); len(nodes) > 0 && !puo.mutation.TimeLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.TimeLogsTable,
+			Columns: []string{project.TimeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(timelog.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.TimeLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.TimeLogsTable,
+			Columns: []string{project.TimeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(timelog.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

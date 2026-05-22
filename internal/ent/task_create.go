@@ -162,6 +162,34 @@ func (tc *TaskCreate) SetMetadata(m map[string]interface{}) *TaskCreate {
 	return tc
 }
 
+// SetParentID sets the "parent_id" field.
+func (tc *TaskCreate) SetParentID(u uuid.UUID) *TaskCreate {
+	tc.mutation.SetParentID(u)
+	return tc
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableParentID(u *uuid.UUID) *TaskCreate {
+	if u != nil {
+		tc.SetParentID(*u)
+	}
+	return tc
+}
+
+// SetWbsCode sets the "wbs_code" field.
+func (tc *TaskCreate) SetWbsCode(s string) *TaskCreate {
+	tc.mutation.SetWbsCode(s)
+	return tc
+}
+
+// SetNillableWbsCode sets the "wbs_code" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableWbsCode(s *string) *TaskCreate {
+	if s != nil {
+		tc.SetWbsCode(*s)
+	}
+	return tc
+}
+
 // SetID sets the "id" field.
 func (tc *TaskCreate) SetID(u uuid.UUID) *TaskCreate {
 	tc.mutation.SetID(u)
@@ -407,6 +435,14 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Metadata(); ok {
 		_spec.SetField(task.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
+	}
+	if value, ok := tc.mutation.ParentID(); ok {
+		_spec.SetField(task.FieldParentID, field.TypeUUID, value)
+		_node.ParentID = value
+	}
+	if value, ok := tc.mutation.WbsCode(); ok {
+		_spec.SetField(task.FieldWbsCode, field.TypeString, value)
+		_node.WbsCode = value
 	}
 	if nodes := tc.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

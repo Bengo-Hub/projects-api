@@ -839,6 +839,52 @@ func HasAttachmentsWith(preds ...predicate.Attachment) predicate.Project {
 	})
 }
 
+// HasProjectBudget applies the HasEdge predicate on the "project_budget" edge.
+func HasProjectBudget() predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProjectBudgetTable, ProjectBudgetColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProjectBudgetWith applies the HasEdge predicate on the "project_budget" edge with a given conditions (other predicates).
+func HasProjectBudgetWith(preds ...predicate.Budget) predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := newProjectBudgetStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasTimeLogs applies the HasEdge predicate on the "time_logs" edge.
+func HasTimeLogs() predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TimeLogsTable, TimeLogsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTimeLogsWith applies the HasEdge predicate on the "time_logs" edge with a given conditions (other predicates).
+func HasTimeLogsWith(preds ...predicate.TimeLog) predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := newTimeLogsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Project) predicate.Project {
 	return predicate.Project(sql.AndPredicates(predicates...))

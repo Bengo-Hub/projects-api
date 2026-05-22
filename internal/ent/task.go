@@ -44,6 +44,10 @@ type Task struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	// ParentID holds the value of the "parent_id" field.
+	ParentID uuid.UUID `json:"parent_id,omitempty"`
+	// WbsCode holds the value of the "wbs_code" field.
+	WbsCode string `json:"wbs_code,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
 	Edges        TaskEdges `json:"edges"`
@@ -121,11 +125,11 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case task.FieldMetadata:
 			values[i] = new([]byte)
-		case task.FieldTitle, task.FieldDescription, task.FieldStatus, task.FieldPriority:
+		case task.FieldTitle, task.FieldDescription, task.FieldStatus, task.FieldPriority, task.FieldWbsCode:
 			values[i] = new(sql.NullString)
 		case task.FieldDueDate, task.FieldCompletedAt, task.FieldCreatedAt, task.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case task.FieldID, task.FieldTenantID, task.FieldProjectID, task.FieldAssigneeID:
+		case task.FieldID, task.FieldTenantID, task.FieldProjectID, task.FieldAssigneeID, task.FieldParentID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -221,6 +225,18 @@ func (t *Task) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &t.Metadata); err != nil {
 					return fmt.Errorf("unmarshal field metadata: %w", err)
 				}
+			}
+		case task.FieldParentID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field parent_id", values[i])
+			} else if value != nil {
+				t.ParentID = *value
+			}
+		case task.FieldWbsCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field wbs_code", values[i])
+			} else if value.Valid {
+				t.WbsCode = value.String
 			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
@@ -318,6 +334,12 @@ func (t *Task) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
 	builder.WriteString(fmt.Sprintf("%v", t.Metadata))
+	builder.WriteString(", ")
+	builder.WriteString("parent_id=")
+	builder.WriteString(fmt.Sprintf("%v", t.ParentID))
+	builder.WriteString(", ")
+	builder.WriteString("wbs_code=")
+	builder.WriteString(t.WbsCode)
 	builder.WriteByte(')')
 	return builder.String()
 }

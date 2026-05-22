@@ -12,11 +12,13 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
+	"github.com/bengobox/projects-service/internal/ent/budget"
 	"github.com/bengobox/projects-service/internal/ent/comment"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
 	"github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/ent/timelog"
 	"github.com/google/uuid"
 )
 
@@ -265,6 +267,36 @@ func (pc *ProjectCreate) AddAttachments(a ...*Attachment) *ProjectCreate {
 		ids[i] = a[i].ID
 	}
 	return pc.AddAttachmentIDs(ids...)
+}
+
+// AddProjectBudgetIDs adds the "project_budget" edge to the Budget entity by IDs.
+func (pc *ProjectCreate) AddProjectBudgetIDs(ids ...uuid.UUID) *ProjectCreate {
+	pc.mutation.AddProjectBudgetIDs(ids...)
+	return pc
+}
+
+// AddProjectBudget adds the "project_budget" edges to the Budget entity.
+func (pc *ProjectCreate) AddProjectBudget(b ...*Budget) *ProjectCreate {
+	ids := make([]uuid.UUID, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return pc.AddProjectBudgetIDs(ids...)
+}
+
+// AddTimeLogIDs adds the "time_logs" edge to the TimeLog entity by IDs.
+func (pc *ProjectCreate) AddTimeLogIDs(ids ...uuid.UUID) *ProjectCreate {
+	pc.mutation.AddTimeLogIDs(ids...)
+	return pc
+}
+
+// AddTimeLogs adds the "time_logs" edges to the TimeLog entity.
+func (pc *ProjectCreate) AddTimeLogs(t ...*TimeLog) *ProjectCreate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return pc.AddTimeLogIDs(ids...)
 }
 
 // Mutation returns the ProjectMutation object of the builder.
@@ -524,6 +556,38 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(attachment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.ProjectBudgetIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.ProjectBudgetTable,
+			Columns: []string{project.ProjectBudgetColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(budget.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.TimeLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.TimeLogsTable,
+			Columns: []string{project.TimeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(timelog.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

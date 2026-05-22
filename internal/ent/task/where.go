@@ -111,6 +111,16 @@ func UpdatedAt(v time.Time) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// ParentID applies equality check predicate on the "parent_id" field. It's identical to ParentIDEQ.
+func ParentID(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldParentID, v))
+}
+
+// WbsCode applies equality check predicate on the "wbs_code" field. It's identical to WbsCodeEQ.
+func WbsCode(v string) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldWbsCode, v))
+}
+
 // TenantIDEQ applies the EQ predicate on the "tenant_id" field.
 func TenantIDEQ(v uuid.UUID) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldTenantID, v))
@@ -679,6 +689,131 @@ func MetadataIsNil() predicate.Task {
 // MetadataNotNil applies the NotNil predicate on the "metadata" field.
 func MetadataNotNil() predicate.Task {
 	return predicate.Task(sql.FieldNotNull(FieldMetadata))
+}
+
+// ParentIDEQ applies the EQ predicate on the "parent_id" field.
+func ParentIDEQ(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldParentID, v))
+}
+
+// ParentIDNEQ applies the NEQ predicate on the "parent_id" field.
+func ParentIDNEQ(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldNEQ(FieldParentID, v))
+}
+
+// ParentIDIn applies the In predicate on the "parent_id" field.
+func ParentIDIn(vs ...uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldIn(FieldParentID, vs...))
+}
+
+// ParentIDNotIn applies the NotIn predicate on the "parent_id" field.
+func ParentIDNotIn(vs ...uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldNotIn(FieldParentID, vs...))
+}
+
+// ParentIDGT applies the GT predicate on the "parent_id" field.
+func ParentIDGT(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldGT(FieldParentID, v))
+}
+
+// ParentIDGTE applies the GTE predicate on the "parent_id" field.
+func ParentIDGTE(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldGTE(FieldParentID, v))
+}
+
+// ParentIDLT applies the LT predicate on the "parent_id" field.
+func ParentIDLT(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldLT(FieldParentID, v))
+}
+
+// ParentIDLTE applies the LTE predicate on the "parent_id" field.
+func ParentIDLTE(v uuid.UUID) predicate.Task {
+	return predicate.Task(sql.FieldLTE(FieldParentID, v))
+}
+
+// ParentIDIsNil applies the IsNil predicate on the "parent_id" field.
+func ParentIDIsNil() predicate.Task {
+	return predicate.Task(sql.FieldIsNull(FieldParentID))
+}
+
+// ParentIDNotNil applies the NotNil predicate on the "parent_id" field.
+func ParentIDNotNil() predicate.Task {
+	return predicate.Task(sql.FieldNotNull(FieldParentID))
+}
+
+// WbsCodeEQ applies the EQ predicate on the "wbs_code" field.
+func WbsCodeEQ(v string) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldWbsCode, v))
+}
+
+// WbsCodeNEQ applies the NEQ predicate on the "wbs_code" field.
+func WbsCodeNEQ(v string) predicate.Task {
+	return predicate.Task(sql.FieldNEQ(FieldWbsCode, v))
+}
+
+// WbsCodeIn applies the In predicate on the "wbs_code" field.
+func WbsCodeIn(vs ...string) predicate.Task {
+	return predicate.Task(sql.FieldIn(FieldWbsCode, vs...))
+}
+
+// WbsCodeNotIn applies the NotIn predicate on the "wbs_code" field.
+func WbsCodeNotIn(vs ...string) predicate.Task {
+	return predicate.Task(sql.FieldNotIn(FieldWbsCode, vs...))
+}
+
+// WbsCodeGT applies the GT predicate on the "wbs_code" field.
+func WbsCodeGT(v string) predicate.Task {
+	return predicate.Task(sql.FieldGT(FieldWbsCode, v))
+}
+
+// WbsCodeGTE applies the GTE predicate on the "wbs_code" field.
+func WbsCodeGTE(v string) predicate.Task {
+	return predicate.Task(sql.FieldGTE(FieldWbsCode, v))
+}
+
+// WbsCodeLT applies the LT predicate on the "wbs_code" field.
+func WbsCodeLT(v string) predicate.Task {
+	return predicate.Task(sql.FieldLT(FieldWbsCode, v))
+}
+
+// WbsCodeLTE applies the LTE predicate on the "wbs_code" field.
+func WbsCodeLTE(v string) predicate.Task {
+	return predicate.Task(sql.FieldLTE(FieldWbsCode, v))
+}
+
+// WbsCodeContains applies the Contains predicate on the "wbs_code" field.
+func WbsCodeContains(v string) predicate.Task {
+	return predicate.Task(sql.FieldContains(FieldWbsCode, v))
+}
+
+// WbsCodeHasPrefix applies the HasPrefix predicate on the "wbs_code" field.
+func WbsCodeHasPrefix(v string) predicate.Task {
+	return predicate.Task(sql.FieldHasPrefix(FieldWbsCode, v))
+}
+
+// WbsCodeHasSuffix applies the HasSuffix predicate on the "wbs_code" field.
+func WbsCodeHasSuffix(v string) predicate.Task {
+	return predicate.Task(sql.FieldHasSuffix(FieldWbsCode, v))
+}
+
+// WbsCodeIsNil applies the IsNil predicate on the "wbs_code" field.
+func WbsCodeIsNil() predicate.Task {
+	return predicate.Task(sql.FieldIsNull(FieldWbsCode))
+}
+
+// WbsCodeNotNil applies the NotNil predicate on the "wbs_code" field.
+func WbsCodeNotNil() predicate.Task {
+	return predicate.Task(sql.FieldNotNull(FieldWbsCode))
+}
+
+// WbsCodeEqualFold applies the EqualFold predicate on the "wbs_code" field.
+func WbsCodeEqualFold(v string) predicate.Task {
+	return predicate.Task(sql.FieldEqualFold(FieldWbsCode, v))
+}
+
+// WbsCodeContainsFold applies the ContainsFold predicate on the "wbs_code" field.
+func WbsCodeContainsFold(v string) predicate.Task {
+	return predicate.Task(sql.FieldContainsFold(FieldWbsCode, v))
 }
 
 // HasProject applies the HasEdge predicate on the "project" edge.

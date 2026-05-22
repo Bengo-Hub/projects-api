@@ -31,6 +31,32 @@ CREATE EXTENSION IF NOT EXISTS "postgis";        -- Geospatial (optional for loc
 
 ---
 
+## Implementation Status (2026-05-22)
+
+| Entity | Ent Schema | Migration | API Endpoints |
+|--------|-----------|-----------|---------------|
+| `tenders` | ✅ `internal/ent/schema/tender.go` | ✅ 20260522 | ✅ CRUD + metrics |
+| `tender_documents` | ✅ `tenderdocument.go` | ✅ | ✅ list + upload |
+| `tender_committees` | ✅ `tendercommittee.go` | ✅ | ✅ CRUD |
+| `tender_committee_members` | ✅ `tendercommitteemember.go` | ✅ | ✅ add/remove |
+| `tender_evaluations` | ✅ `tenderevaluation.go` | ✅ | ✅ submit + list |
+| `tender_meetings` | ✅ `tendermeeting.go` | ✅ | ✅ schedule + list |
+| `projects` | ✅ `project.go` | ✅ pre-existing | ✅ CRUD + summary |
+| `tasks` | ✅ `task.go` (+ parent_id, wbs_code) | ✅ | ✅ CRUD + deps + gantt |
+| `milestones` | ✅ `milestone.go` | ✅ pre-existing | ✅ CRUD |
+| `members` | ✅ `member.go` | ✅ pre-existing | ✅ CRUD |
+| `comments` | ✅ `comment.go` | ✅ pre-existing | ✅ CRUD |
+| `budgets` | ✅ `budget.go` | ✅ 20260522 | ❌ Sprint 5 |
+| `expenses` | ✅ `expense.go` | ✅ 20260522 | ❌ Sprint 5 |
+| `time_logs` | ✅ `timelog.go` | ✅ 20260522 | ❌ Sprint 5 |
+| `tender_sections` | ❌ Sprint 1 deferred | — | — |
+| `tender_submissions` | ❌ Sprint 1 deferred | — | — |
+| `activities` | ❌ Sprint 4 | — | — |
+| `resources` | ❌ Sprint 6 | — | — |
+| `governance` | ❌ Sprint 7 | — | — |
+
+---
+
 ## 1. Tender Management Entities
 
 ### 1.1 `tenders`

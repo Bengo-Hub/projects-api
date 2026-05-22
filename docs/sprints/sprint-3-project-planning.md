@@ -102,3 +102,33 @@
 - Implement CRUD APIs for activity lookup tables
 - Implement Activity management APIs with quarterly planning logic
 - Add validation for pax/days/frequency constraints
+
+---
+
+## Implementation Status (as of 2026-05-22)
+
+### Completed
+
+| Story | Status | Notes |
+|-------|--------|-------|
+| US-3.1: WBS & Workplan | Partial | `parent_id` + `wbs_code` fields added to Task schema; hierarchical task CRUD APIs implemented; progress roll-up and PDF export deferred |
+| US-3.2: Task Dependencies | ✅ | `task_dependencies` edge on Task entity; AddDependency/RemoveDependency APIs; DFS circular dependency detection; Gantt data endpoint |
+| US-3.3: Milestones | ✅ | Milestone entity, service, handler; full CRUD at `/projects/{id}/milestones` |
+
+### Deferred
+
+| Story | Reason |
+|-------|--------|
+| US-3.1: Progress roll-up + export | Sprint 4 candidate — requires frontend integration first |
+| US-3.4: Activity Planning | Deferred to Sprint 4/5 — activities, activity_outputs entities not yet created |
+| Critical Path Method (CPM) | Sprint 5 candidate — dependencies graph exists, CPM calculation TBD |
+| Deliverable approval workflow | Sprint 4 candidate |
+
+### Additional Work Completed (Not in Original Sprint Scope)
+
+- Projects CRUD service + handler (GET/POST /projects, GET/PUT/DELETE/summary /projects/{id})
+- Members management (add/remove/update role on project members)
+- Comments service + handler for project-level and task-level comments
+- Activity feed handler (project + task activities)
+- Time Logs entity (timelog schema, migration — API endpoints in Sprint 5)
+- Budget + Expenses entities (schema, migration — Budget API in Sprint 5)

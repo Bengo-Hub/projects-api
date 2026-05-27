@@ -1,0 +1,7 @@
+.env
+*.exe
+*.log
+*.pem
+*.key
+dist/
+tmp/

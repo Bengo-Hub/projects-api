@@ -1,7 +1,0 @@
-2026-05-22T18:39:10.622+0300	[33mWARN[0m	app/app.go:95	event bus connection failed	{"error": "read tcp [::1]:53889->[::1]:4222: i/o timeout"}
-github.com/bengobox/projects-service/internal/app.New
-	D:/Projects/Codevertex/projects-service/projects-api/internal/app/app.go:95
-main.main
-	D:/Projects/Codevertex/projects-service/projects-api/cmd/api/main.go:21
-runtime.main
-	C:/Program Files/Go/src/runtime/proc.go:290

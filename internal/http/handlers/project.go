@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -48,21 +48,18 @@ func (h *ProjectHandler) List(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid tenant id")
 		return
 	}
+	p := pagination.Parse(r)
 	filter := projects.ListProjectsFilter{
 		Status: r.URL.Query().Get("status"),
-	}
-	if p := r.URL.Query().Get("page"); p != "" {
-		filter.Page, _ = strconv.Atoi(p)
-	}
-	if ps := r.URL.Query().Get("page_size"); ps != "" {
-		filter.PageSize, _ = strconv.Atoi(ps)
+		Limit:  p.Limit,
+		Offset: p.Offset,
 	}
 	items, total, err := h.svc.ListProjects(r.Context(), tenantID, filter)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondJSON(w, http.StatusOK, map[string]any{"data": items, "total": total})
+	respondJSON(w, http.StatusOK, pagination.NewResponse(items, total, p))
 }
 
 // Get returns a single project.

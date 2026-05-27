@@ -52,31 +52,27 @@ type UpdateProjectInput struct {
 
 // ListProjectsFilter holds filter options for listing projects.
 type ListProjectsFilter struct {
-	Status   string `json:"status"`
-	Page     int    `json:"page"`
-	PageSize int    `json:"page_size"`
+	Status string `json:"status"`
+	Limit  int    `json:"limit"`
+	Offset int    `json:"offset"`
 }
 
 // ListProjects returns a paginated list of projects for the given tenant.
 func (s *Service) ListProjects(ctx context.Context, tenantID uuid.UUID, filter ListProjectsFilter) ([]*ent.Project, int, error) {
-	if filter.PageSize <= 0 {
-		filter.PageSize = 20
+	if filter.Limit <= 0 {
+		filter.Limit = 20
 	}
-	if filter.Page <= 0 {
-		filter.Page = 1
-	}
-	offset := (filter.Page - 1) * filter.PageSize
 
 	q := s.client.Project.Query().Where(entproject.TenantID(tenantID))
 	if filter.Status != "" {
 		q = q.Where(entproject.Status(filter.Status))
 	}
-	total, err := q.Count(ctx)
+	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count projects: %w", err)
 	}
 	items, err := q.Order(ent.Desc(entproject.FieldCreatedAt)).
-		Offset(offset).Limit(filter.PageSize).All(ctx)
+		Offset(filter.Offset).Limit(filter.Limit).All(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list projects: %w", err)
 	}

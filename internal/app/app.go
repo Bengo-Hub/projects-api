@@ -21,7 +21,6 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/migrate"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 	router "github.com/bengobox/projects-service/internal/http/router"
-	"github.com/bengobox/projects-service/internal/modules/outbox"
 	"github.com/bengobox/projects-service/internal/platform/cache"
 	"github.com/bengobox/projects-service/internal/platform/database"
 	"github.com/bengobox/projects-service/internal/platform/events"
@@ -161,7 +160,7 @@ func New(ctx context.Context) (*App, error) {
 			// Get underlying sql.DB for outbox repository
 			sqlDB, err := sql.Open("pgx", cfg.Postgres.URL)
 			if err == nil {
-				outboxRepo := outbox.NewRepository(sqlDB)
+				outboxRepo := eventslib.NewSQLOutboxRepository(sqlDB)
 				pubCfg := eventslib.DefaultPublisherConfig(js, outboxRepo, log)
 				outboxPublisher = eventslib.NewPublisher(pubCfg)
 				log.Info("outbox publisher initialized")

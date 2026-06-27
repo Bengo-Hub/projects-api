@@ -17,17 +17,27 @@ import (
 // ErrNotFound is returned when a milestone is not found.
 var ErrNotFound = errors.New("not found")
 
+// Publisher emits milestone domain events to the shared-events outbox. Kept as a narrow
+// interface so the service stays decoupled from the events platform package.
+type Publisher interface {
+	PublishMilestoneReached(ctx context.Context, tenantID, milestoneID uuid.UUID, payload map[string]any) error
+}
+
 // Service handles milestone CRUD operations.
 type Service struct {
-	client *ent.Client
-	cache  *sharedcache.Aside
-	log    *zap.Logger
+	client    *ent.Client
+	cache     *sharedcache.Aside
+	log       *zap.Logger
+	publisher Publisher
 }
 
 // NewService creates a new milestones service.
 func NewService(client *ent.Client, cache *sharedcache.Aside, log *zap.Logger) *Service {
 	return &Service{client: client, cache: cache, log: log.Named("milestones.svc")}
 }
+
+// SetPublisher wires the event publisher used to emit project.milestone.reached.
+func (s *Service) SetPublisher(p Publisher) { s.publisher = p }
 
 // CreateMilestoneInput holds data for creating a milestone.
 type CreateMilestoneInput struct {
@@ -122,6 +132,24 @@ func (s *Service) UpdateMilestone(ctx context.Context, tenantID, projectID, id u
 	updated, err := u.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("update milestone: %w", err)
+	}
+
+	// On completion, emit project.milestone.reached so notifications-api can email the
+	// tenant. Best-effort: a publish failure must not fail the milestone update.
+	if input.Status != nil && *input.Status == "completed" && s.publisher != nil {
+		projectName := ""
+		if proj, perr := s.client.Project.Get(ctx, projectID); perr == nil {
+			projectName = proj.Name
+		}
+		if perr := s.publisher.PublishMilestoneReached(ctx, tenantID, updated.ID, map[string]any{
+			"project_id":      projectID.String(),
+			"project_name":    projectName,
+			"milestone_name":  updated.Name,
+			"completion_date": time.Now().UTC().Format(time.RFC3339),
+			"progress":        100,
+		}); perr != nil {
+			s.log.Warn("publish milestone.reached failed", zap.Error(perr))
+		}
 	}
 	return updated, nil
 }

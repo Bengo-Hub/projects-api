@@ -68,7 +68,11 @@ func New(
 		// Apply auth middleware to all v1 routes
 		if authMiddleware != nil {
 			api.Use(authMiddleware.RequireAuth)
-			// Layer 2: Subscription enforcement — mutations only (GET/HEAD/OPTIONS pass through)
+			// Layer 2: Subscription + feature enforcement — mutations only (GET/HEAD/OPTIONS
+			// pass through). Exemption funnels through claims.IsGatingExempt() (platform owner /
+			// demo / service-charge / sub-exempt), uniform with the rest of the fleet — note a
+			// tenant superuser is NOT exempt. A mutating tenant must have an active subscription
+			// AND the project_management feature (the projects module's base entitlement).
 			api.Use(func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
@@ -80,13 +84,23 @@ func New(
 						next.ServeHTTP(w, r)
 						return
 					}
-					if claims.IsSuperuser() || claims.IsPlatformOwner || claims.IsSubscriptionActive() {
+					if claims.IsGatingExempt() {
 						next.ServeHTTP(w, r)
 						return
 					}
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusForbidden)
-					_, _ = w.Write([]byte(`{"error":"Your subscription is not active. Please renew to continue.","code":"subscription_inactive","upgrade":true}`))
+					if !claims.IsSubscriptionActive() {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusForbidden)
+						_, _ = w.Write([]byte(`{"error":"Your subscription is not active. Please renew to continue.","code":"subscription_inactive","upgrade":true}`))
+						return
+					}
+					if !claims.HasFeature("project_management") {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusForbidden)
+						_, _ = w.Write([]byte(`{"error":"feature_not_available","code":"feature_not_available","required_feature":"project_management","upgrade":true}`))
+						return
+					}
+					next.ServeHTTP(w, r)
 				})
 			})
 		}

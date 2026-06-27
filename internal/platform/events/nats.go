@@ -31,14 +31,34 @@ func EnsureStream(ctx context.Context, nc *nats.Conn, cfg config.EventsConfig) e
 		return fmt.Errorf("jetstream init: %w", err)
 	}
 
-	_, err = js.StreamInfo(cfg.StreamName)
+	// Capture both the singular aggregate subject "project.>" (shared-events convention,
+	// what notifications-api binds to) and the legacy "projects.>" prefix.
+	subjects := []string{"project.>", "projects.>"}
+
+	info, err := js.StreamInfo(cfg.StreamName)
 	if err == nil {
+		// Stream exists — ensure it captures project.> (older deployments only had projects.>).
+		have := map[string]bool{}
+		for _, s := range info.Config.Subjects {
+			have[s] = true
+		}
+		missing := false
+		for _, s := range subjects {
+			if !have[s] {
+				missing = true
+			}
+		}
+		if missing {
+			updated := info.Config
+			updated.Subjects = subjects
+			_, _ = js.UpdateStream(&updated)
+		}
 		return nil
 	}
 
 	_, err = js.AddStream(&nats.StreamConfig{
 		Name:     cfg.StreamName,
-		Subjects: []string{"projects.>"},
+		Subjects: subjects,
 		Replicas: 1,
 	})
 	return err

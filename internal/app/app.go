@@ -117,6 +117,11 @@ func New(ctx context.Context) (*App, error) {
 	rbacService := rbac.NewService(entClient, cacheClient, log)
 	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
 
+	// Wire the milestone event publisher (shared-events transactional outbox). The
+	// background outbox worker (App.Run) drains it to JetStream so notifications-api
+	// receives project.milestone.reached and emails the tenant.
+	milestoneService.SetPublisher(events.NewPublisher(runtimeSQLDB, log))
+
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(log, rbacService, syncService)
 	projectHandler := handlers.NewProjectHandler(log, projectService)

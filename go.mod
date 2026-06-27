@@ -3,7 +3,7 @@ module github.com/bengobox/projects-service
 go 1.26.0
 
 // Map module path to correct GitHub repository
-replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.8.1
+replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.10.0
 
 // use tagged releases for other shared modules
 
@@ -14,7 +14,7 @@ require (
 	github.com/Bengo-Hub/httpware v0.5.0
 	github.com/Bengo-Hub/pagination v0.3.0
 	github.com/Bengo-Hub/shared-auth-client v0.3.1
-	github.com/Bengo-Hub/shared-events v0.4.2
+	github.com/Bengo-Hub/shared-events v0.5.0
 	github.com/Bengo-Hub/shared-service-client v0.3.0
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-chi/cors v1.2.1

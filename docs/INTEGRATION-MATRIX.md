@@ -6,7 +6,7 @@ This document provides a comprehensive matrix of all services and platforms that
 
 ---
 
-## Internal BengoBox Microservices Integration Matrix
+## Internal Codevertex Microservices Integration Matrix
 
 | Service | Location | Status | Integration Type | Data Flow | Key Use Cases |
 |---------|----------|--------|------------------|-----------|---------------|

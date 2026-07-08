@@ -1,6 +1,6 @@
 # Projects Service Documentation
 
-Welcome to the Projects Service documentation. This service provides world-class project management and tender management capabilities for the BengoBox ecosystem.
+Welcome to the Projects Service documentation. This service provides world-class project management and tender management capabilities for the Codevertex ecosystem.
 
 ## 📚 Documentation Index
 

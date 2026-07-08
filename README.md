@@ -1,6 +1,6 @@
 # Projects Service
 
-The Projects Service provides project management capabilities for the BengoBox ecosystem, including project creation, task management, team collaboration, and resource allocation. It integrates with auth-service for SSO authentication and user management.
+The Projects Service provides project management capabilities for the Codevertex ecosystem, including project creation, task management, team collaboration, and resource allocation. It integrates with auth-service for SSO authentication and user management.
 
 ## Key Features
 

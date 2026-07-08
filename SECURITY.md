@@ -34,5 +34,5 @@ We will acknowledge reports within 48 hours and coordinate remediation and discl
 - Monitor audit logs for suspicious access attempts or unauthorized operations.
 - Enforce RBAC at both API and database levels.
 
-Thank you for helping keep the BengoBox platform secure.
+Thank you for helping keep the Codevertex platform secure.
 

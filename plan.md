@@ -2,11 +2,11 @@
 
 ## Executive Summary
 
-The Projects Service is a comprehensive, enterprise-grade project management and tender management platform designed for the BengoBox ecosystem. It provides end-to-end lifecycle management from tender identification through project completion, integrating seamlessly with all internal microservices and popular third-party collaboration tools.
+The Projects Service is a comprehensive, enterprise-grade project management and tender management platform designed for the Codevertex ecosystem. It provides end-to-end lifecycle management from tender identification through project completion, integrating seamlessly with all internal microservices and popular third-party collaboration tools.
 
 ### Vision
 
-To deliver a unified platform that rivals Zoho Projects, Microsoft Project, and Jira, while providing specialized tender management capabilities and deep integration with the BengoBox ecosystem.
+To deliver a unified platform that rivals Zoho Projects, Microsoft Project, and Jira, while providing specialized tender management capabilities and deep integration with the Codevertex ecosystem.
 
 ---
 
@@ -243,7 +243,7 @@ To deliver a unified platform that rivals Zoho Projects, Microsoft Project, and 
 
 ### 1.4 Integration Capabilities
 
-#### A. Internal BengoBox Microservices
+#### A. Internal Codevertex Microservices
 
 ##### Auth Service Integration
 - **Single Sign-On (SSO)**: Seamless authentication via JWT

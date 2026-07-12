@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -89,10 +90,16 @@ func New(
 						return
 					}
 					if !claims.IsSubscriptionActive() {
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusForbidden)
-						_, _ = w.Write([]byte(`{"error":"Your subscription is not active. Please renew to continue.","code":"subscription_inactive","upgrade":true}`))
-						return
+						// Uniform fleet-wide 7-day post-expiry grace: an EXPIRED tenant may still
+						// mutate within the window (warned via X-Sub-Grace-Days-Left); beyond it → 403.
+						if left, inGrace := claims.GraceDaysLeft(7); inGrace {
+							w.Header().Set("X-Sub-Grace-Days-Left", strconv.Itoa(left))
+						} else {
+							w.Header().Set("Content-Type", "application/json")
+							w.WriteHeader(http.StatusForbidden)
+							_, _ = w.Write([]byte(`{"error":"Your subscription is not active. Please renew to continue.","code":"subscription_inactive","upgrade":true}`))
+							return
+						}
 					}
 					if !claims.HasFeature("project_management") {
 						w.Header().Set("Content-Type", "application/json")

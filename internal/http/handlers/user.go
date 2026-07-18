@@ -29,13 +29,12 @@ func NewUserHandler(logger *zap.Logger, rbacService *rbac.Service, syncService *
 	}
 }
 
-// CreateUserRequest represents a request to create a user
+// CreateUserRequest represents a request to create a user. The account is provisioned
+// in auth-service by email (auth generates a temp password for brand-new accounts);
+// tenant comes from the caller's claims.
 type CreateUserRequest struct {
-	Email      string                 `json:"email"`
-	Password   string                 `json:"password,omitempty"`
-	TenantSlug string                 `json:"tenant_slug"`
-	Profile    map[string]interface{} `json:"profile,omitempty"`
-	Roles      []string               `json:"roles,omitempty"`
+	Email string   `json:"email"`
+	Roles []string `json:"roles,omitempty"`
 }
 
 // CreateUser creates a new user and syncs with auth-service
@@ -59,13 +58,12 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Sync user with auth-service
+	// Provision the user in auth-service (S2S member add — resolves-or-creates by email).
 	syncReq := usersync.SyncUserRequest{
-		Email:      req.Email,
-		Password:   req.Password,
-		TenantSlug: req.TenantSlug,
-		Profile:    req.Profile,
-		Service:    "projects-service",
+		Email:    req.Email,
+		TenantID: *tenantID,
+		Roles:    req.Roles,
+		Service:  "projects",
 	}
 
 	syncResp, err := h.syncService.SyncUser(r.Context(), syncReq)

@@ -1,3 +1,4 @@
-h1:+/HAHSHM0bGiOB5qyhEo7JSYEby2dw+tLwEwRawaBuw=
+h1:HMiE0ZrYDUmTbBOba8ddj8hUaSrAcbvaI8WlZlFQxpw=
 20260430183219_initial_schema.sql h1:8sjsHE8Suxx+lUikavjsqekFCMlU8CRSIpRdG8oTiDQ=
 20260522152854_add_tenders_budget_timelog.sql h1:sajU0BSc96mmGcYK9lTV9jAXMU7xyb7SnDlxhMFe55g=
+20260718120000_drop_tenant_sync_events.sql h1:yZFk9yNNGe/cfNno0xHH0faUDG8RiHsNx4rhH/fK5fg=

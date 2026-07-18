@@ -369,22 +369,6 @@ var (
 			},
 		},
 	}
-	// TenantSyncEventsColumns holds the columns for the "tenant_sync_events" table.
-	TenantSyncEventsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "tenant_id", Type: field.TypeUUID},
-		{Name: "tenant_slug", Type: field.TypeString},
-		{Name: "source_service", Type: field.TypeString},
-		{Name: "payload", Type: field.TypeJSON, Nullable: true},
-		{Name: "synced_at", Type: field.TypeTime},
-		{Name: "status", Type: field.TypeString, Default: "pending"},
-	}
-	// TenantSyncEventsTable holds the schema information for the "tenant_sync_events" table.
-	TenantSyncEventsTable = &schema.Table{
-		Name:       "tenant_sync_events",
-		Columns:    TenantSyncEventsColumns,
-		PrimaryKey: []*schema.Column{TenantSyncEventsColumns[0]},
-	}
 	// TendersColumns holds the columns for the "tenders" table.
 	TendersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -627,7 +611,6 @@ var (
 		RolePermissionsTable,
 		TasksTable,
 		TaskDependenciesTable,
-		TenantSyncEventsTable,
 		TendersTable,
 		TenderCommitteesTable,
 		TenderCommitteeMembersTable,

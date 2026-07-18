@@ -40,8 +40,6 @@ type Tx struct {
 	Task *TaskClient
 	// TaskDependency is the client for interacting with the TaskDependency builders.
 	TaskDependency *TaskDependencyClient
-	// TenantSyncEvent is the client for interacting with the TenantSyncEvent builders.
-	TenantSyncEvent *TenantSyncEventClient
 	// Tender is the client for interacting with the Tender builders.
 	Tender *TenderClient
 	// TenderCommittee is the client for interacting with the TenderCommittee builders.
@@ -203,7 +201,6 @@ func (tx *Tx) init() {
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.TaskDependency = NewTaskDependencyClient(tx.config)
-	tx.TenantSyncEvent = NewTenantSyncEventClient(tx.config)
 	tx.Tender = NewTenderClient(tx.config)
 	tx.TenderCommittee = NewTenderCommitteeClient(tx.config)
 	tx.TenderCommitteeMember = NewTenderCommitteeMemberClient(tx.config)

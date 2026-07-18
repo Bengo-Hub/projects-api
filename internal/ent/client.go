@@ -30,7 +30,6 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
-	"github.com/bengobox/projects-service/internal/ent/tenantsyncevent"
 	"github.com/bengobox/projects-service/internal/ent/tender"
 	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
 	"github.com/bengobox/projects-service/internal/ent/tendercommitteemember"
@@ -74,8 +73,6 @@ type Client struct {
 	Task *TaskClient
 	// TaskDependency is the client for interacting with the TaskDependency builders.
 	TaskDependency *TaskDependencyClient
-	// TenantSyncEvent is the client for interacting with the TenantSyncEvent builders.
-	TenantSyncEvent *TenantSyncEventClient
 	// Tender is the client for interacting with the Tender builders.
 	Tender *TenderClient
 	// TenderCommittee is the client for interacting with the TenderCommittee builders.
@@ -117,7 +114,6 @@ func (c *Client) init() {
 	c.RolePermission = NewRolePermissionClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.TaskDependency = NewTaskDependencyClient(c.config)
-	c.TenantSyncEvent = NewTenantSyncEventClient(c.config)
 	c.Tender = NewTenderClient(c.config)
 	c.TenderCommittee = NewTenderCommitteeClient(c.config)
 	c.TenderCommitteeMember = NewTenderCommitteeMemberClient(c.config)
@@ -232,7 +228,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RolePermission:        NewRolePermissionClient(cfg),
 		Task:                  NewTaskClient(cfg),
 		TaskDependency:        NewTaskDependencyClient(cfg),
-		TenantSyncEvent:       NewTenantSyncEventClient(cfg),
 		Tender:                NewTenderClient(cfg),
 		TenderCommittee:       NewTenderCommitteeClient(cfg),
 		TenderCommitteeMember: NewTenderCommitteeMemberClient(cfg),
@@ -274,7 +269,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RolePermission:        NewRolePermissionClient(cfg),
 		Task:                  NewTaskClient(cfg),
 		TaskDependency:        NewTaskDependencyClient(cfg),
-		TenantSyncEvent:       NewTenantSyncEventClient(cfg),
 		Tender:                NewTenderClient(cfg),
 		TenderCommittee:       NewTenderCommitteeClient(cfg),
 		TenderCommitteeMember: NewTenderCommitteeMemberClient(cfg),
@@ -314,9 +308,9 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Activity, c.Attachment, c.Budget, c.Comment, c.Expense, c.Milestone,
 		c.OutboxEvent, c.Permission, c.Project, c.ProjectMember, c.Role,
-		c.RolePermission, c.Task, c.TaskDependency, c.TenantSyncEvent, c.Tender,
-		c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
-		c.TenderEvaluation, c.TenderMeeting, c.TimeLog, c.UserRole,
+		c.RolePermission, c.Task, c.TaskDependency, c.Tender, c.TenderCommittee,
+		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
+		c.TimeLog, c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -328,9 +322,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Activity, c.Attachment, c.Budget, c.Comment, c.Expense, c.Milestone,
 		c.OutboxEvent, c.Permission, c.Project, c.ProjectMember, c.Role,
-		c.RolePermission, c.Task, c.TaskDependency, c.TenantSyncEvent, c.Tender,
-		c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
-		c.TenderEvaluation, c.TenderMeeting, c.TimeLog, c.UserRole,
+		c.RolePermission, c.Task, c.TaskDependency, c.Tender, c.TenderCommittee,
+		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
+		c.TimeLog, c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -367,8 +361,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Task.mutate(ctx, m)
 	case *TaskDependencyMutation:
 		return c.TaskDependency.mutate(ctx, m)
-	case *TenantSyncEventMutation:
-		return c.TenantSyncEvent.mutate(ctx, m)
 	case *TenderMutation:
 		return c.Tender.mutate(ctx, m)
 	case *TenderCommitteeMutation:
@@ -2732,139 +2724,6 @@ func (c *TaskDependencyClient) mutate(ctx context.Context, m *TaskDependencyMuta
 	}
 }
 
-// TenantSyncEventClient is a client for the TenantSyncEvent schema.
-type TenantSyncEventClient struct {
-	config
-}
-
-// NewTenantSyncEventClient returns a client for the TenantSyncEvent from the given config.
-func NewTenantSyncEventClient(c config) *TenantSyncEventClient {
-	return &TenantSyncEventClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `tenantsyncevent.Hooks(f(g(h())))`.
-func (c *TenantSyncEventClient) Use(hooks ...Hook) {
-	c.hooks.TenantSyncEvent = append(c.hooks.TenantSyncEvent, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `tenantsyncevent.Intercept(f(g(h())))`.
-func (c *TenantSyncEventClient) Intercept(interceptors ...Interceptor) {
-	c.inters.TenantSyncEvent = append(c.inters.TenantSyncEvent, interceptors...)
-}
-
-// Create returns a builder for creating a TenantSyncEvent entity.
-func (c *TenantSyncEventClient) Create() *TenantSyncEventCreate {
-	mutation := newTenantSyncEventMutation(c.config, OpCreate)
-	return &TenantSyncEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of TenantSyncEvent entities.
-func (c *TenantSyncEventClient) CreateBulk(builders ...*TenantSyncEventCreate) *TenantSyncEventCreateBulk {
-	return &TenantSyncEventCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *TenantSyncEventClient) MapCreateBulk(slice any, setFunc func(*TenantSyncEventCreate, int)) *TenantSyncEventCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &TenantSyncEventCreateBulk{err: fmt.Errorf("calling to TenantSyncEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*TenantSyncEventCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &TenantSyncEventCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for TenantSyncEvent.
-func (c *TenantSyncEventClient) Update() *TenantSyncEventUpdate {
-	mutation := newTenantSyncEventMutation(c.config, OpUpdate)
-	return &TenantSyncEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *TenantSyncEventClient) UpdateOne(tse *TenantSyncEvent) *TenantSyncEventUpdateOne {
-	mutation := newTenantSyncEventMutation(c.config, OpUpdateOne, withTenantSyncEvent(tse))
-	return &TenantSyncEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *TenantSyncEventClient) UpdateOneID(id uuid.UUID) *TenantSyncEventUpdateOne {
-	mutation := newTenantSyncEventMutation(c.config, OpUpdateOne, withTenantSyncEventID(id))
-	return &TenantSyncEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for TenantSyncEvent.
-func (c *TenantSyncEventClient) Delete() *TenantSyncEventDelete {
-	mutation := newTenantSyncEventMutation(c.config, OpDelete)
-	return &TenantSyncEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *TenantSyncEventClient) DeleteOne(tse *TenantSyncEvent) *TenantSyncEventDeleteOne {
-	return c.DeleteOneID(tse.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TenantSyncEventClient) DeleteOneID(id uuid.UUID) *TenantSyncEventDeleteOne {
-	builder := c.Delete().Where(tenantsyncevent.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &TenantSyncEventDeleteOne{builder}
-}
-
-// Query returns a query builder for TenantSyncEvent.
-func (c *TenantSyncEventClient) Query() *TenantSyncEventQuery {
-	return &TenantSyncEventQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeTenantSyncEvent},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a TenantSyncEvent entity by its id.
-func (c *TenantSyncEventClient) Get(ctx context.Context, id uuid.UUID) (*TenantSyncEvent, error) {
-	return c.Query().Where(tenantsyncevent.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *TenantSyncEventClient) GetX(ctx context.Context, id uuid.UUID) *TenantSyncEvent {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *TenantSyncEventClient) Hooks() []Hook {
-	return c.hooks.TenantSyncEvent
-}
-
-// Interceptors returns the client interceptors.
-func (c *TenantSyncEventClient) Interceptors() []Interceptor {
-	return c.inters.TenantSyncEvent
-}
-
-func (c *TenantSyncEventClient) mutate(ctx context.Context, m *TenantSyncEventMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&TenantSyncEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&TenantSyncEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&TenantSyncEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&TenantSyncEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown TenantSyncEvent mutation op: %q", m.Op())
-	}
-}
-
 // TenderClient is a client for the Tender schema.
 type TenderClient struct {
 	config
@@ -4126,14 +3985,13 @@ type (
 	hooks struct {
 		Activity, Attachment, Budget, Comment, Expense, Milestone, OutboxEvent,
 		Permission, Project, ProjectMember, Role, RolePermission, Task, TaskDependency,
-		TenantSyncEvent, Tender, TenderCommittee, TenderCommitteeMember,
-		TenderDocument, TenderEvaluation, TenderMeeting, TimeLog, UserRole []ent.Hook
+		Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
+		TenderEvaluation, TenderMeeting, TimeLog, UserRole []ent.Hook
 	}
 	inters struct {
 		Activity, Attachment, Budget, Comment, Expense, Milestone, OutboxEvent,
 		Permission, Project, ProjectMember, Role, RolePermission, Task, TaskDependency,
-		TenantSyncEvent, Tender, TenderCommittee, TenderCommitteeMember,
-		TenderDocument, TenderEvaluation, TenderMeeting, TimeLog,
-		UserRole []ent.Interceptor
+		Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
+		TenderEvaluation, TenderMeeting, TimeLog, UserRole []ent.Interceptor
 	}
 )

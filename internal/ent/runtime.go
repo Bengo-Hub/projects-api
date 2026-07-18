@@ -20,7 +20,6 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/schema"
 	"github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
-	"github.com/bengobox/projects-service/internal/ent/tenantsyncevent"
 	"github.com/bengobox/projects-service/internal/ent/tender"
 	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
 	"github.com/bengobox/projects-service/internal/ent/tendercommitteemember"
@@ -330,28 +329,6 @@ func init() {
 	taskdependencyDescID := taskdependencyFields[0].Descriptor()
 	// taskdependency.DefaultID holds the default value on creation for the id field.
 	taskdependency.DefaultID = taskdependencyDescID.Default.(func() uuid.UUID)
-	tenantsynceventFields := schema.TenantSyncEvent{}.Fields()
-	_ = tenantsynceventFields
-	// tenantsynceventDescTenantSlug is the schema descriptor for tenant_slug field.
-	tenantsynceventDescTenantSlug := tenantsynceventFields[2].Descriptor()
-	// tenantsyncevent.TenantSlugValidator is a validator for the "tenant_slug" field. It is called by the builders before save.
-	tenantsyncevent.TenantSlugValidator = tenantsynceventDescTenantSlug.Validators[0].(func(string) error)
-	// tenantsynceventDescSourceService is the schema descriptor for source_service field.
-	tenantsynceventDescSourceService := tenantsynceventFields[3].Descriptor()
-	// tenantsyncevent.SourceServiceValidator is a validator for the "source_service" field. It is called by the builders before save.
-	tenantsyncevent.SourceServiceValidator = tenantsynceventDescSourceService.Validators[0].(func(string) error)
-	// tenantsynceventDescSyncedAt is the schema descriptor for synced_at field.
-	tenantsynceventDescSyncedAt := tenantsynceventFields[5].Descriptor()
-	// tenantsyncevent.DefaultSyncedAt holds the default value on creation for the synced_at field.
-	tenantsyncevent.DefaultSyncedAt = tenantsynceventDescSyncedAt.Default.(func() time.Time)
-	// tenantsynceventDescStatus is the schema descriptor for status field.
-	tenantsynceventDescStatus := tenantsynceventFields[6].Descriptor()
-	// tenantsyncevent.DefaultStatus holds the default value on creation for the status field.
-	tenantsyncevent.DefaultStatus = tenantsynceventDescStatus.Default.(string)
-	// tenantsynceventDescID is the schema descriptor for id field.
-	tenantsynceventDescID := tenantsynceventFields[0].Descriptor()
-	// tenantsyncevent.DefaultID holds the default value on creation for the id field.
-	tenantsyncevent.DefaultID = tenantsynceventDescID.Default.(func() uuid.UUID)
 	tenderFields := schema.Tender{}.Fields()
 	_ = tenderFields
 	// tenderDescTitle is the schema descriptor for title field.

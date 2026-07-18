@@ -31,24 +31,16 @@ func EnsureStream(ctx context.Context, nc *nats.Conn, cfg config.EventsConfig) e
 		return fmt.Errorf("jetstream init: %w", err)
 	}
 
-	// Capture both the singular aggregate subject "project.>" (shared-events convention,
-	// what notifications-api binds to) and the legacy "projects.>" prefix.
-	subjects := []string{"project.>", "projects.>"}
+	// Singular aggregate subject only (shared-events convention: subject =
+	// {aggregate_type}.{event_type}; notifications-api binds project.>). The legacy
+	// "projects.>" binding was dropped — nothing ever published or consumed it.
+	subjects := []string{"project.>"}
 
 	info, err := js.StreamInfo(cfg.StreamName)
 	if err == nil {
-		// Stream exists — ensure it captures project.> (older deployments only had projects.>).
-		have := map[string]bool{}
-		for _, s := range info.Config.Subjects {
-			have[s] = true
-		}
-		missing := false
-		for _, s := range subjects {
-			if !have[s] {
-				missing = true
-			}
-		}
-		if missing {
+		// Stream exists — reconcile the subject set (drops legacy projects.>, adds project.>
+		// on older deployments).
+		if len(info.Config.Subjects) != len(subjects) || info.Config.Subjects[0] != subjects[0] {
 			updated := info.Config
 			updated.Subjects = subjects
 			_, _ = js.UpdateStream(&updated)

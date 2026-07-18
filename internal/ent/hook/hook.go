@@ -177,18 +177,6 @@ func (f TaskDependencyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TaskDependencyMutation", m)
 }
 
-// The TenantSyncEventFunc type is an adapter to allow the use of ordinary
-// function as TenantSyncEvent mutator.
-type TenantSyncEventFunc func(context.Context, *ent.TenantSyncEventMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f TenantSyncEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.TenantSyncEventMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenantSyncEventMutation", m)
-}
-
 // The TenderFunc type is an adapter to allow the use of ordinary
 // function as Tender mutator.
 type TenderFunc func(context.Context, *ent.TenderMutation) (ent.Value, error)

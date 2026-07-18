@@ -48,9 +48,6 @@ type Task func(*sql.Selector)
 // TaskDependency is the predicate function for taskdependency builders.
 type TaskDependency func(*sql.Selector)
 
-// TenantSyncEvent is the predicate function for tenantsyncevent builders.
-type TenantSyncEvent func(*sql.Selector)
-
 // Tender is the predicate function for tender builders.
 type Tender func(*sql.Selector)
 

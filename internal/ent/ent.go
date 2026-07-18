@@ -26,7 +26,6 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
-	"github.com/bengobox/projects-service/internal/ent/tenantsyncevent"
 	"github.com/bengobox/projects-service/internal/ent/tender"
 	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
 	"github.com/bengobox/projects-service/internal/ent/tendercommitteemember"
@@ -109,7 +108,6 @@ func checkColumn(table, column string) error {
 			rolepermission.Table:        rolepermission.ValidColumn,
 			task.Table:                  task.ValidColumn,
 			taskdependency.Table:        taskdependency.ValidColumn,
-			tenantsyncevent.Table:       tenantsyncevent.ValidColumn,
 			tender.Table:                tender.ValidColumn,
 			tendercommittee.Table:       tendercommittee.ValidColumn,
 			tendercommitteemember.Table: tendercommitteemember.ValidColumn,

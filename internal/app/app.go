@@ -43,13 +43,14 @@ import (
 )
 
 type App struct {
-	cfg            *config.Config
-	log            *zap.Logger
-	httpServer     *http.Server
-	db             *pgxpool.Pool
-	cache          *redis.Client
-	events         *nats.Conn
-	outboxPublisher *eventslib.Publisher
+	cfg                *config.Config
+	log                *zap.Logger
+	httpServer         *http.Server
+	db                 *pgxpool.Pool
+	cache              *redis.Client
+	events             *nats.Conn
+	outboxPublisher    *eventslib.Publisher
+	authEventsConsumer *usersync.AuthEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -116,6 +117,7 @@ func New(ctx context.Context) (*App, error) {
 	tenderService := tenders.NewService(entClient, cacheClient, log)
 	rbacService := rbac.NewService(entClient, cacheClient, log)
 	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
+	authEventsConsumer := usersync.NewAuthEventsConsumer(entClient, log)
 
 	// Wire the milestone event publisher (shared-events transactional outbox). The
 	// background outbox worker (App.Run) drains it to JetStream so notifications-api
@@ -190,13 +192,14 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	return &App{
-		cfg:            cfg,
-		log:            log,
-		httpServer:     httpServer,
-		db:             dbPool,
-		cache:          redisClient,
-		events:         natsConn,
-		outboxPublisher: outboxPublisher,
+		cfg:                cfg,
+		log:                log,
+		httpServer:         httpServer,
+		db:                 dbPool,
+		cache:              redisClient,
+		events:             natsConn,
+		outboxPublisher:    outboxPublisher,
+		authEventsConsumer: authEventsConsumer,
 	}, nil
 }
 
@@ -209,6 +212,15 @@ func (a *App) Run(ctx context.Context) error {
 			}
 		}()
 		a.log.Info("outbox publisher started")
+	}
+
+	if a.authEventsConsumer != nil && a.events != nil {
+		go func() {
+			if err := a.authEventsConsumer.Start(ctx, a.events); err != nil {
+				a.log.Error("auth.user.deleted consumer failed", zap.Error(err))
+			}
+		}()
+		a.log.Info("auth.user.deleted consumer started")
 	}
 
 	errCh := make(chan error, 1)

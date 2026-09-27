@@ -60,7 +60,7 @@ func (s *Service) ListMilestones(ctx context.Context, tenantID, projectID uuid.U
 	items, err := s.client.Milestone.Query().
 		Where(entmilestone.TenantID(tenantID), entmilestone.ProjectID(projectID)).
 		Order(ent.Asc(entmilestone.FieldTargetDate)).
-		All(ctx)
+		Limit(subListLimit).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list milestones: %w", err)
 	}

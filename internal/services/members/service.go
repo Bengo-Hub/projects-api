@@ -47,7 +47,7 @@ func (s *Service) ListMembers(ctx context.Context, tenantID, projectID uuid.UUID
 	items, err := s.client.ProjectMember.Query().
 		Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID)).
 		Order(ent.Asc(entmember.FieldJoinedAt)).
-		All(ctx)
+		Limit(subListLimit).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list members: %w", err)
 	}

@@ -73,6 +73,9 @@ func (s *Service) ListTasks(ctx context.Context, tenantID, projectID uuid.UUID, 
 	if filter.PageSize <= 0 {
 		filter.PageSize = 50
 	}
+	if filter.PageSize > maxPageSize {
+		filter.PageSize = maxPageSize
+	}
 	if filter.Page <= 0 {
 		filter.Page = 1
 	}
@@ -238,11 +241,23 @@ func (s *Service) AddDependency(ctx context.Context, tenantID, taskID, dependsOn
 	if depType == "" {
 		depType = "FS"
 	}
+	if taskID == dependsOnID {
+		return ErrCircularDependency
+	}
+	// Both tasks must belong to the caller's tenant (dependencies carry no tenant of their own).
+	n, err := s.client.Task.Query().
+		Where(enttask.TenantID(tenantID), enttask.IDIn(taskID, dependsOnID)).Count(ctx)
+	if err != nil {
+		return fmt.Errorf("check tasks: %w", err)
+	}
+	if n != 2 {
+		return ErrNotFound
+	}
 	// Circular dependency check: does dependsOnID eventually depend on taskID?
-	if err := s.checkCircular(ctx, dependsOnID, taskID); err != nil {
+	if err := s.checkCircular(ctx, tenantID, dependsOnID, taskID); err != nil {
 		return err
 	}
-	_, err := s.client.TaskDependency.Create().
+	_, err = s.client.TaskDependency.Create().
 		SetTaskID(taskID).
 		SetDependsOnTaskID(dependsOnID).
 		SetDependencyType(depType).
@@ -253,36 +268,54 @@ func (s *Service) AddDependency(ctx context.Context, tenantID, taskID, dependsOn
 	return nil
 }
 
-// checkCircular performs DFS to detect if adding taskID→target would create a cycle.
-func (s *Service) checkCircular(ctx context.Context, start, target uuid.UUID) error {
+// checkCircular reports whether adding "target depends on start" would close a cycle, i.e.
+// whether start already (transitively) depends on target. The tenant's dependency edges are read
+// in ONE query (two id columns per row) and walked in memory, instead of one query per node.
+func (s *Service) checkCircular(ctx context.Context, tenantID, start, target uuid.UUID) error {
+	var edges []struct {
+		TaskID          uuid.UUID `json:"task_id"`
+		DependsOnTaskID uuid.UUID `json:"depends_on_task_id"`
+	}
+	if err := s.client.TaskDependency.Query().
+		Where(enttaskdep.HasTaskWith(enttask.TenantID(tenantID))).
+		Select(enttaskdep.FieldTaskID, enttaskdep.FieldDependsOnTaskID).
+		Scan(ctx, &edges); err != nil {
+		return fmt.Errorf("load dependencies: %w", err)
+	}
+	graph := make(map[uuid.UUID][]uuid.UUID, len(edges))
+	for _, e := range edges {
+		graph[e.TaskID] = append(graph[e.TaskID], e.DependsOnTaskID)
+	}
+	if reaches(graph, start, target) {
+		return ErrCircularDependency
+	}
+	return nil
+}
+
+// reaches reports whether target is reachable from start along dependency edges.
+func reaches(graph map[uuid.UUID][]uuid.UUID, start, target uuid.UUID) bool {
 	visited := map[uuid.UUID]bool{}
-	queue := []uuid.UUID{start}
-	for len(queue) > 0 {
-		curr := queue[0]
-		queue = queue[1:]
+	stack := []uuid.UUID{start}
+	for len(stack) > 0 {
+		curr := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
 		if curr == target {
-			return ErrCircularDependency
+			return true
 		}
 		if visited[curr] {
 			continue
 		}
 		visited[curr] = true
-		deps, err := s.client.TaskDependency.Query().
-			Where(enttaskdep.TaskID(curr)).All(ctx)
-		if err != nil {
-			continue
-		}
-		for _, d := range deps {
-			queue = append(queue, d.DependsOnTaskID)
-		}
+		stack = append(stack, graph[curr]...)
 	}
-	return nil
+	return false
 }
 
-// RemoveDependency removes a dependency between two tasks.
+// RemoveDependency removes a dependency between two of the tenant's tasks.
 func (s *Service) RemoveDependency(ctx context.Context, tenantID, taskID, dependsOnID uuid.UUID) error {
 	n, err := s.client.TaskDependency.Delete().
-		Where(enttaskdep.TaskID(taskID), enttaskdep.DependsOnTaskID(dependsOnID)).Exec(ctx)
+		Where(enttaskdep.TaskID(taskID), enttaskdep.DependsOnTaskID(dependsOnID),
+			enttaskdep.HasTaskWith(enttask.TenantID(tenantID))).Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("remove dependency: %w", err)
 	}

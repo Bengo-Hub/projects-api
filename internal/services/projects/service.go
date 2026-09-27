@@ -11,6 +11,7 @@ import (
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
+	enttask "github.com/bengobox/projects-service/internal/ent/task"
 )
 
 // Service handles project CRUD operations.
@@ -189,18 +190,52 @@ func (s *Service) DeleteProject(ctx context.Context, tenantID, id uuid.UUID) err
 	return nil
 }
 
-// GetProjectSummary returns aggregated stats for a project.
+// GetProjectSummary returns aggregated stats for a project, counted in SQL (tasks grouped by
+// status, overdue tasks, members, milestones) rather than by loading every row.
 func (s *Service) GetProjectSummary(ctx context.Context, tenantID, id uuid.UUID) (map[string]any, error) {
-	p, err := s.GetProject(ctx, tenantID, id)
+	p, err := s.client.Project.Query().
+		Where(entproject.ID(id), entproject.TenantID(tenantID)).
+		Only(ctx)
 	if err != nil {
-		return nil, err
-	}
-	totalTasks := len(p.Edges.Tasks)
-	completedTasks := 0
-	for _, t := range p.Edges.Tasks {
-		if t.Status == "done" {
-			completedTasks++
+		if ent.IsNotFound(err) {
+			return nil, ErrNotFound
 		}
+		return nil, fmt.Errorf("get project: %w", err)
+	}
+	var byStatus []struct {
+		Status string `json:"status"`
+		Count  int    `json:"count"`
+	}
+	if err := s.client.Task.Query().
+		Where(enttask.ProjectID(id), enttask.TenantID(tenantID)).
+		GroupBy(enttask.FieldStatus).
+		Aggregate(ent.Count()).
+		Scan(ctx, &byStatus); err != nil {
+		return nil, fmt.Errorf("task counts: %w", err)
+	}
+	statusCounts := map[string]int{}
+	totalTasks, completedTasks := 0, 0
+	for _, r := range byStatus {
+		statusCounts[r.Status] = r.Count
+		totalTasks += r.Count
+		if r.Status == "done" {
+			completedTasks = r.Count
+		}
+	}
+	overdue, err := s.client.Task.Query().
+		Where(enttask.ProjectID(id), enttask.TenantID(tenantID), enttask.StatusNEQ("done"),
+			enttask.DueDateNotNil(), enttask.DueDateLT(time.Now())).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("overdue tasks: %w", err)
+	}
+	members, err := p.QueryMembers().Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("member count: %w", err)
+	}
+	milestones, err := p.QueryMilestones().Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("milestone count: %w", err)
 	}
 	progress := 0
 	if totalTasks > 0 {
@@ -212,8 +247,10 @@ func (s *Service) GetProjectSummary(ctx context.Context, tenantID, id uuid.UUID)
 		"status":           p.Status,
 		"total_tasks":      totalTasks,
 		"completed_tasks":  completedTasks,
+		"overdue_tasks":    overdue,
+		"tasks_by_status":  statusCounts,
 		"progress":         progress,
-		"total_members":    len(p.Edges.Members),
-		"total_milestones": len(p.Edges.Milestones),
+		"total_members":    members,
+		"total_milestones": milestones,
 	}, nil
 }

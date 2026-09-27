@@ -45,7 +45,7 @@ func (s *Service) ListCommentsByProject(ctx context.Context, tenantID, projectID
 	items, err := s.client.Comment.Query().
 		Where(entcomment.TenantID(tenantID), entcomment.ProjectID(projectID)).
 		Order(ent.Asc(entcomment.FieldCreatedAt)).
-		All(ctx)
+		Limit(subListLimit).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list comments by project: %w", err)
 	}
@@ -57,7 +57,7 @@ func (s *Service) ListCommentsByTask(ctx context.Context, tenantID, taskID uuid.
 	items, err := s.client.Comment.Query().
 		Where(entcomment.TenantID(tenantID), entcomment.TaskID(taskID)).
 		Order(ent.Asc(entcomment.FieldCreatedAt)).
-		All(ctx)
+		Limit(subListLimit).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list comments by task: %w", err)
 	}

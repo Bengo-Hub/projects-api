@@ -113,6 +113,7 @@ func New(
 		}
 
 		api.Route("/{tenantID}", func(tenant chi.Router) {
+			tenant.Use(requireOwnTenant)
 			userHandler.RegisterRoutes(tenant)
 			projectHandler.RegisterRoutes(tenant)
 			taskHandler.RegisterRoutes(tenant)

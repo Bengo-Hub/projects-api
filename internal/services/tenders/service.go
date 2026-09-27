@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
@@ -63,12 +64,12 @@ type UpdateTenderInput struct {
 
 // ListTendersFilter holds filter options for listing tenders.
 type ListTendersFilter struct {
-	Status          string     `json:"status"`
-	Priority        string     `json:"priority"`
-	DeadlineBefore  *time.Time `json:"deadline_before"`
-	DeadlineAfter   *time.Time `json:"deadline_after"`
-	Page            int        `json:"page"`
-	PageSize        int        `json:"page_size"`
+	Status         string     `json:"status"`
+	Priority       string     `json:"priority"`
+	DeadlineBefore *time.Time `json:"deadline_before"`
+	DeadlineAfter  *time.Time `json:"deadline_after"`
+	Page           int        `json:"page"`
+	PageSize       int        `json:"page_size"`
 }
 
 // CreateCommitteeInput holds data for creating a committee.
@@ -92,12 +93,12 @@ type SubmitEvaluationInput struct {
 
 // ScheduleMeetingInput holds data for scheduling a meeting.
 type ScheduleMeetingInput struct {
-	Title       string     `json:"title"`
-	ScheduledAt time.Time  `json:"scheduled_at"`
-	Platform    string     `json:"platform"`
-	MeetingURL  string     `json:"meeting_url"`
-	Notes       string     `json:"notes"`
-	CreatedBy   uuid.UUID  `json:"created_by"`
+	Title       string    `json:"title"`
+	ScheduledAt time.Time `json:"scheduled_at"`
+	Platform    string    `json:"platform"`
+	MeetingURL  string    `json:"meeting_url"`
+	Notes       string    `json:"notes"`
+	CreatedBy   uuid.UUID `json:"created_by"`
 }
 
 // AddDocumentInput holds data for adding a document.
@@ -185,6 +186,9 @@ func (s *Service) CreateTender(ctx context.Context, tenantID uuid.UUID, input Cr
 func (s *Service) ListTenders(ctx context.Context, tenantID uuid.UUID, filter ListTendersFilter) ([]*ent.Tender, int, error) {
 	if filter.PageSize <= 0 {
 		filter.PageSize = 20
+	}
+	if filter.PageSize > maxPageSize {
+		filter.PageSize = maxPageSize
 	}
 	if filter.Page <= 0 {
 		filter.Page = 1
@@ -302,25 +306,63 @@ func (s *Service) DeleteTender(ctx context.Context, tenantID, id uuid.UUID) erro
 	return nil
 }
 
-// GetTenderMetrics returns aggregate counts and values by status.
+// tenderStatuses are always reported (zero when a tenant has none) so the UI cards never read a
+// missing key.
+var tenderStatuses = []string{"draft", "evaluating", "submitted", "awarded", "lost", "cancelled"}
+
+// StatusMetric is one status bucket of the tender pipeline.
+type StatusMetric struct {
+	Count int     `json:"count"`
+	Value float64 `json:"value"`
+}
+
+// GetTenderMetrics returns the tender pipeline by status in ONE grouped query: count and total
+// estimated value per status, the overall totals, and the win rate (awarded out of decided,
+// i.e. awarded + lost). "counts" is kept for older clients.
 func (s *Service) GetTenderMetrics(ctx context.Context, tenantID uuid.UUID) (map[string]any, error) {
-	statuses := []string{"draft", "evaluating", "submitted", "awarded", "lost", "cancelled"}
-	counts := map[string]int{}
-	for _, st := range statuses {
-		n, err := s.client.Tender.Query().
-			Where(enttender.TenantID(tenantID), enttender.Status(st)).Count(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("count by status %s: %w", st, err)
-		}
-		counts[st] = n
+	var rows []struct {
+		Status string  `json:"status"`
+		Count  int     `json:"count"`
+		Value  float64 `json:"value"`
 	}
-	total, err := s.client.Tender.Query().Where(enttender.TenantID(tenantID)).Count(ctx)
+	err := s.client.Tender.Query().
+		Where(enttender.TenantID(tenantID)).
+		GroupBy(enttender.FieldStatus).
+		Aggregate(
+			ent.Count(),
+			func(sel *entsql.Selector) string {
+				return entsql.As(fmt.Sprintf("COALESCE(SUM(%s), 0)", sel.C(enttender.FieldEstimatedValue)), "value")
+			},
+		).
+		Scan(ctx, &rows)
 	if err != nil {
-		return nil, fmt.Errorf("count total: %w", err)
+		return nil, fmt.Errorf("tender metrics: %w", err)
+	}
+	byStatus := make(map[string]StatusMetric, len(tenderStatuses))
+	counts := make(map[string]int, len(tenderStatuses))
+	for _, st := range tenderStatuses {
+		byStatus[st] = StatusMetric{}
+		counts[st] = 0
+	}
+	total, totalValue := 0, 0.0
+	for _, r := range rows {
+		byStatus[r.Status] = StatusMetric{Count: r.Count, Value: r.Value}
+		counts[r.Status] = r.Count
+		total += r.Count
+		totalValue += r.Value
+	}
+	winRate := 0.0
+	if decided := byStatus["awarded"].Count + byStatus["lost"].Count; decided > 0 {
+		winRate = float64(byStatus["awarded"].Count) / float64(decided) * 100
 	}
 	return map[string]any{
-		"total":  total,
-		"counts": counts,
+		"total":                 total,
+		"total_estimated_value": totalValue,
+		"by_status":             byStatus,
+		"win_rate":              winRate,
+		"awarded_value":         byStatus["awarded"].Value,
+		"pipeline_value":        byStatus["draft"].Value + byStatus["evaluating"].Value + byStatus["submitted"].Value,
+		"counts":                counts,
 	}, nil
 }
 
@@ -344,7 +386,7 @@ func (s *Service) ListCommittees(ctx context.Context, tenantID, tenderID uuid.UU
 	items, err := s.client.TenderCommittee.Query().
 		Where(enttendercommittee.TenderID(tenderID), enttendercommittee.TenantID(tenantID)).
 		WithMembers().
-		All(ctx)
+		Limit(subListLimit).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list committees: %w", err)
 	}
@@ -410,7 +452,7 @@ func (s *Service) ListEvaluations(ctx context.Context, tenantID, tenderID uuid.U
 	items, err := s.client.TenderEvaluation.Query().
 		Where(enttendereval.TenderID(tenderID), enttendereval.TenantID(tenantID)).
 		Order(ent.Desc(enttendereval.FieldEvaluatedAt)).
-		All(ctx)
+		Limit(subListLimit).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list evaluations: %w", err)
 	}
@@ -450,7 +492,7 @@ func (s *Service) ListMeetings(ctx context.Context, tenantID, tenderID uuid.UUID
 	items, err := s.client.TenderMeeting.Query().
 		Where(enttendermeeting.TenderID(tenderID), enttendermeeting.TenantID(tenantID)).
 		Order(ent.Asc(enttendermeeting.FieldScheduledAt)).
-		All(ctx)
+		Limit(subListLimit).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list meetings: %w", err)
 	}
@@ -485,7 +527,7 @@ func (s *Service) ListDocuments(ctx context.Context, tenantID, tenderID uuid.UUI
 	items, err := s.client.TenderDocument.Query().
 		Where(enttenderdoc.TenderID(tenderID), enttenderdoc.TenantID(tenantID)).
 		Order(ent.Desc(enttenderdoc.FieldUploadedAt)).
-		All(ctx)
+		Limit(subListLimit).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list documents: %w", err)
 	}

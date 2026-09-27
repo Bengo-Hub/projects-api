@@ -16,12 +16,8 @@ type Tx struct {
 	Activity *ActivityClient
 	// Attachment is the client for interacting with the Attachment builders.
 	Attachment *AttachmentClient
-	// Budget is the client for interacting with the Budget builders.
-	Budget *BudgetClient
 	// Comment is the client for interacting with the Comment builders.
 	Comment *CommentClient
-	// Expense is the client for interacting with the Expense builders.
-	Expense *ExpenseClient
 	// Milestone is the client for interacting with the Milestone builders.
 	Milestone *MilestoneClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
@@ -52,8 +48,6 @@ type Tx struct {
 	TenderEvaluation *TenderEvaluationClient
 	// TenderMeeting is the client for interacting with the TenderMeeting builders.
 	TenderMeeting *TenderMeetingClient
-	// TimeLog is the client for interacting with the TimeLog builders.
-	TimeLog *TimeLogClient
 	// UserRole is the client for interacting with the UserRole builders.
 	UserRole *UserRoleClient
 
@@ -189,9 +183,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Activity = NewActivityClient(tx.config)
 	tx.Attachment = NewAttachmentClient(tx.config)
-	tx.Budget = NewBudgetClient(tx.config)
 	tx.Comment = NewCommentClient(tx.config)
-	tx.Expense = NewExpenseClient(tx.config)
 	tx.Milestone = NewMilestoneClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
 	tx.Permission = NewPermissionClient(tx.config)
@@ -207,7 +199,6 @@ func (tx *Tx) init() {
 	tx.TenderDocument = NewTenderDocumentClient(tx.config)
 	tx.TenderEvaluation = NewTenderEvaluationClient(tx.config)
 	tx.TenderMeeting = NewTenderMeetingClient(tx.config)
-	tx.TimeLog = NewTimeLogClient(tx.config)
 	tx.UserRole = NewUserRoleClient(tx.config)
 }
 

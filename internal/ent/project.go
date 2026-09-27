@@ -63,13 +63,9 @@ type ProjectEdges struct {
 	Activities []*Activity `json:"activities,omitempty"`
 	// Attachments holds the value of the attachments edge.
 	Attachments []*Attachment `json:"attachments,omitempty"`
-	// ProjectBudget holds the value of the project_budget edge.
-	ProjectBudget []*Budget `json:"project_budget,omitempty"`
-	// TimeLogs holds the value of the time_logs edge.
-	TimeLogs []*TimeLog `json:"time_logs,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [6]bool
 }
 
 // TasksOrErr returns the Tasks value or an error if the edge
@@ -124,24 +120,6 @@ func (e ProjectEdges) AttachmentsOrErr() ([]*Attachment, error) {
 		return e.Attachments, nil
 	}
 	return nil, &NotLoadedError{edge: "attachments"}
-}
-
-// ProjectBudgetOrErr returns the ProjectBudget value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProjectEdges) ProjectBudgetOrErr() ([]*Budget, error) {
-	if e.loadedTypes[6] {
-		return e.ProjectBudget, nil
-	}
-	return nil, &NotLoadedError{edge: "project_budget"}
-}
-
-// TimeLogsOrErr returns the TimeLogs value or an error if the edge
-// was not loaded in eager-loading.
-func (e ProjectEdges) TimeLogsOrErr() ([]*TimeLog, error) {
-	if e.loadedTypes[7] {
-		return e.TimeLogs, nil
-	}
-	return nil, &NotLoadedError{edge: "time_logs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -295,16 +273,6 @@ func (pr *Project) QueryActivities() *ActivityQuery {
 // QueryAttachments queries the "attachments" edge of the Project entity.
 func (pr *Project) QueryAttachments() *AttachmentQuery {
 	return NewProjectClient(pr.config).QueryAttachments(pr)
-}
-
-// QueryProjectBudget queries the "project_budget" edge of the Project entity.
-func (pr *Project) QueryProjectBudget() *BudgetQuery {
-	return NewProjectClient(pr.config).QueryProjectBudget(pr)
-}
-
-// QueryTimeLogs queries the "time_logs" edge of the Project entity.
-func (pr *Project) QueryTimeLogs() *TimeLogQuery {
-	return NewProjectClient(pr.config).QueryTimeLogs(pr)
 }
 
 // Update returns a builder for updating this Project.

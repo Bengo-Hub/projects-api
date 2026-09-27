@@ -34,6 +34,19 @@ func (Task) Fields() []ent.Field {
 			Optional(),
 		field.Time("due_date").
 			Optional(),
+		// start_date, estimated_hours and progress_pct drive earned value: a task's planned value
+		// accrues over [start_date, due_date] weighted by its estimate, and its earned value is
+		// estimate x progress. All optional so existing rows migrate untouched.
+		field.Time("start_date").
+			Optional().
+			Nillable(),
+		field.Float("estimated_hours").
+			Optional().
+			Nillable().
+			Comment("Effort estimate; weights the task in project earned value"),
+		field.Int("progress_pct").
+			Default(0).
+			Comment("0-100; done tasks count as 100"),
 		field.Time("completed_at").
 			Optional(),
 		field.Time("created_at").

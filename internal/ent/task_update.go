@@ -164,6 +164,74 @@ func (tu *TaskUpdate) ClearDueDate() *TaskUpdate {
 	return tu
 }
 
+// SetStartDate sets the "start_date" field.
+func (tu *TaskUpdate) SetStartDate(t time.Time) *TaskUpdate {
+	tu.mutation.SetStartDate(t)
+	return tu
+}
+
+// SetNillableStartDate sets the "start_date" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableStartDate(t *time.Time) *TaskUpdate {
+	if t != nil {
+		tu.SetStartDate(*t)
+	}
+	return tu
+}
+
+// ClearStartDate clears the value of the "start_date" field.
+func (tu *TaskUpdate) ClearStartDate() *TaskUpdate {
+	tu.mutation.ClearStartDate()
+	return tu
+}
+
+// SetEstimatedHours sets the "estimated_hours" field.
+func (tu *TaskUpdate) SetEstimatedHours(f float64) *TaskUpdate {
+	tu.mutation.ResetEstimatedHours()
+	tu.mutation.SetEstimatedHours(f)
+	return tu
+}
+
+// SetNillableEstimatedHours sets the "estimated_hours" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableEstimatedHours(f *float64) *TaskUpdate {
+	if f != nil {
+		tu.SetEstimatedHours(*f)
+	}
+	return tu
+}
+
+// AddEstimatedHours adds f to the "estimated_hours" field.
+func (tu *TaskUpdate) AddEstimatedHours(f float64) *TaskUpdate {
+	tu.mutation.AddEstimatedHours(f)
+	return tu
+}
+
+// ClearEstimatedHours clears the value of the "estimated_hours" field.
+func (tu *TaskUpdate) ClearEstimatedHours() *TaskUpdate {
+	tu.mutation.ClearEstimatedHours()
+	return tu
+}
+
+// SetProgressPct sets the "progress_pct" field.
+func (tu *TaskUpdate) SetProgressPct(i int) *TaskUpdate {
+	tu.mutation.ResetProgressPct()
+	tu.mutation.SetProgressPct(i)
+	return tu
+}
+
+// SetNillableProgressPct sets the "progress_pct" field if the given value is not nil.
+func (tu *TaskUpdate) SetNillableProgressPct(i *int) *TaskUpdate {
+	if i != nil {
+		tu.SetProgressPct(*i)
+	}
+	return tu
+}
+
+// AddProgressPct adds i to the "progress_pct" field.
+func (tu *TaskUpdate) AddProgressPct(i int) *TaskUpdate {
+	tu.mutation.AddProgressPct(i)
+	return tu
+}
+
 // SetCompletedAt sets the "completed_at" field.
 func (tu *TaskUpdate) SetCompletedAt(t time.Time) *TaskUpdate {
 	tu.mutation.SetCompletedAt(t)
@@ -492,6 +560,27 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if tu.mutation.DueDateCleared() {
 		_spec.ClearField(task.FieldDueDate, field.TypeTime)
+	}
+	if value, ok := tu.mutation.StartDate(); ok {
+		_spec.SetField(task.FieldStartDate, field.TypeTime, value)
+	}
+	if tu.mutation.StartDateCleared() {
+		_spec.ClearField(task.FieldStartDate, field.TypeTime)
+	}
+	if value, ok := tu.mutation.EstimatedHours(); ok {
+		_spec.SetField(task.FieldEstimatedHours, field.TypeFloat64, value)
+	}
+	if value, ok := tu.mutation.AddedEstimatedHours(); ok {
+		_spec.AddField(task.FieldEstimatedHours, field.TypeFloat64, value)
+	}
+	if tu.mutation.EstimatedHoursCleared() {
+		_spec.ClearField(task.FieldEstimatedHours, field.TypeFloat64)
+	}
+	if value, ok := tu.mutation.ProgressPct(); ok {
+		_spec.SetField(task.FieldProgressPct, field.TypeInt, value)
+	}
+	if value, ok := tu.mutation.AddedProgressPct(); ok {
+		_spec.AddField(task.FieldProgressPct, field.TypeInt, value)
 	}
 	if value, ok := tu.mutation.CompletedAt(); ok {
 		_spec.SetField(task.FieldCompletedAt, field.TypeTime, value)
@@ -879,6 +968,74 @@ func (tuo *TaskUpdateOne) ClearDueDate() *TaskUpdateOne {
 	return tuo
 }
 
+// SetStartDate sets the "start_date" field.
+func (tuo *TaskUpdateOne) SetStartDate(t time.Time) *TaskUpdateOne {
+	tuo.mutation.SetStartDate(t)
+	return tuo
+}
+
+// SetNillableStartDate sets the "start_date" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableStartDate(t *time.Time) *TaskUpdateOne {
+	if t != nil {
+		tuo.SetStartDate(*t)
+	}
+	return tuo
+}
+
+// ClearStartDate clears the value of the "start_date" field.
+func (tuo *TaskUpdateOne) ClearStartDate() *TaskUpdateOne {
+	tuo.mutation.ClearStartDate()
+	return tuo
+}
+
+// SetEstimatedHours sets the "estimated_hours" field.
+func (tuo *TaskUpdateOne) SetEstimatedHours(f float64) *TaskUpdateOne {
+	tuo.mutation.ResetEstimatedHours()
+	tuo.mutation.SetEstimatedHours(f)
+	return tuo
+}
+
+// SetNillableEstimatedHours sets the "estimated_hours" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableEstimatedHours(f *float64) *TaskUpdateOne {
+	if f != nil {
+		tuo.SetEstimatedHours(*f)
+	}
+	return tuo
+}
+
+// AddEstimatedHours adds f to the "estimated_hours" field.
+func (tuo *TaskUpdateOne) AddEstimatedHours(f float64) *TaskUpdateOne {
+	tuo.mutation.AddEstimatedHours(f)
+	return tuo
+}
+
+// ClearEstimatedHours clears the value of the "estimated_hours" field.
+func (tuo *TaskUpdateOne) ClearEstimatedHours() *TaskUpdateOne {
+	tuo.mutation.ClearEstimatedHours()
+	return tuo
+}
+
+// SetProgressPct sets the "progress_pct" field.
+func (tuo *TaskUpdateOne) SetProgressPct(i int) *TaskUpdateOne {
+	tuo.mutation.ResetProgressPct()
+	tuo.mutation.SetProgressPct(i)
+	return tuo
+}
+
+// SetNillableProgressPct sets the "progress_pct" field if the given value is not nil.
+func (tuo *TaskUpdateOne) SetNillableProgressPct(i *int) *TaskUpdateOne {
+	if i != nil {
+		tuo.SetProgressPct(*i)
+	}
+	return tuo
+}
+
+// AddProgressPct adds i to the "progress_pct" field.
+func (tuo *TaskUpdateOne) AddProgressPct(i int) *TaskUpdateOne {
+	tuo.mutation.AddProgressPct(i)
+	return tuo
+}
+
 // SetCompletedAt sets the "completed_at" field.
 func (tuo *TaskUpdateOne) SetCompletedAt(t time.Time) *TaskUpdateOne {
 	tuo.mutation.SetCompletedAt(t)
@@ -1237,6 +1394,27 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 	}
 	if tuo.mutation.DueDateCleared() {
 		_spec.ClearField(task.FieldDueDate, field.TypeTime)
+	}
+	if value, ok := tuo.mutation.StartDate(); ok {
+		_spec.SetField(task.FieldStartDate, field.TypeTime, value)
+	}
+	if tuo.mutation.StartDateCleared() {
+		_spec.ClearField(task.FieldStartDate, field.TypeTime)
+	}
+	if value, ok := tuo.mutation.EstimatedHours(); ok {
+		_spec.SetField(task.FieldEstimatedHours, field.TypeFloat64, value)
+	}
+	if value, ok := tuo.mutation.AddedEstimatedHours(); ok {
+		_spec.AddField(task.FieldEstimatedHours, field.TypeFloat64, value)
+	}
+	if tuo.mutation.EstimatedHoursCleared() {
+		_spec.ClearField(task.FieldEstimatedHours, field.TypeFloat64)
+	}
+	if value, ok := tuo.mutation.ProgressPct(); ok {
+		_spec.SetField(task.FieldProgressPct, field.TypeInt, value)
+	}
+	if value, ok := tuo.mutation.AddedProgressPct(); ok {
+		_spec.AddField(task.FieldProgressPct, field.TypeInt, value)
 	}
 	if value, ok := tuo.mutation.CompletedAt(); ok {
 		_spec.SetField(task.FieldCompletedAt, field.TypeTime, value)

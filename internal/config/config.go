@@ -20,6 +20,14 @@ type Config struct {
 	Events    EventsConfig
 	Telemetry TelemetryConfig
 	Auth      AuthConfig
+	Services  ServicesConfig
+}
+
+// ServicesConfig holds the base URLs of the services projects-api calls over S2S.
+type ServicesConfig struct {
+	// TreasuryURL is treasury-api, which owns project budgets and costs (in-cluster DNS in
+	// production, see devops-k8s apps/projects-api/values.yaml).
+	TreasuryURL string `envconfig:"TREASURY_SERVICE_URL" default:"https://booksapi.codevertexafrica.com"`
 }
 
 type AppConfig struct {

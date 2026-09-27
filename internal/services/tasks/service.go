@@ -29,28 +29,34 @@ func NewService(client *ent.Client, cache *sharedcache.Aside, log *zap.Logger) *
 
 // CreateTaskInput holds the data needed to create a task.
 type CreateTaskInput struct {
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	Status      string         `json:"status"`
-	Priority    string         `json:"priority"`
-	AssigneeID  *uuid.UUID     `json:"assignee_id"`
-	DueDate     *time.Time     `json:"due_date"`
-	ParentID    *uuid.UUID     `json:"parent_id"`
-	WbsCode     string         `json:"wbs_code"`
-	Metadata    map[string]any `json:"metadata"`
+	Title          string         `json:"title"`
+	Description    string         `json:"description"`
+	Status         string         `json:"status"`
+	Priority       string         `json:"priority"`
+	AssigneeID     *uuid.UUID     `json:"assignee_id"`
+	DueDate        *time.Time     `json:"due_date"`
+	StartDate      *time.Time     `json:"start_date"`
+	EstimatedHours *float64       `json:"estimated_hours"`
+	ProgressPct    *int           `json:"progress_pct"`
+	ParentID       *uuid.UUID     `json:"parent_id"`
+	WbsCode        string         `json:"wbs_code"`
+	Metadata       map[string]any `json:"metadata"`
 }
 
 // UpdateTaskInput holds the data needed to update a task.
 type UpdateTaskInput struct {
-	Title       *string        `json:"title"`
-	Description *string        `json:"description"`
-	Status      *string        `json:"status"`
-	Priority    *string        `json:"priority"`
-	AssigneeID  *uuid.UUID     `json:"assignee_id"`
-	DueDate     *time.Time     `json:"due_date"`
-	ParentID    *uuid.UUID     `json:"parent_id"`
-	WbsCode     *string        `json:"wbs_code"`
-	Metadata    map[string]any `json:"metadata"`
+	Title          *string        `json:"title"`
+	Description    *string        `json:"description"`
+	Status         *string        `json:"status"`
+	Priority       *string        `json:"priority"`
+	AssigneeID     *uuid.UUID     `json:"assignee_id"`
+	DueDate        *time.Time     `json:"due_date"`
+	StartDate      *time.Time     `json:"start_date"`
+	EstimatedHours *float64       `json:"estimated_hours"`
+	ProgressPct    *int           `json:"progress_pct"`
+	ParentID       *uuid.UUID     `json:"parent_id"`
+	WbsCode        *string        `json:"wbs_code"`
+	Metadata       map[string]any `json:"metadata"`
 }
 
 // ListTasksFilter holds filter options for listing tasks.
@@ -157,6 +163,18 @@ func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID,
 	if input.DueDate != nil {
 		c = c.SetDueDate(*input.DueDate)
 	}
+	if input.StartDate != nil {
+		c = c.SetStartDate(*input.StartDate)
+	}
+	if input.EstimatedHours != nil {
+		c = c.SetEstimatedHours(*input.EstimatedHours)
+	}
+	if input.ProgressPct != nil {
+		c = c.SetProgressPct(clampPct(*input.ProgressPct))
+	}
+	if status == "done" {
+		c = c.SetProgressPct(100)
+	}
 	if input.ParentID != nil {
 		c = c.SetParentID(*input.ParentID)
 	}
@@ -196,6 +214,7 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 		if *input.Status == "done" {
 			now := time.Now()
 			u = u.SetCompletedAt(now)
+			u = u.SetProgressPct(100)
 		}
 	}
 	if input.Priority != nil {
@@ -206,6 +225,15 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 	}
 	if input.DueDate != nil {
 		u = u.SetDueDate(*input.DueDate)
+	}
+	if input.StartDate != nil {
+		u = u.SetStartDate(*input.StartDate)
+	}
+	if input.EstimatedHours != nil {
+		u = u.SetEstimatedHours(*input.EstimatedHours)
+	}
+	if input.ProgressPct != nil {
+		u = u.SetProgressPct(clampPct(*input.ProgressPct))
 	}
 	if input.ParentID != nil {
 		u = u.SetParentID(*input.ParentID)
@@ -336,4 +364,15 @@ func (s *Service) GetGanttData(ctx context.Context, tenantID, projectID uuid.UUI
 		return nil, fmt.Errorf("get gantt data: %w", err)
 	}
 	return tasks, nil
+}
+
+// clampPct keeps a progress percentage within 0-100.
+func clampPct(p int) int {
+	if p < 0 {
+		return 0
+	}
+	if p > 100 {
+		return 100
+	}
+	return p
 }

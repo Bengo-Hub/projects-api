@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/projects-service/internal/config"
 	"github.com/bengobox/projects-service/internal/ent"
 	"github.com/bengobox/projects-service/internal/ent/migrate"
+	"github.com/bengobox/projects-service/internal/platform/database"
 )
 
 func main() {
@@ -44,6 +45,9 @@ func main() {
 	db.SetMaxIdleConns(2)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
+	if err := database.DropRetiredTables(ctx, db); err != nil {
+		log.Fatalf("migrate: %v", err)
+	}
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	client := ent.NewClient(ent.Driver(drv))
 	defer client.Close()

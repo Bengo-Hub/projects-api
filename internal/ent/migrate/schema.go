@@ -73,32 +73,6 @@ var (
 			},
 		},
 	}
-	// BudgetsColumns holds the columns for the "budgets" table.
-	BudgetsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "tenant_id", Type: field.TypeUUID},
-		{Name: "total_amount", Type: field.TypeFloat64, Default: 0},
-		{Name: "spent_amount", Type: field.TypeFloat64, Default: 0},
-		{Name: "currency", Type: field.TypeString, Default: "KES"},
-		{Name: "status", Type: field.TypeString, Default: "draft"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "project_id", Type: field.TypeUUID},
-	}
-	// BudgetsTable holds the schema information for the "budgets" table.
-	BudgetsTable = &schema.Table{
-		Name:       "budgets",
-		Columns:    BudgetsColumns,
-		PrimaryKey: []*schema.Column{BudgetsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "budgets_projects_project_budget",
-				Columns:    []*schema.Column{BudgetsColumns[8]},
-				RefColumns: []*schema.Column{ProjectsColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-		},
-	}
 	// CommentsColumns holds the columns for the "comments" table.
 	CommentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -128,37 +102,6 @@ var (
 				Columns:    []*schema.Column{CommentsColumns[8]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.SetNull,
-			},
-		},
-	}
-	// ExpensesColumns holds the columns for the "expenses" table.
-	ExpensesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "project_id", Type: field.TypeUUID},
-		{Name: "tenant_id", Type: field.TypeUUID},
-		{Name: "description", Type: field.TypeString},
-		{Name: "amount", Type: field.TypeFloat64},
-		{Name: "currency", Type: field.TypeString, Default: "KES"},
-		{Name: "category", Type: field.TypeString, Nullable: true},
-		{Name: "incurred_by", Type: field.TypeUUID},
-		{Name: "incurred_at", Type: field.TypeTime},
-		{Name: "receipt_url", Type: field.TypeString, Nullable: true},
-		{Name: "status", Type: field.TypeString, Default: "pending"},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "budget_id", Type: field.TypeUUID},
-	}
-	// ExpensesTable holds the schema information for the "expenses" table.
-	ExpensesTable = &schema.Table{
-		Name:       "expenses",
-		Columns:    ExpensesColumns,
-		PrimaryKey: []*schema.Column{ExpensesColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "expenses_budgets_expenses",
-				Columns:    []*schema.Column{ExpensesColumns[13]},
-				RefColumns: []*schema.Column{BudgetsColumns[0]},
-				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -325,6 +268,9 @@ var (
 		{Name: "priority", Type: field.TypeString, Default: "medium"},
 		{Name: "assignee_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "due_date", Type: field.TypeTime, Nullable: true},
+		{Name: "start_date", Type: field.TypeTime, Nullable: true},
+		{Name: "estimated_hours", Type: field.TypeFloat64, Nullable: true},
+		{Name: "progress_pct", Type: field.TypeInt, Default: 0},
 		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -341,7 +287,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tasks_projects_tasks",
-				Columns:    []*schema.Column{TasksColumns[14]},
+				Columns:    []*schema.Column{TasksColumns[17]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -531,46 +477,6 @@ var (
 			},
 		},
 	}
-	// TimeLogsColumns holds the columns for the "time_logs" table.
-	TimeLogsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "task_id", Type: field.TypeUUID, Nullable: true},
-		{Name: "tenant_id", Type: field.TypeUUID},
-		{Name: "user_id", Type: field.TypeUUID},
-		{Name: "hours", Type: field.TypeFloat64},
-		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "logged_date", Type: field.TypeTime},
-		{Name: "is_billable", Type: field.TypeBool, Default: false},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "project_id", Type: field.TypeUUID},
-	}
-	// TimeLogsTable holds the schema information for the "time_logs" table.
-	TimeLogsTable = &schema.Table{
-		Name:       "time_logs",
-		Columns:    TimeLogsColumns,
-		PrimaryKey: []*schema.Column{TimeLogsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "time_logs_projects_time_logs",
-				Columns:    []*schema.Column{TimeLogsColumns[10]},
-				RefColumns: []*schema.Column{ProjectsColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "timelog_tenant_id_project_id",
-				Unique:  false,
-				Columns: []*schema.Column{TimeLogsColumns[2], TimeLogsColumns[10]},
-			},
-			{
-				Name:    "timelog_tenant_id_user_id",
-				Unique:  false,
-				Columns: []*schema.Column{TimeLogsColumns[2], TimeLogsColumns[3]},
-			},
-		},
-	}
 	// UserRolesColumns holds the columns for the "user_roles" table.
 	UserRolesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -599,9 +505,7 @@ var (
 	Tables = []*schema.Table{
 		ActivitiesTable,
 		AttachmentsTable,
-		BudgetsTable,
 		CommentsTable,
-		ExpensesTable,
 		MilestonesTable,
 		OutboxEventsTable,
 		PermissionsTable,
@@ -617,7 +521,6 @@ var (
 		TenderDocumentsTable,
 		TenderEvaluationsTable,
 		TenderMeetingsTable,
-		TimeLogsTable,
 		UserRolesTable,
 	}
 )
@@ -627,10 +530,8 @@ func init() {
 	ActivitiesTable.ForeignKeys[1].RefTable = TasksTable
 	AttachmentsTable.ForeignKeys[0].RefTable = ProjectsTable
 	AttachmentsTable.ForeignKeys[1].RefTable = TasksTable
-	BudgetsTable.ForeignKeys[0].RefTable = ProjectsTable
 	CommentsTable.ForeignKeys[0].RefTable = ProjectsTable
 	CommentsTable.ForeignKeys[1].RefTable = TasksTable
-	ExpensesTable.ForeignKeys[0].RefTable = BudgetsTable
 	MilestonesTable.ForeignKeys[0].RefTable = ProjectsTable
 	ProjectMembersTable.ForeignKeys[0].RefTable = ProjectsTable
 	RolePermissionsTable.ForeignKeys[0].RefTable = PermissionsTable
@@ -642,6 +543,5 @@ func init() {
 	TenderDocumentsTable.ForeignKeys[0].RefTable = TendersTable
 	TenderEvaluationsTable.ForeignKeys[0].RefTable = TendersTable
 	TenderMeetingsTable.ForeignKeys[0].RefTable = TendersTable
-	TimeLogsTable.ForeignKeys[0].RefTable = ProjectsTable
 	UserRolesTable.ForeignKeys[0].RefTable = RolesTable
 }

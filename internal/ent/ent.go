@@ -14,9 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
-	"github.com/bengobox/projects-service/internal/ent/budget"
 	"github.com/bengobox/projects-service/internal/ent/comment"
-	"github.com/bengobox/projects-service/internal/ent/expense"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
@@ -32,7 +30,6 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
-	"github.com/bengobox/projects-service/internal/ent/timelog"
 	"github.com/bengobox/projects-service/internal/ent/userrole"
 )
 
@@ -96,9 +93,7 @@ func checkColumn(table, column string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			activity.Table:              activity.ValidColumn,
 			attachment.Table:            attachment.ValidColumn,
-			budget.Table:                budget.ValidColumn,
 			comment.Table:               comment.ValidColumn,
-			expense.Table:               expense.ValidColumn,
 			milestone.Table:             milestone.ValidColumn,
 			outboxevent.Table:           outboxevent.ValidColumn,
 			permission.Table:            permission.ValidColumn,
@@ -114,7 +109,6 @@ func checkColumn(table, column string) error {
 			tenderdocument.Table:        tenderdocument.ValidColumn,
 			tenderevaluation.Table:      tenderevaluation.ValidColumn,
 			tendermeeting.Table:         tendermeeting.ValidColumn,
-			timelog.Table:               timelog.ValidColumn,
 			userrole.Table:              userrole.ValidColumn,
 		})
 	})

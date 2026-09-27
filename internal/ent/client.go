@@ -18,9 +18,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
-	"github.com/bengobox/projects-service/internal/ent/budget"
 	"github.com/bengobox/projects-service/internal/ent/comment"
-	"github.com/bengobox/projects-service/internal/ent/expense"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
@@ -36,7 +34,6 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
-	"github.com/bengobox/projects-service/internal/ent/timelog"
 	"github.com/bengobox/projects-service/internal/ent/userrole"
 )
 
@@ -49,12 +46,8 @@ type Client struct {
 	Activity *ActivityClient
 	// Attachment is the client for interacting with the Attachment builders.
 	Attachment *AttachmentClient
-	// Budget is the client for interacting with the Budget builders.
-	Budget *BudgetClient
 	// Comment is the client for interacting with the Comment builders.
 	Comment *CommentClient
-	// Expense is the client for interacting with the Expense builders.
-	Expense *ExpenseClient
 	// Milestone is the client for interacting with the Milestone builders.
 	Milestone *MilestoneClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
@@ -85,8 +78,6 @@ type Client struct {
 	TenderEvaluation *TenderEvaluationClient
 	// TenderMeeting is the client for interacting with the TenderMeeting builders.
 	TenderMeeting *TenderMeetingClient
-	// TimeLog is the client for interacting with the TimeLog builders.
-	TimeLog *TimeLogClient
 	// UserRole is the client for interacting with the UserRole builders.
 	UserRole *UserRoleClient
 }
@@ -102,9 +93,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Activity = NewActivityClient(c.config)
 	c.Attachment = NewAttachmentClient(c.config)
-	c.Budget = NewBudgetClient(c.config)
 	c.Comment = NewCommentClient(c.config)
-	c.Expense = NewExpenseClient(c.config)
 	c.Milestone = NewMilestoneClient(c.config)
 	c.OutboxEvent = NewOutboxEventClient(c.config)
 	c.Permission = NewPermissionClient(c.config)
@@ -120,7 +109,6 @@ func (c *Client) init() {
 	c.TenderDocument = NewTenderDocumentClient(c.config)
 	c.TenderEvaluation = NewTenderEvaluationClient(c.config)
 	c.TenderMeeting = NewTenderMeetingClient(c.config)
-	c.TimeLog = NewTimeLogClient(c.config)
 	c.UserRole = NewUserRoleClient(c.config)
 }
 
@@ -216,9 +204,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:                cfg,
 		Activity:              NewActivityClient(cfg),
 		Attachment:            NewAttachmentClient(cfg),
-		Budget:                NewBudgetClient(cfg),
 		Comment:               NewCommentClient(cfg),
-		Expense:               NewExpenseClient(cfg),
 		Milestone:             NewMilestoneClient(cfg),
 		OutboxEvent:           NewOutboxEventClient(cfg),
 		Permission:            NewPermissionClient(cfg),
@@ -234,7 +220,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		TenderDocument:        NewTenderDocumentClient(cfg),
 		TenderEvaluation:      NewTenderEvaluationClient(cfg),
 		TenderMeeting:         NewTenderMeetingClient(cfg),
-		TimeLog:               NewTimeLogClient(cfg),
 		UserRole:              NewUserRoleClient(cfg),
 	}, nil
 }
@@ -257,9 +242,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:                cfg,
 		Activity:              NewActivityClient(cfg),
 		Attachment:            NewAttachmentClient(cfg),
-		Budget:                NewBudgetClient(cfg),
 		Comment:               NewCommentClient(cfg),
-		Expense:               NewExpenseClient(cfg),
 		Milestone:             NewMilestoneClient(cfg),
 		OutboxEvent:           NewOutboxEventClient(cfg),
 		Permission:            NewPermissionClient(cfg),
@@ -275,7 +258,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		TenderDocument:        NewTenderDocumentClient(cfg),
 		TenderEvaluation:      NewTenderEvaluationClient(cfg),
 		TenderMeeting:         NewTenderMeetingClient(cfg),
-		TimeLog:               NewTimeLogClient(cfg),
 		UserRole:              NewUserRoleClient(cfg),
 	}, nil
 }
@@ -306,11 +288,10 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Activity, c.Attachment, c.Budget, c.Comment, c.Expense, c.Milestone,
-		c.OutboxEvent, c.Permission, c.Project, c.ProjectMember, c.Role,
-		c.RolePermission, c.Task, c.TaskDependency, c.Tender, c.TenderCommittee,
-		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
-		c.TimeLog, c.UserRole,
+		c.Activity, c.Attachment, c.Comment, c.Milestone, c.OutboxEvent, c.Permission,
+		c.Project, c.ProjectMember, c.Role, c.RolePermission, c.Task, c.TaskDependency,
+		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
+		c.TenderEvaluation, c.TenderMeeting, c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -320,11 +301,10 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Activity, c.Attachment, c.Budget, c.Comment, c.Expense, c.Milestone,
-		c.OutboxEvent, c.Permission, c.Project, c.ProjectMember, c.Role,
-		c.RolePermission, c.Task, c.TaskDependency, c.Tender, c.TenderCommittee,
-		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
-		c.TimeLog, c.UserRole,
+		c.Activity, c.Attachment, c.Comment, c.Milestone, c.OutboxEvent, c.Permission,
+		c.Project, c.ProjectMember, c.Role, c.RolePermission, c.Task, c.TaskDependency,
+		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
+		c.TenderEvaluation, c.TenderMeeting, c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -337,12 +317,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Activity.mutate(ctx, m)
 	case *AttachmentMutation:
 		return c.Attachment.mutate(ctx, m)
-	case *BudgetMutation:
-		return c.Budget.mutate(ctx, m)
 	case *CommentMutation:
 		return c.Comment.mutate(ctx, m)
-	case *ExpenseMutation:
-		return c.Expense.mutate(ctx, m)
 	case *MilestoneMutation:
 		return c.Milestone.mutate(ctx, m)
 	case *OutboxEventMutation:
@@ -373,8 +349,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.TenderEvaluation.mutate(ctx, m)
 	case *TenderMeetingMutation:
 		return c.TenderMeeting.mutate(ctx, m)
-	case *TimeLogMutation:
-		return c.TimeLog.mutate(ctx, m)
 	case *UserRoleMutation:
 		return c.UserRole.mutate(ctx, m)
 	default:
@@ -712,171 +686,6 @@ func (c *AttachmentClient) mutate(ctx context.Context, m *AttachmentMutation) (V
 	}
 }
 
-// BudgetClient is a client for the Budget schema.
-type BudgetClient struct {
-	config
-}
-
-// NewBudgetClient returns a client for the Budget from the given config.
-func NewBudgetClient(c config) *BudgetClient {
-	return &BudgetClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `budget.Hooks(f(g(h())))`.
-func (c *BudgetClient) Use(hooks ...Hook) {
-	c.hooks.Budget = append(c.hooks.Budget, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `budget.Intercept(f(g(h())))`.
-func (c *BudgetClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Budget = append(c.inters.Budget, interceptors...)
-}
-
-// Create returns a builder for creating a Budget entity.
-func (c *BudgetClient) Create() *BudgetCreate {
-	mutation := newBudgetMutation(c.config, OpCreate)
-	return &BudgetCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Budget entities.
-func (c *BudgetClient) CreateBulk(builders ...*BudgetCreate) *BudgetCreateBulk {
-	return &BudgetCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *BudgetClient) MapCreateBulk(slice any, setFunc func(*BudgetCreate, int)) *BudgetCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &BudgetCreateBulk{err: fmt.Errorf("calling to BudgetClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*BudgetCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &BudgetCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Budget.
-func (c *BudgetClient) Update() *BudgetUpdate {
-	mutation := newBudgetMutation(c.config, OpUpdate)
-	return &BudgetUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *BudgetClient) UpdateOne(b *Budget) *BudgetUpdateOne {
-	mutation := newBudgetMutation(c.config, OpUpdateOne, withBudget(b))
-	return &BudgetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *BudgetClient) UpdateOneID(id uuid.UUID) *BudgetUpdateOne {
-	mutation := newBudgetMutation(c.config, OpUpdateOne, withBudgetID(id))
-	return &BudgetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Budget.
-func (c *BudgetClient) Delete() *BudgetDelete {
-	mutation := newBudgetMutation(c.config, OpDelete)
-	return &BudgetDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *BudgetClient) DeleteOne(b *Budget) *BudgetDeleteOne {
-	return c.DeleteOneID(b.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *BudgetClient) DeleteOneID(id uuid.UUID) *BudgetDeleteOne {
-	builder := c.Delete().Where(budget.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &BudgetDeleteOne{builder}
-}
-
-// Query returns a query builder for Budget.
-func (c *BudgetClient) Query() *BudgetQuery {
-	return &BudgetQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeBudget},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Budget entity by its id.
-func (c *BudgetClient) Get(ctx context.Context, id uuid.UUID) (*Budget, error) {
-	return c.Query().Where(budget.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *BudgetClient) GetX(ctx context.Context, id uuid.UUID) *Budget {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryProject queries the project edge of a Budget.
-func (c *BudgetClient) QueryProject(b *Budget) *ProjectQuery {
-	query := (&ProjectClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(budget.Table, budget.FieldID, id),
-			sqlgraph.To(project.Table, project.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, budget.ProjectTable, budget.ProjectColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryExpenses queries the expenses edge of a Budget.
-func (c *BudgetClient) QueryExpenses(b *Budget) *ExpenseQuery {
-	query := (&ExpenseClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := b.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(budget.Table, budget.FieldID, id),
-			sqlgraph.To(expense.Table, expense.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, budget.ExpensesTable, budget.ExpensesColumn),
-		)
-		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *BudgetClient) Hooks() []Hook {
-	return c.hooks.Budget
-}
-
-// Interceptors returns the client interceptors.
-func (c *BudgetClient) Interceptors() []Interceptor {
-	return c.inters.Budget
-}
-
-func (c *BudgetClient) mutate(ctx context.Context, m *BudgetMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&BudgetCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&BudgetUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&BudgetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&BudgetDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Budget mutation op: %q", m.Op())
-	}
-}
-
 // CommentClient is a client for the Comment schema.
 type CommentClient struct {
 	config
@@ -1039,155 +848,6 @@ func (c *CommentClient) mutate(ctx context.Context, m *CommentMutation) (Value, 
 		return (&CommentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Comment mutation op: %q", m.Op())
-	}
-}
-
-// ExpenseClient is a client for the Expense schema.
-type ExpenseClient struct {
-	config
-}
-
-// NewExpenseClient returns a client for the Expense from the given config.
-func NewExpenseClient(c config) *ExpenseClient {
-	return &ExpenseClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `expense.Hooks(f(g(h())))`.
-func (c *ExpenseClient) Use(hooks ...Hook) {
-	c.hooks.Expense = append(c.hooks.Expense, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `expense.Intercept(f(g(h())))`.
-func (c *ExpenseClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Expense = append(c.inters.Expense, interceptors...)
-}
-
-// Create returns a builder for creating a Expense entity.
-func (c *ExpenseClient) Create() *ExpenseCreate {
-	mutation := newExpenseMutation(c.config, OpCreate)
-	return &ExpenseCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Expense entities.
-func (c *ExpenseClient) CreateBulk(builders ...*ExpenseCreate) *ExpenseCreateBulk {
-	return &ExpenseCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *ExpenseClient) MapCreateBulk(slice any, setFunc func(*ExpenseCreate, int)) *ExpenseCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &ExpenseCreateBulk{err: fmt.Errorf("calling to ExpenseClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*ExpenseCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &ExpenseCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Expense.
-func (c *ExpenseClient) Update() *ExpenseUpdate {
-	mutation := newExpenseMutation(c.config, OpUpdate)
-	return &ExpenseUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ExpenseClient) UpdateOne(e *Expense) *ExpenseUpdateOne {
-	mutation := newExpenseMutation(c.config, OpUpdateOne, withExpense(e))
-	return &ExpenseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ExpenseClient) UpdateOneID(id uuid.UUID) *ExpenseUpdateOne {
-	mutation := newExpenseMutation(c.config, OpUpdateOne, withExpenseID(id))
-	return &ExpenseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Expense.
-func (c *ExpenseClient) Delete() *ExpenseDelete {
-	mutation := newExpenseMutation(c.config, OpDelete)
-	return &ExpenseDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ExpenseClient) DeleteOne(e *Expense) *ExpenseDeleteOne {
-	return c.DeleteOneID(e.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ExpenseClient) DeleteOneID(id uuid.UUID) *ExpenseDeleteOne {
-	builder := c.Delete().Where(expense.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ExpenseDeleteOne{builder}
-}
-
-// Query returns a query builder for Expense.
-func (c *ExpenseClient) Query() *ExpenseQuery {
-	return &ExpenseQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeExpense},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Expense entity by its id.
-func (c *ExpenseClient) Get(ctx context.Context, id uuid.UUID) (*Expense, error) {
-	return c.Query().Where(expense.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ExpenseClient) GetX(ctx context.Context, id uuid.UUID) *Expense {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryBudget queries the budget edge of a Expense.
-func (c *ExpenseClient) QueryBudget(e *Expense) *BudgetQuery {
-	query := (&BudgetClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := e.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(expense.Table, expense.FieldID, id),
-			sqlgraph.To(budget.Table, budget.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, expense.BudgetTable, expense.BudgetColumn),
-		)
-		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *ExpenseClient) Hooks() []Hook {
-	return c.hooks.Expense
-}
-
-// Interceptors returns the client interceptors.
-func (c *ExpenseClient) Interceptors() []Interceptor {
-	return c.inters.Expense
-}
-
-func (c *ExpenseClient) mutate(ctx context.Context, m *ExpenseMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&ExpenseCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&ExpenseUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&ExpenseUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&ExpenseDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Expense mutation op: %q", m.Op())
 	}
 }
 
@@ -1819,38 +1479,6 @@ func (c *ProjectClient) QueryAttachments(pr *Project) *AttachmentQuery {
 			sqlgraph.From(project.Table, project.FieldID, id),
 			sqlgraph.To(attachment.Table, attachment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, project.AttachmentsTable, project.AttachmentsColumn),
-		)
-		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryProjectBudget queries the project_budget edge of a Project.
-func (c *ProjectClient) QueryProjectBudget(pr *Project) *BudgetQuery {
-	query := (&BudgetClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := pr.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(project.Table, project.FieldID, id),
-			sqlgraph.To(budget.Table, budget.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, project.ProjectBudgetTable, project.ProjectBudgetColumn),
-		)
-		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryTimeLogs queries the time_logs edge of a Project.
-func (c *ProjectClient) QueryTimeLogs(pr *Project) *TimeLogQuery {
-	query := (&TimeLogClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := pr.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(project.Table, project.FieldID, id),
-			sqlgraph.To(timelog.Table, timelog.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, project.TimeLogsTable, project.TimeLogsColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -3682,155 +3310,6 @@ func (c *TenderMeetingClient) mutate(ctx context.Context, m *TenderMeetingMutati
 	}
 }
 
-// TimeLogClient is a client for the TimeLog schema.
-type TimeLogClient struct {
-	config
-}
-
-// NewTimeLogClient returns a client for the TimeLog from the given config.
-func NewTimeLogClient(c config) *TimeLogClient {
-	return &TimeLogClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `timelog.Hooks(f(g(h())))`.
-func (c *TimeLogClient) Use(hooks ...Hook) {
-	c.hooks.TimeLog = append(c.hooks.TimeLog, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `timelog.Intercept(f(g(h())))`.
-func (c *TimeLogClient) Intercept(interceptors ...Interceptor) {
-	c.inters.TimeLog = append(c.inters.TimeLog, interceptors...)
-}
-
-// Create returns a builder for creating a TimeLog entity.
-func (c *TimeLogClient) Create() *TimeLogCreate {
-	mutation := newTimeLogMutation(c.config, OpCreate)
-	return &TimeLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of TimeLog entities.
-func (c *TimeLogClient) CreateBulk(builders ...*TimeLogCreate) *TimeLogCreateBulk {
-	return &TimeLogCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *TimeLogClient) MapCreateBulk(slice any, setFunc func(*TimeLogCreate, int)) *TimeLogCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &TimeLogCreateBulk{err: fmt.Errorf("calling to TimeLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*TimeLogCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &TimeLogCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for TimeLog.
-func (c *TimeLogClient) Update() *TimeLogUpdate {
-	mutation := newTimeLogMutation(c.config, OpUpdate)
-	return &TimeLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *TimeLogClient) UpdateOne(tl *TimeLog) *TimeLogUpdateOne {
-	mutation := newTimeLogMutation(c.config, OpUpdateOne, withTimeLog(tl))
-	return &TimeLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *TimeLogClient) UpdateOneID(id uuid.UUID) *TimeLogUpdateOne {
-	mutation := newTimeLogMutation(c.config, OpUpdateOne, withTimeLogID(id))
-	return &TimeLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for TimeLog.
-func (c *TimeLogClient) Delete() *TimeLogDelete {
-	mutation := newTimeLogMutation(c.config, OpDelete)
-	return &TimeLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *TimeLogClient) DeleteOne(tl *TimeLog) *TimeLogDeleteOne {
-	return c.DeleteOneID(tl.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TimeLogClient) DeleteOneID(id uuid.UUID) *TimeLogDeleteOne {
-	builder := c.Delete().Where(timelog.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &TimeLogDeleteOne{builder}
-}
-
-// Query returns a query builder for TimeLog.
-func (c *TimeLogClient) Query() *TimeLogQuery {
-	return &TimeLogQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeTimeLog},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a TimeLog entity by its id.
-func (c *TimeLogClient) Get(ctx context.Context, id uuid.UUID) (*TimeLog, error) {
-	return c.Query().Where(timelog.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *TimeLogClient) GetX(ctx context.Context, id uuid.UUID) *TimeLog {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryProject queries the project edge of a TimeLog.
-func (c *TimeLogClient) QueryProject(tl *TimeLog) *ProjectQuery {
-	query := (&ProjectClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := tl.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(timelog.Table, timelog.FieldID, id),
-			sqlgraph.To(project.Table, project.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, timelog.ProjectTable, timelog.ProjectColumn),
-		)
-		fromV = sqlgraph.Neighbors(tl.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *TimeLogClient) Hooks() []Hook {
-	return c.hooks.TimeLog
-}
-
-// Interceptors returns the client interceptors.
-func (c *TimeLogClient) Interceptors() []Interceptor {
-	return c.inters.TimeLog
-}
-
-func (c *TimeLogClient) mutate(ctx context.Context, m *TimeLogMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&TimeLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&TimeLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&TimeLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&TimeLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown TimeLog mutation op: %q", m.Op())
-	}
-}
-
 // UserRoleClient is a client for the UserRole schema.
 type UserRoleClient struct {
 	config
@@ -3983,15 +3462,15 @@ func (c *UserRoleClient) mutate(ctx context.Context, m *UserRoleMutation) (Value
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Activity, Attachment, Budget, Comment, Expense, Milestone, OutboxEvent,
-		Permission, Project, ProjectMember, Role, RolePermission, Task, TaskDependency,
-		Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
-		TenderEvaluation, TenderMeeting, TimeLog, UserRole []ent.Hook
+		Activity, Attachment, Comment, Milestone, OutboxEvent, Permission, Project,
+		ProjectMember, Role, RolePermission, Task, TaskDependency, Tender,
+		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
+		TenderMeeting, UserRole []ent.Hook
 	}
 	inters struct {
-		Activity, Attachment, Budget, Comment, Expense, Milestone, OutboxEvent,
-		Permission, Project, ProjectMember, Role, RolePermission, Task, TaskDependency,
-		Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
-		TenderEvaluation, TenderMeeting, TimeLog, UserRole []ent.Interceptor
+		Activity, Attachment, Comment, Milestone, OutboxEvent, Permission, Project,
+		ProjectMember, Role, RolePermission, Task, TaskDependency, Tender,
+		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
+		TenderMeeting, UserRole []ent.Interceptor
 	}
 )

@@ -26,6 +26,7 @@ func New(
 	commentHandler *handlers.CommentHandler,
 	activityHandler *handlers.ActivityHandler,
 	tenderHandler *handlers.TenderHandler,
+	financialsHandler *handlers.FinancialsHandler,
 	authMiddleware *authclient.AuthMiddleware,
 	allowedOrigins []string,
 ) http.Handler {
@@ -122,6 +123,10 @@ func New(
 			commentHandler.RegisterRoutes(tenant)
 			activityHandler.RegisterRoutes(tenant)
 			tenderHandler.RegisterRoutes(tenant)
+			if financialsHandler != nil {
+				// Project financials, portfolio and project budgets: the budget_tracking feature.
+				financialsHandler.RegisterRoutes(tenant, requireFeature("budget_tracking"))
+			}
 		})
 	})
 

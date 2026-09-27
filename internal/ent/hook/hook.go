@@ -33,18 +33,6 @@ func (f AttachmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AttachmentMutation", m)
 }
 
-// The BudgetFunc type is an adapter to allow the use of ordinary
-// function as Budget mutator.
-type BudgetFunc func(context.Context, *ent.BudgetMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f BudgetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.BudgetMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BudgetMutation", m)
-}
-
 // The CommentFunc type is an adapter to allow the use of ordinary
 // function as Comment mutator.
 type CommentFunc func(context.Context, *ent.CommentMutation) (ent.Value, error)
@@ -55,18 +43,6 @@ func (f CommentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CommentMutation", m)
-}
-
-// The ExpenseFunc type is an adapter to allow the use of ordinary
-// function as Expense mutator.
-type ExpenseFunc func(context.Context, *ent.ExpenseMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f ExpenseFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.ExpenseMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ExpenseMutation", m)
 }
 
 // The MilestoneFunc type is an adapter to allow the use of ordinary
@@ -247,18 +223,6 @@ func (f TenderMeetingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenderMeetingMutation", m)
-}
-
-// The TimeLogFunc type is an adapter to allow the use of ordinary
-// function as TimeLog mutator.
-type TimeLogFunc func(context.Context, *ent.TimeLogMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f TimeLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.TimeLogMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TimeLogMutation", m)
 }
 
 // The UserRoleFunc type is an adapter to allow the use of ordinary

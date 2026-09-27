@@ -31,6 +31,12 @@ const (
 	FieldAssigneeID = "assignee_id"
 	// FieldDueDate holds the string denoting the due_date field in the database.
 	FieldDueDate = "due_date"
+	// FieldStartDate holds the string denoting the start_date field in the database.
+	FieldStartDate = "start_date"
+	// FieldEstimatedHours holds the string denoting the estimated_hours field in the database.
+	FieldEstimatedHours = "estimated_hours"
+	// FieldProgressPct holds the string denoting the progress_pct field in the database.
+	FieldProgressPct = "progress_pct"
 	// FieldCompletedAt holds the string denoting the completed_at field in the database.
 	FieldCompletedAt = "completed_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -103,6 +109,9 @@ var Columns = []string{
 	FieldPriority,
 	FieldAssigneeID,
 	FieldDueDate,
+	FieldStartDate,
+	FieldEstimatedHours,
+	FieldProgressPct,
 	FieldCompletedAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -128,6 +137,8 @@ var (
 	DefaultStatus string
 	// DefaultPriority holds the default value on creation for the "priority" field.
 	DefaultPriority string
+	// DefaultProgressPct holds the default value on creation for the "progress_pct" field.
+	DefaultProgressPct int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -184,6 +195,21 @@ func ByAssigneeID(opts ...sql.OrderTermOption) OrderOption {
 // ByDueDate orders the results by the due_date field.
 func ByDueDate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDueDate, opts...).ToFunc()
+}
+
+// ByStartDate orders the results by the start_date field.
+func ByStartDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStartDate, opts...).ToFunc()
+}
+
+// ByEstimatedHours orders the results by the estimated_hours field.
+func ByEstimatedHours(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEstimatedHours, opts...).ToFunc()
+}
+
+// ByProgressPct orders the results by the progress_pct field.
+func ByProgressPct(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProgressPct, opts...).ToFunc()
 }
 
 // ByCompletedAt orders the results by the completed_at field.

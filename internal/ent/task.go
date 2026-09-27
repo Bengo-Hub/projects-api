@@ -36,6 +36,12 @@ type Task struct {
 	AssigneeID uuid.UUID `json:"assignee_id,omitempty"`
 	// DueDate holds the value of the "due_date" field.
 	DueDate time.Time `json:"due_date,omitempty"`
+	// StartDate holds the value of the "start_date" field.
+	StartDate *time.Time `json:"start_date,omitempty"`
+	// Effort estimate; weights the task in project earned value
+	EstimatedHours *float64 `json:"estimated_hours,omitempty"`
+	// 0-100; done tasks count as 100
+	ProgressPct int `json:"progress_pct,omitempty"`
 	// CompletedAt holds the value of the "completed_at" field.
 	CompletedAt time.Time `json:"completed_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -125,9 +131,13 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case task.FieldMetadata:
 			values[i] = new([]byte)
+		case task.FieldEstimatedHours:
+			values[i] = new(sql.NullFloat64)
+		case task.FieldProgressPct:
+			values[i] = new(sql.NullInt64)
 		case task.FieldTitle, task.FieldDescription, task.FieldStatus, task.FieldPriority, task.FieldWbsCode:
 			values[i] = new(sql.NullString)
-		case task.FieldDueDate, task.FieldCompletedAt, task.FieldCreatedAt, task.FieldUpdatedAt:
+		case task.FieldDueDate, task.FieldStartDate, task.FieldCompletedAt, task.FieldCreatedAt, task.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case task.FieldID, task.FieldTenantID, task.FieldProjectID, task.FieldAssigneeID, task.FieldParentID:
 			values[i] = new(uuid.UUID)
@@ -199,6 +209,26 @@ func (t *Task) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field due_date", values[i])
 			} else if value.Valid {
 				t.DueDate = value.Time
+			}
+		case task.FieldStartDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field start_date", values[i])
+			} else if value.Valid {
+				t.StartDate = new(time.Time)
+				*t.StartDate = value.Time
+			}
+		case task.FieldEstimatedHours:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field estimated_hours", values[i])
+			} else if value.Valid {
+				t.EstimatedHours = new(float64)
+				*t.EstimatedHours = value.Float64
+			}
+		case task.FieldProgressPct:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field progress_pct", values[i])
+			} else if value.Valid {
+				t.ProgressPct = int(value.Int64)
 			}
 		case task.FieldCompletedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -322,6 +352,19 @@ func (t *Task) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("due_date=")
 	builder.WriteString(t.DueDate.Format(time.ANSIC))
+	builder.WriteString(", ")
+	if v := t.StartDate; v != nil {
+		builder.WriteString("start_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := t.EstimatedHours; v != nil {
+		builder.WriteString("estimated_hours=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("progress_pct=")
+	builder.WriteString(fmt.Sprintf("%v", t.ProgressPct))
 	builder.WriteString(", ")
 	builder.WriteString("completed_at=")
 	builder.WriteString(t.CompletedAt.Format(time.ANSIC))

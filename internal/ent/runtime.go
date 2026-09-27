@@ -7,9 +7,7 @@ import (
 
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
-	"github.com/bengobox/projects-service/internal/ent/budget"
 	"github.com/bengobox/projects-service/internal/ent/comment"
-	"github.com/bengobox/projects-service/internal/ent/expense"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
@@ -26,7 +24,6 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
-	"github.com/bengobox/projects-service/internal/ent/timelog"
 	"github.com/bengobox/projects-service/internal/ent/userrole"
 	"github.com/google/uuid"
 )
@@ -67,38 +64,6 @@ func init() {
 	attachmentDescID := attachmentFields[0].Descriptor()
 	// attachment.DefaultID holds the default value on creation for the id field.
 	attachment.DefaultID = attachmentDescID.Default.(func() uuid.UUID)
-	budgetFields := schema.Budget{}.Fields()
-	_ = budgetFields
-	// budgetDescTotalAmount is the schema descriptor for total_amount field.
-	budgetDescTotalAmount := budgetFields[3].Descriptor()
-	// budget.DefaultTotalAmount holds the default value on creation for the total_amount field.
-	budget.DefaultTotalAmount = budgetDescTotalAmount.Default.(float64)
-	// budgetDescSpentAmount is the schema descriptor for spent_amount field.
-	budgetDescSpentAmount := budgetFields[4].Descriptor()
-	// budget.DefaultSpentAmount holds the default value on creation for the spent_amount field.
-	budget.DefaultSpentAmount = budgetDescSpentAmount.Default.(float64)
-	// budgetDescCurrency is the schema descriptor for currency field.
-	budgetDescCurrency := budgetFields[5].Descriptor()
-	// budget.DefaultCurrency holds the default value on creation for the currency field.
-	budget.DefaultCurrency = budgetDescCurrency.Default.(string)
-	// budgetDescStatus is the schema descriptor for status field.
-	budgetDescStatus := budgetFields[6].Descriptor()
-	// budget.DefaultStatus holds the default value on creation for the status field.
-	budget.DefaultStatus = budgetDescStatus.Default.(string)
-	// budgetDescCreatedAt is the schema descriptor for created_at field.
-	budgetDescCreatedAt := budgetFields[7].Descriptor()
-	// budget.DefaultCreatedAt holds the default value on creation for the created_at field.
-	budget.DefaultCreatedAt = budgetDescCreatedAt.Default.(func() time.Time)
-	// budgetDescUpdatedAt is the schema descriptor for updated_at field.
-	budgetDescUpdatedAt := budgetFields[8].Descriptor()
-	// budget.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	budget.DefaultUpdatedAt = budgetDescUpdatedAt.Default.(func() time.Time)
-	// budget.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	budget.UpdateDefaultUpdatedAt = budgetDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// budgetDescID is the schema descriptor for id field.
-	budgetDescID := budgetFields[0].Descriptor()
-	// budget.DefaultID holds the default value on creation for the id field.
-	budget.DefaultID = budgetDescID.Default.(func() uuid.UUID)
 	commentFields := schema.Comment{}.Fields()
 	_ = commentFields
 	// commentDescContent is the schema descriptor for content field.
@@ -119,34 +84,6 @@ func init() {
 	commentDescID := commentFields[0].Descriptor()
 	// comment.DefaultID holds the default value on creation for the id field.
 	comment.DefaultID = commentDescID.Default.(func() uuid.UUID)
-	expenseFields := schema.Expense{}.Fields()
-	_ = expenseFields
-	// expenseDescDescription is the schema descriptor for description field.
-	expenseDescDescription := expenseFields[4].Descriptor()
-	// expense.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
-	expense.DescriptionValidator = expenseDescDescription.Validators[0].(func(string) error)
-	// expenseDescCurrency is the schema descriptor for currency field.
-	expenseDescCurrency := expenseFields[6].Descriptor()
-	// expense.DefaultCurrency holds the default value on creation for the currency field.
-	expense.DefaultCurrency = expenseDescCurrency.Default.(string)
-	// expenseDescStatus is the schema descriptor for status field.
-	expenseDescStatus := expenseFields[11].Descriptor()
-	// expense.DefaultStatus holds the default value on creation for the status field.
-	expense.DefaultStatus = expenseDescStatus.Default.(string)
-	// expenseDescCreatedAt is the schema descriptor for created_at field.
-	expenseDescCreatedAt := expenseFields[12].Descriptor()
-	// expense.DefaultCreatedAt holds the default value on creation for the created_at field.
-	expense.DefaultCreatedAt = expenseDescCreatedAt.Default.(func() time.Time)
-	// expenseDescUpdatedAt is the schema descriptor for updated_at field.
-	expenseDescUpdatedAt := expenseFields[13].Descriptor()
-	// expense.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	expense.DefaultUpdatedAt = expenseDescUpdatedAt.Default.(func() time.Time)
-	// expense.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	expense.UpdateDefaultUpdatedAt = expenseDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// expenseDescID is the schema descriptor for id field.
-	expenseDescID := expenseFields[0].Descriptor()
-	// expense.DefaultID holds the default value on creation for the id field.
-	expense.DefaultID = expenseDescID.Default.(func() uuid.UUID)
 	milestoneFields := schema.Milestone{}.Fields()
 	_ = milestoneFields
 	// milestoneDescName is the schema descriptor for name field.
@@ -301,12 +238,16 @@ func init() {
 	taskDescPriority := taskFields[6].Descriptor()
 	// task.DefaultPriority holds the default value on creation for the priority field.
 	task.DefaultPriority = taskDescPriority.Default.(string)
+	// taskDescProgressPct is the schema descriptor for progress_pct field.
+	taskDescProgressPct := taskFields[11].Descriptor()
+	// task.DefaultProgressPct holds the default value on creation for the progress_pct field.
+	task.DefaultProgressPct = taskDescProgressPct.Default.(int)
 	// taskDescCreatedAt is the schema descriptor for created_at field.
-	taskDescCreatedAt := taskFields[10].Descriptor()
+	taskDescCreatedAt := taskFields[13].Descriptor()
 	// task.DefaultCreatedAt holds the default value on creation for the created_at field.
 	task.DefaultCreatedAt = taskDescCreatedAt.Default.(func() time.Time)
 	// taskDescUpdatedAt is the schema descriptor for updated_at field.
-	taskDescUpdatedAt := taskFields[11].Descriptor()
+	taskDescUpdatedAt := taskFields[14].Descriptor()
 	// task.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	task.DefaultUpdatedAt = taskDescUpdatedAt.Default.(func() time.Time)
 	// task.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -435,26 +376,6 @@ func init() {
 	tendermeetingDescID := tendermeetingFields[0].Descriptor()
 	// tendermeeting.DefaultID holds the default value on creation for the id field.
 	tendermeeting.DefaultID = tendermeetingDescID.Default.(func() uuid.UUID)
-	timelogFields := schema.TimeLog{}.Fields()
-	_ = timelogFields
-	// timelogDescIsBillable is the schema descriptor for is_billable field.
-	timelogDescIsBillable := timelogFields[8].Descriptor()
-	// timelog.DefaultIsBillable holds the default value on creation for the is_billable field.
-	timelog.DefaultIsBillable = timelogDescIsBillable.Default.(bool)
-	// timelogDescCreatedAt is the schema descriptor for created_at field.
-	timelogDescCreatedAt := timelogFields[9].Descriptor()
-	// timelog.DefaultCreatedAt holds the default value on creation for the created_at field.
-	timelog.DefaultCreatedAt = timelogDescCreatedAt.Default.(func() time.Time)
-	// timelogDescUpdatedAt is the schema descriptor for updated_at field.
-	timelogDescUpdatedAt := timelogFields[10].Descriptor()
-	// timelog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	timelog.DefaultUpdatedAt = timelogDescUpdatedAt.Default.(func() time.Time)
-	// timelog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	timelog.UpdateDefaultUpdatedAt = timelogDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// timelogDescID is the schema descriptor for id field.
-	timelogDescID := timelogFields[0].Descriptor()
-	// timelog.DefaultID holds the default value on creation for the id field.
-	timelog.DefaultID = timelogDescID.Default.(func() uuid.UUID)
 	userroleFields := schema.UserRole{}.Fields()
 	_ = userroleFields
 	// userroleDescAssignedAt is the schema descriptor for assigned_at field.

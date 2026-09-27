@@ -96,6 +96,21 @@ func DueDate(v time.Time) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldDueDate, v))
 }
 
+// StartDate applies equality check predicate on the "start_date" field. It's identical to StartDateEQ.
+func StartDate(v time.Time) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldStartDate, v))
+}
+
+// EstimatedHours applies equality check predicate on the "estimated_hours" field. It's identical to EstimatedHoursEQ.
+func EstimatedHours(v float64) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldEstimatedHours, v))
+}
+
+// ProgressPct applies equality check predicate on the "progress_pct" field. It's identical to ProgressPctEQ.
+func ProgressPct(v int) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldProgressPct, v))
+}
+
 // CompletedAt applies equality check predicate on the "completed_at" field. It's identical to CompletedAtEQ.
 func CompletedAt(v time.Time) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldCompletedAt, v))
@@ -549,6 +564,146 @@ func DueDateIsNil() predicate.Task {
 // DueDateNotNil applies the NotNil predicate on the "due_date" field.
 func DueDateNotNil() predicate.Task {
 	return predicate.Task(sql.FieldNotNull(FieldDueDate))
+}
+
+// StartDateEQ applies the EQ predicate on the "start_date" field.
+func StartDateEQ(v time.Time) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldStartDate, v))
+}
+
+// StartDateNEQ applies the NEQ predicate on the "start_date" field.
+func StartDateNEQ(v time.Time) predicate.Task {
+	return predicate.Task(sql.FieldNEQ(FieldStartDate, v))
+}
+
+// StartDateIn applies the In predicate on the "start_date" field.
+func StartDateIn(vs ...time.Time) predicate.Task {
+	return predicate.Task(sql.FieldIn(FieldStartDate, vs...))
+}
+
+// StartDateNotIn applies the NotIn predicate on the "start_date" field.
+func StartDateNotIn(vs ...time.Time) predicate.Task {
+	return predicate.Task(sql.FieldNotIn(FieldStartDate, vs...))
+}
+
+// StartDateGT applies the GT predicate on the "start_date" field.
+func StartDateGT(v time.Time) predicate.Task {
+	return predicate.Task(sql.FieldGT(FieldStartDate, v))
+}
+
+// StartDateGTE applies the GTE predicate on the "start_date" field.
+func StartDateGTE(v time.Time) predicate.Task {
+	return predicate.Task(sql.FieldGTE(FieldStartDate, v))
+}
+
+// StartDateLT applies the LT predicate on the "start_date" field.
+func StartDateLT(v time.Time) predicate.Task {
+	return predicate.Task(sql.FieldLT(FieldStartDate, v))
+}
+
+// StartDateLTE applies the LTE predicate on the "start_date" field.
+func StartDateLTE(v time.Time) predicate.Task {
+	return predicate.Task(sql.FieldLTE(FieldStartDate, v))
+}
+
+// StartDateIsNil applies the IsNil predicate on the "start_date" field.
+func StartDateIsNil() predicate.Task {
+	return predicate.Task(sql.FieldIsNull(FieldStartDate))
+}
+
+// StartDateNotNil applies the NotNil predicate on the "start_date" field.
+func StartDateNotNil() predicate.Task {
+	return predicate.Task(sql.FieldNotNull(FieldStartDate))
+}
+
+// EstimatedHoursEQ applies the EQ predicate on the "estimated_hours" field.
+func EstimatedHoursEQ(v float64) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldEstimatedHours, v))
+}
+
+// EstimatedHoursNEQ applies the NEQ predicate on the "estimated_hours" field.
+func EstimatedHoursNEQ(v float64) predicate.Task {
+	return predicate.Task(sql.FieldNEQ(FieldEstimatedHours, v))
+}
+
+// EstimatedHoursIn applies the In predicate on the "estimated_hours" field.
+func EstimatedHoursIn(vs ...float64) predicate.Task {
+	return predicate.Task(sql.FieldIn(FieldEstimatedHours, vs...))
+}
+
+// EstimatedHoursNotIn applies the NotIn predicate on the "estimated_hours" field.
+func EstimatedHoursNotIn(vs ...float64) predicate.Task {
+	return predicate.Task(sql.FieldNotIn(FieldEstimatedHours, vs...))
+}
+
+// EstimatedHoursGT applies the GT predicate on the "estimated_hours" field.
+func EstimatedHoursGT(v float64) predicate.Task {
+	return predicate.Task(sql.FieldGT(FieldEstimatedHours, v))
+}
+
+// EstimatedHoursGTE applies the GTE predicate on the "estimated_hours" field.
+func EstimatedHoursGTE(v float64) predicate.Task {
+	return predicate.Task(sql.FieldGTE(FieldEstimatedHours, v))
+}
+
+// EstimatedHoursLT applies the LT predicate on the "estimated_hours" field.
+func EstimatedHoursLT(v float64) predicate.Task {
+	return predicate.Task(sql.FieldLT(FieldEstimatedHours, v))
+}
+
+// EstimatedHoursLTE applies the LTE predicate on the "estimated_hours" field.
+func EstimatedHoursLTE(v float64) predicate.Task {
+	return predicate.Task(sql.FieldLTE(FieldEstimatedHours, v))
+}
+
+// EstimatedHoursIsNil applies the IsNil predicate on the "estimated_hours" field.
+func EstimatedHoursIsNil() predicate.Task {
+	return predicate.Task(sql.FieldIsNull(FieldEstimatedHours))
+}
+
+// EstimatedHoursNotNil applies the NotNil predicate on the "estimated_hours" field.
+func EstimatedHoursNotNil() predicate.Task {
+	return predicate.Task(sql.FieldNotNull(FieldEstimatedHours))
+}
+
+// ProgressPctEQ applies the EQ predicate on the "progress_pct" field.
+func ProgressPctEQ(v int) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldProgressPct, v))
+}
+
+// ProgressPctNEQ applies the NEQ predicate on the "progress_pct" field.
+func ProgressPctNEQ(v int) predicate.Task {
+	return predicate.Task(sql.FieldNEQ(FieldProgressPct, v))
+}
+
+// ProgressPctIn applies the In predicate on the "progress_pct" field.
+func ProgressPctIn(vs ...int) predicate.Task {
+	return predicate.Task(sql.FieldIn(FieldProgressPct, vs...))
+}
+
+// ProgressPctNotIn applies the NotIn predicate on the "progress_pct" field.
+func ProgressPctNotIn(vs ...int) predicate.Task {
+	return predicate.Task(sql.FieldNotIn(FieldProgressPct, vs...))
+}
+
+// ProgressPctGT applies the GT predicate on the "progress_pct" field.
+func ProgressPctGT(v int) predicate.Task {
+	return predicate.Task(sql.FieldGT(FieldProgressPct, v))
+}
+
+// ProgressPctGTE applies the GTE predicate on the "progress_pct" field.
+func ProgressPctGTE(v int) predicate.Task {
+	return predicate.Task(sql.FieldGTE(FieldProgressPct, v))
+}
+
+// ProgressPctLT applies the LT predicate on the "progress_pct" field.
+func ProgressPctLT(v int) predicate.Task {
+	return predicate.Task(sql.FieldLT(FieldProgressPct, v))
+}
+
+// ProgressPctLTE applies the LTE predicate on the "progress_pct" field.
+func ProgressPctLTE(v int) predicate.Task {
+	return predicate.Task(sql.FieldLTE(FieldProgressPct, v))
 }
 
 // CompletedAtEQ applies the EQ predicate on the "completed_at" field.

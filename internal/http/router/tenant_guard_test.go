@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	httpware "github.com/Bengo-Hub/httpware"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"github.com/go-chi/chi/v5"
 )
@@ -19,10 +20,14 @@ func guarded(t *testing.T, claims *authclient.Claims, path, header string) (int,
 	t.Helper()
 	var seenHeader string
 	r := chi.NewRouter()
+	r.Use(httpware.Tenant) // as in production: the header is copied into the context first
 	r.Route("/{tenantID}", func(tr chi.Router) {
 		tr.Use(requireOwnTenant)
 		tr.Get("/projects", func(w http.ResponseWriter, r *http.Request) {
 			seenHeader = r.Header.Get("X-Tenant-ID")
+			if ctxTenant := httpware.GetTenantID(r.Context()); ctxTenant != seenHeader {
+				t.Errorf("context tenant %q differs from header %q", ctxTenant, seenHeader)
+			}
 			w.WriteHeader(http.StatusOK)
 		})
 	})

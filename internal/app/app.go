@@ -24,7 +24,9 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/cache"
 	"github.com/bengobox/projects-service/internal/platform/database"
 	"github.com/bengobox/projects-service/internal/platform/events"
+	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/comments"
+	"github.com/bengobox/projects-service/internal/services/financials"
 	"github.com/bengobox/projects-service/internal/services/members"
 	"github.com/bengobox/projects-service/internal/services/milestones"
 	projectssvc "github.com/bengobox/projects-service/internal/services/projects"
@@ -79,6 +81,9 @@ func New(ctx context.Context) (*App, error) {
 			return nil, fmt.Errorf("sql open for migrations: %w", err)
 		}
 		defer sqlDB.Close()
+		if err := database.DropRetiredTables(ctx, sqlDB); err != nil {
+			return nil, err
+		}
 		drv := entsql.OpenDB(dialect.Postgres, sqlDB)
 		entClient := ent.NewClient(ent.Driver(drv))
 		defer entClient.Close()
@@ -133,6 +138,10 @@ func New(ctx context.Context) (*App, error) {
 	commentHandler := handlers.NewCommentHandler(log, commentService)
 	activityHandler := handlers.NewActivityHandler(log, entClient)
 	tenderHandler := handlers.NewTenderHandler(log, tenderService)
+	// Project money lives in treasury (budgets, booked costs); financials joins it with task
+	// progress for earned value.
+	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey)
+	financialsHandler := handlers.NewFinancialsHandler(log, financials.NewService(entClient, treasuryClient, log))
 
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
@@ -179,7 +188,7 @@ func New(ctx context.Context) (*App, error) {
 
 	chiRouter := router.New(log, healthHandler, userHandler,
 		projectHandler, taskHandler, milestoneHandler, memberHandler,
-		commentHandler, activityHandler, tenderHandler,
+		commentHandler, activityHandler, tenderHandler, financialsHandler,
 		authMiddleware, cfg.HTTP.AllowedOrigins)
 
 	httpServer := &http.Server{

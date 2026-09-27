@@ -114,6 +114,48 @@ func (tc *TaskCreate) SetNillableDueDate(t *time.Time) *TaskCreate {
 	return tc
 }
 
+// SetStartDate sets the "start_date" field.
+func (tc *TaskCreate) SetStartDate(t time.Time) *TaskCreate {
+	tc.mutation.SetStartDate(t)
+	return tc
+}
+
+// SetNillableStartDate sets the "start_date" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableStartDate(t *time.Time) *TaskCreate {
+	if t != nil {
+		tc.SetStartDate(*t)
+	}
+	return tc
+}
+
+// SetEstimatedHours sets the "estimated_hours" field.
+func (tc *TaskCreate) SetEstimatedHours(f float64) *TaskCreate {
+	tc.mutation.SetEstimatedHours(f)
+	return tc
+}
+
+// SetNillableEstimatedHours sets the "estimated_hours" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableEstimatedHours(f *float64) *TaskCreate {
+	if f != nil {
+		tc.SetEstimatedHours(*f)
+	}
+	return tc
+}
+
+// SetProgressPct sets the "progress_pct" field.
+func (tc *TaskCreate) SetProgressPct(i int) *TaskCreate {
+	tc.mutation.SetProgressPct(i)
+	return tc
+}
+
+// SetNillableProgressPct sets the "progress_pct" field if the given value is not nil.
+func (tc *TaskCreate) SetNillableProgressPct(i *int) *TaskCreate {
+	if i != nil {
+		tc.SetProgressPct(*i)
+	}
+	return tc
+}
+
 // SetCompletedAt sets the "completed_at" field.
 func (tc *TaskCreate) SetCompletedAt(t time.Time) *TaskCreate {
 	tc.mutation.SetCompletedAt(t)
@@ -312,6 +354,10 @@ func (tc *TaskCreate) defaults() {
 		v := task.DefaultPriority
 		tc.mutation.SetPriority(v)
 	}
+	if _, ok := tc.mutation.ProgressPct(); !ok {
+		v := task.DefaultProgressPct
+		tc.mutation.SetProgressPct(v)
+	}
 	if _, ok := tc.mutation.CreatedAt(); !ok {
 		v := task.DefaultCreatedAt()
 		tc.mutation.SetCreatedAt(v)
@@ -347,6 +393,9 @@ func (tc *TaskCreate) check() error {
 	}
 	if _, ok := tc.mutation.Priority(); !ok {
 		return &ValidationError{Name: "priority", err: errors.New(`ent: missing required field "Task.priority"`)}
+	}
+	if _, ok := tc.mutation.ProgressPct(); !ok {
+		return &ValidationError{Name: "progress_pct", err: errors.New(`ent: missing required field "Task.progress_pct"`)}
 	}
 	if _, ok := tc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Task.created_at"`)}
@@ -419,6 +468,18 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.DueDate(); ok {
 		_spec.SetField(task.FieldDueDate, field.TypeTime, value)
 		_node.DueDate = value
+	}
+	if value, ok := tc.mutation.StartDate(); ok {
+		_spec.SetField(task.FieldStartDate, field.TypeTime, value)
+		_node.StartDate = &value
+	}
+	if value, ok := tc.mutation.EstimatedHours(); ok {
+		_spec.SetField(task.FieldEstimatedHours, field.TypeFloat64, value)
+		_node.EstimatedHours = &value
+	}
+	if value, ok := tc.mutation.ProgressPct(); ok {
+		_spec.SetField(task.FieldProgressPct, field.TypeInt, value)
+		_node.ProgressPct = value
 	}
 	if value, ok := tc.mutation.CompletedAt(); ok {
 		_spec.SetField(task.FieldCompletedAt, field.TypeTime, value)

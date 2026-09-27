@@ -34,8 +34,8 @@ type CreateTaskInput struct {
 	Status         string         `json:"status"`
 	Priority       string         `json:"priority"`
 	AssigneeID     *uuid.UUID     `json:"assignee_id"`
-	DueDate        *time.Time     `json:"due_date"`
-	StartDate      *time.Time     `json:"start_date"`
+	DueDate        *Date          `json:"due_date"`
+	StartDate      *Date          `json:"start_date"`
 	EstimatedHours *float64       `json:"estimated_hours"`
 	ProgressPct    *int           `json:"progress_pct"`
 	ParentID       *uuid.UUID     `json:"parent_id"`
@@ -50,8 +50,8 @@ type UpdateTaskInput struct {
 	Status         *string        `json:"status"`
 	Priority       *string        `json:"priority"`
 	AssigneeID     *uuid.UUID     `json:"assignee_id"`
-	DueDate        *time.Time     `json:"due_date"`
-	StartDate      *time.Time     `json:"start_date"`
+	DueDate        *Date          `json:"due_date"`
+	StartDate      *Date          `json:"start_date"`
 	EstimatedHours *float64       `json:"estimated_hours"`
 	ProgressPct    *int           `json:"progress_pct"`
 	ParentID       *uuid.UUID     `json:"parent_id"`
@@ -161,10 +161,10 @@ func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID,
 		c = c.SetAssigneeID(*input.AssigneeID)
 	}
 	if input.DueDate != nil {
-		c = c.SetDueDate(*input.DueDate)
+		c = c.SetDueDate(input.DueDate.Time)
 	}
 	if input.StartDate != nil {
-		c = c.SetStartDate(*input.StartDate)
+		c = c.SetStartDate(input.StartDate.Time)
 	}
 	if input.EstimatedHours != nil {
 		c = c.SetEstimatedHours(*input.EstimatedHours)
@@ -224,10 +224,10 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 		u = u.SetAssigneeID(*input.AssigneeID)
 	}
 	if input.DueDate != nil {
-		u = u.SetDueDate(*input.DueDate)
+		u = u.SetDueDate(input.DueDate.Time)
 	}
 	if input.StartDate != nil {
-		u = u.SetStartDate(*input.StartDate)
+		u = u.SetStartDate(input.StartDate.Time)
 	}
 	if input.EstimatedHours != nil {
 		u = u.SetEstimatedHours(*input.EstimatedHours)

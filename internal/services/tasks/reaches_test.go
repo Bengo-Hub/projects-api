@@ -24,3 +24,26 @@ func TestReaches(t *testing.T) {
 		t.Error("a node reaches itself")
 	}
 }
+
+func TestDateAcceptsPlainAndRFC3339(t *testing.T) {
+	for in, want := range map[string]string{
+		`"2026-10-01"`:           "2026-10-01",
+		`"2026-10-01T09:30:00Z"`: "2026-10-01",
+		`"2026-10-01T09:30:00"`:  "2026-10-01",
+	} {
+		var d Date
+		if err := d.UnmarshalJSON([]byte(in)); err != nil {
+			t.Fatalf("%s: %v", in, err)
+		}
+		if got := d.Format("2006-01-02"); got != want {
+			t.Errorf("%s = %s, want %s", in, got, want)
+		}
+	}
+	var d Date
+	if err := d.UnmarshalJSON([]byte(`"01/10/2026"`)); err == nil {
+		t.Error("an unknown format must be refused")
+	}
+	if err := d.UnmarshalJSON([]byte(`""`)); err != nil || !d.IsZero() {
+		t.Error("empty is no date")
+	}
+}

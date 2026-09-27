@@ -1,5 +1,7 @@
 # Sprint 6: Resource Management
 
+**Status**: Planned (verified against code 2026-09-27). No resource pool, allocation or capacity code exists. Utilisation from ERP timesheet hours is In progress (plan budgets-planning-projects-bi-2026-09-27, Phase 3); the rest is in `docs/backlog.md`.
+
 **Duration**: 2 weeks  
 **Sprint Goal**: Implement organizational resource pool, allocation, and capacity planning.  
 **Team Size**: x developers  

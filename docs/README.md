@@ -15,20 +15,22 @@ Welcome to the Projects Service documentation. This service provides world-class
 
 ### Sprint Planning
 
-| Sprint | Duration | Focus | Document |
-|--------|----------|-------|----------|
-| **Sprint 0** | 2 weeks | ✅ Foundations (COMPLETED) | - |
-| **Sprint 1** | 4 weeks | Tender Management | [sprint-1-tender-management.md](sprints/sprint-1-tender-management.md) |
-| **Sprint 2** | 2 weeks | Tender to Project Conversion | Coming soon |
-| **Sprint 3** | 4 weeks | Project Planning | Coming soon |
-| **Sprint 4** | 3 weeks | Team & Collaboration | Coming soon |
-| **Sprint 5** | 3 weeks | Time & Budget | Coming soon |
-| **Sprint 6** | 2 weeks | Resource Management | Coming soon |
-| **Sprint 7** | 3 weeks | Governance & Reporting | Coming soon |
-| **Sprint 8** | 2 weeks | Apache Superset Integration | Coming soon |
-| **Sprint 9** | 4 weeks | External Integrations | Coming soon |
-| **Sprint 10** | 3 weeks | AI & Advanced Features | Coming soon |
-| **Sprint 11** | 2 weeks | Polish & Production Readiness | Coming soon |
+Status verified against code 2026-09-27. Open items: [backlog.md](backlog.md).
+
+| Sprint | Duration | Focus | Status | Document |
+|--------|----------|-------|--------|----------|
+| **Sprint 0** | 2 weeks | Foundations | Done | - |
+| **Sprint 1** | 4 weeks | Tender Management | Partially done | [sprint-1](sprints/sprint-1-tender-management.md) |
+| **Sprint 2** | 2 weeks | Tender to Project Conversion | Planned | [sprint-2](sprints/sprint-2-tender-to-project-conversion.md) |
+| **Sprint 3** | 4 weeks | Project Planning | Partially done | [sprint-3](sprints/sprint-3-project-planning.md) |
+| **Sprint 4** | 3 weeks | Team & Collaboration | Partially done | [sprint-4](sprints/sprint-4-team-collaboration.md) |
+| **Sprint 5** | 3 weeks | Time & Budget | Planned; budgets moved to treasury, in progress | [sprint-5](sprints/sprint-5-time-budget.md) |
+| **Sprint 6** | 2 weeks | Resource Management | Planned | [sprint-6](sprints/sprint-6-resource-management.md) |
+| **Sprint 7** | 3 weeks | Governance & Reporting | Partially done | [sprint-7](sprints/sprint-7-governance-reporting.md) |
+| **Sprint 8** | 2 weeks | Apache Superset Integration | Planned, deferred | [sprint-8](sprints/sprint-8-superset-integration.md) |
+| **Sprint 9** | 4 weeks | External Integrations | Planned | [sprint-9](sprints/sprint-9-external-integrations.md) |
+| **Sprint 10** | 3 weeks | AI & Advanced Features | Planned | [sprint-10](sprints/sprint-10-ai-advanced-features.md) |
+| **Sprint 11** | 2 weeks | Polish & Production Readiness | Planned | [sprint-11](sprints/sprint-11-polish-production-readiness.md) |
 
 **Total Estimated Duration**: ~32 weeks (~8 months)
 

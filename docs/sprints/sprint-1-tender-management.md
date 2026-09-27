@@ -1,5 +1,6 @@
 # Sprint 1: Tender Management Module
 
+**Status**: Partially done (verified against code 2026-09-27). Tender CRUD, committees, meetings, evaluations, documents and metrics are live. Not built: tender sections, submissions, go/no-go decisions, meeting platform integrations, tender events, document storage, swagger and any tests (the repo has no `_test.go` files). Known bugs: the metrics response shape does not match projects-ui, and tender page size is uncapped. See `docs/backlog.md`.  
 **Duration**: 4 weeks  
 **Sprint Goal**: Implement complete tender management lifecycle from opportunity identification through submission  
 **Team Size**: x developers  
@@ -354,7 +355,7 @@
 - [ ] Implement submission APIs (deferred — tender submissions entity not yet created)
 - [x] Add input validation with custom validators (JSON decode + field checks in handlers)
 - [x] Add error handling and proper HTTP status codes
-- [x] Generate OpenAPI/Swagger documentation (deferred to Phase 7)
+- [ ] Generate OpenAPI/Swagger documentation (deferred to Phase 7). Was ticked, but no swagger or OpenAPI file exists in the repo (verified 2026-09-27).
 - [x] Implement tender metrics endpoint (GET /tenders/metrics)
 
 ### External Integrations
@@ -511,7 +512,7 @@ projects.tender.lost                    - Tender lost
 
 - [ ] All user stories implemented and tested
 - [ ] All API endpoints implemented with OpenAPI docs
-- [ ] Database migrations created and tested
+- [x] Database migrations created and tested
 - [ ] Integration with meeting platforms working
 - [ ] Integration with notifications service working
 - [ ] Unit test coverage >80%

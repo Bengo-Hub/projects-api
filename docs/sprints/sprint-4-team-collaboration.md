@@ -1,5 +1,7 @@
 # Sprint 4: Team & Collaboration
 
+**Status**: Partially done (verified against code 2026-09-27). Project members, task comments, project and task activity feeds and RBAC roles are live. Not built: @mentions, attachment routes (the `attachment` table is unused), WebSocket updates, and pagination on comments and members. See `docs/backlog.md`.
+
 **Duration**: 3 weeks  
 **Sprint Goal**: Implement team management, real-time collaboration, and activity tracking.  
 **Team Size**: x developers  

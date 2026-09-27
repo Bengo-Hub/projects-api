@@ -1,5 +1,7 @@
 # Sprint 2: Tender to Project Conversion
 
+**Status**: Planned (verified against code 2026-09-27). There is no conversion route or service, projects carry no tender link, and no charter or stakeholder register exists. See `docs/backlog.md`.
+
 **Duration**: 2 weeks  
 **Sprint Goal**: Implement the seamless transition from an awarded tender to a live project.  
 **Team Size**: x developers  

@@ -1,5 +1,7 @@
 # Sprint 5: Time & Budget
 
+**Status**: Planned, with the budget part replaced (verified against code 2026-09-27). The `Budget`, `Expense` and `TimeLog` Ent schemas exist but have no service, handler or route; the only finance field is `Project.budget`. Decision (2026-09-27): treasury owns all budgets. These dead tables are being dropped, and projects will read budgets and financials from treasury over S2S, with timesheet hours from ERP. In progress (plan budgets-planning-projects-bi-2026-09-27, Phase 3). Timers and signing sheets are not planned yet. See `docs/backlog.md`.
+
 **Duration**: 3 weeks  
 **Sprint Goal**: Implement time tracking, budget management, and integration with the Treasury Service.  
 **Team Size**: x developers  

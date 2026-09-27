@@ -56,6 +56,8 @@ This document provides detailed integration information for all external service
 
 ### Treasury App
 
+> **Status (verified 2026-09-27): not integrated.** projects-api has no treasury client and publishes only `project.milestone.reached`. `treasury.budget.approved` and `treasury.budget.rejected` are not emitted by treasury yet, and treasury consumes no `projects.*` event. Decision: treasury owns all budgets; projects will read budget and financials through `GET /s2s/{tenant}/projects/{id}/financials` and proxy budget edits to treasury budgets of `budget_type=project`. In progress (plan budgets-planning-projects-bi-2026-09-27, Phase 3). The design below predates that decision.
+
 **Integration Type**: REST API + Events (NATS)
 
 **Use Cases**:

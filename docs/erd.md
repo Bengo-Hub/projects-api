@@ -31,7 +31,9 @@ CREATE EXTENSION IF NOT EXISTS "postgis";        -- Geospatial (optional for loc
 
 ---
 
-## Implementation Status (2026-05-22)
+## Implementation Status (2026-05-22, corrected 2026-09-27)
+
+> Re-verified against code 2026-09-27. `activities` now has a schema and read routes. `budgets`, `expenses` and `time_logs` will never get endpoints here: treasury owns all budgets, hours come from ERP timesheets, and these three tables are being dropped (In progress, plan budgets-planning-projects-bi-2026-09-27). `attachments` has a schema but no routes.
 
 | Entity | Ent Schema | Migration | API Endpoints |
 |--------|-----------|-----------|---------------|
@@ -46,12 +48,13 @@ CREATE EXTENSION IF NOT EXISTS "postgis";        -- Geospatial (optional for loc
 | `milestones` | ✅ `milestone.go` | ✅ pre-existing | ✅ CRUD |
 | `members` | ✅ `member.go` | ✅ pre-existing | ✅ CRUD |
 | `comments` | ✅ `comment.go` | ✅ pre-existing | ✅ CRUD |
-| `budgets` | ✅ `budget.go` | ✅ 20260522 | ❌ Sprint 5 |
-| `expenses` | ✅ `expense.go` | ✅ 20260522 | ❌ Sprint 5 |
-| `time_logs` | ✅ `timelog.go` | ✅ 20260522 | ❌ Sprint 5 |
+| `budgets` | Dead `budget.go` | ✅ 20260522 | Not planned; being dropped (treasury owns budgets) |
+| `expenses` | Dead `expense.go` | ✅ 20260522 | Not planned; being dropped (treasury owns expenses) |
+| `time_logs` | Dead `timelog.go` | ✅ 20260522 | Not planned; being dropped (ERP timesheets) |
+| `attachments` | ✅ `attachment.go` | ✅ | ❌ no routes |
 | `tender_sections` | ❌ Sprint 1 deferred | — | — |
 | `tender_submissions` | ❌ Sprint 1 deferred | — | — |
-| `activities` | ❌ Sprint 4 | — | — |
+| `activities` | ✅ `activity.go` | ✅ | ✅ project and task activity feeds |
 | `resources` | ❌ Sprint 6 | — | — |
 | `governance` | ❌ Sprint 7 | — | — |
 
@@ -644,6 +647,8 @@ CREATE INDEX idx_deliverables_status ON deliverables(status, project_id);
 ---
 
 ## 4. Resource & Budget Entities
+
+> **Superseded 2026-09-27 for budgets, budget lines, expenses, vouchers and time logs.** Treasury owns these. The designs in 4.1 to 4.5 are kept for reference only and will not be built in projects-api. See `.claude/plans/budgets-planning-projects-bi-2026-09-27.md`.
 
 ### 4.1 `budgets`
 

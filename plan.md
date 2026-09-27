@@ -518,13 +518,13 @@ See `docs/erd.md` for complete ERD with all entities, relationships, and vector 
 - `deliverables` - Project deliverables
 
 #### Resource & Budget
-- `resources` - Resource pool
-- `resource_allocations` - Resource assignments
-- `budgets` - Project budgets
-- `budget_lines` - Budget line items
-- `expenses` - Project expenses
-- `vouchers` - Payment vouchers
-- `time_logs` - Time tracking
+
+> **Decision 2026-09-27: treasury owns all budgets.** projects-api will not own `budgets`, `budget_lines`, `expenses` or `vouchers`. The existing `Budget`, `Expense` and `TimeLog` schemas are dead (no service, handler or route) and are being dropped; projects reads budget and financials from treasury over S2S and hours from ERP timesheets. `Project.budget` stays as the BAC mirror. In progress (plan budgets-planning-projects-bi-2026-09-27).
+
+- `resources` - Resource pool (planned)
+- `resource_allocations` - Resource assignments (planned)
+- ~~`budgets`, `budget_lines`, `expenses`, `vouchers`~~ - owned by treasury-api
+- ~~`time_logs`~~ - hours come from ERP timesheets
 
 #### Collaboration
 - `comments` - Task/project comments
@@ -835,6 +835,8 @@ Superset dashboards can be embedded into the Projects Service UI using iframe em
 ## 10. Delivery Roadmap
 
 See `docs/sprints/` for detailed sprint planning.
+
+**Status re-verified against code 2026-09-27:** Sprint 0 done; Sprints 1, 3, 4 and 7 partially done; Sprints 2, 5, 6, 8, 9, 10 and 11 planned. Each sprint doc carries its own status line, and every open item is in [docs/backlog.md](docs/backlog.md). Project finance (budgets via treasury, EVM, portfolio, tender pipeline) is In progress under `.claude/plans/budgets-planning-projects-bi-2026-09-27.md`.
 
 ### Sprint 0: Foundations ✅ (COMPLETED)
 - Project scaffold, config, logging

@@ -1,5 +1,7 @@
 # Sprint 3: Project Planning
 
+**Status**: Partially done (verified against code 2026-09-27). Tasks with `parent_id` and `wbs_code`, typed task dependencies, milestones with the `project.milestone.reached` event, and a Gantt data route are live. Open: task `estimated_hours` and `progress_pct` (In progress, plan budgets-planning-projects-bi-2026-09-27), a tenant-scoped single-query dependency cycle check (the current walk is N+1 and not tenant scoped), and capped task pagination. See `docs/backlog.md`.
+
 **Duration**: 4 weeks  
 **Sprint Goal**: Implement core project planning tools including WBS, task dependencies, and Gantt chart support.  
 **Team Size**: x developers  

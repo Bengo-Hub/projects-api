@@ -1,5 +1,7 @@
 # Sprint 11: Polish & Production Readiness
 
+**Status**: Planned (verified against code 2026-09-27). Performance work on tender metrics, pagination caps, summary queries and the dependency check, plus the tenant header check against the JWT claim, are In progress (plan budgets-planning-projects-bi-2026-09-27, Phase 0). There are no tests and no swagger yet.
+
 **Duration**: 2 weeks  
 **Sprint Goal**: Finalize the system for production use, optimize performance, and ensure security compliance.  
 **Team Size**: x developers  

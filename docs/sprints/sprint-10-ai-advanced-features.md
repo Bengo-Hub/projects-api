@@ -1,5 +1,7 @@
 # Sprint 10: AI & Advanced Features
 
+**Status**: Planned (verified against code 2026-09-27). No pgvector column or AI feature exists.
+
 **Duration**: 3 weeks  
 **Sprint Goal**: Implement AI-powered features using pgvector and predictive analytics.  
 **Team Size**: x developers  

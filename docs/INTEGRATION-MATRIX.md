@@ -8,12 +8,14 @@ This document provides a comprehensive matrix of all services and platforms that
 
 ## Internal Codevertex Microservices Integration Matrix
 
+> **Note (verified 2026-09-27):** "Production" in the Status column means the other service runs in production, not that projects-api integrates with it. In code today projects-api only talks to auth-api (JWT, user sync) and publishes `project.milestone.reached`. It has no ERP, CRM or treasury client. Treasury and ERP timesheet integration is in progress under plan budgets-planning-projects-bi-2026-09-27.
+
 | Service | Location | Status | Integration Type | Data Flow | Key Use Cases |
 |---------|----------|--------|------------------|-----------|---------------|
 | **Auth Service** | `auth-service/` | ✅ Production | REST API + Events | Bi-directional | • JWT validation (JWKS)<br>• User synchronization<br>• Tenant management<br>• SSO authentication |
 | **HRM (ERP)** | `erp/erp-api/` | ✅ Production | REST API + Events | Projects → HRM (read)<br>HRM → Projects (events) | • Employee directory<br>• Organizational structure<br>• Leave calendar<br>• Skill matrix<br>• Performance linking |
-| **Treasury** | `treasury-api/` | ✅ Production | REST API + Events | Bi-directional | • Budget approval<br>• Voucher processing<br>• Payment tracking<br>• Expense recording<br>• Cost center allocation |
-| **Finance (ERP)** | `erp/erp-api/` | ✅ Production | REST API | Projects → Finance (read) | • Invoice management<br>• Cost center lookup<br>• Financial reporting<br>• Budget integration |
+| **Treasury** | `treasury-api/` | Not integrated yet (verified 2026-09-27); in progress under plan budgets-planning-projects-bi-2026-09-27 | REST API (S2S) | Projects reads budgets and financials from treasury | • Budget approval<br>• Voucher processing<br>• Payment tracking<br>• Expense recording<br>• Cost center allocation |
+| **Finance (ERP)** | `erp/erp-api/` | Not applicable: ERP is HR and payroll only, finance lives in treasury-api (verified 2026-09-27) | REST API | Projects → Finance (read) | • Invoice management<br>• Cost center lookup<br>• Financial reporting<br>• Budget integration |
 | **CRM (ERP)** | `erp/erp-api/` | ✅ Production | REST API + Events | Bi-directional | • Client information<br>• Opportunity tracking<br>• Contact management<br>• Client portal<br>• Feedback collection |
 | **Notifications** | `notifications-service/notifications-api/` | ✅ Production | Events (NATS) | Projects → Notifications | • Task assignments<br>• Deadline reminders<br>• Status changes<br>• Comment mentions<br>• Meeting reminders<br>• Budget alerts |
 | **Logistics** | `logistics-service/` | ⚙️ Development | REST API + Events | Bi-directional | • Delivery coordination<br>• Resource transportation<br>• Site logistics<br>• Proof of delivery |

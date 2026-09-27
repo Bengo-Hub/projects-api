@@ -1,5 +1,7 @@
 # Projects Service - Apache Superset Integration
 
+> **Status (verified 2026-09-27): Planned, not built.** No Superset views, client or embed route exist in projects-api. The budget queries in this doc assume project-owned `budgets` and `expenses` tables, which are being dropped because treasury owns budgets. Tracked in `docs/backlog.md`.
+
 ## Overview
 
 The Projects service integrates with the centralized Apache Superset instance for BI dashboards, analytics, and reporting. Superset is deployed as a centralized service accessible to all Codevertex services.

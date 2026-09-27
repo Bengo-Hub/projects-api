@@ -1,5 +1,7 @@
 # Sprint 9: External Integrations
 
+**Status**: Planned (verified against code 2026-09-27). No Google, Microsoft, Zoom or storage integration exists.
+
 **Duration**: 4 weeks  
 **Sprint Goal**: Integrate with external collaboration and productivity tools.  
 **Team Size**: x developers  

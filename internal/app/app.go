@@ -99,6 +99,13 @@ func New(ctx context.Context) (*App, error) {
 	if err != nil {
 		log.Warn("event bus connection failed", zap.Error(err))
 	}
+	// The projects stream (project.>) must exist before the outbox can publish: without it every
+	// project.* event, milestone emails included, had nowhere to go.
+	if natsConn != nil {
+		if err := events.EnsureStream(ctx, natsConn, cfg.Events); err != nil {
+			log.Warn("projects event stream not ensured", zap.Error(err))
+		}
+	}
 
 	healthHandler := handlers.NewHealthHandler(log, dbPool, redisClient, natsConn)
 

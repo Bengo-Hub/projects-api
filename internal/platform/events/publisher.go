@@ -54,3 +54,10 @@ func (p *Publisher) publish(ctx context.Context, aggregateType, eventType string
 func (p *Publisher) PublishMilestoneReached(ctx context.Context, tenantID, milestoneID uuid.UUID, payload map[string]any) error {
 	return p.publish(ctx, "project", "milestone.reached", milestoneID, tenantID, payload)
 }
+
+// PublishProjectEvent emits project.{created,updated,closed,deleted} with the project as the
+// aggregate. treasury-api closes a project's budgets and releases its open commitments on
+// closed and deleted.
+func (p *Publisher) PublishProjectEvent(ctx context.Context, tenantID, projectID uuid.UUID, eventType string, payload map[string]any) error {
+	return p.publish(ctx, "project", eventType, projectID, tenantID, payload)
+}

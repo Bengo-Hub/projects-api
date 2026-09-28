@@ -16,9 +16,10 @@ import (
 
 // Service handles project CRUD operations.
 type Service struct {
-	client *ent.Client
-	cache  *sharedcache.Aside
-	log    *zap.Logger
+	client    *ent.Client
+	cache     *sharedcache.Aside
+	log       *zap.Logger
+	publisher Publisher
 }
 
 // NewService creates a new projects service.
@@ -132,6 +133,7 @@ func (s *Service) CreateProject(ctx context.Context, tenantID uuid.UUID, input C
 		return nil, fmt.Errorf("create project: %w", err)
 	}
 	s.log.Info("project created", zap.String("id", p.ID.String()), zap.String("tenant", tenantID.String()))
+	s.emit(ctx, tenantID, p.ID, EventCreated, projectPayload(p))
 	return p, nil
 }
 
@@ -170,9 +172,16 @@ func (s *Service) UpdateProject(ctx context.Context, tenantID, id uuid.UUID, inp
 	if input.Metadata != nil {
 		u = u.SetMetadata(input.Metadata)
 	}
+	prevStatus := p.Status
 	updated, err := u.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("update project: %w", err)
+	}
+	payload := projectPayload(updated)
+	payload["previous_status"] = prevStatus
+	s.emit(ctx, tenantID, updated.ID, EventUpdated, payload)
+	if closesProject(prevStatus, updated.Status) {
+		s.emit(ctx, tenantID, updated.ID, EventClosed, payload)
 	}
 	return updated, nil
 }
@@ -187,6 +196,7 @@ func (s *Service) DeleteProject(ctx context.Context, tenantID, id uuid.UUID) err
 	if n == 0 {
 		return ErrNotFound
 	}
+	s.emit(ctx, tenantID, id, EventDeleted, map[string]any{"id": id.String(), "tenant_id": tenantID.String()})
 	return nil
 }
 

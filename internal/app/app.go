@@ -115,6 +115,8 @@ func New(ctx context.Context) (*App, error) {
 
 	// Initialize all services
 	projectService := projectssvc.NewService(entClient, cacheClient, log)
+	// project.created|updated|closed|deleted: treasury closes a project's budgets on closed/deleted.
+	projectService.SetPublisher(events.NewPublisher(runtimeSQLDB, log))
 	taskService := tasks.NewService(entClient, cacheClient, log)
 	milestoneService := milestones.NewService(entClient, cacheClient, log)
 	memberService := members.NewService(entClient, cacheClient, log)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,6 +13,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	enttask "github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/platform/erp"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 )
 
@@ -25,8 +27,57 @@ const maxPortfolioPage = 100
 type Service struct {
 	client   *ent.Client
 	treasury *treasury.Client
+	erp      *erp.Client
 	log      *zap.Logger
 	now      func() time.Time
+}
+
+// WithERP wires timesheet hours for utilisation. Optional: without it hours are not reported.
+func (s *Service) WithERP(c *erp.Client) *Service {
+	s.erp = c
+	return s
+}
+
+// Hours compares the time logged in ERP timesheets with the tasks' estimates.
+type Hours struct {
+	Estimated float64 `json:"estimated"`
+	Logged    float64 `json:"logged"`  // approved timesheet hours
+	Pending   float64 `json:"pending"` // submitted, awaiting approval
+	// UtilisationPct is logged over estimated; nil without estimates.
+	UtilisationPct *float64 `json:"utilisation_pct"`
+}
+
+// projectHours fetches logged hours for a page of projects; nil when ERP is not wired or fails
+// (the rest of the financials still render).
+func (s *Service) projectHours(ctx context.Context, tenantID uuid.UUID, ids []uuid.UUID) map[uuid.UUID]erp.Hours {
+	if !s.erp.Enabled() {
+		return nil
+	}
+	h, err := s.erp.ProjectHours(ctx, tenantID, ids)
+	if err != nil {
+		s.log.Warn("erp project hours unavailable", zap.Error(err))
+		return nil
+	}
+	return h
+}
+
+// hoursSummary builds Hours from the tasks' estimates and the logged time.
+func hoursSummary(tasks []taskRow, logged *erp.Hours) *Hours {
+	h := &Hours{}
+	for _, t := range tasks {
+		if t.EstimatedHours != nil {
+			h.Estimated += *t.EstimatedHours
+		}
+	}
+	if logged == nil {
+		return h
+	}
+	h.Logged, h.Pending = logged.ApprovedHours, logged.SubmittedHours
+	if h.Estimated > 0 {
+		u := math.Round(h.Logged/h.Estimated*1000) / 10
+		h.UtilisationPct = &u
+	}
+	return h
 }
 
 func NewService(client *ent.Client, tc *treasury.Client, log *zap.Logger) *Service {
@@ -50,6 +101,7 @@ type ProjectFinancials struct {
 	TasksTotal   int                         `json:"tasks_total"`
 	TasksDone    int                         `json:"tasks_done"`
 	TasksOverdue int                         `json:"tasks_overdue"`
+	Hours        *Hours                      `json:"hours,omitempty"`
 }
 
 // taskRow is the task data one EVM needs (selected columns only).
@@ -79,7 +131,7 @@ func (s *Service) loadTasks(ctx context.Context, tenantID uuid.UUID, projectIDs 
 	return out, nil
 }
 
-func (s *Service) build(p *ent.Project, tasks []taskRow, money *treasury.ProjectFinancials, moneyErr error, now time.Time) *ProjectFinancials {
+func (s *Service) build(p *ent.Project, tasks []taskRow, money *treasury.ProjectFinancials, moneyErr error, hours map[uuid.UUID]erp.Hours, now time.Time) *ProjectFinancials {
 	pf := &ProjectFinancials{
 		ProjectID: p.ID, Name: p.Name, Status: p.Status, Currency: p.Currency,
 		Money: money,
@@ -114,6 +166,13 @@ func (s *Service) build(p *ent.Project, tasks []taskRow, money *treasury.Project
 		}
 	}
 	pf.EVM = ComputeEVM(bac, ac, work, pf.StartDate, pf.EndDate, now)
+	if hours != nil {
+		var logged *erp.Hours
+		if h, ok := hours[p.ID]; ok {
+			logged = &h
+		}
+		pf.Hours = hoursSummary(tasks, logged)
+	}
 	return pf
 }
 
@@ -139,7 +198,7 @@ func (s *Service) Project(ctx context.Context, tenantID, projectID uuid.UUID) (*
 	} else {
 		s.log.Warn("treasury financials unavailable", zap.String("project", projectID.String()), zap.Error(merr))
 	}
-	return s.build(p, tasks[projectID], m, merr, s.now()), nil
+	return s.build(p, tasks[projectID], m, merr, s.projectHours(ctx, tenantID, []uuid.UUID{projectID}), s.now()), nil
 }
 
 // PortfolioFilter narrows the portfolio.
@@ -182,6 +241,7 @@ func (s *Service) Portfolio(ctx context.Context, tenantID uuid.UUID, f Portfolio
 	if merr != nil {
 		s.log.Warn("treasury portfolio financials unavailable", zap.Error(merr))
 	}
+	hours := s.projectHours(ctx, tenantID, ids)
 	now := s.now()
 	out := make([]*ProjectFinancials, len(projects))
 	for i, p := range projects {
@@ -189,7 +249,7 @@ func (s *Service) Portfolio(ctx context.Context, tenantID uuid.UUID, f Portfolio
 		if f, ok := money[p.ID]; ok {
 			m = &f
 		}
-		out[i] = s.build(p, tasks[p.ID], m, merr, now)
+		out[i] = s.build(p, tasks[p.ID], m, merr, hours, now)
 	}
 	return out, total, nil
 }

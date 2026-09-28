@@ -28,6 +28,8 @@ type ServicesConfig struct {
 	// TreasuryURL is treasury-api, which owns project budgets and costs (in-cluster DNS in
 	// production, see devops-k8s apps/projects-api/values.yaml).
 	TreasuryURL string `envconfig:"TREASURY_SERVICE_URL" default:"https://booksapi.codevertexafrica.com"`
+	// ERPURL is erp-api, read for timesheet hours per project (project utilisation).
+	ERPURL string `envconfig:"ERP_SERVICE_URL" default:"http://erp-api.erp.svc.cluster.local:80"`
 }
 
 type AppConfig struct {

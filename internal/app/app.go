@@ -23,6 +23,7 @@ import (
 	router "github.com/bengobox/projects-service/internal/http/router"
 	"github.com/bengobox/projects-service/internal/platform/cache"
 	"github.com/bengobox/projects-service/internal/platform/database"
+	"github.com/bengobox/projects-service/internal/platform/erp"
 	"github.com/bengobox/projects-service/internal/platform/events"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/comments"
@@ -150,7 +151,8 @@ func New(ctx context.Context) (*App, error) {
 	// Project money lives in treasury (budgets, booked costs); financials joins it with task
 	// progress for earned value.
 	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey)
-	financialsHandler := handlers.NewFinancialsHandler(log, financials.NewService(entClient, treasuryClient, log))
+	erpClient := erp.NewClient(cfg.Services.ERPURL, cfg.Auth.APIKey)
+	financialsHandler := handlers.NewFinancialsHandler(log, financials.NewService(entClient, treasuryClient, log).WithERP(erpClient))
 
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware

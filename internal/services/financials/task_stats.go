@@ -81,7 +81,9 @@ func (s *Service) loadTaskStats(ctx context.Context, tenantID uuid.UUID, project
 			sum("overdue", func(s *entsql.Selector) string {
 				return fmt.Sprintf("CASE WHEN %s <> 'done' AND %s < %s THEN 1 ELSE 0 END", s.C(enttask.FieldStatus), s.C(enttask.FieldDueDate), ts)
 			}),
-			sum("est_sum", func(s *entsql.Selector) string { return fmt.Sprintf("COALESCE(%s, 0)", s.C(enttask.FieldEstimatedHours)) }),
+			sum("est_sum", func(s *entsql.Selector) string {
+				return fmt.Sprintf("COALESCE(%s, 0)", s.C(enttask.FieldEstimatedHours))
+			}),
 			sum("all_total", func(*entsql.Selector) string { return "1" }),
 			sum("all_earned", func(s *entsql.Selector) string { pr, _, _ := exprs(s); return pr }),
 			sum("all_planned", func(s *entsql.Selector) string { _, pl, _ := exprs(s); return pl }),

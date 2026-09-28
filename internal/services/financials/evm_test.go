@@ -115,16 +115,14 @@ func TestHealthAmber(t *testing.T) {
 }
 
 func TestHoursSummary(t *testing.T) {
-	est := func(v float64) *float64 { return &v }
-	tasks := []taskRow{{EstimatedHours: est(10)}, {EstimatedHours: est(30)}, {}}
-	h := hoursSummary(tasks, &erp.Hours{ApprovedHours: 15, SubmittedHours: 4})
+	h := hoursSummary(40, &erp.Hours{ApprovedHours: 15, SubmittedHours: 4})
 	if h.Estimated != 40 || h.Logged != 15 || h.Pending != 4 || h.UtilisationPct == nil || *h.UtilisationPct != 37.5 {
 		t.Fatalf("summary = %+v", h)
 	}
-	if none := hoursSummary(nil, &erp.Hours{ApprovedHours: 5}); none.UtilisationPct != nil {
+	if none := hoursSummary(0, &erp.Hours{ApprovedHours: 5}); none.UtilisationPct != nil {
 		t.Fatal("no estimates: utilisation must be empty, not infinite")
 	}
-	if nolog := hoursSummary(tasks, nil); nolog.Logged != 0 || nolog.Estimated != 40 {
+	if nolog := hoursSummary(40, nil); nolog.Logged != 0 || nolog.Estimated != 40 {
 		t.Fatalf("no logged time: %+v", nolog)
 	}
 }

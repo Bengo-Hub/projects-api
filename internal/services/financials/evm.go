@@ -63,10 +63,16 @@ func plannedFraction(t TaskWork, projStart, projEnd *time.Time, asOf time.Time, 
 	return math.Min(1, math.Max(0, asOf.Sub(*start).Seconds()/total))
 }
 
-// ComputeEVM derives earned value from task progress and the budget. Tasks are weighted by
-// their estimated hours; when no task has an estimate every task weighs the same.
-func ComputeEVM(bac, ac float64, tasks []TaskWork, projStart, projEnd *time.Time, asOf time.Time) EVM {
-	e := EVM{BAC: round2(bac), AC: round2(ac), Health: "none"}
+// Weights are the weighted task totals earned value is computed from: the total weight, the
+// weight earned by progress, and the weight planned done by now. Tasks are weighted by their
+// estimated hours; when no task has an estimate every task weighs the same. The portfolio reads
+// them straight from SQL (taskStats); TaskWeights is the same rule over loaded tasks.
+type Weights struct {
+	Total, Earned, Planned float64
+}
+
+// TaskWeights computes Weights from tasks in Go.
+func TaskWeights(tasks []TaskWork, projStart, projEnd *time.Time, asOf time.Time) Weights {
 	anyEstimate := false
 	for _, t := range tasks {
 		if t.EstimatedHours != nil && *t.EstimatedHours > 0 {
@@ -74,27 +80,38 @@ func ComputeEVM(bac, ac float64, tasks []TaskWork, projStart, projEnd *time.Time
 			break
 		}
 	}
-	var totalW, earnedW, plannedW float64
+	var w Weights
 	for _, t := range tasks {
-		w := 1.0
+		weight := 1.0
 		if anyEstimate {
 			if t.EstimatedHours == nil || *t.EstimatedHours <= 0 {
 				continue
 			}
-			w = *t.EstimatedHours
+			weight = *t.EstimatedHours
 		}
 		p := float64(t.ProgressPct) / 100
 		if t.Done {
 			p = 1
 		}
 		p = math.Min(1, math.Max(0, p))
-		totalW += w
-		earnedW += w * p
-		plannedW += w * plannedFraction(t, projStart, projEnd, asOf, p)
+		w.Total += weight
+		w.Earned += weight * p
+		w.Planned += weight * plannedFraction(t, projStart, projEnd, asOf, p)
 	}
-	if totalW > 0 {
-		e.PercentComplete = round2(earnedW / totalW * 100)
-		e.PercentPlanned = round2(plannedW / totalW * 100)
+	return w
+}
+
+// ComputeEVM derives earned value from task progress and the budget.
+func ComputeEVM(bac, ac float64, tasks []TaskWork, projStart, projEnd *time.Time, asOf time.Time) EVM {
+	return EVMFromWeights(bac, ac, TaskWeights(tasks, projStart, projEnd, asOf))
+}
+
+// EVMFromWeights derives the earned-value figures from task weights, budget and actual cost.
+func EVMFromWeights(bac, ac float64, w Weights) EVM {
+	e := EVM{BAC: round2(bac), AC: round2(ac), Health: "none"}
+	if w.Total > 0 {
+		e.PercentComplete = round2(w.Earned / w.Total * 100)
+		e.PercentPlanned = round2(w.Planned / w.Total * 100)
 	}
 	e.EV = round2(bac * e.PercentComplete / 100)
 	e.PV = round2(bac * e.PercentPlanned / 100)

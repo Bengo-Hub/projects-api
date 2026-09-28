@@ -3,7 +3,6 @@ package financials
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
-	enttask "github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/platform/erp"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 )
@@ -61,14 +59,9 @@ func (s *Service) projectHours(ctx context.Context, tenantID uuid.UUID, ids []uu
 	return h
 }
 
-// hoursSummary builds Hours from the tasks' estimates and the logged time.
-func hoursSummary(tasks []taskRow, logged *erp.Hours) *Hours {
-	h := &Hours{}
-	for _, t := range tasks {
-		if t.EstimatedHours != nil {
-			h.Estimated += *t.EstimatedHours
-		}
-	}
+// hoursSummary builds Hours from the tasks' estimated hours and the logged time.
+func hoursSummary(estimated float64, logged *erp.Hours) *Hours {
+	h := &Hours{Estimated: estimated}
 	if logged == nil {
 		return h
 	}
@@ -104,34 +97,7 @@ type ProjectFinancials struct {
 	Hours        *Hours                      `json:"hours,omitempty"`
 }
 
-// taskRow is the task data one EVM needs (selected columns only).
-type taskRow struct {
-	ProjectID      uuid.UUID  `json:"project_id"`
-	Status         string     `json:"status"`
-	StartDate      *time.Time `json:"start_date"`
-	DueDate        *time.Time `json:"due_date"`
-	EstimatedHours *float64   `json:"estimated_hours"`
-	ProgressPct    int        `json:"progress_pct"`
-}
-
-// loadTasks reads the EVM columns of every task of the given projects in one query.
-func (s *Service) loadTasks(ctx context.Context, tenantID uuid.UUID, projectIDs []uuid.UUID) (map[uuid.UUID][]taskRow, error) {
-	var rows []taskRow
-	if err := s.client.Task.Query().
-		Where(enttask.TenantID(tenantID), enttask.ProjectIDIn(projectIDs...)).
-		Select(enttask.FieldProjectID, enttask.FieldStatus, enttask.FieldStartDate, enttask.FieldDueDate,
-			enttask.FieldEstimatedHours, enttask.FieldProgressPct).
-		Scan(ctx, &rows); err != nil {
-		return nil, fmt.Errorf("load tasks: %w", err)
-	}
-	out := make(map[uuid.UUID][]taskRow, len(projectIDs))
-	for _, r := range rows {
-		out[r.ProjectID] = append(out[r.ProjectID], r)
-	}
-	return out, nil
-}
-
-func (s *Service) build(p *ent.Project, tasks []taskRow, money *treasury.ProjectFinancials, moneyErr error, hours map[uuid.UUID]erp.Hours, now time.Time) *ProjectFinancials {
+func (s *Service) build(p *ent.Project, stats taskStats, money *treasury.ProjectFinancials, moneyErr error, hours map[uuid.UUID]erp.Hours) *ProjectFinancials {
 	pf := &ProjectFinancials{
 		ProjectID: p.ID, Name: p.Name, Status: p.Status, Currency: p.Currency,
 		Money: money,
@@ -147,17 +113,7 @@ func (s *Service) build(p *ent.Project, tasks []taskRow, money *treasury.Project
 	if moneyErr != nil {
 		pf.MoneyError = "treasury unavailable"
 	}
-	work := make([]TaskWork, 0, len(tasks))
-	for _, t := range tasks {
-		done := t.Status == "done"
-		pf.TasksTotal++
-		if done {
-			pf.TasksDone++
-		} else if t.DueDate != nil && t.DueDate.Before(now) {
-			pf.TasksOverdue++
-		}
-		work = append(work, TaskWork{Start: t.StartDate, Due: t.DueDate, EstimatedHours: t.EstimatedHours, ProgressPct: t.ProgressPct, Done: done})
-	}
+	pf.TasksTotal, pf.TasksDone, pf.TasksOverdue = stats.Total, stats.Done, stats.Overdue
 	bac, ac := 0.0, 0.0
 	if money != nil {
 		bac, ac = float64(money.BudgetCost), float64(money.ActualCost)
@@ -165,13 +121,13 @@ func (s *Service) build(p *ent.Project, tasks []taskRow, money *treasury.Project
 			pf.Currency = money.Currency
 		}
 	}
-	pf.EVM = ComputeEVM(bac, ac, work, pf.StartDate, pf.EndDate, now)
+	pf.EVM = EVMFromWeights(bac, ac, stats.weights())
 	if hours != nil {
 		var logged *erp.Hours
 		if h, ok := hours[p.ID]; ok {
 			logged = &h
 		}
-		pf.Hours = hoursSummary(tasks, logged)
+		pf.Hours = hoursSummary(stats.EstSum, logged)
 	}
 	return pf
 }
@@ -185,7 +141,8 @@ func (s *Service) Project(ctx context.Context, tenantID, projectID uuid.UUID) (*
 		}
 		return nil, err
 	}
-	tasks, err := s.loadTasks(ctx, tenantID, []uuid.UUID{projectID})
+	now := s.now()
+	stats, err := s.loadTaskStats(ctx, tenantID, []uuid.UUID{projectID}, now)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +155,7 @@ func (s *Service) Project(ctx context.Context, tenantID, projectID uuid.UUID) (*
 	} else {
 		s.log.Warn("treasury financials unavailable", zap.String("project", projectID.String()), zap.Error(merr))
 	}
-	return s.build(p, tasks[projectID], m, merr, s.projectHours(ctx, tenantID, []uuid.UUID{projectID}), s.now()), nil
+	return s.build(p, stats[projectID], m, merr, s.projectHours(ctx, tenantID, []uuid.UUID{projectID})), nil
 }
 
 // PortfolioFilter narrows the portfolio.
@@ -233,7 +190,8 @@ func (s *Service) Portfolio(ctx context.Context, tenantID uuid.UUID, f Portfolio
 	for i, p := range projects {
 		ids[i] = p.ID
 	}
-	tasks, err := s.loadTasks(ctx, tenantID, ids)
+	now := s.now()
+	stats, err := s.loadTaskStats(ctx, tenantID, ids, now)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -242,14 +200,13 @@ func (s *Service) Portfolio(ctx context.Context, tenantID uuid.UUID, f Portfolio
 		s.log.Warn("treasury portfolio financials unavailable", zap.Error(merr))
 	}
 	hours := s.projectHours(ctx, tenantID, ids)
-	now := s.now()
 	out := make([]*ProjectFinancials, len(projects))
 	for i, p := range projects {
 		var m *treasury.ProjectFinancials
 		if f, ok := money[p.ID]; ok {
 			m = &f
 		}
-		out[i] = s.build(p, tasks[p.ID], m, merr, hours, now)
+		out[i] = s.build(p, stats[p.ID], m, merr, hours)
 	}
 	return out, total, nil
 }

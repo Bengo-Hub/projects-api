@@ -1,30 +1,32 @@
 # Projects API Backlog
 
-**Last updated:** 2026-09-27. Built by checking `plan.md`, `docs/sprints/*.md`, `docs/erd.md` and `docs/integrations.md` against the code. Each item names the doc it came from. Items marked **In progress (plan budgets-planning-projects-bi-2026-09-27)** are being built now under `.claude/plans/budgets-planning-projects-bi-2026-09-27.md`; do not start them separately. UI gaps live in `projects-service/projects-ui/docs/backlog.md`.
+**Last updated:** 2026-09-28. Built by checking `plan.md`, `docs/sprints/*.md`, `docs/erd.md` and `docs/integrations.md` against the code. Each item names the doc it came from. The budgets, planning, project costing and BI plan is complete here; its items are under Done. UI gaps live in `projects-service/projects-ui/docs/backlog.md`.
 
-## Correctness and security
+## Project finance, open
 
-All In progress (plan budgets-planning-projects-bi-2026-09-27, Phase 0):
+- Project `billing_type`, `crm_contact_id`, `cost_center_id` and `contract_value` in metadata (margin against contract value, billing mode on the financials tab). Source: sprint-3, sprint-5.
 
-- Tenant comes only from the `X-Tenant-ID` header and is not checked against the JWT tenant claim. Source: sprint-11.
-- Tender metrics run seven COUNT queries and the response shape does not match projects-ui (Awarded and Evaluating show 0, Est. Value shows "NaNK"). Source: sprint-1.
-- Task and tender page sizes are uncapped, and the UI sends `page_size` while `pagination.Parse` reads `limit`. Source: sprint-1, sprint-3.
-- Project summary eager-loads tasks and milestones instead of grouping in SQL. Source: sprint-7.
-- Dependency cycle check is an N+1 walk and not tenant scoped. Source: sprint-3.
-- Comments, members, milestones and tender sub-resources are unpaginated. Source: sprint-4.
+## Done (plan budgets-planning-projects-bi-2026-09-27, updated 2026-09-28)
 
-## Project finance
+Correctness and security:
 
-All In progress (plan budgets-planning-projects-bi-2026-09-27, Phases 3 and 5). The financials, budget proxy and portfolio endpoints gate on the existing projects feature code `budget_tracking` (T3), decided 2026-09-27.
+- Tenant guard: `X-Tenant-ID` or the path tenant must match the JWT tenant claim (fills a missing header). Commit `881c693`.
+- Tender metrics in one `GROUP BY status` with values, win rate and pipeline value. Commit `881c693`.
+- Page sizes capped at 100 (`page_size` accepted as an alias of `limit`); sub-lists bounded at 500. Commit `881c693`.
+- Project summary and financials task stats counted in SQL. Commits `881c693`, `9aa3f7f`.
+- Dependency cycle check in one tenant-scoped query. Commit `881c693`.
+- Indexes on every tenant-scoped read path (projects, tasks incl. the trend windows, milestones, members, comments, activities, attachments, dependencies, tender sub-resources, user roles, outbox pending poll); only tenders had any before. Migration `20260928163438_add_query_indexes`, commit `8a87dd5`.
 
-- Drop the dead `Budget`, `Expense` and `TimeLog` schemas and tables (treasury owns budgets). Source: sprint-5, erd.md.
-- Task `estimated_hours` and `progress_pct`; project `billing_type`, `crm_contact_id`, `cost_center_id`, `contract_value` in metadata. Source: sprint-3, sprint-5.
-- Treasury client and `GET /projects/{id}/financials` with EVM (BAC, AC, PV, EV, CPI, SPI, EAC, ETC, VAC). Source: sprint-5, integrations.md.
-- Budget proxy `GET/PUT /projects/{id}/budget` to treasury project budgets. Source: sprint-5.
-- `GET /portfolio` with RAG health. Source: sprint-7.
-- Publish `project.created`, `project.updated`, `project.closed`. Source: plan.md Event Architecture.
-- Utilisation from ERP timesheet hours. Source: sprint-6.
-- Task throughput, overdue trend and tender pipeline value and win rate reports. Source: sprint-7.
+Project finance (gated on `budget_tracking`, T3):
+
+- Dead `Budget`, `Expense` and `TimeLog` tables dropped; treasury owns budgets. Commit `ef19f50`.
+- Task `start_date`, `estimated_hours`, `progress_pct`. Commit `ef19f50`.
+- Treasury client; `GET /financials/projects/{id}` with EVM (BAC, AC, PV, EV, CPI, SPI, EAC, ETC, VAC) and `GET /financials/portfolio` with RAG health, one batched treasury call per page. Commits `ef19f50`, `9aa3f7f`.
+- Budget proxy under `/financials/projects/{id}/budgets` (list, create, update, submit) to treasury project budgets. Commit `ef19f50`.
+- `project.created|updated|closed|deleted` outbox events; the `projects` stream is ensured at startup. Commits `070b5cc`, `f37ef5c`.
+- `Project.budget` follows `treasury.budget.approved` (`planned_cost`). Commit `ff9338b`.
+- Utilisation from ERP timesheet hours. Commit `b9fff12`.
+- `GET /tasks/trend` (created, completed, overdue at month end) and `GET /projects/metrics` (counts by status). Commits `ff9338b`, `8a87dd5`.
 
 ## Tenders
 

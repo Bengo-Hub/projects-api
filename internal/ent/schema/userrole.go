@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -29,6 +30,13 @@ func (UserRole) Fields() []ent.Field {
 			Optional(),
 		field.JSON("metadata", map[string]any{}).
 			Optional(),
+	}
+}
+
+// Indexes of the UserRole: permission checks resolve a user's roles on every request.
+func (UserRole) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("tenant_id", "user_id"),
 	}
 }
 

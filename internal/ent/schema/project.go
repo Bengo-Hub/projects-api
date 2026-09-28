@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -44,6 +45,15 @@ func (Project) Fields() []ent.Field {
 			UpdateDefault(time.Now),
 		field.JSON("metadata", map[string]any{}).
 			Optional(),
+	}
+}
+
+// Indexes of the Project: every read is tenant scoped, listed newest first or filtered and
+// counted by status.
+func (Project) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("tenant_id", "status"),
+		index.Fields("tenant_id", "created_at"),
 	}
 }
 

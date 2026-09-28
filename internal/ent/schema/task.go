@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -61,6 +62,17 @@ func (Task) Fields() []ent.Field {
 			Optional(),
 		field.String("wbs_code").
 			Optional(),
+	}
+}
+
+// Indexes of the Task: project task lists and status counts, and the tenant-wide monthly
+// trend windows over created_at, completed_at and due_date.
+func (Task) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("tenant_id", "project_id", "status"),
+		index.Fields("tenant_id", "created_at"),
+		index.Fields("tenant_id", "completed_at"),
+		index.Fields("tenant_id", "due_date"),
 	}
 }
 

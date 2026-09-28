@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -24,6 +25,11 @@ func (TenderDocument) Fields() []ent.Field {
 		field.UUID("uploaded_by", uuid.UUID{}),
 		field.Time("uploaded_at").Default(time.Now).Immutable(),
 	}
+}
+
+// Indexes: documents are always read per tender.
+func (TenderDocument) Indexes() []ent.Index {
+	return []ent.Index{index.Fields("tender_id")}
 }
 
 func (TenderDocument) Edges() []ent.Edge {

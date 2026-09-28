@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -32,6 +33,14 @@ func (Activity) Fields() []ent.Field {
 			Optional(),
 		field.Time("occurred_at").
 			Default(time.Now),
+	}
+}
+
+// Indexes of the Activity: feeds are read per project or per task, newest first.
+func (Activity) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("tenant_id", "project_id", "occurred_at"),
+		index.Fields("tenant_id", "task_id", "occurred_at"),
 	}
 }
 

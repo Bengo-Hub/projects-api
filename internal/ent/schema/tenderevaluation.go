@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -23,6 +24,11 @@ func (TenderEvaluation) Fields() []ent.Field {
 		field.String("criteria").Optional(),
 		field.Time("evaluated_at").Default(time.Now).Immutable(),
 	}
+}
+
+// Indexes: evaluations are always read per tender.
+func (TenderEvaluation) Indexes() []ent.Index {
+	return []ent.Index{index.Fields("tender_id")}
 }
 
 func (TenderEvaluation) Edges() []ent.Edge {

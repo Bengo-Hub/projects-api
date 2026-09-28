@@ -38,6 +38,18 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "activity_tenant_id_project_id_occurred_at",
+				Unique:  false,
+				Columns: []*schema.Column{ActivitiesColumns[1], ActivitiesColumns[6], ActivitiesColumns[5]},
+			},
+			{
+				Name:    "activity_tenant_id_task_id_occurred_at",
+				Unique:  false,
+				Columns: []*schema.Column{ActivitiesColumns[1], ActivitiesColumns[7], ActivitiesColumns[5]},
+			},
+		},
 	}
 	// AttachmentsColumns holds the columns for the "attachments" table.
 	AttachmentsColumns = []*schema.Column{
@@ -72,6 +84,18 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "attachment_tenant_id_project_id",
+				Unique:  false,
+				Columns: []*schema.Column{AttachmentsColumns[1], AttachmentsColumns[9]},
+			},
+			{
+				Name:    "attachment_tenant_id_task_id",
+				Unique:  false,
+				Columns: []*schema.Column{AttachmentsColumns[1], AttachmentsColumns[10]},
+			},
+		},
 	}
 	// CommentsColumns holds the columns for the "comments" table.
 	CommentsColumns = []*schema.Column{
@@ -104,6 +128,18 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "comment_tenant_id_project_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CommentsColumns[1], CommentsColumns[7], CommentsColumns[4]},
+			},
+			{
+				Name:    "comment_tenant_id_task_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CommentsColumns[1], CommentsColumns[8], CommentsColumns[4]},
+			},
+		},
 	}
 	// MilestonesColumns holds the columns for the "milestones" table.
 	MilestonesColumns = []*schema.Column{
@@ -131,6 +167,13 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "milestone_tenant_id_project_id_target_date",
+				Unique:  false,
+				Columns: []*schema.Column{MilestonesColumns[1], MilestonesColumns[9], MilestonesColumns[4]},
+			},
+		},
 	}
 	// OutboxEventsColumns holds the columns for the "outbox_events" table.
 	OutboxEventsColumns = []*schema.Column{
@@ -150,6 +193,13 @@ var (
 		Name:       "outbox_events",
 		Columns:    OutboxEventsColumns,
 		PrimaryKey: []*schema.Column{OutboxEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "outboxevent_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{OutboxEventsColumns[6], OutboxEventsColumns[9]},
+			},
+		},
 	}
 	// PermissionsColumns holds the columns for the "permissions" table.
 	PermissionsColumns = []*schema.Column{
@@ -189,6 +239,18 @@ var (
 		Name:       "projects",
 		Columns:    ProjectsColumns,
 		PrimaryKey: []*schema.Column{ProjectsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "project_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectsColumns[1], ProjectsColumns[4]},
+			},
+			{
+				Name:    "project_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectsColumns[1], ProjectsColumns[10]},
+			},
+		},
 	}
 	// ProjectMembersColumns holds the columns for the "project_members" table.
 	ProjectMembersColumns = []*schema.Column{
@@ -212,6 +274,13 @@ var (
 				Columns:    []*schema.Column{ProjectMembersColumns[7]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "projectmember_tenant_id_project_id_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectMembersColumns[1], ProjectMembersColumns[7], ProjectMembersColumns[2]},
 			},
 		},
 	}
@@ -292,6 +361,28 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "task_tenant_id_project_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{TasksColumns[1], TasksColumns[17], TasksColumns[4]},
+			},
+			{
+				Name:    "task_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{TasksColumns[1], TasksColumns[12]},
+			},
+			{
+				Name:    "task_tenant_id_completed_at",
+				Unique:  false,
+				Columns: []*schema.Column{TasksColumns[1], TasksColumns[11]},
+			},
+			{
+				Name:    "task_tenant_id_due_date",
+				Unique:  false,
+				Columns: []*schema.Column{TasksColumns[1], TasksColumns[7]},
+			},
+		},
 	}
 	// TaskDependenciesColumns holds the columns for the "task_dependencies" table.
 	TaskDependenciesColumns = []*schema.Column{
@@ -312,6 +403,18 @@ var (
 				Columns:    []*schema.Column{TaskDependenciesColumns[4]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "taskdependency_task_id_depends_on_task_id",
+				Unique:  false,
+				Columns: []*schema.Column{TaskDependenciesColumns[4], TaskDependenciesColumns[1]},
+			},
+			{
+				Name:    "taskdependency_depends_on_task_id",
+				Unique:  false,
+				Columns: []*schema.Column{TaskDependenciesColumns[1]},
 			},
 		},
 	}
@@ -375,6 +478,13 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tendercommittee_tender_id",
+				Unique:  false,
+				Columns: []*schema.Column{TenderCommitteesColumns[4]},
+			},
+		},
 	}
 	// TenderCommitteeMembersColumns holds the columns for the "tender_committee_members" table.
 	TenderCommitteeMembersColumns = []*schema.Column{
@@ -396,6 +506,13 @@ var (
 				Columns:    []*schema.Column{TenderCommitteeMembersColumns[5]},
 				RefColumns: []*schema.Column{TenderCommitteesColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tendercommitteemember_committee_id_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{TenderCommitteeMembersColumns[5], TenderCommitteeMembersColumns[2]},
 			},
 		},
 	}
@@ -424,6 +541,13 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tenderdocument_tender_id",
+				Unique:  false,
+				Columns: []*schema.Column{TenderDocumentsColumns[8]},
+			},
+		},
 	}
 	// TenderEvaluationsColumns holds the columns for the "tender_evaluations" table.
 	TenderEvaluationsColumns = []*schema.Column{
@@ -447,6 +571,13 @@ var (
 				Columns:    []*schema.Column{TenderEvaluationsColumns[7]},
 				RefColumns: []*schema.Column{TendersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tenderevaluation_tender_id",
+				Unique:  false,
+				Columns: []*schema.Column{TenderEvaluationsColumns[7]},
 			},
 		},
 	}
@@ -476,6 +607,13 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tendermeeting_tender_id",
+				Unique:  false,
+				Columns: []*schema.Column{TenderMeetingsColumns[9]},
+			},
+		},
 	}
 	// UserRolesColumns holds the columns for the "user_roles" table.
 	UserRolesColumns = []*schema.Column{
@@ -498,6 +636,13 @@ var (
 				Columns:    []*schema.Column{UserRolesColumns[6]},
 				RefColumns: []*schema.Column{RolesColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userrole_tenant_id_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserRolesColumns[1], UserRolesColumns[2]},
 			},
 		},
 	}

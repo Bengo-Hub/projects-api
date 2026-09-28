@@ -264,3 +264,31 @@ func (s *Service) GetProjectSummary(ctx context.Context, tenantID, id uuid.UUID)
 		"total_milestones": milestones,
 	}, nil
 }
+
+// ProjectMetrics counts the tenant's projects by status in one grouped query, so dashboards
+// report every project rather than whatever fits on one list page.
+type ProjectMetrics struct {
+	Total    int            `json:"total"`
+	ByStatus map[string]int `json:"by_status"`
+}
+
+// GetProjectMetrics returns project counts by status for the tenant.
+func (s *Service) GetProjectMetrics(ctx context.Context, tenantID uuid.UUID) (ProjectMetrics, error) {
+	var rows []struct {
+		Status string `json:"status"`
+		Count  int    `json:"count"`
+	}
+	if err := s.client.Project.Query().
+		Where(entproject.TenantID(tenantID)).
+		GroupBy(entproject.FieldStatus).
+		Aggregate(ent.Count()).
+		Scan(ctx, &rows); err != nil {
+		return ProjectMetrics{}, fmt.Errorf("project metrics: %w", err)
+	}
+	m := ProjectMetrics{ByStatus: make(map[string]int, len(rows))}
+	for _, r := range rows {
+		m.ByStatus[r.Status] = r.Count
+		m.Total += r.Count
+	}
+	return m, nil
+}

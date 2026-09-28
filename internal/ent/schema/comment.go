@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -36,6 +37,14 @@ func (Comment) Fields() []ent.Field {
 			UpdateDefault(time.Now),
 		field.JSON("metadata", map[string]any{}).
 			Optional(),
+	}
+}
+
+// Indexes of the Comment: threads are read per project or per task in posting order.
+func (Comment) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("tenant_id", "project_id", "created_at"),
+		index.Fields("tenant_id", "task_id", "created_at"),
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -30,6 +31,13 @@ func (ProjectMember) Fields() []ent.Field {
 			Optional(),
 		field.JSON("metadata", map[string]any{}).
 			Optional(),
+	}
+}
+
+// Indexes of the ProjectMember: listed per project and looked up per project and user.
+func (ProjectMember) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("tenant_id", "project_id", "user_id"),
 	}
 }
 

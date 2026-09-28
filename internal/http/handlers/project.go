@@ -31,6 +31,7 @@ func (h *ProjectHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/projects", func(pr chi.Router) {
 		pr.Get("/", h.List)
 		pr.Post("/", h.Create)
+		pr.Get("/metrics", h.Metrics)
 		pr.Route("/{projectID}", func(p chi.Router) {
 			p.Get("/", h.Get)
 			p.Put("/", h.Update)
@@ -60,6 +61,22 @@ func (h *ProjectHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusOK, pagination.NewResponse(items, total, p))
+}
+
+// Metrics returns the tenant's project counts by status, grouped in SQL.
+func (h *ProjectHandler) Metrics(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := uuid.Parse(httpware.GetTenantID(r.Context()))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid tenant id")
+		return
+	}
+	m, err := h.svc.GetProjectMetrics(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("project metrics failed", zap.Error(err))
+		respondError(w, http.StatusInternalServerError, "failed to count projects")
+		return
+	}
+	respondJSON(w, http.StatusOK, m)
 }
 
 // Get returns a single project.

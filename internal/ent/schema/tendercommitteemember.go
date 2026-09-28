@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -21,6 +22,11 @@ func (TenderCommitteeMember) Fields() []ent.Field {
 		field.String("role").Default("member"),
 		field.Time("joined_at").Default(time.Now).Immutable(),
 	}
+}
+
+// Indexes: members are listed per committee and looked up per committee and user.
+func (TenderCommitteeMember) Indexes() []ent.Index {
+	return []ent.Index{index.Fields("committee_id", "user_id")}
 }
 
 func (TenderCommitteeMember) Edges() []ent.Edge {

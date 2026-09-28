@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -20,6 +21,11 @@ func (TenderCommittee) Fields() []ent.Field {
 		field.String("name").NotEmpty(),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}
+}
+
+// Indexes: committees are always read per tender.
+func (TenderCommittee) Indexes() []ent.Index {
+	return []ent.Index{index.Fields("tender_id")}
 }
 
 func (TenderCommittee) Edges() []ent.Edge {

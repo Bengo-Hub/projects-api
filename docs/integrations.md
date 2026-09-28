@@ -105,7 +105,16 @@ This document provides detailed integration information for all external service
 **REST API Usage**:
 - `POST /v1/{tenantId}/notifications/messages` - Send notification
 
-**Events Published**:
+**Events Published (implemented, 2026-09-28)** on the `project.>` stream through the outbox:
+- `project.milestone.reached`
+- `project.created`, `project.updated`, `project.closed`, `project.deleted`
+- `project.tender.created`, `project.tender.committee.formed`, `project.tender.meeting.scheduled`, `project.tender.evaluation.submitted`, `project.tender.decision.made`
+- `project.tender.section.assigned`, `project.tender.section.submitted`, `project.tender.section.approved`, `project.tender.section.changes_requested`
+- `project.tender.submitted` (for an email submission the payload carries `recipient_email`, `email_subject`, `email_body` and `document_url`, so notifications-api can send it), `project.tender.status.changed`, `project.tender.awarded`, `project.tender.lost`
+
+notifications-api still needs templates and handlers for the tender events, and a way to report email delivery back to the submission record (`delivery_status` stays `queued` until then).
+
+**Events Published (original design, not implemented)**:
 - `projects.notification.send` - Generic notification request
 - `projects.task.assigned` - Task assigned to user
 - `projects.deadline.approaching` - Deadline reminder

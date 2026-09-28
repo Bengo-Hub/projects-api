@@ -31,14 +31,14 @@ CREATE EXTENSION IF NOT EXISTS "postgis";        -- Geospatial (optional for loc
 
 ---
 
-## Implementation Status (2026-05-22, corrected 2026-09-27)
+## Implementation Status (2026-05-22, corrected 2026-09-28)
 
-> Re-verified against code 2026-09-27. `activities` now has a schema and read routes. `budgets`, `expenses` and `time_logs` will never get endpoints here: treasury owns all budgets, hours come from ERP timesheets, and these three tables are being dropped (In progress, plan budgets-planning-projects-bi-2026-09-27). `attachments` has a schema but no routes.
+> Re-verified against code 2026-09-28. `budgets`, `expenses` and `time_logs` were dropped (migration 20260927230524): treasury owns all budgets and hours come from ERP timesheets. `activities` is now written by the task, comment, attachment, milestone, member and project handlers. `attachments` has routes (file links; no upload storage). Migration 20260928101531 adds `tender_sections`, `tender_submissions`, the tender decision, outcome, status history and final-document fields, and `kind`/`version` on `tender_documents`.
 
 | Entity | Ent Schema | Migration | API Endpoints |
 |--------|-----------|-----------|---------------|
-| `tenders` | ✅ `internal/ent/schema/tender.go` | ✅ 20260522 | ✅ CRUD + metrics |
-| `tender_documents` | ✅ `tenderdocument.go` | ✅ | ✅ list + upload |
+| `tenders` | ✅ `internal/ent/schema/tender.go` (+ decision, outcome, status_history, final_document_version, ready_for_submission) | ✅ 20260522, 20260928 | ✅ CRUD, metrics, decision, status, outcome, evaluation summary, ready |
+| `tender_documents` | ✅ `tenderdocument.go` (+ kind supporting/final, version) | ✅ | ✅ list, add link, versioned final document |
 | `tender_committees` | ✅ `tendercommittee.go` | ✅ | ✅ CRUD |
 | `tender_committee_members` | ✅ `tendercommitteemember.go` | ✅ | ✅ add/remove |
 | `tender_evaluations` | ✅ `tenderevaluation.go` | ✅ | ✅ submit + list |
@@ -47,14 +47,14 @@ CREATE EXTENSION IF NOT EXISTS "postgis";        -- Geospatial (optional for loc
 | `tasks` | ✅ `task.go` (+ parent_id, wbs_code) | ✅ | ✅ CRUD + deps + gantt |
 | `milestones` | ✅ `milestone.go` | ✅ pre-existing | ✅ CRUD |
 | `members` | ✅ `member.go` | ✅ pre-existing | ✅ CRUD |
-| `comments` | ✅ `comment.go` | ✅ pre-existing | ✅ CRUD |
-| `budgets` | Dead `budget.go` | ✅ 20260522 | Not planned; being dropped (treasury owns budgets) |
-| `expenses` | Dead `expense.go` | ✅ 20260522 | Not planned; being dropped (treasury owns expenses) |
-| `time_logs` | Dead `timelog.go` | ✅ 20260522 | Not planned; being dropped (ERP timesheets) |
-| `attachments` | ✅ `attachment.go` | ✅ | ❌ no routes |
-| `tender_sections` | ❌ Sprint 1 deferred | — | — |
-| `tender_submissions` | ❌ Sprint 1 deferred | — | — |
-| `activities` | ✅ `activity.go` | ✅ | ✅ project and task activity feeds |
+| `comments` | ✅ `comment.go` | ✅ pre-existing | ✅ CRUD (task comments carry the project id) |
+| `budgets` | Dropped | ✅ dropped 20260927 | Not planned (treasury owns budgets) |
+| `expenses` | Dropped | ✅ dropped 20260927 | Not planned (treasury owns expenses) |
+| `time_logs` | Dropped | ✅ dropped 20260927 | Not planned (ERP timesheets) |
+| `attachments` | ✅ `attachment.go` | ✅ | ✅ project and task file links |
+| `tender_sections` | ✅ `tendersection.go` | ✅ 20260928 | ✅ CRUD, submit, approve, request changes |
+| `tender_submissions` | ✅ `tendersubmission.go` | ✅ 20260928 | ✅ submit (email, physical, online) + list |
+| `activities` | ✅ `activity.go` | ✅ | ✅ written on every collaboration change; project and task feeds |
 | `resources` | ❌ Sprint 6 | — | — |
 | `governance` | ❌ Sprint 7 | — | — |
 

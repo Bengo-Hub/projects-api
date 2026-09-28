@@ -351,26 +351,28 @@
 - [x] Implement committee management APIs (POST/GET committees, POST/DELETE committee members)
 - [x] Implement meeting scheduling APIs (POST/GET tender meetings)
 - [x] Implement evaluation APIs (POST/GET tender evaluations)
-- [ ] Implement section management APIs (deferred — tender sections entity not yet created)
-- [ ] Implement submission APIs (deferred — tender submissions entity not yet created)
+- [x] Implement section management APIs (`/tenders/{id}/sections`: CRUD, submit, approve, request-changes; `tender_sections` entity, 2026-09-28)
+- [x] Implement submission APIs (`POST /tenders/{id}/submit`, `GET /tenders/{id}/submissions`; email, physical, online; `tender_submissions` entity, 2026-09-28)
+- [x] Implement decision, status and outcome APIs (`/decision`, `/evaluation-summary`, `/status` with validated transitions and `status_history`, `/outcome`; 2026-09-28)
+- [x] Final document versioning and ready flag (`/final-document`, `/ready`; 2026-09-28)
 - [x] Add input validation with custom validators (JSON decode + field checks in handlers)
 - [x] Add error handling and proper HTTP status codes
-- [ ] Generate OpenAPI/Swagger documentation (deferred to Phase 7). Was ticked, but no swagger or OpenAPI file exists in the repo (verified 2026-09-27).
+- [x] OpenAPI documentation: `internal/http/apidocs/openapi.yaml`, served with Swagger UI at `/v1/docs/`. A router test fails when a route is missing from it (2026-09-28).
 - [x] Implement tender metrics endpoint (GET /tenders/metrics)
 
 ### External Integrations
 - [ ] Integrate Google Meet API for meeting creation (deferred to Sprint 9)
 - [ ] Integrate Microsoft Teams API (deferred to Sprint 9)
 - [ ] Integrate Zoom API (deferred to Sprint 9)
-- [ ] Integrate with notifications service (NATS events) (deferred — NATS outbox ready)
+- [x] Publish tender events for the notifications service (`project.tender.*` through the outbox, 2026-09-28). notifications-api templates for them are its own work.
 - [x] Integrate with auth-service for user data (JWKS JWT validation, API key auth)
 - [ ] Setup S3/MinIO for document storage (deferred to Sprint 9)
 
 ### Testing
-- [ ] Write unit tests for all service layer functions
-- [ ] Write integration tests for all API endpoints
+- [x] Unit tests for the tender workflow (transitions, history, evaluation summary, outcome, submission validation, section summary), activity diffs and attachment validation (2026-09-28). Older service functions are still untested.
+- [x] Integration tests on a throwaway Postgres schema (`internal/testutil`): the full tender workflow at service and HTTP level, and the collaboration routes (tasks, comments, attachments, activity). They skip when no Postgres is reachable. Not every endpoint is covered yet.
 - [ ] Write tests for external integrations (with mocks)
-- [ ] Setup Testcontainers for database tests
+- [ ] Setup Testcontainers for database tests. Not done: the DB tests use a local Postgres (`PROJECTS_TEST_DATABASE_URL`) instead; CI needs a Postgres service for them to run rather than skip.
 - [ ] Achieve >80% code coverage
 
 ### DevOps
@@ -424,13 +426,17 @@ POST   /api/v1/{tenantID}/tenders/{id}/decision            - Make go/no-go decis
 ```
 
 ### Sections
+As built, section routes sit under the tender (`/tenders/{id}/sections/{sectionID}/...`) like committees do.
 ```
-POST   /api/v1/{tenantID}/tenders/{id}/sections            - Create section
-GET    /api/v1/{tenantID}/tenders/{id}/sections            - List sections
-PUT    /api/v1/{tenantID}/sections/{id}                    - Update section
-POST   /api/v1/{tenantID}/sections/{id}/submit             - Submit for review
-POST   /api/v1/{tenantID}/sections/{id}/approve            - Approve section
-POST   /api/v1/{tenantID}/sections/{id}/request-changes    - Request changes
+POST   /api/v1/{tenantID}/tenders/{id}/sections                               - Create section
+GET    /api/v1/{tenantID}/tenders/{id}/sections                               - List sections (+ summary)
+PUT    /api/v1/{tenantID}/tenders/{id}/sections/{sectionID}                   - Update section
+DELETE /api/v1/{tenantID}/tenders/{id}/sections/{sectionID}                   - Delete section
+POST   /api/v1/{tenantID}/tenders/{id}/sections/{sectionID}/submit            - Submit for review
+POST   /api/v1/{tenantID}/tenders/{id}/sections/{sectionID}/approve           - Approve section
+POST   /api/v1/{tenantID}/tenders/{id}/sections/{sectionID}/request-changes   - Request changes
+POST   /api/v1/{tenantID}/tenders/{id}/final-document                         - Add final document version
+POST   /api/v1/{tenantID}/tenders/{id}/ready                                  - Mark ready for submission
 ```
 
 ### Submissions
@@ -467,7 +473,7 @@ See `docs/erd.md` for complete schema definitions.
 
 ## Event Publishing (NATS)
 
-Publish events for key tender lifecycle changes:
+Publish events for key tender lifecycle changes. As built (2026-09-28) the subjects are `project.tender.*`, not `projects.tender.*`: the projects stream binds `project.>`. Section review adds `project.tender.section.changes_requested`.
 
 ```
 projects.tender.created                 - New tender logged

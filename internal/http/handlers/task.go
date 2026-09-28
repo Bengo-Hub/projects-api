@@ -11,18 +11,27 @@ import (
 	"go.uber.org/zap"
 
 	httpware "github.com/Bengo-Hub/httpware"
+	"github.com/bengobox/projects-service/internal/ent"
+	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/tasks"
 )
 
 // TaskHandler handles task HTTP endpoints.
 type TaskHandler struct {
-	log *zap.Logger
-	svc *tasks.Service
+	log      *zap.Logger
+	svc      *tasks.Service
+	activity *activity.Recorder
 }
 
 // NewTaskHandler creates a new task handler.
 func NewTaskHandler(log *zap.Logger, svc *tasks.Service) *TaskHandler {
 	return &TaskHandler{log: log.Named("task.handler"), svc: svc}
+}
+
+// WithActivity records task changes in the project activity feed.
+func (h *TaskHandler) WithActivity(rec *activity.Recorder) *TaskHandler {
+	h.activity = rec
+	return h
 }
 
 // RegisterRoutes registers task routes nested under /projects/{projectID}.
@@ -54,7 +63,8 @@ func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 	if p := r.URL.Query().Get("page"); p != "" {
 		filter.Page, _ = strconv.Atoi(p)
 	}
-	if ps := r.URL.Query().Get("page_size"); ps != "" {
+	// limit is the fleet's pagination param; page_size is kept for older clients.
+	if ps := firstQuery(r, "limit", "page_size"); ps != "" {
 		filter.PageSize, _ = strconv.Atoi(ps)
 	}
 	if a := r.URL.Query().Get("assignee_id"); a != "" {
@@ -117,6 +127,10 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, TaskID: uuidPtr(t.ID), UserID: actorID(r),
+		Type: "task.created", Payload: map[string]any{"title": t.Title, "status": t.Status},
+	})
 	respondJSON(w, http.StatusCreated, t)
 }
 
@@ -136,6 +150,10 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	var before *ent.Task
+	if h.activity != nil {
+		before, _ = h.svc.GetTask(r.Context(), tenantID, projectID, taskID)
+	}
 	t, err := h.svc.UpdateTask(r.Context(), tenantID, projectID, taskID, input)
 	if errors.Is(err, tasks.ErrNotFound) {
 		respondError(w, http.StatusNotFound, "task not found")
@@ -144,6 +162,12 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if changes := activity.TaskChanges(before, t); len(changes) > 0 {
+		h.activity.Record(r.Context(), activity.Entry{
+			TenantID: tenantID, ProjectID: projectID, TaskID: uuidPtr(t.ID), UserID: actorID(r),
+			Type: "task.updated", Payload: map[string]any{"title": t.Title, "changes": changes},
+		})
 	}
 	respondJSON(w, http.StatusOK, t)
 }
@@ -159,6 +183,7 @@ func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid task id")
 		return
 	}
+	title := h.activity.TaskTitle(r.Context(), tenantID, taskID)
 	if err := h.svc.DeleteTask(r.Context(), tenantID, projectID, taskID); errors.Is(err, tasks.ErrNotFound) {
 		respondError(w, http.StatusNotFound, "task not found")
 		return
@@ -166,12 +191,17 @@ func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	// The row is gone, so the entry is project-level and keeps the id in the payload.
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, UserID: actorID(r),
+		Type: "task.deleted", Payload: map[string]any{"title": title, "task_id": taskID.String()},
+	})
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // AddDependency adds a dependency between tasks.
 func (h *TaskHandler) AddDependency(w http.ResponseWriter, r *http.Request) {
-	tenantID, _, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := taskProjectParams(w, r)
 	if !ok {
 		return
 	}
@@ -193,12 +223,19 @@ func (h *TaskHandler) AddDependency(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, TaskID: uuidPtr(taskID), UserID: actorID(r),
+		Type: "dependency.added", Payload: map[string]any{
+			"title":              h.activity.TaskTitle(r.Context(), tenantID, input.DependsOnTaskID),
+			"depends_on_task_id": input.DependsOnTaskID.String(),
+		},
+	})
 	w.WriteHeader(http.StatusCreated)
 }
 
 // RemoveDependency removes a dependency between tasks.
 func (h *TaskHandler) RemoveDependency(w http.ResponseWriter, r *http.Request) {
-	tenantID, _, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := taskProjectParams(w, r)
 	if !ok {
 		return
 	}
@@ -219,6 +256,13 @@ func (h *TaskHandler) RemoveDependency(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, TaskID: uuidPtr(taskID), UserID: actorID(r),
+		Type: "dependency.removed", Payload: map[string]any{
+			"title":              h.activity.TaskTitle(r.Context(), tenantID, depID),
+			"depends_on_task_id": depID.String(),
+		},
+	})
 	w.WriteHeader(http.StatusNoContent)
 }
 

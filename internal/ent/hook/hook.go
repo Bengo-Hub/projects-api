@@ -225,6 +225,30 @@ func (f TenderMeetingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenderMeetingMutation", m)
 }
 
+// The TenderSectionFunc type is an adapter to allow the use of ordinary
+// function as TenderSection mutator.
+type TenderSectionFunc func(context.Context, *ent.TenderSectionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TenderSectionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TenderSectionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenderSectionMutation", m)
+}
+
+// The TenderSubmissionFunc type is an adapter to allow the use of ordinary
+// function as TenderSubmission mutator.
+type TenderSubmissionFunc func(context.Context, *ent.TenderSubmissionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TenderSubmissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TenderSubmissionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenderSubmissionMutation", m)
+}
+
 // The UserRoleFunc type is an adapter to allow the use of ordinary
 // function as UserRole mutator.
 type UserRoleFunc func(context.Context, *ent.UserRoleMutation) (ent.Value, error)

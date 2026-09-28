@@ -23,6 +23,10 @@ func (TenderDocument) Fields() []ent.Field {
 		field.String("mime_type").Optional(),
 		field.UUID("uploaded_by", uuid.UUID{}),
 		field.Time("uploaded_at").Default(time.Now).Immutable(),
+		// kind is "supporting" for reference files or "final" for a compiled tender document;
+		// final documents are numbered by version (1, 2, ...).
+		field.String("kind").Default("supporting"),
+		field.Int("version").Default(0),
 	}
 }
 

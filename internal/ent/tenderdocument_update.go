@@ -146,6 +146,41 @@ func (tdu *TenderDocumentUpdate) SetNillableUploadedBy(u *uuid.UUID) *TenderDocu
 	return tdu
 }
 
+// SetKind sets the "kind" field.
+func (tdu *TenderDocumentUpdate) SetKind(s string) *TenderDocumentUpdate {
+	tdu.mutation.SetKind(s)
+	return tdu
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (tdu *TenderDocumentUpdate) SetNillableKind(s *string) *TenderDocumentUpdate {
+	if s != nil {
+		tdu.SetKind(*s)
+	}
+	return tdu
+}
+
+// SetVersion sets the "version" field.
+func (tdu *TenderDocumentUpdate) SetVersion(i int) *TenderDocumentUpdate {
+	tdu.mutation.ResetVersion()
+	tdu.mutation.SetVersion(i)
+	return tdu
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (tdu *TenderDocumentUpdate) SetNillableVersion(i *int) *TenderDocumentUpdate {
+	if i != nil {
+		tdu.SetVersion(*i)
+	}
+	return tdu
+}
+
+// AddVersion adds i to the "version" field.
+func (tdu *TenderDocumentUpdate) AddVersion(i int) *TenderDocumentUpdate {
+	tdu.mutation.AddVersion(i)
+	return tdu
+}
+
 // SetTender sets the "tender" edge to the Tender entity.
 func (tdu *TenderDocumentUpdate) SetTender(t *Tender) *TenderDocumentUpdate {
 	return tdu.SetTenderID(t.ID)
@@ -235,6 +270,15 @@ func (tdu *TenderDocumentUpdate) sqlSave(ctx context.Context) (n int, err error)
 	}
 	if value, ok := tdu.mutation.UploadedBy(); ok {
 		_spec.SetField(tenderdocument.FieldUploadedBy, field.TypeUUID, value)
+	}
+	if value, ok := tdu.mutation.Kind(); ok {
+		_spec.SetField(tenderdocument.FieldKind, field.TypeString, value)
+	}
+	if value, ok := tdu.mutation.Version(); ok {
+		_spec.SetField(tenderdocument.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := tdu.mutation.AddedVersion(); ok {
+		_spec.AddField(tenderdocument.FieldVersion, field.TypeInt, value)
 	}
 	if tdu.mutation.TenderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -402,6 +446,41 @@ func (tduo *TenderDocumentUpdateOne) SetNillableUploadedBy(u *uuid.UUID) *Tender
 	return tduo
 }
 
+// SetKind sets the "kind" field.
+func (tduo *TenderDocumentUpdateOne) SetKind(s string) *TenderDocumentUpdateOne {
+	tduo.mutation.SetKind(s)
+	return tduo
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (tduo *TenderDocumentUpdateOne) SetNillableKind(s *string) *TenderDocumentUpdateOne {
+	if s != nil {
+		tduo.SetKind(*s)
+	}
+	return tduo
+}
+
+// SetVersion sets the "version" field.
+func (tduo *TenderDocumentUpdateOne) SetVersion(i int) *TenderDocumentUpdateOne {
+	tduo.mutation.ResetVersion()
+	tduo.mutation.SetVersion(i)
+	return tduo
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (tduo *TenderDocumentUpdateOne) SetNillableVersion(i *int) *TenderDocumentUpdateOne {
+	if i != nil {
+		tduo.SetVersion(*i)
+	}
+	return tduo
+}
+
+// AddVersion adds i to the "version" field.
+func (tduo *TenderDocumentUpdateOne) AddVersion(i int) *TenderDocumentUpdateOne {
+	tduo.mutation.AddVersion(i)
+	return tduo
+}
+
 // SetTender sets the "tender" edge to the Tender entity.
 func (tduo *TenderDocumentUpdateOne) SetTender(t *Tender) *TenderDocumentUpdateOne {
 	return tduo.SetTenderID(t.ID)
@@ -521,6 +600,15 @@ func (tduo *TenderDocumentUpdateOne) sqlSave(ctx context.Context) (_node *Tender
 	}
 	if value, ok := tduo.mutation.UploadedBy(); ok {
 		_spec.SetField(tenderdocument.FieldUploadedBy, field.TypeUUID, value)
+	}
+	if value, ok := tduo.mutation.Kind(); ok {
+		_spec.SetField(tenderdocument.FieldKind, field.TypeString, value)
+	}
+	if value, ok := tduo.mutation.Version(); ok {
+		_spec.SetField(tenderdocument.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := tduo.mutation.AddedVersion(); ok {
+		_spec.AddField(tenderdocument.FieldVersion, field.TypeInt, value)
 	}
 	if tduo.mutation.TenderCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -24,6 +24,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	"github.com/bengobox/projects-service/internal/ent/tendersection"
+	"github.com/bengobox/projects-service/internal/ent/tendersubmission"
 	"github.com/bengobox/projects-service/internal/ent/userrole"
 	"github.com/google/uuid"
 )
@@ -306,6 +308,14 @@ func init() {
 	tender.DefaultUpdatedAt = tenderDescUpdatedAt.Default.(func() time.Time)
 	// tender.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	tender.UpdateDefaultUpdatedAt = tenderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// tenderDescFinalDocumentVersion is the schema descriptor for final_document_version field.
+	tenderDescFinalDocumentVersion := tenderFields[24].Descriptor()
+	// tender.DefaultFinalDocumentVersion holds the default value on creation for the final_document_version field.
+	tender.DefaultFinalDocumentVersion = tenderDescFinalDocumentVersion.Default.(int)
+	// tenderDescReadyForSubmission is the schema descriptor for ready_for_submission field.
+	tenderDescReadyForSubmission := tenderFields[25].Descriptor()
+	// tender.DefaultReadyForSubmission holds the default value on creation for the ready_for_submission field.
+	tender.DefaultReadyForSubmission = tenderDescReadyForSubmission.Default.(bool)
 	// tenderDescID is the schema descriptor for id field.
 	tenderDescID := tenderFields[0].Descriptor()
 	// tender.DefaultID holds the default value on creation for the id field.
@@ -344,6 +354,14 @@ func init() {
 	tenderdocumentDescUploadedAt := tenderdocumentFields[8].Descriptor()
 	// tenderdocument.DefaultUploadedAt holds the default value on creation for the uploaded_at field.
 	tenderdocument.DefaultUploadedAt = tenderdocumentDescUploadedAt.Default.(func() time.Time)
+	// tenderdocumentDescKind is the schema descriptor for kind field.
+	tenderdocumentDescKind := tenderdocumentFields[9].Descriptor()
+	// tenderdocument.DefaultKind holds the default value on creation for the kind field.
+	tenderdocument.DefaultKind = tenderdocumentDescKind.Default.(string)
+	// tenderdocumentDescVersion is the schema descriptor for version field.
+	tenderdocumentDescVersion := tenderdocumentFields[10].Descriptor()
+	// tenderdocument.DefaultVersion holds the default value on creation for the version field.
+	tenderdocument.DefaultVersion = tenderdocumentDescVersion.Default.(int)
 	// tenderdocumentDescID is the schema descriptor for id field.
 	tenderdocumentDescID := tenderdocumentFields[0].Descriptor()
 	// tenderdocument.DefaultID holds the default value on creation for the id field.
@@ -376,6 +394,52 @@ func init() {
 	tendermeetingDescID := tendermeetingFields[0].Descriptor()
 	// tendermeeting.DefaultID holds the default value on creation for the id field.
 	tendermeeting.DefaultID = tendermeetingDescID.Default.(func() uuid.UUID)
+	tendersectionFields := schema.TenderSection{}.Fields()
+	_ = tendersectionFields
+	// tendersectionDescTitle is the schema descriptor for title field.
+	tendersectionDescTitle := tendersectionFields[3].Descriptor()
+	// tendersection.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	tendersection.TitleValidator = tendersectionDescTitle.Validators[0].(func(string) error)
+	// tendersectionDescStatus is the schema descriptor for status field.
+	tendersectionDescStatus := tendersectionFields[8].Descriptor()
+	// tendersection.DefaultStatus holds the default value on creation for the status field.
+	tendersection.DefaultStatus = tendersectionDescStatus.Default.(string)
+	// tendersectionDescSortOrder is the schema descriptor for sort_order field.
+	tendersectionDescSortOrder := tendersectionFields[11].Descriptor()
+	// tendersection.DefaultSortOrder holds the default value on creation for the sort_order field.
+	tendersection.DefaultSortOrder = tendersectionDescSortOrder.Default.(int)
+	// tendersectionDescCreatedAt is the schema descriptor for created_at field.
+	tendersectionDescCreatedAt := tendersectionFields[15].Descriptor()
+	// tendersection.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tendersection.DefaultCreatedAt = tendersectionDescCreatedAt.Default.(func() time.Time)
+	// tendersectionDescUpdatedAt is the schema descriptor for updated_at field.
+	tendersectionDescUpdatedAt := tendersectionFields[16].Descriptor()
+	// tendersection.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	tendersection.DefaultUpdatedAt = tendersectionDescUpdatedAt.Default.(func() time.Time)
+	// tendersection.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	tendersection.UpdateDefaultUpdatedAt = tendersectionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// tendersectionDescID is the schema descriptor for id field.
+	tendersectionDescID := tendersectionFields[0].Descriptor()
+	// tendersection.DefaultID holds the default value on creation for the id field.
+	tendersection.DefaultID = tendersectionDescID.Default.(func() uuid.UUID)
+	tendersubmissionFields := schema.TenderSubmission{}.Fields()
+	_ = tendersubmissionFields
+	// tendersubmissionDescSubmittedAt is the schema descriptor for submitted_at field.
+	tendersubmissionDescSubmittedAt := tendersubmissionFields[4].Descriptor()
+	// tendersubmission.DefaultSubmittedAt holds the default value on creation for the submitted_at field.
+	tendersubmission.DefaultSubmittedAt = tendersubmissionDescSubmittedAt.Default.(func() time.Time)
+	// tendersubmissionDescDeliveryStatus is the schema descriptor for delivery_status field.
+	tendersubmissionDescDeliveryStatus := tendersubmissionFields[15].Descriptor()
+	// tendersubmission.DefaultDeliveryStatus holds the default value on creation for the delivery_status field.
+	tendersubmission.DefaultDeliveryStatus = tendersubmissionDescDeliveryStatus.Default.(string)
+	// tendersubmissionDescCreatedAt is the schema descriptor for created_at field.
+	tendersubmissionDescCreatedAt := tendersubmissionFields[17].Descriptor()
+	// tendersubmission.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tendersubmission.DefaultCreatedAt = tendersubmissionDescCreatedAt.Default.(func() time.Time)
+	// tendersubmissionDescID is the schema descriptor for id field.
+	tendersubmissionDescID := tendersubmissionFields[0].Descriptor()
+	// tendersubmission.DefaultID holds the default value on creation for the id field.
+	tendersubmission.DefaultID = tendersubmissionDescID.Default.(func() uuid.UUID)
 	userroleFields := schema.UserRole{}.Fields()
 	_ = userroleFields
 	// userroleDescAssignedAt is the schema descriptor for assigned_at field.

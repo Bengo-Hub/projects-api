@@ -12,6 +12,7 @@ import (
 
 	httpware "github.com/Bengo-Hub/httpware"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
+	"github.com/bengobox/projects-service/internal/http/apidocs"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 )
 
@@ -25,6 +26,7 @@ func New(
 	memberHandler *handlers.MemberHandler,
 	commentHandler *handlers.CommentHandler,
 	activityHandler *handlers.ActivityHandler,
+	attachmentHandler *handlers.AttachmentHandler,
 	tenderHandler *handlers.TenderHandler,
 	financialsHandler *handlers.FinancialsHandler,
 	authMiddleware *authclient.AuthMiddleware,
@@ -55,6 +57,9 @@ func New(
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/v1/docs/", http.StatusMovedPermanently)
 	})
+	// OpenAPI spec and Swagger UI (public: the spec holds no tenant data).
+	r.Handle("/v1/docs", http.RedirectHandler("/v1/docs/", http.StatusMovedPermanently))
+	r.Mount("/v1/docs/", http.StripPrefix("/v1/docs", apidocs.Handler()))
 
 	r.Route("/api/v1", func(api chi.Router) {
 		// Optional outlet context — extracts X-Outlet-ID if present
@@ -122,6 +127,7 @@ func New(
 			memberHandler.RegisterRoutes(tenant)
 			commentHandler.RegisterRoutes(tenant)
 			activityHandler.RegisterRoutes(tenant)
+			attachmentHandler.RegisterRoutes(tenant)
 			tenderHandler.RegisterRoutes(tenant)
 			if financialsHandler != nil {
 				// Project financials, portfolio and project budgets: the budget_tracking feature.

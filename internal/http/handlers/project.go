@@ -10,15 +10,23 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	authclient "github.com/Bengo-Hub/shared-auth-client"
 	httpware "github.com/Bengo-Hub/httpware"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
+	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/projects"
 )
 
 // ProjectHandler handles project HTTP endpoints.
 type ProjectHandler struct {
-	log *zap.Logger
-	svc *projects.Service
+	log      *zap.Logger
+	svc      *projects.Service
+	activity *activity.Recorder
+}
+
+// WithActivity records changes in the project activity feed.
+func (h *ProjectHandler) WithActivity(rec *activity.Recorder) *ProjectHandler {
+	h.activity = rec
+	return h
 }
 
 // NewProjectHandler creates a new project handler.
@@ -132,6 +140,13 @@ func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	payload := map[string]any{"name": p.Name}
+	if input.Status != nil {
+		payload["status"] = p.Status
+	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: p.ID, UserID: actorID(r), Type: "project.updated", Payload: payload,
+	})
 	respondJSON(w, http.StatusOK, p)
 }
 
@@ -188,4 +203,14 @@ func projectParams(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID
 // respondError writes a JSON error response. Defined here to avoid duplicating the one in health.go.
 func respondError(w http.ResponseWriter, status int, msg string) {
 	respondJSON(w, status, map[string]string{"error": msg})
+}
+
+// firstQuery returns the first non-empty query parameter among names.
+func firstQuery(r *http.Request, names ...string) string {
+	for _, n := range names {
+		if v := r.URL.Query().Get(n); v != "" {
+			return v
+		}
+	}
+	return ""
 }

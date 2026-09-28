@@ -49,6 +49,22 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldCreatedBy holds the string denoting the created_by field in the database.
 	FieldCreatedBy = "created_by"
+	// FieldDecision holds the string denoting the decision field in the database.
+	FieldDecision = "decision"
+	// FieldDecisionRationale holds the string denoting the decision_rationale field in the database.
+	FieldDecisionRationale = "decision_rationale"
+	// FieldDecidedBy holds the string denoting the decided_by field in the database.
+	FieldDecidedBy = "decided_by"
+	// FieldDecidedAt holds the string denoting the decided_at field in the database.
+	FieldDecidedAt = "decided_at"
+	// FieldOutcome holds the string denoting the outcome field in the database.
+	FieldOutcome = "outcome"
+	// FieldStatusHistory holds the string denoting the status_history field in the database.
+	FieldStatusHistory = "status_history"
+	// FieldFinalDocumentVersion holds the string denoting the final_document_version field in the database.
+	FieldFinalDocumentVersion = "final_document_version"
+	// FieldReadyForSubmission holds the string denoting the ready_for_submission field in the database.
+	FieldReadyForSubmission = "ready_for_submission"
 	// EdgeDocuments holds the string denoting the documents edge name in mutations.
 	EdgeDocuments = "documents"
 	// EdgeCommittees holds the string denoting the committees edge name in mutations.
@@ -57,6 +73,10 @@ const (
 	EdgeEvaluations = "evaluations"
 	// EdgeMeetings holds the string denoting the meetings edge name in mutations.
 	EdgeMeetings = "meetings"
+	// EdgeSections holds the string denoting the sections edge name in mutations.
+	EdgeSections = "sections"
+	// EdgeSubmissions holds the string denoting the submissions edge name in mutations.
+	EdgeSubmissions = "submissions"
 	// Table holds the table name of the tender in the database.
 	Table = "tenders"
 	// DocumentsTable is the table that holds the documents relation/edge.
@@ -87,6 +107,20 @@ const (
 	MeetingsInverseTable = "tender_meetings"
 	// MeetingsColumn is the table column denoting the meetings relation/edge.
 	MeetingsColumn = "tender_id"
+	// SectionsTable is the table that holds the sections relation/edge.
+	SectionsTable = "tender_sections"
+	// SectionsInverseTable is the table name for the TenderSection entity.
+	// It exists in this package in order to avoid circular dependency with the "tendersection" package.
+	SectionsInverseTable = "tender_sections"
+	// SectionsColumn is the table column denoting the sections relation/edge.
+	SectionsColumn = "tender_id"
+	// SubmissionsTable is the table that holds the submissions relation/edge.
+	SubmissionsTable = "tender_submissions"
+	// SubmissionsInverseTable is the table name for the TenderSubmission entity.
+	// It exists in this package in order to avoid circular dependency with the "tendersubmission" package.
+	SubmissionsInverseTable = "tender_submissions"
+	// SubmissionsColumn is the table column denoting the submissions relation/edge.
+	SubmissionsColumn = "tender_id"
 )
 
 // Columns holds all SQL columns for tender fields.
@@ -109,6 +143,14 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldCreatedBy,
+	FieldDecision,
+	FieldDecisionRationale,
+	FieldDecidedBy,
+	FieldDecidedAt,
+	FieldOutcome,
+	FieldStatusHistory,
+	FieldFinalDocumentVersion,
+	FieldReadyForSubmission,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -140,6 +182,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultFinalDocumentVersion holds the default value on creation for the "final_document_version" field.
+	DefaultFinalDocumentVersion int
+	// DefaultReadyForSubmission holds the default value on creation for the "ready_for_submission" field.
+	DefaultReadyForSubmission bool
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -232,6 +278,36 @@ func ByCreatedBy(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedBy, opts...).ToFunc()
 }
 
+// ByDecision orders the results by the decision field.
+func ByDecision(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDecision, opts...).ToFunc()
+}
+
+// ByDecisionRationale orders the results by the decision_rationale field.
+func ByDecisionRationale(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDecisionRationale, opts...).ToFunc()
+}
+
+// ByDecidedBy orders the results by the decided_by field.
+func ByDecidedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDecidedBy, opts...).ToFunc()
+}
+
+// ByDecidedAt orders the results by the decided_at field.
+func ByDecidedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDecidedAt, opts...).ToFunc()
+}
+
+// ByFinalDocumentVersion orders the results by the final_document_version field.
+func ByFinalDocumentVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFinalDocumentVersion, opts...).ToFunc()
+}
+
+// ByReadyForSubmission orders the results by the ready_for_submission field.
+func ByReadyForSubmission(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReadyForSubmission, opts...).ToFunc()
+}
+
 // ByDocumentsCount orders the results by documents count.
 func ByDocumentsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -287,6 +363,34 @@ func ByMeetings(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMeetingsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySectionsCount orders the results by sections count.
+func BySectionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSectionsStep(), opts...)
+	}
+}
+
+// BySections orders the results by sections terms.
+func BySections(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSectionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySubmissionsCount orders the results by submissions count.
+func BySubmissionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSubmissionsStep(), opts...)
+	}
+}
+
+// BySubmissions orders the results by submissions terms.
+func BySubmissions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubmissionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newDocumentsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -313,5 +417,19 @@ func newMeetingsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MeetingsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, MeetingsTable, MeetingsColumn),
+	)
+}
+func newSectionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SectionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SectionsTable, SectionsColumn),
+	)
+}
+func newSubmissionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubmissionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SubmissionsTable, SubmissionsColumn),
 	)
 }

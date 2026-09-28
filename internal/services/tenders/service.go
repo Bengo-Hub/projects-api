@@ -17,13 +17,16 @@ import (
 	enttenderdoc "github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	enttendereval "github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	enttendermeeting "github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	enttendersection "github.com/bengobox/projects-service/internal/ent/tendersection"
+	enttendersub "github.com/bengobox/projects-service/internal/ent/tendersubmission"
 )
 
 // Service handles tender management operations.
 type Service struct {
-	client *ent.Client
-	cache  *sharedcache.Aside
-	log    *zap.Logger
+	client    *ent.Client
+	cache     *sharedcache.Aside
+	log       *zap.Logger
+	publisher Publisher
 }
 
 // NewService creates a new tenders service.
@@ -60,6 +63,7 @@ type UpdateTenderInput struct {
 	Description    *string        `json:"description"`
 	SubmissionType *string        `json:"submission_type"`
 	Metadata       map[string]any `json:"metadata"`
+	ChangedBy      uuid.UUID      `json:"-"`
 }
 
 // ListTendersFilter holds filter options for listing tenders.
@@ -135,7 +139,10 @@ func (s *Service) CreateTender(ctx context.Context, tenantID uuid.UUID, input Cr
 	}
 	status := input.Status
 	if status == "" {
-		status = "draft"
+		status = StatusDraft
+	}
+	if status != StatusDraft && status != StatusEvaluating {
+		return nil, ErrValidation("a new tender starts as draft or evaluating")
 	}
 	priority := input.Priority
 	if priority == "" {
@@ -179,6 +186,7 @@ func (s *Service) CreateTender(ctx context.Context, tenantID uuid.UUID, input Cr
 		return nil, fmt.Errorf("create tender: %w", err)
 	}
 	s.log.Info("tender created", zap.String("id", t.ID.String()), zap.String("number", t.Number))
+	s.emit(ctx, tenantID, t.ID, "tender.created", s.tenderPayload(t))
 	return t, nil
 }
 
@@ -228,6 +236,10 @@ func (s *Service) GetTender(ctx context.Context, tenantID, id uuid.UUID) (*ent.T
 		WithEvaluations().
 		WithMeetings().
 		WithDocuments().
+		WithSections(func(q *ent.TenderSectionQuery) {
+			q.Order(ent.Asc(enttendersection.FieldSortOrder), ent.Asc(enttendersection.FieldCreatedAt))
+		}).
+		WithSubmissions().
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -258,10 +270,16 @@ func (s *Service) UpdateTender(ctx context.Context, tenantID, id uuid.UUID, inpu
 	if input.Source != nil {
 		u = u.SetSource(*input.Source)
 	}
-	if input.Status != nil {
-		u = u.SetStatus(*input.Status)
-		if *input.Status == "submitted" {
-			now := time.Now()
+	statusChanged := input.Status != nil && *input.Status != t.Status
+	if statusChanged {
+		// Same rules as POST /status: a valid transition, logged in the history.
+		now := time.Now()
+		history, err := nextHistory(t, *input.Status, "", input.ChangedBy, now)
+		if err != nil {
+			return nil, err
+		}
+		u = u.SetStatus(*input.Status).SetStatusHistory(history)
+		if *input.Status == StatusSubmitted {
 			u = u.SetSubmittedAt(now)
 		}
 	}
@@ -290,25 +308,53 @@ func (s *Service) UpdateTender(ctx context.Context, tenantID, id uuid.UUID, inpu
 	if err != nil {
 		return nil, fmt.Errorf("update tender: %w", err)
 	}
+	if statusChanged {
+		s.emitStatusChanged(ctx, t.Status, updated, "")
+	}
 	return updated, nil
 }
 
-// DeleteTender deletes a tender.
+// DeleteTender deletes a tender with its committees, evaluations, meetings, documents, sections
+// and submissions in one transaction (the foreign keys do not cascade).
 func (s *Service) DeleteTender(ctx context.Context, tenantID, id uuid.UUID) error {
-	n, err := s.client.Tender.Delete().
-		Where(enttender.ID(id), enttender.TenantID(tenantID)).Exec(ctx)
+	if _, err := s.tenderOf(ctx, tenantID, id); err != nil {
+		return err
+	}
+	tx, err := s.client.Tx(ctx)
 	if err != nil {
+		return fmt.Errorf("begin: %w", err)
+	}
+	steps := []func() (int, error){
+		func() (int, error) {
+			return tx.TenderCommitteeMember.Delete().
+				Where(enttendercommitteemember.HasCommitteeWith(enttendercommittee.TenderID(id))).Exec(ctx)
+		},
+		func() (int, error) {
+			return tx.TenderCommittee.Delete().Where(enttendercommittee.TenderID(id)).Exec(ctx)
+		},
+		func() (int, error) { return tx.TenderEvaluation.Delete().Where(enttendereval.TenderID(id)).Exec(ctx) },
+		func() (int, error) { return tx.TenderMeeting.Delete().Where(enttendermeeting.TenderID(id)).Exec(ctx) },
+		func() (int, error) { return tx.TenderDocument.Delete().Where(enttenderdoc.TenderID(id)).Exec(ctx) },
+		func() (int, error) { return tx.TenderSection.Delete().Where(enttendersection.TenderID(id)).Exec(ctx) },
+		func() (int, error) { return tx.TenderSubmission.Delete().Where(enttendersub.TenderID(id)).Exec(ctx) },
+	}
+	for _, step := range steps {
+		if _, err := step(); err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("delete tender children: %w", err)
+		}
+	}
+	n, err := tx.Tender.Delete().Where(enttender.ID(id), enttender.TenantID(tenantID)).Exec(ctx)
+	if err != nil {
+		_ = tx.Rollback()
 		return fmt.Errorf("delete tender: %w", err)
 	}
 	if n == 0 {
+		_ = tx.Rollback()
 		return ErrNotFound
 	}
-	return nil
+	return tx.Commit()
 }
-
-// tenderStatuses are always reported (zero when a tenant has none) so the UI cards never read a
-// missing key.
-var tenderStatuses = []string{"draft", "evaluating", "submitted", "awarded", "lost", "cancelled"}
 
 // StatusMetric is one status bucket of the tender pipeline.
 type StatusMetric struct {
@@ -355,13 +401,17 @@ func (s *Service) GetTenderMetrics(ctx context.Context, tenantID uuid.UUID) (map
 	if decided := byStatus["awarded"].Count + byStatus["lost"].Count; decided > 0 {
 		winRate = float64(byStatus["awarded"].Count) / float64(decided) * 100
 	}
+	pipeline := 0.0
+	for _, st := range openStatuses {
+		pipeline += byStatus[st].Value
+	}
 	return map[string]any{
 		"total":                 total,
 		"total_estimated_value": totalValue,
 		"by_status":             byStatus,
 		"win_rate":              winRate,
 		"awarded_value":         byStatus["awarded"].Value,
-		"pipeline_value":        byStatus["draft"].Value + byStatus["evaluating"].Value + byStatus["submitted"].Value,
+		"pipeline_value":        pipeline,
 		"counts":                counts,
 	}, nil
 }
@@ -370,6 +420,9 @@ func (s *Service) GetTenderMetrics(ctx context.Context, tenantID uuid.UUID) (map
 
 // CreateCommittee creates a new committee for a tender.
 func (s *Service) CreateCommittee(ctx context.Context, tenantID, tenderID uuid.UUID, input CreateCommitteeInput) (*ent.TenderCommittee, error) {
+	if _, err := s.tenderOf(ctx, tenantID, tenderID); err != nil {
+		return nil, err
+	}
 	c, err := s.client.TenderCommittee.Create().
 		SetTenderID(tenderID).
 		SetTenantID(tenantID).
@@ -378,6 +431,9 @@ func (s *Service) CreateCommittee(ctx context.Context, tenantID, tenderID uuid.U
 	if err != nil {
 		return nil, fmt.Errorf("create committee: %w", err)
 	}
+	s.emit(ctx, tenantID, tenderID, "tender.committee.formed", map[string]any{
+		"tender_id": tenderID.String(), "committee_id": c.ID.String(), "name": c.Name,
+	})
 	return c, nil
 }
 
@@ -429,6 +485,9 @@ func (s *Service) RemoveCommitteeMember(ctx context.Context, tenantID, committee
 
 // SubmitEvaluation submits an evaluation for a tender.
 func (s *Service) SubmitEvaluation(ctx context.Context, tenantID, tenderID uuid.UUID, input SubmitEvaluationInput) (*ent.TenderEvaluation, error) {
+	if _, err := s.tenderOf(ctx, tenantID, tenderID); err != nil {
+		return nil, err
+	}
 	c := s.client.TenderEvaluation.Create().
 		SetTenderID(tenderID).
 		SetTenantID(tenantID).
@@ -444,6 +503,10 @@ func (s *Service) SubmitEvaluation(ctx context.Context, tenantID, tenderID uuid.
 	if err != nil {
 		return nil, fmt.Errorf("submit evaluation: %w", err)
 	}
+	s.emit(ctx, tenantID, tenderID, "tender.evaluation.submitted", map[string]any{
+		"tender_id": tenderID.String(), "evaluation_id": e.ID.String(),
+		"evaluator_id": e.EvaluatorID.String(), "score": e.Score, "criteria": e.Criteria,
+	})
 	return e, nil
 }
 
@@ -463,6 +526,9 @@ func (s *Service) ListEvaluations(ctx context.Context, tenantID, tenderID uuid.U
 
 // ScheduleMeeting schedules a meeting for a tender.
 func (s *Service) ScheduleMeeting(ctx context.Context, tenantID, tenderID uuid.UUID, input ScheduleMeetingInput) (*ent.TenderMeeting, error) {
+	if _, err := s.tenderOf(ctx, tenantID, tenderID); err != nil {
+		return nil, err
+	}
 	platform := input.Platform
 	if platform == "" {
 		platform = "physical"
@@ -484,6 +550,10 @@ func (s *Service) ScheduleMeeting(ctx context.Context, tenantID, tenderID uuid.U
 	if err != nil {
 		return nil, fmt.Errorf("schedule meeting: %w", err)
 	}
+	s.emit(ctx, tenantID, tenderID, "tender.meeting.scheduled", map[string]any{
+		"tender_id": tenderID.String(), "meeting_id": m.ID.String(), "title": m.Title,
+		"scheduled_at": m.ScheduledAt, "platform": m.Platform, "meeting_url": m.MeetingURL,
+	})
 	return m, nil
 }
 
@@ -503,6 +573,9 @@ func (s *Service) ListMeetings(ctx context.Context, tenantID, tenderID uuid.UUID
 
 // AddDocument adds a document to a tender.
 func (s *Service) AddDocument(ctx context.Context, tenantID, tenderID uuid.UUID, input AddDocumentInput) (*ent.TenderDocument, error) {
+	if _, err := s.tenderOf(ctx, tenantID, tenderID); err != nil {
+		return nil, err
+	}
 	c := s.client.TenderDocument.Create().
 		SetTenderID(tenderID).
 		SetTenantID(tenantID).

@@ -30,6 +30,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	"github.com/bengobox/projects-service/internal/ent/tendersection"
+	"github.com/bengobox/projects-service/internal/ent/tendersubmission"
 	"github.com/bengobox/projects-service/internal/ent/userrole"
 	"github.com/google/uuid"
 )
@@ -61,6 +63,8 @@ const (
 	TypeTenderDocument        = "TenderDocument"
 	TypeTenderEvaluation      = "TenderEvaluation"
 	TypeTenderMeeting         = "TenderMeeting"
+	TypeTenderSection         = "TenderSection"
+	TypeTenderSubmission      = "TenderSubmission"
 	TypeUserRole              = "UserRole"
 )
 
@@ -11380,43 +11384,59 @@ func (m *TaskDependencyMutation) ResetEdge(name string) error {
 // TenderMutation represents an operation that mutates the Tender nodes in the graph.
 type TenderMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *uuid.UUID
-	tenant_id          *uuid.UUID
-	number             *string
-	title              *string
-	client_name        *string
-	source             *string
-	status             *string
-	priority           *string
-	estimated_value    *float64
-	addestimated_value *float64
-	currency           *string
-	deadline           *time.Time
-	description        *string
-	submission_type    *string
-	submitted_at       *time.Time
-	metadata           *map[string]interface{}
-	created_at         *time.Time
-	updated_at         *time.Time
-	created_by         *uuid.UUID
-	clearedFields      map[string]struct{}
-	documents          map[uuid.UUID]struct{}
-	removeddocuments   map[uuid.UUID]struct{}
-	cleareddocuments   bool
-	committees         map[uuid.UUID]struct{}
-	removedcommittees  map[uuid.UUID]struct{}
-	clearedcommittees  bool
-	evaluations        map[uuid.UUID]struct{}
-	removedevaluations map[uuid.UUID]struct{}
-	clearedevaluations bool
-	meetings           map[uuid.UUID]struct{}
-	removedmeetings    map[uuid.UUID]struct{}
-	clearedmeetings    bool
-	done               bool
-	oldValue           func(context.Context) (*Tender, error)
-	predicates         []predicate.Tender
+	op                        Op
+	typ                       string
+	id                        *uuid.UUID
+	tenant_id                 *uuid.UUID
+	number                    *string
+	title                     *string
+	client_name               *string
+	source                    *string
+	status                    *string
+	priority                  *string
+	estimated_value           *float64
+	addestimated_value        *float64
+	currency                  *string
+	deadline                  *time.Time
+	description               *string
+	submission_type           *string
+	submitted_at              *time.Time
+	metadata                  *map[string]interface{}
+	created_at                *time.Time
+	updated_at                *time.Time
+	created_by                *uuid.UUID
+	decision                  *string
+	decision_rationale        *string
+	decided_by                *uuid.UUID
+	decided_at                *time.Time
+	outcome                   *map[string]interface{}
+	status_history            *[]map[string]interface{}
+	appendstatus_history      []map[string]interface{}
+	final_document_version    *int
+	addfinal_document_version *int
+	ready_for_submission      *bool
+	clearedFields             map[string]struct{}
+	documents                 map[uuid.UUID]struct{}
+	removeddocuments          map[uuid.UUID]struct{}
+	cleareddocuments          bool
+	committees                map[uuid.UUID]struct{}
+	removedcommittees         map[uuid.UUID]struct{}
+	clearedcommittees         bool
+	evaluations               map[uuid.UUID]struct{}
+	removedevaluations        map[uuid.UUID]struct{}
+	clearedevaluations        bool
+	meetings                  map[uuid.UUID]struct{}
+	removedmeetings           map[uuid.UUID]struct{}
+	clearedmeetings           bool
+	sections                  map[uuid.UUID]struct{}
+	removedsections           map[uuid.UUID]struct{}
+	clearedsections           bool
+	submissions               map[uuid.UUID]struct{}
+	removedsubmissions        map[uuid.UUID]struct{}
+	clearedsubmissions        bool
+	done                      bool
+	oldValue                  func(context.Context) (*Tender, error)
+	predicates                []predicate.Tender
 }
 
 var _ ent.Mutation = (*TenderMutation)(nil)
@@ -12234,6 +12254,408 @@ func (m *TenderMutation) ResetCreatedBy() {
 	m.created_by = nil
 }
 
+// SetDecision sets the "decision" field.
+func (m *TenderMutation) SetDecision(s string) {
+	m.decision = &s
+}
+
+// Decision returns the value of the "decision" field in the mutation.
+func (m *TenderMutation) Decision() (r string, exists bool) {
+	v := m.decision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDecision returns the old "decision" field's value of the Tender entity.
+// If the Tender object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderMutation) OldDecision(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDecision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDecision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDecision: %w", err)
+	}
+	return oldValue.Decision, nil
+}
+
+// ClearDecision clears the value of the "decision" field.
+func (m *TenderMutation) ClearDecision() {
+	m.decision = nil
+	m.clearedFields[tender.FieldDecision] = struct{}{}
+}
+
+// DecisionCleared returns if the "decision" field was cleared in this mutation.
+func (m *TenderMutation) DecisionCleared() bool {
+	_, ok := m.clearedFields[tender.FieldDecision]
+	return ok
+}
+
+// ResetDecision resets all changes to the "decision" field.
+func (m *TenderMutation) ResetDecision() {
+	m.decision = nil
+	delete(m.clearedFields, tender.FieldDecision)
+}
+
+// SetDecisionRationale sets the "decision_rationale" field.
+func (m *TenderMutation) SetDecisionRationale(s string) {
+	m.decision_rationale = &s
+}
+
+// DecisionRationale returns the value of the "decision_rationale" field in the mutation.
+func (m *TenderMutation) DecisionRationale() (r string, exists bool) {
+	v := m.decision_rationale
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDecisionRationale returns the old "decision_rationale" field's value of the Tender entity.
+// If the Tender object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderMutation) OldDecisionRationale(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDecisionRationale is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDecisionRationale requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDecisionRationale: %w", err)
+	}
+	return oldValue.DecisionRationale, nil
+}
+
+// ClearDecisionRationale clears the value of the "decision_rationale" field.
+func (m *TenderMutation) ClearDecisionRationale() {
+	m.decision_rationale = nil
+	m.clearedFields[tender.FieldDecisionRationale] = struct{}{}
+}
+
+// DecisionRationaleCleared returns if the "decision_rationale" field was cleared in this mutation.
+func (m *TenderMutation) DecisionRationaleCleared() bool {
+	_, ok := m.clearedFields[tender.FieldDecisionRationale]
+	return ok
+}
+
+// ResetDecisionRationale resets all changes to the "decision_rationale" field.
+func (m *TenderMutation) ResetDecisionRationale() {
+	m.decision_rationale = nil
+	delete(m.clearedFields, tender.FieldDecisionRationale)
+}
+
+// SetDecidedBy sets the "decided_by" field.
+func (m *TenderMutation) SetDecidedBy(u uuid.UUID) {
+	m.decided_by = &u
+}
+
+// DecidedBy returns the value of the "decided_by" field in the mutation.
+func (m *TenderMutation) DecidedBy() (r uuid.UUID, exists bool) {
+	v := m.decided_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDecidedBy returns the old "decided_by" field's value of the Tender entity.
+// If the Tender object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderMutation) OldDecidedBy(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDecidedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDecidedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDecidedBy: %w", err)
+	}
+	return oldValue.DecidedBy, nil
+}
+
+// ClearDecidedBy clears the value of the "decided_by" field.
+func (m *TenderMutation) ClearDecidedBy() {
+	m.decided_by = nil
+	m.clearedFields[tender.FieldDecidedBy] = struct{}{}
+}
+
+// DecidedByCleared returns if the "decided_by" field was cleared in this mutation.
+func (m *TenderMutation) DecidedByCleared() bool {
+	_, ok := m.clearedFields[tender.FieldDecidedBy]
+	return ok
+}
+
+// ResetDecidedBy resets all changes to the "decided_by" field.
+func (m *TenderMutation) ResetDecidedBy() {
+	m.decided_by = nil
+	delete(m.clearedFields, tender.FieldDecidedBy)
+}
+
+// SetDecidedAt sets the "decided_at" field.
+func (m *TenderMutation) SetDecidedAt(t time.Time) {
+	m.decided_at = &t
+}
+
+// DecidedAt returns the value of the "decided_at" field in the mutation.
+func (m *TenderMutation) DecidedAt() (r time.Time, exists bool) {
+	v := m.decided_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDecidedAt returns the old "decided_at" field's value of the Tender entity.
+// If the Tender object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderMutation) OldDecidedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDecidedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDecidedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDecidedAt: %w", err)
+	}
+	return oldValue.DecidedAt, nil
+}
+
+// ClearDecidedAt clears the value of the "decided_at" field.
+func (m *TenderMutation) ClearDecidedAt() {
+	m.decided_at = nil
+	m.clearedFields[tender.FieldDecidedAt] = struct{}{}
+}
+
+// DecidedAtCleared returns if the "decided_at" field was cleared in this mutation.
+func (m *TenderMutation) DecidedAtCleared() bool {
+	_, ok := m.clearedFields[tender.FieldDecidedAt]
+	return ok
+}
+
+// ResetDecidedAt resets all changes to the "decided_at" field.
+func (m *TenderMutation) ResetDecidedAt() {
+	m.decided_at = nil
+	delete(m.clearedFields, tender.FieldDecidedAt)
+}
+
+// SetOutcome sets the "outcome" field.
+func (m *TenderMutation) SetOutcome(value map[string]interface{}) {
+	m.outcome = &value
+}
+
+// Outcome returns the value of the "outcome" field in the mutation.
+func (m *TenderMutation) Outcome() (r map[string]interface{}, exists bool) {
+	v := m.outcome
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutcome returns the old "outcome" field's value of the Tender entity.
+// If the Tender object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderMutation) OldOutcome(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutcome is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutcome requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutcome: %w", err)
+	}
+	return oldValue.Outcome, nil
+}
+
+// ClearOutcome clears the value of the "outcome" field.
+func (m *TenderMutation) ClearOutcome() {
+	m.outcome = nil
+	m.clearedFields[tender.FieldOutcome] = struct{}{}
+}
+
+// OutcomeCleared returns if the "outcome" field was cleared in this mutation.
+func (m *TenderMutation) OutcomeCleared() bool {
+	_, ok := m.clearedFields[tender.FieldOutcome]
+	return ok
+}
+
+// ResetOutcome resets all changes to the "outcome" field.
+func (m *TenderMutation) ResetOutcome() {
+	m.outcome = nil
+	delete(m.clearedFields, tender.FieldOutcome)
+}
+
+// SetStatusHistory sets the "status_history" field.
+func (m *TenderMutation) SetStatusHistory(value []map[string]interface{}) {
+	m.status_history = &value
+	m.appendstatus_history = nil
+}
+
+// StatusHistory returns the value of the "status_history" field in the mutation.
+func (m *TenderMutation) StatusHistory() (r []map[string]interface{}, exists bool) {
+	v := m.status_history
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatusHistory returns the old "status_history" field's value of the Tender entity.
+// If the Tender object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderMutation) OldStatusHistory(ctx context.Context) (v []map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatusHistory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatusHistory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatusHistory: %w", err)
+	}
+	return oldValue.StatusHistory, nil
+}
+
+// AppendStatusHistory adds value to the "status_history" field.
+func (m *TenderMutation) AppendStatusHistory(value []map[string]interface{}) {
+	m.appendstatus_history = append(m.appendstatus_history, value...)
+}
+
+// AppendedStatusHistory returns the list of values that were appended to the "status_history" field in this mutation.
+func (m *TenderMutation) AppendedStatusHistory() ([]map[string]interface{}, bool) {
+	if len(m.appendstatus_history) == 0 {
+		return nil, false
+	}
+	return m.appendstatus_history, true
+}
+
+// ClearStatusHistory clears the value of the "status_history" field.
+func (m *TenderMutation) ClearStatusHistory() {
+	m.status_history = nil
+	m.appendstatus_history = nil
+	m.clearedFields[tender.FieldStatusHistory] = struct{}{}
+}
+
+// StatusHistoryCleared returns if the "status_history" field was cleared in this mutation.
+func (m *TenderMutation) StatusHistoryCleared() bool {
+	_, ok := m.clearedFields[tender.FieldStatusHistory]
+	return ok
+}
+
+// ResetStatusHistory resets all changes to the "status_history" field.
+func (m *TenderMutation) ResetStatusHistory() {
+	m.status_history = nil
+	m.appendstatus_history = nil
+	delete(m.clearedFields, tender.FieldStatusHistory)
+}
+
+// SetFinalDocumentVersion sets the "final_document_version" field.
+func (m *TenderMutation) SetFinalDocumentVersion(i int) {
+	m.final_document_version = &i
+	m.addfinal_document_version = nil
+}
+
+// FinalDocumentVersion returns the value of the "final_document_version" field in the mutation.
+func (m *TenderMutation) FinalDocumentVersion() (r int, exists bool) {
+	v := m.final_document_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinalDocumentVersion returns the old "final_document_version" field's value of the Tender entity.
+// If the Tender object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderMutation) OldFinalDocumentVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinalDocumentVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinalDocumentVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinalDocumentVersion: %w", err)
+	}
+	return oldValue.FinalDocumentVersion, nil
+}
+
+// AddFinalDocumentVersion adds i to the "final_document_version" field.
+func (m *TenderMutation) AddFinalDocumentVersion(i int) {
+	if m.addfinal_document_version != nil {
+		*m.addfinal_document_version += i
+	} else {
+		m.addfinal_document_version = &i
+	}
+}
+
+// AddedFinalDocumentVersion returns the value that was added to the "final_document_version" field in this mutation.
+func (m *TenderMutation) AddedFinalDocumentVersion() (r int, exists bool) {
+	v := m.addfinal_document_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFinalDocumentVersion resets all changes to the "final_document_version" field.
+func (m *TenderMutation) ResetFinalDocumentVersion() {
+	m.final_document_version = nil
+	m.addfinal_document_version = nil
+}
+
+// SetReadyForSubmission sets the "ready_for_submission" field.
+func (m *TenderMutation) SetReadyForSubmission(b bool) {
+	m.ready_for_submission = &b
+}
+
+// ReadyForSubmission returns the value of the "ready_for_submission" field in the mutation.
+func (m *TenderMutation) ReadyForSubmission() (r bool, exists bool) {
+	v := m.ready_for_submission
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReadyForSubmission returns the old "ready_for_submission" field's value of the Tender entity.
+// If the Tender object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderMutation) OldReadyForSubmission(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReadyForSubmission is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReadyForSubmission requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReadyForSubmission: %w", err)
+	}
+	return oldValue.ReadyForSubmission, nil
+}
+
+// ResetReadyForSubmission resets all changes to the "ready_for_submission" field.
+func (m *TenderMutation) ResetReadyForSubmission() {
+	m.ready_for_submission = nil
+}
+
 // AddDocumentIDs adds the "documents" edge to the TenderDocument entity by ids.
 func (m *TenderMutation) AddDocumentIDs(ids ...uuid.UUID) {
 	if m.documents == nil {
@@ -12450,6 +12872,114 @@ func (m *TenderMutation) ResetMeetings() {
 	m.removedmeetings = nil
 }
 
+// AddSectionIDs adds the "sections" edge to the TenderSection entity by ids.
+func (m *TenderMutation) AddSectionIDs(ids ...uuid.UUID) {
+	if m.sections == nil {
+		m.sections = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.sections[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSections clears the "sections" edge to the TenderSection entity.
+func (m *TenderMutation) ClearSections() {
+	m.clearedsections = true
+}
+
+// SectionsCleared reports if the "sections" edge to the TenderSection entity was cleared.
+func (m *TenderMutation) SectionsCleared() bool {
+	return m.clearedsections
+}
+
+// RemoveSectionIDs removes the "sections" edge to the TenderSection entity by IDs.
+func (m *TenderMutation) RemoveSectionIDs(ids ...uuid.UUID) {
+	if m.removedsections == nil {
+		m.removedsections = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.sections, ids[i])
+		m.removedsections[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSections returns the removed IDs of the "sections" edge to the TenderSection entity.
+func (m *TenderMutation) RemovedSectionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedsections {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SectionsIDs returns the "sections" edge IDs in the mutation.
+func (m *TenderMutation) SectionsIDs() (ids []uuid.UUID) {
+	for id := range m.sections {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSections resets all changes to the "sections" edge.
+func (m *TenderMutation) ResetSections() {
+	m.sections = nil
+	m.clearedsections = false
+	m.removedsections = nil
+}
+
+// AddSubmissionIDs adds the "submissions" edge to the TenderSubmission entity by ids.
+func (m *TenderMutation) AddSubmissionIDs(ids ...uuid.UUID) {
+	if m.submissions == nil {
+		m.submissions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.submissions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubmissions clears the "submissions" edge to the TenderSubmission entity.
+func (m *TenderMutation) ClearSubmissions() {
+	m.clearedsubmissions = true
+}
+
+// SubmissionsCleared reports if the "submissions" edge to the TenderSubmission entity was cleared.
+func (m *TenderMutation) SubmissionsCleared() bool {
+	return m.clearedsubmissions
+}
+
+// RemoveSubmissionIDs removes the "submissions" edge to the TenderSubmission entity by IDs.
+func (m *TenderMutation) RemoveSubmissionIDs(ids ...uuid.UUID) {
+	if m.removedsubmissions == nil {
+		m.removedsubmissions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.submissions, ids[i])
+		m.removedsubmissions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubmissions returns the removed IDs of the "submissions" edge to the TenderSubmission entity.
+func (m *TenderMutation) RemovedSubmissionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedsubmissions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubmissionsIDs returns the "submissions" edge IDs in the mutation.
+func (m *TenderMutation) SubmissionsIDs() (ids []uuid.UUID) {
+	for id := range m.submissions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubmissions resets all changes to the "submissions" edge.
+func (m *TenderMutation) ResetSubmissions() {
+	m.submissions = nil
+	m.clearedsubmissions = false
+	m.removedsubmissions = nil
+}
+
 // Where appends a list predicates to the TenderMutation builder.
 func (m *TenderMutation) Where(ps ...predicate.Tender) {
 	m.predicates = append(m.predicates, ps...)
@@ -12484,7 +13014,7 @@ func (m *TenderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenderMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 25)
 	if m.tenant_id != nil {
 		fields = append(fields, tender.FieldTenantID)
 	}
@@ -12536,6 +13066,30 @@ func (m *TenderMutation) Fields() []string {
 	if m.created_by != nil {
 		fields = append(fields, tender.FieldCreatedBy)
 	}
+	if m.decision != nil {
+		fields = append(fields, tender.FieldDecision)
+	}
+	if m.decision_rationale != nil {
+		fields = append(fields, tender.FieldDecisionRationale)
+	}
+	if m.decided_by != nil {
+		fields = append(fields, tender.FieldDecidedBy)
+	}
+	if m.decided_at != nil {
+		fields = append(fields, tender.FieldDecidedAt)
+	}
+	if m.outcome != nil {
+		fields = append(fields, tender.FieldOutcome)
+	}
+	if m.status_history != nil {
+		fields = append(fields, tender.FieldStatusHistory)
+	}
+	if m.final_document_version != nil {
+		fields = append(fields, tender.FieldFinalDocumentVersion)
+	}
+	if m.ready_for_submission != nil {
+		fields = append(fields, tender.FieldReadyForSubmission)
+	}
 	return fields
 }
 
@@ -12578,6 +13132,22 @@ func (m *TenderMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case tender.FieldCreatedBy:
 		return m.CreatedBy()
+	case tender.FieldDecision:
+		return m.Decision()
+	case tender.FieldDecisionRationale:
+		return m.DecisionRationale()
+	case tender.FieldDecidedBy:
+		return m.DecidedBy()
+	case tender.FieldDecidedAt:
+		return m.DecidedAt()
+	case tender.FieldOutcome:
+		return m.Outcome()
+	case tender.FieldStatusHistory:
+		return m.StatusHistory()
+	case tender.FieldFinalDocumentVersion:
+		return m.FinalDocumentVersion()
+	case tender.FieldReadyForSubmission:
+		return m.ReadyForSubmission()
 	}
 	return nil, false
 }
@@ -12621,6 +13191,22 @@ func (m *TenderMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldUpdatedAt(ctx)
 	case tender.FieldCreatedBy:
 		return m.OldCreatedBy(ctx)
+	case tender.FieldDecision:
+		return m.OldDecision(ctx)
+	case tender.FieldDecisionRationale:
+		return m.OldDecisionRationale(ctx)
+	case tender.FieldDecidedBy:
+		return m.OldDecidedBy(ctx)
+	case tender.FieldDecidedAt:
+		return m.OldDecidedAt(ctx)
+	case tender.FieldOutcome:
+		return m.OldOutcome(ctx)
+	case tender.FieldStatusHistory:
+		return m.OldStatusHistory(ctx)
+	case tender.FieldFinalDocumentVersion:
+		return m.OldFinalDocumentVersion(ctx)
+	case tender.FieldReadyForSubmission:
+		return m.OldReadyForSubmission(ctx)
 	}
 	return nil, fmt.Errorf("unknown Tender field %s", name)
 }
@@ -12749,6 +13335,62 @@ func (m *TenderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCreatedBy(v)
 		return nil
+	case tender.FieldDecision:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDecision(v)
+		return nil
+	case tender.FieldDecisionRationale:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDecisionRationale(v)
+		return nil
+	case tender.FieldDecidedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDecidedBy(v)
+		return nil
+	case tender.FieldDecidedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDecidedAt(v)
+		return nil
+	case tender.FieldOutcome:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutcome(v)
+		return nil
+	case tender.FieldStatusHistory:
+		v, ok := value.([]map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatusHistory(v)
+		return nil
+	case tender.FieldFinalDocumentVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinalDocumentVersion(v)
+		return nil
+	case tender.FieldReadyForSubmission:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReadyForSubmission(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Tender field %s", name)
 }
@@ -12760,6 +13402,9 @@ func (m *TenderMutation) AddedFields() []string {
 	if m.addestimated_value != nil {
 		fields = append(fields, tender.FieldEstimatedValue)
 	}
+	if m.addfinal_document_version != nil {
+		fields = append(fields, tender.FieldFinalDocumentVersion)
+	}
 	return fields
 }
 
@@ -12770,6 +13415,8 @@ func (m *TenderMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case tender.FieldEstimatedValue:
 		return m.AddedEstimatedValue()
+	case tender.FieldFinalDocumentVersion:
+		return m.AddedFinalDocumentVersion()
 	}
 	return nil, false
 }
@@ -12785,6 +13432,13 @@ func (m *TenderMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddEstimatedValue(v)
+		return nil
+	case tender.FieldFinalDocumentVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFinalDocumentVersion(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Tender numeric field %s", name)
@@ -12811,6 +13465,24 @@ func (m *TenderMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(tender.FieldMetadata) {
 		fields = append(fields, tender.FieldMetadata)
+	}
+	if m.FieldCleared(tender.FieldDecision) {
+		fields = append(fields, tender.FieldDecision)
+	}
+	if m.FieldCleared(tender.FieldDecisionRationale) {
+		fields = append(fields, tender.FieldDecisionRationale)
+	}
+	if m.FieldCleared(tender.FieldDecidedBy) {
+		fields = append(fields, tender.FieldDecidedBy)
+	}
+	if m.FieldCleared(tender.FieldDecidedAt) {
+		fields = append(fields, tender.FieldDecidedAt)
+	}
+	if m.FieldCleared(tender.FieldOutcome) {
+		fields = append(fields, tender.FieldOutcome)
+	}
+	if m.FieldCleared(tender.FieldStatusHistory) {
+		fields = append(fields, tender.FieldStatusHistory)
 	}
 	return fields
 }
@@ -12843,6 +13515,24 @@ func (m *TenderMutation) ClearField(name string) error {
 		return nil
 	case tender.FieldMetadata:
 		m.ClearMetadata()
+		return nil
+	case tender.FieldDecision:
+		m.ClearDecision()
+		return nil
+	case tender.FieldDecisionRationale:
+		m.ClearDecisionRationale()
+		return nil
+	case tender.FieldDecidedBy:
+		m.ClearDecidedBy()
+		return nil
+	case tender.FieldDecidedAt:
+		m.ClearDecidedAt()
+		return nil
+	case tender.FieldOutcome:
+		m.ClearOutcome()
+		return nil
+	case tender.FieldStatusHistory:
+		m.ClearStatusHistory()
 		return nil
 	}
 	return fmt.Errorf("unknown Tender nullable field %s", name)
@@ -12903,13 +13593,37 @@ func (m *TenderMutation) ResetField(name string) error {
 	case tender.FieldCreatedBy:
 		m.ResetCreatedBy()
 		return nil
+	case tender.FieldDecision:
+		m.ResetDecision()
+		return nil
+	case tender.FieldDecisionRationale:
+		m.ResetDecisionRationale()
+		return nil
+	case tender.FieldDecidedBy:
+		m.ResetDecidedBy()
+		return nil
+	case tender.FieldDecidedAt:
+		m.ResetDecidedAt()
+		return nil
+	case tender.FieldOutcome:
+		m.ResetOutcome()
+		return nil
+	case tender.FieldStatusHistory:
+		m.ResetStatusHistory()
+		return nil
+	case tender.FieldFinalDocumentVersion:
+		m.ResetFinalDocumentVersion()
+		return nil
+	case tender.FieldReadyForSubmission:
+		m.ResetReadyForSubmission()
+		return nil
 	}
 	return fmt.Errorf("unknown Tender field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TenderMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
 	if m.documents != nil {
 		edges = append(edges, tender.EdgeDocuments)
 	}
@@ -12921,6 +13635,12 @@ func (m *TenderMutation) AddedEdges() []string {
 	}
 	if m.meetings != nil {
 		edges = append(edges, tender.EdgeMeetings)
+	}
+	if m.sections != nil {
+		edges = append(edges, tender.EdgeSections)
+	}
+	if m.submissions != nil {
+		edges = append(edges, tender.EdgeSubmissions)
 	}
 	return edges
 }
@@ -12953,13 +13673,25 @@ func (m *TenderMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case tender.EdgeSections:
+		ids := make([]ent.Value, 0, len(m.sections))
+		for id := range m.sections {
+			ids = append(ids, id)
+		}
+		return ids
+	case tender.EdgeSubmissions:
+		ids := make([]ent.Value, 0, len(m.submissions))
+		for id := range m.submissions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TenderMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
 	if m.removeddocuments != nil {
 		edges = append(edges, tender.EdgeDocuments)
 	}
@@ -12971,6 +13703,12 @@ func (m *TenderMutation) RemovedEdges() []string {
 	}
 	if m.removedmeetings != nil {
 		edges = append(edges, tender.EdgeMeetings)
+	}
+	if m.removedsections != nil {
+		edges = append(edges, tender.EdgeSections)
+	}
+	if m.removedsubmissions != nil {
+		edges = append(edges, tender.EdgeSubmissions)
 	}
 	return edges
 }
@@ -13003,13 +13741,25 @@ func (m *TenderMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case tender.EdgeSections:
+		ids := make([]ent.Value, 0, len(m.removedsections))
+		for id := range m.removedsections {
+			ids = append(ids, id)
+		}
+		return ids
+	case tender.EdgeSubmissions:
+		ids := make([]ent.Value, 0, len(m.removedsubmissions))
+		for id := range m.removedsubmissions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TenderMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
 	if m.cleareddocuments {
 		edges = append(edges, tender.EdgeDocuments)
 	}
@@ -13021,6 +13771,12 @@ func (m *TenderMutation) ClearedEdges() []string {
 	}
 	if m.clearedmeetings {
 		edges = append(edges, tender.EdgeMeetings)
+	}
+	if m.clearedsections {
+		edges = append(edges, tender.EdgeSections)
+	}
+	if m.clearedsubmissions {
+		edges = append(edges, tender.EdgeSubmissions)
 	}
 	return edges
 }
@@ -13037,6 +13793,10 @@ func (m *TenderMutation) EdgeCleared(name string) bool {
 		return m.clearedevaluations
 	case tender.EdgeMeetings:
 		return m.clearedmeetings
+	case tender.EdgeSections:
+		return m.clearedsections
+	case tender.EdgeSubmissions:
+		return m.clearedsubmissions
 	}
 	return false
 }
@@ -13064,6 +13824,12 @@ func (m *TenderMutation) ResetEdge(name string) error {
 		return nil
 	case tender.EdgeMeetings:
 		m.ResetMeetings()
+		return nil
+	case tender.EdgeSections:
+		m.ResetSections()
+		return nil
+	case tender.EdgeSubmissions:
+		m.ResetSubmissions()
 		return nil
 	}
 	return fmt.Errorf("unknown Tender edge %s", name)
@@ -14318,6 +15084,9 @@ type TenderDocumentMutation struct {
 	mime_type     *string
 	uploaded_by   *uuid.UUID
 	uploaded_at   *time.Time
+	kind          *string
+	version       *int
+	addversion    *int
 	clearedFields map[string]struct{}
 	tender        *uuid.UUID
 	clearedtender bool
@@ -14765,6 +15534,98 @@ func (m *TenderDocumentMutation) ResetUploadedAt() {
 	m.uploaded_at = nil
 }
 
+// SetKind sets the "kind" field.
+func (m *TenderDocumentMutation) SetKind(s string) {
+	m.kind = &s
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *TenderDocumentMutation) Kind() (r string, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the TenderDocument entity.
+// If the TenderDocument object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderDocumentMutation) OldKind(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *TenderDocumentMutation) ResetKind() {
+	m.kind = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *TenderDocumentMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *TenderDocumentMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the TenderDocument entity.
+// If the TenderDocument object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderDocumentMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *TenderDocumentMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *TenderDocumentMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *TenderDocumentMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
+}
+
 // ClearTender clears the "tender" edge to the Tender entity.
 func (m *TenderDocumentMutation) ClearTender() {
 	m.clearedtender = true
@@ -14826,7 +15687,7 @@ func (m *TenderDocumentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenderDocumentMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 10)
 	if m.tender != nil {
 		fields = append(fields, tenderdocument.FieldTenderID)
 	}
@@ -14850,6 +15711,12 @@ func (m *TenderDocumentMutation) Fields() []string {
 	}
 	if m.uploaded_at != nil {
 		fields = append(fields, tenderdocument.FieldUploadedAt)
+	}
+	if m.kind != nil {
+		fields = append(fields, tenderdocument.FieldKind)
+	}
+	if m.version != nil {
+		fields = append(fields, tenderdocument.FieldVersion)
 	}
 	return fields
 }
@@ -14875,6 +15742,10 @@ func (m *TenderDocumentMutation) Field(name string) (ent.Value, bool) {
 		return m.UploadedBy()
 	case tenderdocument.FieldUploadedAt:
 		return m.UploadedAt()
+	case tenderdocument.FieldKind:
+		return m.Kind()
+	case tenderdocument.FieldVersion:
+		return m.Version()
 	}
 	return nil, false
 }
@@ -14900,6 +15771,10 @@ func (m *TenderDocumentMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldUploadedBy(ctx)
 	case tenderdocument.FieldUploadedAt:
 		return m.OldUploadedAt(ctx)
+	case tenderdocument.FieldKind:
+		return m.OldKind(ctx)
+	case tenderdocument.FieldVersion:
+		return m.OldVersion(ctx)
 	}
 	return nil, fmt.Errorf("unknown TenderDocument field %s", name)
 }
@@ -14965,6 +15840,20 @@ func (m *TenderDocumentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUploadedAt(v)
 		return nil
+	case tenderdocument.FieldKind:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
+		return nil
+	case tenderdocument.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
 	}
 	return fmt.Errorf("unknown TenderDocument field %s", name)
 }
@@ -14976,6 +15865,9 @@ func (m *TenderDocumentMutation) AddedFields() []string {
 	if m.addfile_size != nil {
 		fields = append(fields, tenderdocument.FieldFileSize)
 	}
+	if m.addversion != nil {
+		fields = append(fields, tenderdocument.FieldVersion)
+	}
 	return fields
 }
 
@@ -14986,6 +15878,8 @@ func (m *TenderDocumentMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case tenderdocument.FieldFileSize:
 		return m.AddedFileSize()
+	case tenderdocument.FieldVersion:
+		return m.AddedVersion()
 	}
 	return nil, false
 }
@@ -15001,6 +15895,13 @@ func (m *TenderDocumentMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddFileSize(v)
+		return nil
+	case tenderdocument.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
 		return nil
 	}
 	return fmt.Errorf("unknown TenderDocument numeric field %s", name)
@@ -15067,6 +15968,12 @@ func (m *TenderDocumentMutation) ResetField(name string) error {
 		return nil
 	case tenderdocument.FieldUploadedAt:
 		m.ResetUploadedAt()
+		return nil
+	case tenderdocument.FieldKind:
+		m.ResetKind()
+		return nil
+	case tenderdocument.FieldVersion:
+		m.ResetVersion()
 		return nil
 	}
 	return fmt.Errorf("unknown TenderDocument field %s", name)
@@ -16790,6 +17697,2855 @@ func (m *TenderMeetingMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown TenderMeeting edge %s", name)
+}
+
+// TenderSectionMutation represents an operation that mutates the TenderSection nodes in the graph.
+type TenderSectionMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	tenant_id       *uuid.UUID
+	title           *string
+	description     *string
+	assignee_id     *uuid.UUID
+	reviewer_id     *uuid.UUID
+	due_date        *time.Time
+	status          *string
+	document_url    *string
+	review_comments *string
+	sort_order      *int
+	addsort_order   *int
+	submitted_at    *time.Time
+	reviewed_by     *uuid.UUID
+	reviewed_at     *time.Time
+	created_at      *time.Time
+	updated_at      *time.Time
+	clearedFields   map[string]struct{}
+	tender          *uuid.UUID
+	clearedtender   bool
+	done            bool
+	oldValue        func(context.Context) (*TenderSection, error)
+	predicates      []predicate.TenderSection
+}
+
+var _ ent.Mutation = (*TenderSectionMutation)(nil)
+
+// tendersectionOption allows management of the mutation configuration using functional options.
+type tendersectionOption func(*TenderSectionMutation)
+
+// newTenderSectionMutation creates new mutation for the TenderSection entity.
+func newTenderSectionMutation(c config, op Op, opts ...tendersectionOption) *TenderSectionMutation {
+	m := &TenderSectionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTenderSection,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTenderSectionID sets the ID field of the mutation.
+func withTenderSectionID(id uuid.UUID) tendersectionOption {
+	return func(m *TenderSectionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *TenderSection
+		)
+		m.oldValue = func(ctx context.Context) (*TenderSection, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().TenderSection.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTenderSection sets the old TenderSection of the mutation.
+func withTenderSection(node *TenderSection) tendersectionOption {
+	return func(m *TenderSectionMutation) {
+		m.oldValue = func(context.Context) (*TenderSection, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TenderSectionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TenderSectionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of TenderSection entities.
+func (m *TenderSectionMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TenderSectionMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TenderSectionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().TenderSection.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *TenderSectionMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *TenderSectionMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *TenderSectionMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetTenderID sets the "tender_id" field.
+func (m *TenderSectionMutation) SetTenderID(u uuid.UUID) {
+	m.tender = &u
+}
+
+// TenderID returns the value of the "tender_id" field in the mutation.
+func (m *TenderSectionMutation) TenderID() (r uuid.UUID, exists bool) {
+	v := m.tender
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenderID returns the old "tender_id" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldTenderID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenderID: %w", err)
+	}
+	return oldValue.TenderID, nil
+}
+
+// ResetTenderID resets all changes to the "tender_id" field.
+func (m *TenderSectionMutation) ResetTenderID() {
+	m.tender = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *TenderSectionMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *TenderSectionMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *TenderSectionMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *TenderSectionMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *TenderSectionMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *TenderSectionMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[tendersection.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *TenderSectionMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[tendersection.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *TenderSectionMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, tendersection.FieldDescription)
+}
+
+// SetAssigneeID sets the "assignee_id" field.
+func (m *TenderSectionMutation) SetAssigneeID(u uuid.UUID) {
+	m.assignee_id = &u
+}
+
+// AssigneeID returns the value of the "assignee_id" field in the mutation.
+func (m *TenderSectionMutation) AssigneeID() (r uuid.UUID, exists bool) {
+	v := m.assignee_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAssigneeID returns the old "assignee_id" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldAssigneeID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAssigneeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAssigneeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAssigneeID: %w", err)
+	}
+	return oldValue.AssigneeID, nil
+}
+
+// ClearAssigneeID clears the value of the "assignee_id" field.
+func (m *TenderSectionMutation) ClearAssigneeID() {
+	m.assignee_id = nil
+	m.clearedFields[tendersection.FieldAssigneeID] = struct{}{}
+}
+
+// AssigneeIDCleared returns if the "assignee_id" field was cleared in this mutation.
+func (m *TenderSectionMutation) AssigneeIDCleared() bool {
+	_, ok := m.clearedFields[tendersection.FieldAssigneeID]
+	return ok
+}
+
+// ResetAssigneeID resets all changes to the "assignee_id" field.
+func (m *TenderSectionMutation) ResetAssigneeID() {
+	m.assignee_id = nil
+	delete(m.clearedFields, tendersection.FieldAssigneeID)
+}
+
+// SetReviewerID sets the "reviewer_id" field.
+func (m *TenderSectionMutation) SetReviewerID(u uuid.UUID) {
+	m.reviewer_id = &u
+}
+
+// ReviewerID returns the value of the "reviewer_id" field in the mutation.
+func (m *TenderSectionMutation) ReviewerID() (r uuid.UUID, exists bool) {
+	v := m.reviewer_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReviewerID returns the old "reviewer_id" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldReviewerID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReviewerID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReviewerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReviewerID: %w", err)
+	}
+	return oldValue.ReviewerID, nil
+}
+
+// ClearReviewerID clears the value of the "reviewer_id" field.
+func (m *TenderSectionMutation) ClearReviewerID() {
+	m.reviewer_id = nil
+	m.clearedFields[tendersection.FieldReviewerID] = struct{}{}
+}
+
+// ReviewerIDCleared returns if the "reviewer_id" field was cleared in this mutation.
+func (m *TenderSectionMutation) ReviewerIDCleared() bool {
+	_, ok := m.clearedFields[tendersection.FieldReviewerID]
+	return ok
+}
+
+// ResetReviewerID resets all changes to the "reviewer_id" field.
+func (m *TenderSectionMutation) ResetReviewerID() {
+	m.reviewer_id = nil
+	delete(m.clearedFields, tendersection.FieldReviewerID)
+}
+
+// SetDueDate sets the "due_date" field.
+func (m *TenderSectionMutation) SetDueDate(t time.Time) {
+	m.due_date = &t
+}
+
+// DueDate returns the value of the "due_date" field in the mutation.
+func (m *TenderSectionMutation) DueDate() (r time.Time, exists bool) {
+	v := m.due_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDueDate returns the old "due_date" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldDueDate(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDueDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDueDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDueDate: %w", err)
+	}
+	return oldValue.DueDate, nil
+}
+
+// ClearDueDate clears the value of the "due_date" field.
+func (m *TenderSectionMutation) ClearDueDate() {
+	m.due_date = nil
+	m.clearedFields[tendersection.FieldDueDate] = struct{}{}
+}
+
+// DueDateCleared returns if the "due_date" field was cleared in this mutation.
+func (m *TenderSectionMutation) DueDateCleared() bool {
+	_, ok := m.clearedFields[tendersection.FieldDueDate]
+	return ok
+}
+
+// ResetDueDate resets all changes to the "due_date" field.
+func (m *TenderSectionMutation) ResetDueDate() {
+	m.due_date = nil
+	delete(m.clearedFields, tendersection.FieldDueDate)
+}
+
+// SetStatus sets the "status" field.
+func (m *TenderSectionMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *TenderSectionMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *TenderSectionMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetDocumentURL sets the "document_url" field.
+func (m *TenderSectionMutation) SetDocumentURL(s string) {
+	m.document_url = &s
+}
+
+// DocumentURL returns the value of the "document_url" field in the mutation.
+func (m *TenderSectionMutation) DocumentURL() (r string, exists bool) {
+	v := m.document_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDocumentURL returns the old "document_url" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldDocumentURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDocumentURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDocumentURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDocumentURL: %w", err)
+	}
+	return oldValue.DocumentURL, nil
+}
+
+// ClearDocumentURL clears the value of the "document_url" field.
+func (m *TenderSectionMutation) ClearDocumentURL() {
+	m.document_url = nil
+	m.clearedFields[tendersection.FieldDocumentURL] = struct{}{}
+}
+
+// DocumentURLCleared returns if the "document_url" field was cleared in this mutation.
+func (m *TenderSectionMutation) DocumentURLCleared() bool {
+	_, ok := m.clearedFields[tendersection.FieldDocumentURL]
+	return ok
+}
+
+// ResetDocumentURL resets all changes to the "document_url" field.
+func (m *TenderSectionMutation) ResetDocumentURL() {
+	m.document_url = nil
+	delete(m.clearedFields, tendersection.FieldDocumentURL)
+}
+
+// SetReviewComments sets the "review_comments" field.
+func (m *TenderSectionMutation) SetReviewComments(s string) {
+	m.review_comments = &s
+}
+
+// ReviewComments returns the value of the "review_comments" field in the mutation.
+func (m *TenderSectionMutation) ReviewComments() (r string, exists bool) {
+	v := m.review_comments
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReviewComments returns the old "review_comments" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldReviewComments(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReviewComments is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReviewComments requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReviewComments: %w", err)
+	}
+	return oldValue.ReviewComments, nil
+}
+
+// ClearReviewComments clears the value of the "review_comments" field.
+func (m *TenderSectionMutation) ClearReviewComments() {
+	m.review_comments = nil
+	m.clearedFields[tendersection.FieldReviewComments] = struct{}{}
+}
+
+// ReviewCommentsCleared returns if the "review_comments" field was cleared in this mutation.
+func (m *TenderSectionMutation) ReviewCommentsCleared() bool {
+	_, ok := m.clearedFields[tendersection.FieldReviewComments]
+	return ok
+}
+
+// ResetReviewComments resets all changes to the "review_comments" field.
+func (m *TenderSectionMutation) ResetReviewComments() {
+	m.review_comments = nil
+	delete(m.clearedFields, tendersection.FieldReviewComments)
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (m *TenderSectionMutation) SetSortOrder(i int) {
+	m.sort_order = &i
+	m.addsort_order = nil
+}
+
+// SortOrder returns the value of the "sort_order" field in the mutation.
+func (m *TenderSectionMutation) SortOrder() (r int, exists bool) {
+	v := m.sort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSortOrder returns the old "sort_order" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldSortOrder(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSortOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSortOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSortOrder: %w", err)
+	}
+	return oldValue.SortOrder, nil
+}
+
+// AddSortOrder adds i to the "sort_order" field.
+func (m *TenderSectionMutation) AddSortOrder(i int) {
+	if m.addsort_order != nil {
+		*m.addsort_order += i
+	} else {
+		m.addsort_order = &i
+	}
+}
+
+// AddedSortOrder returns the value that was added to the "sort_order" field in this mutation.
+func (m *TenderSectionMutation) AddedSortOrder() (r int, exists bool) {
+	v := m.addsort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSortOrder resets all changes to the "sort_order" field.
+func (m *TenderSectionMutation) ResetSortOrder() {
+	m.sort_order = nil
+	m.addsort_order = nil
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (m *TenderSectionMutation) SetSubmittedAt(t time.Time) {
+	m.submitted_at = &t
+}
+
+// SubmittedAt returns the value of the "submitted_at" field in the mutation.
+func (m *TenderSectionMutation) SubmittedAt() (r time.Time, exists bool) {
+	v := m.submitted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubmittedAt returns the old "submitted_at" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldSubmittedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubmittedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubmittedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubmittedAt: %w", err)
+	}
+	return oldValue.SubmittedAt, nil
+}
+
+// ClearSubmittedAt clears the value of the "submitted_at" field.
+func (m *TenderSectionMutation) ClearSubmittedAt() {
+	m.submitted_at = nil
+	m.clearedFields[tendersection.FieldSubmittedAt] = struct{}{}
+}
+
+// SubmittedAtCleared returns if the "submitted_at" field was cleared in this mutation.
+func (m *TenderSectionMutation) SubmittedAtCleared() bool {
+	_, ok := m.clearedFields[tendersection.FieldSubmittedAt]
+	return ok
+}
+
+// ResetSubmittedAt resets all changes to the "submitted_at" field.
+func (m *TenderSectionMutation) ResetSubmittedAt() {
+	m.submitted_at = nil
+	delete(m.clearedFields, tendersection.FieldSubmittedAt)
+}
+
+// SetReviewedBy sets the "reviewed_by" field.
+func (m *TenderSectionMutation) SetReviewedBy(u uuid.UUID) {
+	m.reviewed_by = &u
+}
+
+// ReviewedBy returns the value of the "reviewed_by" field in the mutation.
+func (m *TenderSectionMutation) ReviewedBy() (r uuid.UUID, exists bool) {
+	v := m.reviewed_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReviewedBy returns the old "reviewed_by" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldReviewedBy(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReviewedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReviewedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReviewedBy: %w", err)
+	}
+	return oldValue.ReviewedBy, nil
+}
+
+// ClearReviewedBy clears the value of the "reviewed_by" field.
+func (m *TenderSectionMutation) ClearReviewedBy() {
+	m.reviewed_by = nil
+	m.clearedFields[tendersection.FieldReviewedBy] = struct{}{}
+}
+
+// ReviewedByCleared returns if the "reviewed_by" field was cleared in this mutation.
+func (m *TenderSectionMutation) ReviewedByCleared() bool {
+	_, ok := m.clearedFields[tendersection.FieldReviewedBy]
+	return ok
+}
+
+// ResetReviewedBy resets all changes to the "reviewed_by" field.
+func (m *TenderSectionMutation) ResetReviewedBy() {
+	m.reviewed_by = nil
+	delete(m.clearedFields, tendersection.FieldReviewedBy)
+}
+
+// SetReviewedAt sets the "reviewed_at" field.
+func (m *TenderSectionMutation) SetReviewedAt(t time.Time) {
+	m.reviewed_at = &t
+}
+
+// ReviewedAt returns the value of the "reviewed_at" field in the mutation.
+func (m *TenderSectionMutation) ReviewedAt() (r time.Time, exists bool) {
+	v := m.reviewed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReviewedAt returns the old "reviewed_at" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldReviewedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReviewedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReviewedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReviewedAt: %w", err)
+	}
+	return oldValue.ReviewedAt, nil
+}
+
+// ClearReviewedAt clears the value of the "reviewed_at" field.
+func (m *TenderSectionMutation) ClearReviewedAt() {
+	m.reviewed_at = nil
+	m.clearedFields[tendersection.FieldReviewedAt] = struct{}{}
+}
+
+// ReviewedAtCleared returns if the "reviewed_at" field was cleared in this mutation.
+func (m *TenderSectionMutation) ReviewedAtCleared() bool {
+	_, ok := m.clearedFields[tendersection.FieldReviewedAt]
+	return ok
+}
+
+// ResetReviewedAt resets all changes to the "reviewed_at" field.
+func (m *TenderSectionMutation) ResetReviewedAt() {
+	m.reviewed_at = nil
+	delete(m.clearedFields, tendersection.FieldReviewedAt)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *TenderSectionMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *TenderSectionMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *TenderSectionMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *TenderSectionMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *TenderSectionMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the TenderSection entity.
+// If the TenderSection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSectionMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *TenderSectionMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// ClearTender clears the "tender" edge to the Tender entity.
+func (m *TenderSectionMutation) ClearTender() {
+	m.clearedtender = true
+	m.clearedFields[tendersection.FieldTenderID] = struct{}{}
+}
+
+// TenderCleared reports if the "tender" edge to the Tender entity was cleared.
+func (m *TenderSectionMutation) TenderCleared() bool {
+	return m.clearedtender
+}
+
+// TenderIDs returns the "tender" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TenderID instead. It exists only for internal usage by the builders.
+func (m *TenderSectionMutation) TenderIDs() (ids []uuid.UUID) {
+	if id := m.tender; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTender resets all changes to the "tender" edge.
+func (m *TenderSectionMutation) ResetTender() {
+	m.tender = nil
+	m.clearedtender = false
+}
+
+// Where appends a list predicates to the TenderSectionMutation builder.
+func (m *TenderSectionMutation) Where(ps ...predicate.TenderSection) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TenderSectionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TenderSectionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.TenderSection, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TenderSectionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TenderSectionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (TenderSection).
+func (m *TenderSectionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TenderSectionMutation) Fields() []string {
+	fields := make([]string, 0, 16)
+	if m.tenant_id != nil {
+		fields = append(fields, tendersection.FieldTenantID)
+	}
+	if m.tender != nil {
+		fields = append(fields, tendersection.FieldTenderID)
+	}
+	if m.title != nil {
+		fields = append(fields, tendersection.FieldTitle)
+	}
+	if m.description != nil {
+		fields = append(fields, tendersection.FieldDescription)
+	}
+	if m.assignee_id != nil {
+		fields = append(fields, tendersection.FieldAssigneeID)
+	}
+	if m.reviewer_id != nil {
+		fields = append(fields, tendersection.FieldReviewerID)
+	}
+	if m.due_date != nil {
+		fields = append(fields, tendersection.FieldDueDate)
+	}
+	if m.status != nil {
+		fields = append(fields, tendersection.FieldStatus)
+	}
+	if m.document_url != nil {
+		fields = append(fields, tendersection.FieldDocumentURL)
+	}
+	if m.review_comments != nil {
+		fields = append(fields, tendersection.FieldReviewComments)
+	}
+	if m.sort_order != nil {
+		fields = append(fields, tendersection.FieldSortOrder)
+	}
+	if m.submitted_at != nil {
+		fields = append(fields, tendersection.FieldSubmittedAt)
+	}
+	if m.reviewed_by != nil {
+		fields = append(fields, tendersection.FieldReviewedBy)
+	}
+	if m.reviewed_at != nil {
+		fields = append(fields, tendersection.FieldReviewedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, tendersection.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, tendersection.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TenderSectionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case tendersection.FieldTenantID:
+		return m.TenantID()
+	case tendersection.FieldTenderID:
+		return m.TenderID()
+	case tendersection.FieldTitle:
+		return m.Title()
+	case tendersection.FieldDescription:
+		return m.Description()
+	case tendersection.FieldAssigneeID:
+		return m.AssigneeID()
+	case tendersection.FieldReviewerID:
+		return m.ReviewerID()
+	case tendersection.FieldDueDate:
+		return m.DueDate()
+	case tendersection.FieldStatus:
+		return m.Status()
+	case tendersection.FieldDocumentURL:
+		return m.DocumentURL()
+	case tendersection.FieldReviewComments:
+		return m.ReviewComments()
+	case tendersection.FieldSortOrder:
+		return m.SortOrder()
+	case tendersection.FieldSubmittedAt:
+		return m.SubmittedAt()
+	case tendersection.FieldReviewedBy:
+		return m.ReviewedBy()
+	case tendersection.FieldReviewedAt:
+		return m.ReviewedAt()
+	case tendersection.FieldCreatedAt:
+		return m.CreatedAt()
+	case tendersection.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TenderSectionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case tendersection.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case tendersection.FieldTenderID:
+		return m.OldTenderID(ctx)
+	case tendersection.FieldTitle:
+		return m.OldTitle(ctx)
+	case tendersection.FieldDescription:
+		return m.OldDescription(ctx)
+	case tendersection.FieldAssigneeID:
+		return m.OldAssigneeID(ctx)
+	case tendersection.FieldReviewerID:
+		return m.OldReviewerID(ctx)
+	case tendersection.FieldDueDate:
+		return m.OldDueDate(ctx)
+	case tendersection.FieldStatus:
+		return m.OldStatus(ctx)
+	case tendersection.FieldDocumentURL:
+		return m.OldDocumentURL(ctx)
+	case tendersection.FieldReviewComments:
+		return m.OldReviewComments(ctx)
+	case tendersection.FieldSortOrder:
+		return m.OldSortOrder(ctx)
+	case tendersection.FieldSubmittedAt:
+		return m.OldSubmittedAt(ctx)
+	case tendersection.FieldReviewedBy:
+		return m.OldReviewedBy(ctx)
+	case tendersection.FieldReviewedAt:
+		return m.OldReviewedAt(ctx)
+	case tendersection.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case tendersection.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown TenderSection field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TenderSectionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case tendersection.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case tendersection.FieldTenderID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenderID(v)
+		return nil
+	case tendersection.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case tendersection.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case tendersection.FieldAssigneeID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAssigneeID(v)
+		return nil
+	case tendersection.FieldReviewerID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReviewerID(v)
+		return nil
+	case tendersection.FieldDueDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDueDate(v)
+		return nil
+	case tendersection.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case tendersection.FieldDocumentURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDocumentURL(v)
+		return nil
+	case tendersection.FieldReviewComments:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReviewComments(v)
+		return nil
+	case tendersection.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSortOrder(v)
+		return nil
+	case tendersection.FieldSubmittedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubmittedAt(v)
+		return nil
+	case tendersection.FieldReviewedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReviewedBy(v)
+		return nil
+	case tendersection.FieldReviewedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReviewedAt(v)
+		return nil
+	case tendersection.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case tendersection.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSection field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TenderSectionMutation) AddedFields() []string {
+	var fields []string
+	if m.addsort_order != nil {
+		fields = append(fields, tendersection.FieldSortOrder)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TenderSectionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case tendersection.FieldSortOrder:
+		return m.AddedSortOrder()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TenderSectionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case tendersection.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSortOrder(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSection numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TenderSectionMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(tendersection.FieldDescription) {
+		fields = append(fields, tendersection.FieldDescription)
+	}
+	if m.FieldCleared(tendersection.FieldAssigneeID) {
+		fields = append(fields, tendersection.FieldAssigneeID)
+	}
+	if m.FieldCleared(tendersection.FieldReviewerID) {
+		fields = append(fields, tendersection.FieldReviewerID)
+	}
+	if m.FieldCleared(tendersection.FieldDueDate) {
+		fields = append(fields, tendersection.FieldDueDate)
+	}
+	if m.FieldCleared(tendersection.FieldDocumentURL) {
+		fields = append(fields, tendersection.FieldDocumentURL)
+	}
+	if m.FieldCleared(tendersection.FieldReviewComments) {
+		fields = append(fields, tendersection.FieldReviewComments)
+	}
+	if m.FieldCleared(tendersection.FieldSubmittedAt) {
+		fields = append(fields, tendersection.FieldSubmittedAt)
+	}
+	if m.FieldCleared(tendersection.FieldReviewedBy) {
+		fields = append(fields, tendersection.FieldReviewedBy)
+	}
+	if m.FieldCleared(tendersection.FieldReviewedAt) {
+		fields = append(fields, tendersection.FieldReviewedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TenderSectionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TenderSectionMutation) ClearField(name string) error {
+	switch name {
+	case tendersection.FieldDescription:
+		m.ClearDescription()
+		return nil
+	case tendersection.FieldAssigneeID:
+		m.ClearAssigneeID()
+		return nil
+	case tendersection.FieldReviewerID:
+		m.ClearReviewerID()
+		return nil
+	case tendersection.FieldDueDate:
+		m.ClearDueDate()
+		return nil
+	case tendersection.FieldDocumentURL:
+		m.ClearDocumentURL()
+		return nil
+	case tendersection.FieldReviewComments:
+		m.ClearReviewComments()
+		return nil
+	case tendersection.FieldSubmittedAt:
+		m.ClearSubmittedAt()
+		return nil
+	case tendersection.FieldReviewedBy:
+		m.ClearReviewedBy()
+		return nil
+	case tendersection.FieldReviewedAt:
+		m.ClearReviewedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSection nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TenderSectionMutation) ResetField(name string) error {
+	switch name {
+	case tendersection.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case tendersection.FieldTenderID:
+		m.ResetTenderID()
+		return nil
+	case tendersection.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case tendersection.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case tendersection.FieldAssigneeID:
+		m.ResetAssigneeID()
+		return nil
+	case tendersection.FieldReviewerID:
+		m.ResetReviewerID()
+		return nil
+	case tendersection.FieldDueDate:
+		m.ResetDueDate()
+		return nil
+	case tendersection.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case tendersection.FieldDocumentURL:
+		m.ResetDocumentURL()
+		return nil
+	case tendersection.FieldReviewComments:
+		m.ResetReviewComments()
+		return nil
+	case tendersection.FieldSortOrder:
+		m.ResetSortOrder()
+		return nil
+	case tendersection.FieldSubmittedAt:
+		m.ResetSubmittedAt()
+		return nil
+	case tendersection.FieldReviewedBy:
+		m.ResetReviewedBy()
+		return nil
+	case tendersection.FieldReviewedAt:
+		m.ResetReviewedAt()
+		return nil
+	case tendersection.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case tendersection.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSection field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TenderSectionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.tender != nil {
+		edges = append(edges, tendersection.EdgeTender)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TenderSectionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case tendersection.EdgeTender:
+		if id := m.tender; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TenderSectionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TenderSectionMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TenderSectionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedtender {
+		edges = append(edges, tendersection.EdgeTender)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TenderSectionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case tendersection.EdgeTender:
+		return m.clearedtender
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TenderSectionMutation) ClearEdge(name string) error {
+	switch name {
+	case tendersection.EdgeTender:
+		m.ClearTender()
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSection unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TenderSectionMutation) ResetEdge(name string) error {
+	switch name {
+	case tendersection.EdgeTender:
+		m.ResetTender()
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSection edge %s", name)
+}
+
+// TenderSubmissionMutation represents an operation that mutates the TenderSubmission nodes in the graph.
+type TenderSubmissionMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	tenant_id           *uuid.UUID
+	method              *string
+	submitted_at        *time.Time
+	submitted_by        *uuid.UUID
+	recipient_email     *string
+	email_subject       *string
+	email_body          *string
+	document_url        *string
+	courier             *string
+	tracking_number     *string
+	address             *string
+	proof_url           *string
+	confirmation_number *string
+	delivery_status     *string
+	notes               *string
+	created_at          *time.Time
+	clearedFields       map[string]struct{}
+	tender              *uuid.UUID
+	clearedtender       bool
+	done                bool
+	oldValue            func(context.Context) (*TenderSubmission, error)
+	predicates          []predicate.TenderSubmission
+}
+
+var _ ent.Mutation = (*TenderSubmissionMutation)(nil)
+
+// tendersubmissionOption allows management of the mutation configuration using functional options.
+type tendersubmissionOption func(*TenderSubmissionMutation)
+
+// newTenderSubmissionMutation creates new mutation for the TenderSubmission entity.
+func newTenderSubmissionMutation(c config, op Op, opts ...tendersubmissionOption) *TenderSubmissionMutation {
+	m := &TenderSubmissionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTenderSubmission,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTenderSubmissionID sets the ID field of the mutation.
+func withTenderSubmissionID(id uuid.UUID) tendersubmissionOption {
+	return func(m *TenderSubmissionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *TenderSubmission
+		)
+		m.oldValue = func(ctx context.Context) (*TenderSubmission, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().TenderSubmission.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTenderSubmission sets the old TenderSubmission of the mutation.
+func withTenderSubmission(node *TenderSubmission) tendersubmissionOption {
+	return func(m *TenderSubmissionMutation) {
+		m.oldValue = func(context.Context) (*TenderSubmission, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TenderSubmissionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TenderSubmissionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of TenderSubmission entities.
+func (m *TenderSubmissionMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TenderSubmissionMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TenderSubmissionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().TenderSubmission.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *TenderSubmissionMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *TenderSubmissionMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *TenderSubmissionMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetTenderID sets the "tender_id" field.
+func (m *TenderSubmissionMutation) SetTenderID(u uuid.UUID) {
+	m.tender = &u
+}
+
+// TenderID returns the value of the "tender_id" field in the mutation.
+func (m *TenderSubmissionMutation) TenderID() (r uuid.UUID, exists bool) {
+	v := m.tender
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenderID returns the old "tender_id" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldTenderID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenderID: %w", err)
+	}
+	return oldValue.TenderID, nil
+}
+
+// ResetTenderID resets all changes to the "tender_id" field.
+func (m *TenderSubmissionMutation) ResetTenderID() {
+	m.tender = nil
+}
+
+// SetMethod sets the "method" field.
+func (m *TenderSubmissionMutation) SetMethod(s string) {
+	m.method = &s
+}
+
+// Method returns the value of the "method" field in the mutation.
+func (m *TenderSubmissionMutation) Method() (r string, exists bool) {
+	v := m.method
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMethod returns the old "method" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldMethod(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMethod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMethod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMethod: %w", err)
+	}
+	return oldValue.Method, nil
+}
+
+// ResetMethod resets all changes to the "method" field.
+func (m *TenderSubmissionMutation) ResetMethod() {
+	m.method = nil
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (m *TenderSubmissionMutation) SetSubmittedAt(t time.Time) {
+	m.submitted_at = &t
+}
+
+// SubmittedAt returns the value of the "submitted_at" field in the mutation.
+func (m *TenderSubmissionMutation) SubmittedAt() (r time.Time, exists bool) {
+	v := m.submitted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubmittedAt returns the old "submitted_at" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldSubmittedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubmittedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubmittedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubmittedAt: %w", err)
+	}
+	return oldValue.SubmittedAt, nil
+}
+
+// ResetSubmittedAt resets all changes to the "submitted_at" field.
+func (m *TenderSubmissionMutation) ResetSubmittedAt() {
+	m.submitted_at = nil
+}
+
+// SetSubmittedBy sets the "submitted_by" field.
+func (m *TenderSubmissionMutation) SetSubmittedBy(u uuid.UUID) {
+	m.submitted_by = &u
+}
+
+// SubmittedBy returns the value of the "submitted_by" field in the mutation.
+func (m *TenderSubmissionMutation) SubmittedBy() (r uuid.UUID, exists bool) {
+	v := m.submitted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubmittedBy returns the old "submitted_by" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldSubmittedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubmittedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubmittedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubmittedBy: %w", err)
+	}
+	return oldValue.SubmittedBy, nil
+}
+
+// ResetSubmittedBy resets all changes to the "submitted_by" field.
+func (m *TenderSubmissionMutation) ResetSubmittedBy() {
+	m.submitted_by = nil
+}
+
+// SetRecipientEmail sets the "recipient_email" field.
+func (m *TenderSubmissionMutation) SetRecipientEmail(s string) {
+	m.recipient_email = &s
+}
+
+// RecipientEmail returns the value of the "recipient_email" field in the mutation.
+func (m *TenderSubmissionMutation) RecipientEmail() (r string, exists bool) {
+	v := m.recipient_email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecipientEmail returns the old "recipient_email" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldRecipientEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecipientEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecipientEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecipientEmail: %w", err)
+	}
+	return oldValue.RecipientEmail, nil
+}
+
+// ClearRecipientEmail clears the value of the "recipient_email" field.
+func (m *TenderSubmissionMutation) ClearRecipientEmail() {
+	m.recipient_email = nil
+	m.clearedFields[tendersubmission.FieldRecipientEmail] = struct{}{}
+}
+
+// RecipientEmailCleared returns if the "recipient_email" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) RecipientEmailCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldRecipientEmail]
+	return ok
+}
+
+// ResetRecipientEmail resets all changes to the "recipient_email" field.
+func (m *TenderSubmissionMutation) ResetRecipientEmail() {
+	m.recipient_email = nil
+	delete(m.clearedFields, tendersubmission.FieldRecipientEmail)
+}
+
+// SetEmailSubject sets the "email_subject" field.
+func (m *TenderSubmissionMutation) SetEmailSubject(s string) {
+	m.email_subject = &s
+}
+
+// EmailSubject returns the value of the "email_subject" field in the mutation.
+func (m *TenderSubmissionMutation) EmailSubject() (r string, exists bool) {
+	v := m.email_subject
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmailSubject returns the old "email_subject" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldEmailSubject(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmailSubject is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmailSubject requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmailSubject: %w", err)
+	}
+	return oldValue.EmailSubject, nil
+}
+
+// ClearEmailSubject clears the value of the "email_subject" field.
+func (m *TenderSubmissionMutation) ClearEmailSubject() {
+	m.email_subject = nil
+	m.clearedFields[tendersubmission.FieldEmailSubject] = struct{}{}
+}
+
+// EmailSubjectCleared returns if the "email_subject" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) EmailSubjectCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldEmailSubject]
+	return ok
+}
+
+// ResetEmailSubject resets all changes to the "email_subject" field.
+func (m *TenderSubmissionMutation) ResetEmailSubject() {
+	m.email_subject = nil
+	delete(m.clearedFields, tendersubmission.FieldEmailSubject)
+}
+
+// SetEmailBody sets the "email_body" field.
+func (m *TenderSubmissionMutation) SetEmailBody(s string) {
+	m.email_body = &s
+}
+
+// EmailBody returns the value of the "email_body" field in the mutation.
+func (m *TenderSubmissionMutation) EmailBody() (r string, exists bool) {
+	v := m.email_body
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmailBody returns the old "email_body" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldEmailBody(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmailBody is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmailBody requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmailBody: %w", err)
+	}
+	return oldValue.EmailBody, nil
+}
+
+// ClearEmailBody clears the value of the "email_body" field.
+func (m *TenderSubmissionMutation) ClearEmailBody() {
+	m.email_body = nil
+	m.clearedFields[tendersubmission.FieldEmailBody] = struct{}{}
+}
+
+// EmailBodyCleared returns if the "email_body" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) EmailBodyCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldEmailBody]
+	return ok
+}
+
+// ResetEmailBody resets all changes to the "email_body" field.
+func (m *TenderSubmissionMutation) ResetEmailBody() {
+	m.email_body = nil
+	delete(m.clearedFields, tendersubmission.FieldEmailBody)
+}
+
+// SetDocumentURL sets the "document_url" field.
+func (m *TenderSubmissionMutation) SetDocumentURL(s string) {
+	m.document_url = &s
+}
+
+// DocumentURL returns the value of the "document_url" field in the mutation.
+func (m *TenderSubmissionMutation) DocumentURL() (r string, exists bool) {
+	v := m.document_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDocumentURL returns the old "document_url" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldDocumentURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDocumentURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDocumentURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDocumentURL: %w", err)
+	}
+	return oldValue.DocumentURL, nil
+}
+
+// ClearDocumentURL clears the value of the "document_url" field.
+func (m *TenderSubmissionMutation) ClearDocumentURL() {
+	m.document_url = nil
+	m.clearedFields[tendersubmission.FieldDocumentURL] = struct{}{}
+}
+
+// DocumentURLCleared returns if the "document_url" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) DocumentURLCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldDocumentURL]
+	return ok
+}
+
+// ResetDocumentURL resets all changes to the "document_url" field.
+func (m *TenderSubmissionMutation) ResetDocumentURL() {
+	m.document_url = nil
+	delete(m.clearedFields, tendersubmission.FieldDocumentURL)
+}
+
+// SetCourier sets the "courier" field.
+func (m *TenderSubmissionMutation) SetCourier(s string) {
+	m.courier = &s
+}
+
+// Courier returns the value of the "courier" field in the mutation.
+func (m *TenderSubmissionMutation) Courier() (r string, exists bool) {
+	v := m.courier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCourier returns the old "courier" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldCourier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCourier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCourier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCourier: %w", err)
+	}
+	return oldValue.Courier, nil
+}
+
+// ClearCourier clears the value of the "courier" field.
+func (m *TenderSubmissionMutation) ClearCourier() {
+	m.courier = nil
+	m.clearedFields[tendersubmission.FieldCourier] = struct{}{}
+}
+
+// CourierCleared returns if the "courier" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) CourierCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldCourier]
+	return ok
+}
+
+// ResetCourier resets all changes to the "courier" field.
+func (m *TenderSubmissionMutation) ResetCourier() {
+	m.courier = nil
+	delete(m.clearedFields, tendersubmission.FieldCourier)
+}
+
+// SetTrackingNumber sets the "tracking_number" field.
+func (m *TenderSubmissionMutation) SetTrackingNumber(s string) {
+	m.tracking_number = &s
+}
+
+// TrackingNumber returns the value of the "tracking_number" field in the mutation.
+func (m *TenderSubmissionMutation) TrackingNumber() (r string, exists bool) {
+	v := m.tracking_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackingNumber returns the old "tracking_number" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldTrackingNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackingNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackingNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackingNumber: %w", err)
+	}
+	return oldValue.TrackingNumber, nil
+}
+
+// ClearTrackingNumber clears the value of the "tracking_number" field.
+func (m *TenderSubmissionMutation) ClearTrackingNumber() {
+	m.tracking_number = nil
+	m.clearedFields[tendersubmission.FieldTrackingNumber] = struct{}{}
+}
+
+// TrackingNumberCleared returns if the "tracking_number" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) TrackingNumberCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldTrackingNumber]
+	return ok
+}
+
+// ResetTrackingNumber resets all changes to the "tracking_number" field.
+func (m *TenderSubmissionMutation) ResetTrackingNumber() {
+	m.tracking_number = nil
+	delete(m.clearedFields, tendersubmission.FieldTrackingNumber)
+}
+
+// SetAddress sets the "address" field.
+func (m *TenderSubmissionMutation) SetAddress(s string) {
+	m.address = &s
+}
+
+// Address returns the value of the "address" field in the mutation.
+func (m *TenderSubmissionMutation) Address() (r string, exists bool) {
+	v := m.address
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddress returns the old "address" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldAddress(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddress is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddress requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
+	}
+	return oldValue.Address, nil
+}
+
+// ClearAddress clears the value of the "address" field.
+func (m *TenderSubmissionMutation) ClearAddress() {
+	m.address = nil
+	m.clearedFields[tendersubmission.FieldAddress] = struct{}{}
+}
+
+// AddressCleared returns if the "address" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) AddressCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldAddress]
+	return ok
+}
+
+// ResetAddress resets all changes to the "address" field.
+func (m *TenderSubmissionMutation) ResetAddress() {
+	m.address = nil
+	delete(m.clearedFields, tendersubmission.FieldAddress)
+}
+
+// SetProofURL sets the "proof_url" field.
+func (m *TenderSubmissionMutation) SetProofURL(s string) {
+	m.proof_url = &s
+}
+
+// ProofURL returns the value of the "proof_url" field in the mutation.
+func (m *TenderSubmissionMutation) ProofURL() (r string, exists bool) {
+	v := m.proof_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProofURL returns the old "proof_url" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldProofURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProofURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProofURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProofURL: %w", err)
+	}
+	return oldValue.ProofURL, nil
+}
+
+// ClearProofURL clears the value of the "proof_url" field.
+func (m *TenderSubmissionMutation) ClearProofURL() {
+	m.proof_url = nil
+	m.clearedFields[tendersubmission.FieldProofURL] = struct{}{}
+}
+
+// ProofURLCleared returns if the "proof_url" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) ProofURLCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldProofURL]
+	return ok
+}
+
+// ResetProofURL resets all changes to the "proof_url" field.
+func (m *TenderSubmissionMutation) ResetProofURL() {
+	m.proof_url = nil
+	delete(m.clearedFields, tendersubmission.FieldProofURL)
+}
+
+// SetConfirmationNumber sets the "confirmation_number" field.
+func (m *TenderSubmissionMutation) SetConfirmationNumber(s string) {
+	m.confirmation_number = &s
+}
+
+// ConfirmationNumber returns the value of the "confirmation_number" field in the mutation.
+func (m *TenderSubmissionMutation) ConfirmationNumber() (r string, exists bool) {
+	v := m.confirmation_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmationNumber returns the old "confirmation_number" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldConfirmationNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmationNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmationNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmationNumber: %w", err)
+	}
+	return oldValue.ConfirmationNumber, nil
+}
+
+// ClearConfirmationNumber clears the value of the "confirmation_number" field.
+func (m *TenderSubmissionMutation) ClearConfirmationNumber() {
+	m.confirmation_number = nil
+	m.clearedFields[tendersubmission.FieldConfirmationNumber] = struct{}{}
+}
+
+// ConfirmationNumberCleared returns if the "confirmation_number" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) ConfirmationNumberCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldConfirmationNumber]
+	return ok
+}
+
+// ResetConfirmationNumber resets all changes to the "confirmation_number" field.
+func (m *TenderSubmissionMutation) ResetConfirmationNumber() {
+	m.confirmation_number = nil
+	delete(m.clearedFields, tendersubmission.FieldConfirmationNumber)
+}
+
+// SetDeliveryStatus sets the "delivery_status" field.
+func (m *TenderSubmissionMutation) SetDeliveryStatus(s string) {
+	m.delivery_status = &s
+}
+
+// DeliveryStatus returns the value of the "delivery_status" field in the mutation.
+func (m *TenderSubmissionMutation) DeliveryStatus() (r string, exists bool) {
+	v := m.delivery_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeliveryStatus returns the old "delivery_status" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldDeliveryStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeliveryStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeliveryStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeliveryStatus: %w", err)
+	}
+	return oldValue.DeliveryStatus, nil
+}
+
+// ResetDeliveryStatus resets all changes to the "delivery_status" field.
+func (m *TenderSubmissionMutation) ResetDeliveryStatus() {
+	m.delivery_status = nil
+}
+
+// SetNotes sets the "notes" field.
+func (m *TenderSubmissionMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *TenderSubmissionMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *TenderSubmissionMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[tendersubmission.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *TenderSubmissionMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[tendersubmission.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *TenderSubmissionMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, tendersubmission.FieldNotes)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *TenderSubmissionMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *TenderSubmissionMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the TenderSubmission entity.
+// If the TenderSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenderSubmissionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *TenderSubmissionMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// ClearTender clears the "tender" edge to the Tender entity.
+func (m *TenderSubmissionMutation) ClearTender() {
+	m.clearedtender = true
+	m.clearedFields[tendersubmission.FieldTenderID] = struct{}{}
+}
+
+// TenderCleared reports if the "tender" edge to the Tender entity was cleared.
+func (m *TenderSubmissionMutation) TenderCleared() bool {
+	return m.clearedtender
+}
+
+// TenderIDs returns the "tender" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TenderID instead. It exists only for internal usage by the builders.
+func (m *TenderSubmissionMutation) TenderIDs() (ids []uuid.UUID) {
+	if id := m.tender; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTender resets all changes to the "tender" edge.
+func (m *TenderSubmissionMutation) ResetTender() {
+	m.tender = nil
+	m.clearedtender = false
+}
+
+// Where appends a list predicates to the TenderSubmissionMutation builder.
+func (m *TenderSubmissionMutation) Where(ps ...predicate.TenderSubmission) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TenderSubmissionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TenderSubmissionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.TenderSubmission, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TenderSubmissionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TenderSubmissionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (TenderSubmission).
+func (m *TenderSubmissionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TenderSubmissionMutation) Fields() []string {
+	fields := make([]string, 0, 17)
+	if m.tenant_id != nil {
+		fields = append(fields, tendersubmission.FieldTenantID)
+	}
+	if m.tender != nil {
+		fields = append(fields, tendersubmission.FieldTenderID)
+	}
+	if m.method != nil {
+		fields = append(fields, tendersubmission.FieldMethod)
+	}
+	if m.submitted_at != nil {
+		fields = append(fields, tendersubmission.FieldSubmittedAt)
+	}
+	if m.submitted_by != nil {
+		fields = append(fields, tendersubmission.FieldSubmittedBy)
+	}
+	if m.recipient_email != nil {
+		fields = append(fields, tendersubmission.FieldRecipientEmail)
+	}
+	if m.email_subject != nil {
+		fields = append(fields, tendersubmission.FieldEmailSubject)
+	}
+	if m.email_body != nil {
+		fields = append(fields, tendersubmission.FieldEmailBody)
+	}
+	if m.document_url != nil {
+		fields = append(fields, tendersubmission.FieldDocumentURL)
+	}
+	if m.courier != nil {
+		fields = append(fields, tendersubmission.FieldCourier)
+	}
+	if m.tracking_number != nil {
+		fields = append(fields, tendersubmission.FieldTrackingNumber)
+	}
+	if m.address != nil {
+		fields = append(fields, tendersubmission.FieldAddress)
+	}
+	if m.proof_url != nil {
+		fields = append(fields, tendersubmission.FieldProofURL)
+	}
+	if m.confirmation_number != nil {
+		fields = append(fields, tendersubmission.FieldConfirmationNumber)
+	}
+	if m.delivery_status != nil {
+		fields = append(fields, tendersubmission.FieldDeliveryStatus)
+	}
+	if m.notes != nil {
+		fields = append(fields, tendersubmission.FieldNotes)
+	}
+	if m.created_at != nil {
+		fields = append(fields, tendersubmission.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TenderSubmissionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case tendersubmission.FieldTenantID:
+		return m.TenantID()
+	case tendersubmission.FieldTenderID:
+		return m.TenderID()
+	case tendersubmission.FieldMethod:
+		return m.Method()
+	case tendersubmission.FieldSubmittedAt:
+		return m.SubmittedAt()
+	case tendersubmission.FieldSubmittedBy:
+		return m.SubmittedBy()
+	case tendersubmission.FieldRecipientEmail:
+		return m.RecipientEmail()
+	case tendersubmission.FieldEmailSubject:
+		return m.EmailSubject()
+	case tendersubmission.FieldEmailBody:
+		return m.EmailBody()
+	case tendersubmission.FieldDocumentURL:
+		return m.DocumentURL()
+	case tendersubmission.FieldCourier:
+		return m.Courier()
+	case tendersubmission.FieldTrackingNumber:
+		return m.TrackingNumber()
+	case tendersubmission.FieldAddress:
+		return m.Address()
+	case tendersubmission.FieldProofURL:
+		return m.ProofURL()
+	case tendersubmission.FieldConfirmationNumber:
+		return m.ConfirmationNumber()
+	case tendersubmission.FieldDeliveryStatus:
+		return m.DeliveryStatus()
+	case tendersubmission.FieldNotes:
+		return m.Notes()
+	case tendersubmission.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TenderSubmissionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case tendersubmission.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case tendersubmission.FieldTenderID:
+		return m.OldTenderID(ctx)
+	case tendersubmission.FieldMethod:
+		return m.OldMethod(ctx)
+	case tendersubmission.FieldSubmittedAt:
+		return m.OldSubmittedAt(ctx)
+	case tendersubmission.FieldSubmittedBy:
+		return m.OldSubmittedBy(ctx)
+	case tendersubmission.FieldRecipientEmail:
+		return m.OldRecipientEmail(ctx)
+	case tendersubmission.FieldEmailSubject:
+		return m.OldEmailSubject(ctx)
+	case tendersubmission.FieldEmailBody:
+		return m.OldEmailBody(ctx)
+	case tendersubmission.FieldDocumentURL:
+		return m.OldDocumentURL(ctx)
+	case tendersubmission.FieldCourier:
+		return m.OldCourier(ctx)
+	case tendersubmission.FieldTrackingNumber:
+		return m.OldTrackingNumber(ctx)
+	case tendersubmission.FieldAddress:
+		return m.OldAddress(ctx)
+	case tendersubmission.FieldProofURL:
+		return m.OldProofURL(ctx)
+	case tendersubmission.FieldConfirmationNumber:
+		return m.OldConfirmationNumber(ctx)
+	case tendersubmission.FieldDeliveryStatus:
+		return m.OldDeliveryStatus(ctx)
+	case tendersubmission.FieldNotes:
+		return m.OldNotes(ctx)
+	case tendersubmission.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown TenderSubmission field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TenderSubmissionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case tendersubmission.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case tendersubmission.FieldTenderID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenderID(v)
+		return nil
+	case tendersubmission.FieldMethod:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMethod(v)
+		return nil
+	case tendersubmission.FieldSubmittedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubmittedAt(v)
+		return nil
+	case tendersubmission.FieldSubmittedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubmittedBy(v)
+		return nil
+	case tendersubmission.FieldRecipientEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecipientEmail(v)
+		return nil
+	case tendersubmission.FieldEmailSubject:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmailSubject(v)
+		return nil
+	case tendersubmission.FieldEmailBody:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmailBody(v)
+		return nil
+	case tendersubmission.FieldDocumentURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDocumentURL(v)
+		return nil
+	case tendersubmission.FieldCourier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCourier(v)
+		return nil
+	case tendersubmission.FieldTrackingNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackingNumber(v)
+		return nil
+	case tendersubmission.FieldAddress:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddress(v)
+		return nil
+	case tendersubmission.FieldProofURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProofURL(v)
+		return nil
+	case tendersubmission.FieldConfirmationNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmationNumber(v)
+		return nil
+	case tendersubmission.FieldDeliveryStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeliveryStatus(v)
+		return nil
+	case tendersubmission.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case tendersubmission.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSubmission field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TenderSubmissionMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TenderSubmissionMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TenderSubmissionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown TenderSubmission numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TenderSubmissionMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(tendersubmission.FieldRecipientEmail) {
+		fields = append(fields, tendersubmission.FieldRecipientEmail)
+	}
+	if m.FieldCleared(tendersubmission.FieldEmailSubject) {
+		fields = append(fields, tendersubmission.FieldEmailSubject)
+	}
+	if m.FieldCleared(tendersubmission.FieldEmailBody) {
+		fields = append(fields, tendersubmission.FieldEmailBody)
+	}
+	if m.FieldCleared(tendersubmission.FieldDocumentURL) {
+		fields = append(fields, tendersubmission.FieldDocumentURL)
+	}
+	if m.FieldCleared(tendersubmission.FieldCourier) {
+		fields = append(fields, tendersubmission.FieldCourier)
+	}
+	if m.FieldCleared(tendersubmission.FieldTrackingNumber) {
+		fields = append(fields, tendersubmission.FieldTrackingNumber)
+	}
+	if m.FieldCleared(tendersubmission.FieldAddress) {
+		fields = append(fields, tendersubmission.FieldAddress)
+	}
+	if m.FieldCleared(tendersubmission.FieldProofURL) {
+		fields = append(fields, tendersubmission.FieldProofURL)
+	}
+	if m.FieldCleared(tendersubmission.FieldConfirmationNumber) {
+		fields = append(fields, tendersubmission.FieldConfirmationNumber)
+	}
+	if m.FieldCleared(tendersubmission.FieldNotes) {
+		fields = append(fields, tendersubmission.FieldNotes)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TenderSubmissionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TenderSubmissionMutation) ClearField(name string) error {
+	switch name {
+	case tendersubmission.FieldRecipientEmail:
+		m.ClearRecipientEmail()
+		return nil
+	case tendersubmission.FieldEmailSubject:
+		m.ClearEmailSubject()
+		return nil
+	case tendersubmission.FieldEmailBody:
+		m.ClearEmailBody()
+		return nil
+	case tendersubmission.FieldDocumentURL:
+		m.ClearDocumentURL()
+		return nil
+	case tendersubmission.FieldCourier:
+		m.ClearCourier()
+		return nil
+	case tendersubmission.FieldTrackingNumber:
+		m.ClearTrackingNumber()
+		return nil
+	case tendersubmission.FieldAddress:
+		m.ClearAddress()
+		return nil
+	case tendersubmission.FieldProofURL:
+		m.ClearProofURL()
+		return nil
+	case tendersubmission.FieldConfirmationNumber:
+		m.ClearConfirmationNumber()
+		return nil
+	case tendersubmission.FieldNotes:
+		m.ClearNotes()
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSubmission nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TenderSubmissionMutation) ResetField(name string) error {
+	switch name {
+	case tendersubmission.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case tendersubmission.FieldTenderID:
+		m.ResetTenderID()
+		return nil
+	case tendersubmission.FieldMethod:
+		m.ResetMethod()
+		return nil
+	case tendersubmission.FieldSubmittedAt:
+		m.ResetSubmittedAt()
+		return nil
+	case tendersubmission.FieldSubmittedBy:
+		m.ResetSubmittedBy()
+		return nil
+	case tendersubmission.FieldRecipientEmail:
+		m.ResetRecipientEmail()
+		return nil
+	case tendersubmission.FieldEmailSubject:
+		m.ResetEmailSubject()
+		return nil
+	case tendersubmission.FieldEmailBody:
+		m.ResetEmailBody()
+		return nil
+	case tendersubmission.FieldDocumentURL:
+		m.ResetDocumentURL()
+		return nil
+	case tendersubmission.FieldCourier:
+		m.ResetCourier()
+		return nil
+	case tendersubmission.FieldTrackingNumber:
+		m.ResetTrackingNumber()
+		return nil
+	case tendersubmission.FieldAddress:
+		m.ResetAddress()
+		return nil
+	case tendersubmission.FieldProofURL:
+		m.ResetProofURL()
+		return nil
+	case tendersubmission.FieldConfirmationNumber:
+		m.ResetConfirmationNumber()
+		return nil
+	case tendersubmission.FieldDeliveryStatus:
+		m.ResetDeliveryStatus()
+		return nil
+	case tendersubmission.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case tendersubmission.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSubmission field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TenderSubmissionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.tender != nil {
+		edges = append(edges, tendersubmission.EdgeTender)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TenderSubmissionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case tendersubmission.EdgeTender:
+		if id := m.tender; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TenderSubmissionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TenderSubmissionMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TenderSubmissionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedtender {
+		edges = append(edges, tendersubmission.EdgeTender)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TenderSubmissionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case tendersubmission.EdgeTender:
+		return m.clearedtender
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TenderSubmissionMutation) ClearEdge(name string) error {
+	switch name {
+	case tendersubmission.EdgeTender:
+		m.ClearTender()
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSubmission unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TenderSubmissionMutation) ResetEdge(name string) error {
+	switch name {
+	case tendersubmission.EdgeTender:
+		m.ResetTender()
+		return nil
+	}
+	return fmt.Errorf("unknown TenderSubmission edge %s", name)
 }
 
 // UserRoleMutation represents an operation that mutates the UserRole nodes in the graph.

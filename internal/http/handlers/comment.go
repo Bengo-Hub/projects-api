@@ -9,15 +9,23 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	authclient "github.com/Bengo-Hub/shared-auth-client"
 	httpware "github.com/Bengo-Hub/httpware"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
+	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/comments"
 )
 
 // CommentHandler handles comment HTTP endpoints.
 type CommentHandler struct {
-	log *zap.Logger
-	svc *comments.Service
+	log      *zap.Logger
+	svc      *comments.Service
+	activity *activity.Recorder
+}
+
+// WithActivity records changes in the project activity feed.
+func (h *CommentHandler) WithActivity(rec *activity.Recorder) *CommentHandler {
+	h.activity = rec
+	return h
 }
 
 // NewCommentHandler creates a new comment handler.
@@ -27,16 +35,15 @@ func NewCommentHandler(log *zap.Logger, svc *comments.Service) *CommentHandler {
 
 // RegisterRoutes registers comment routes.
 func (h *CommentHandler) RegisterRoutes(r chi.Router) {
-	r.Route("/projects/{projectID}", func(pr chi.Router) {
-		pr.Get("/comments", h.ListByProject)
-		pr.Post("/comments", h.CreateProjectComment)
-		pr.Route("/tasks/{taskID}/comments", func(tr chi.Router) {
-			tr.Get("/", h.ListByTask)
-			tr.Post("/", h.CreateTaskComment)
-		})
-		pr.Put("/comments/{commentID}", h.Update)
-		pr.Delete("/comments/{commentID}", h.Delete)
-	})
+	// Flat paths: a nested Route("/projects/{projectID}") or "/tasks/{taskID}/comments" subrouter
+	// is shadowed by the tasks subrouter mounted at /projects/{projectID}/tasks, which answered
+	// 404 for task comments.
+	r.Get("/projects/{projectID}/comments", h.ListByProject)
+	r.Post("/projects/{projectID}/comments", h.CreateProjectComment)
+	r.Get("/projects/{projectID}/tasks/{taskID}/comments", h.ListByTask)
+	r.Post("/projects/{projectID}/tasks/{taskID}/comments", h.CreateTaskComment)
+	r.Put("/projects/{projectID}/comments/{commentID}", h.Update)
+	r.Delete("/projects/{projectID}/comments/{commentID}", h.Delete)
 }
 
 func (h *CommentHandler) ListByProject(w http.ResponseWriter, r *http.Request) {
@@ -63,6 +70,10 @@ func (h *CommentHandler) CreateProjectComment(w http.ResponseWriter, r *http.Req
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, UserID: actorID(r),
+		Type: "comment.added", Payload: map[string]any{"comment_id": c.ID.String()},
+	})
 	respondJSON(w, http.StatusCreated, c)
 }
 
@@ -85,7 +96,7 @@ func (h *CommentHandler) ListByTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CommentHandler) CreateTaskComment(w http.ResponseWriter, r *http.Request) {
-	tenantID, ok := parseTenant(w, r)
+	tenantID, projectID, ok := commentProjectParams(w, r)
 	if !ok {
 		return
 	}
@@ -95,11 +106,21 @@ func (h *CommentHandler) CreateTaskComment(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	input := extractCommentInput(r)
-	c, err := h.svc.CreateTaskComment(r.Context(), tenantID, taskID, input)
+	c, err := h.svc.CreateTaskComment(r.Context(), tenantID, projectID, taskID, input)
+	if errors.Is(err, comments.ErrNotFound) {
+		respondError(w, http.StatusNotFound, "task not found")
+		return
+	}
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, TaskID: uuidPtr(taskID), UserID: actorID(r),
+		Type: "comment.added", Payload: map[string]any{
+			"comment_id": c.ID.String(), "title": h.activity.TaskTitle(r.Context(), tenantID, taskID),
+		},
+	})
 	respondJSON(w, http.StatusCreated, c)
 }
 

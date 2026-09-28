@@ -53,6 +53,22 @@ type Tender struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// CreatedBy holds the value of the "created_by" field.
 	CreatedBy uuid.UUID `json:"created_by,omitempty"`
+	// go or no_go
+	Decision string `json:"decision,omitempty"`
+	// DecisionRationale holds the value of the "decision_rationale" field.
+	DecisionRationale string `json:"decision_rationale,omitempty"`
+	// DecidedBy holds the value of the "decided_by" field.
+	DecidedBy *uuid.UUID `json:"decided_by,omitempty"`
+	// DecidedAt holds the value of the "decided_at" field.
+	DecidedAt *time.Time `json:"decided_at,omitempty"`
+	// Outcome holds the value of the "outcome" field.
+	Outcome map[string]interface{} `json:"outcome,omitempty"`
+	// StatusHistory holds the value of the "status_history" field.
+	StatusHistory []map[string]interface{} `json:"status_history,omitempty"`
+	// FinalDocumentVersion holds the value of the "final_document_version" field.
+	FinalDocumentVersion int `json:"final_document_version,omitempty"`
+	// ReadyForSubmission holds the value of the "ready_for_submission" field.
+	ReadyForSubmission bool `json:"ready_for_submission,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TenderQuery when eager-loading is set.
 	Edges        TenderEdges `json:"edges"`
@@ -69,9 +85,13 @@ type TenderEdges struct {
 	Evaluations []*TenderEvaluation `json:"evaluations,omitempty"`
 	// Meetings holds the value of the meetings edge.
 	Meetings []*TenderMeeting `json:"meetings,omitempty"`
+	// Sections holds the value of the sections edge.
+	Sections []*TenderSection `json:"sections,omitempty"`
+	// Submissions holds the value of the submissions edge.
+	Submissions []*TenderSubmission `json:"submissions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [6]bool
 }
 
 // DocumentsOrErr returns the Documents value or an error if the edge
@@ -110,18 +130,42 @@ func (e TenderEdges) MeetingsOrErr() ([]*TenderMeeting, error) {
 	return nil, &NotLoadedError{edge: "meetings"}
 }
 
+// SectionsOrErr returns the Sections value or an error if the edge
+// was not loaded in eager-loading.
+func (e TenderEdges) SectionsOrErr() ([]*TenderSection, error) {
+	if e.loadedTypes[4] {
+		return e.Sections, nil
+	}
+	return nil, &NotLoadedError{edge: "sections"}
+}
+
+// SubmissionsOrErr returns the Submissions value or an error if the edge
+// was not loaded in eager-loading.
+func (e TenderEdges) SubmissionsOrErr() ([]*TenderSubmission, error) {
+	if e.loadedTypes[5] {
+		return e.Submissions, nil
+	}
+	return nil, &NotLoadedError{edge: "submissions"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Tender) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tender.FieldMetadata:
+		case tender.FieldDecidedBy:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case tender.FieldMetadata, tender.FieldOutcome, tender.FieldStatusHistory:
 			values[i] = new([]byte)
+		case tender.FieldReadyForSubmission:
+			values[i] = new(sql.NullBool)
 		case tender.FieldEstimatedValue:
 			values[i] = new(sql.NullFloat64)
-		case tender.FieldNumber, tender.FieldTitle, tender.FieldClientName, tender.FieldSource, tender.FieldStatus, tender.FieldPriority, tender.FieldCurrency, tender.FieldDescription, tender.FieldSubmissionType:
+		case tender.FieldFinalDocumentVersion:
+			values[i] = new(sql.NullInt64)
+		case tender.FieldNumber, tender.FieldTitle, tender.FieldClientName, tender.FieldSource, tender.FieldStatus, tender.FieldPriority, tender.FieldCurrency, tender.FieldDescription, tender.FieldSubmissionType, tender.FieldDecision, tender.FieldDecisionRationale:
 			values[i] = new(sql.NullString)
-		case tender.FieldDeadline, tender.FieldSubmittedAt, tender.FieldCreatedAt, tender.FieldUpdatedAt:
+		case tender.FieldDeadline, tender.FieldSubmittedAt, tender.FieldCreatedAt, tender.FieldUpdatedAt, tender.FieldDecidedAt:
 			values[i] = new(sql.NullTime)
 		case tender.FieldID, tender.FieldTenantID, tender.FieldCreatedBy:
 			values[i] = new(uuid.UUID)
@@ -250,6 +294,60 @@ func (t *Tender) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				t.CreatedBy = *value
 			}
+		case tender.FieldDecision:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field decision", values[i])
+			} else if value.Valid {
+				t.Decision = value.String
+			}
+		case tender.FieldDecisionRationale:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field decision_rationale", values[i])
+			} else if value.Valid {
+				t.DecisionRationale = value.String
+			}
+		case tender.FieldDecidedBy:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field decided_by", values[i])
+			} else if value.Valid {
+				t.DecidedBy = new(uuid.UUID)
+				*t.DecidedBy = *value.S.(*uuid.UUID)
+			}
+		case tender.FieldDecidedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field decided_at", values[i])
+			} else if value.Valid {
+				t.DecidedAt = new(time.Time)
+				*t.DecidedAt = value.Time
+			}
+		case tender.FieldOutcome:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field outcome", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &t.Outcome); err != nil {
+					return fmt.Errorf("unmarshal field outcome: %w", err)
+				}
+			}
+		case tender.FieldStatusHistory:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field status_history", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &t.StatusHistory); err != nil {
+					return fmt.Errorf("unmarshal field status_history: %w", err)
+				}
+			}
+		case tender.FieldFinalDocumentVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field final_document_version", values[i])
+			} else if value.Valid {
+				t.FinalDocumentVersion = int(value.Int64)
+			}
+		case tender.FieldReadyForSubmission:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field ready_for_submission", values[i])
+			} else if value.Valid {
+				t.ReadyForSubmission = value.Bool
+			}
 		default:
 			t.selectValues.Set(columns[i], values[i])
 		}
@@ -281,6 +379,16 @@ func (t *Tender) QueryEvaluations() *TenderEvaluationQuery {
 // QueryMeetings queries the "meetings" edge of the Tender entity.
 func (t *Tender) QueryMeetings() *TenderMeetingQuery {
 	return NewTenderClient(t.config).QueryMeetings(t)
+}
+
+// QuerySections queries the "sections" edge of the Tender entity.
+func (t *Tender) QuerySections() *TenderSectionQuery {
+	return NewTenderClient(t.config).QuerySections(t)
+}
+
+// QuerySubmissions queries the "submissions" edge of the Tender entity.
+func (t *Tender) QuerySubmissions() *TenderSubmissionQuery {
+	return NewTenderClient(t.config).QuerySubmissions(t)
 }
 
 // Update returns a builder for updating this Tender.
@@ -356,6 +464,34 @@ func (t *Tender) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("created_by=")
 	builder.WriteString(fmt.Sprintf("%v", t.CreatedBy))
+	builder.WriteString(", ")
+	builder.WriteString("decision=")
+	builder.WriteString(t.Decision)
+	builder.WriteString(", ")
+	builder.WriteString("decision_rationale=")
+	builder.WriteString(t.DecisionRationale)
+	builder.WriteString(", ")
+	if v := t.DecidedBy; v != nil {
+		builder.WriteString("decided_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := t.DecidedAt; v != nil {
+		builder.WriteString("decided_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("outcome=")
+	builder.WriteString(fmt.Sprintf("%v", t.Outcome))
+	builder.WriteString(", ")
+	builder.WriteString("status_history=")
+	builder.WriteString(fmt.Sprintf("%v", t.StatusHistory))
+	builder.WriteString(", ")
+	builder.WriteString("final_document_version=")
+	builder.WriteString(fmt.Sprintf("%v", t.FinalDocumentVersion))
+	builder.WriteString(", ")
+	builder.WriteString("ready_for_submission=")
+	builder.WriteString(fmt.Sprintf("%v", t.ReadyForSubmission))
 	builder.WriteByte(')')
 	return builder.String()
 }

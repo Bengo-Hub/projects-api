@@ -1,0 +1,746 @@
+openapi: 3.0.3
+info:
+  title: Projects API
+  version: "1.0"
+  description: |
+    Projects, tasks, collaboration, tenders and project financials for the Codevertex platform.
+
+    Every route below sits under `/api/v1/{tenantID}` and needs a bearer token from auth-api (or
+    an `X-API-Key` for service calls). Mutations also need an active subscription with the
+    `project_management` feature; `/financials/*` needs `budget_tracking`.
+
+    Lists take `page` and `limit` (max 100; `page_size` is accepted on tasks and tenders for older
+    clients) and answer `{ "data": [...], "total": n }`. Errors answer `{ "error": "..." }`: 400 bad
+    input, 403 plan or tenant, 404 not found, 409 a status change the current status does not allow.
+
+    Optional ids that are not set come back as the nil UUID `00000000-0000-0000-0000-000000000000`.
+servers:
+  - url: /api/v1/{tenantID}
+    variables:
+      tenantID:
+        default: your-tenant-slug-or-id
+security:
+  - bearerAuth: []
+  - apiKey: []
+tags:
+  - name: Projects
+  - name: Tasks
+  - name: Milestones
+  - name: Members
+  - name: Collaboration
+    description: Comments, attachments (file links) and the activity feed.
+  - name: Tenders
+  - name: Tender workflow
+    description: Go/no-go decision, sections and review, final document, submission, status and outcome.
+  - name: Financials
+  - name: Users
+
+paths:
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List projects
+      parameters: [{ $ref: "#/components/parameters/page" }, { $ref: "#/components/parameters/limit" }, { name: status, in: query, schema: { type: string } }]
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Projects]
+      summary: Create a project
+      requestBody: { $ref: "#/components/requestBodies/Project" }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Projects]
+      summary: Get a project with its tasks, members and milestones
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+    put:
+      tags: [Projects]
+      summary: Update a project (recorded in the activity feed)
+      requestBody: { $ref: "#/components/requestBodies/Project" }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Projects]
+      summary: Delete a project
+      responses: { "204": { description: Deleted }, "404": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/summary:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Projects]
+      summary: Task counts by status, overdue tasks, progress, members and milestones
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+
+  /projects/{projectID}/tasks:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Tasks]
+      summary: List tasks
+      parameters:
+        - { $ref: "#/components/parameters/page" }
+        - { $ref: "#/components/parameters/limit" }
+        - { name: status, in: query, schema: { type: string, enum: [todo, in_progress, review, done] } }
+        - { name: priority, in: query, schema: { type: string, enum: [low, medium, high, critical] } }
+        - { name: assignee_id, in: query, schema: { type: string, format: uuid } }
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Tasks]
+      summary: Create a task
+      requestBody: { $ref: "#/components/requestBodies/Task" }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/tasks/{taskID}:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { $ref: "#/components/parameters/taskID" }]
+    get:
+      tags: [Tasks]
+      summary: Get a task with its dependencies and comments
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+    put:
+      tags: [Tasks]
+      summary: Update a task; changed fields are recorded in the activity feed
+      requestBody: { $ref: "#/components/requestBodies/Task" }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Tasks]
+      summary: Delete a task
+      responses: { "204": { description: Deleted }, "404": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/tasks/{taskID}/dependencies:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { $ref: "#/components/parameters/taskID" }]
+    post:
+      tags: [Tasks]
+      summary: Make this task depend on another
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [depends_on_task_id]
+              properties:
+                depends_on_task_id: { type: string, format: uuid }
+                dependency_type: { type: string, enum: [FS, SS, FF, SF], default: FS }
+      responses: { "201": { description: Added }, "409": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/tasks/{taskID}/dependencies/{depID}:
+    parameters:
+      - { $ref: "#/components/parameters/projectID" }
+      - { $ref: "#/components/parameters/taskID" }
+      - { name: depID, in: path, required: true, description: The task depended on, schema: { type: string, format: uuid } }
+    delete:
+      tags: [Tasks]
+      summary: Remove a dependency
+      responses: { "204": { description: Removed }, "404": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/gantt:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Tasks]
+      summary: Tasks with dependencies for a Gantt chart
+      responses: { "200": { $ref: "#/components/responses/List" } }
+
+  /projects/{projectID}/milestones:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Milestones]
+      summary: List milestones
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Milestones]
+      summary: Create a milestone
+      requestBody: { $ref: "#/components/requestBodies/Milestone" }
+      responses: { "201": { $ref: "#/components/responses/Object" } }
+  /projects/{projectID}/milestones/{milestoneID}:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { name: milestoneID, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      tags: [Milestones]
+      summary: Get a milestone
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+    put:
+      tags: [Milestones]
+      summary: Update a milestone (completing it emits project.milestone.reached)
+      requestBody: { $ref: "#/components/requestBodies/Milestone" }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Milestones]
+      summary: Delete a milestone
+      responses: { "204": { description: Deleted }, "404": { $ref: "#/components/responses/Error" } }
+
+  /projects/{projectID}/members:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Members]
+      summary: List project members
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Members]
+      summary: Add a member
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: string, format: uuid }
+                role_code: { type: string, default: member }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "409": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/members/{userID}:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { name: userID, in: path, required: true, schema: { type: string, format: uuid } }]
+    put:
+      tags: [Members]
+      summary: Change a member's role
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { role_code: { type: string } } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Members]
+      summary: Remove a member
+      responses: { "204": { description: Removed }, "404": { $ref: "#/components/responses/Error" } }
+
+  /projects/{projectID}/comments:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Collaboration]
+      summary: List the project's comments, including task comments (task_id set)
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Collaboration]
+      summary: Comment on the project
+      requestBody: { $ref: "#/components/requestBodies/Comment" }
+      responses: { "201": { $ref: "#/components/responses/Object" } }
+  /projects/{projectID}/comments/{commentID}:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { name: commentID, in: path, required: true, schema: { type: string, format: uuid } }]
+    put:
+      tags: [Collaboration]
+      summary: Edit a comment
+      requestBody: { $ref: "#/components/requestBodies/Comment" }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Collaboration]
+      summary: Delete a comment
+      responses: { "204": { description: Deleted }, "404": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/tasks/{taskID}/comments:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { $ref: "#/components/parameters/taskID" }]
+    get:
+      tags: [Collaboration]
+      summary: List a task's comments
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Collaboration]
+      summary: Comment on a task of this project
+      requestBody: { $ref: "#/components/requestBodies/Comment" }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/attachments:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Collaboration]
+      summary: List the project's own file links (not its tasks')
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Collaboration]
+      summary: Attach a file link to the project
+      requestBody: { $ref: "#/components/requestBodies/Attachment" }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/attachments/{attachmentID}:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { name: attachmentID, in: path, required: true, schema: { type: string, format: uuid } }]
+    delete:
+      tags: [Collaboration]
+      summary: Remove a file link from the project or one of its tasks
+      responses: { "204": { description: Removed }, "404": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/tasks/{taskID}/attachments:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { $ref: "#/components/parameters/taskID" }]
+    get:
+      tags: [Collaboration]
+      summary: List a task's file links
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Collaboration]
+      summary: Attach a file link to a task
+      requestBody: { $ref: "#/components/requestBodies/Attachment" }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+  /projects/{projectID}/activities:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Collaboration]
+      summary: The project's latest 100 activity entries, newest first
+      description: |
+        activity_type is one of task.created, task.updated (payload.changes: field -> {from, to}),
+        task.deleted, dependency.added, dependency.removed, comment.added, attachment.added,
+        attachment.removed, milestone.created, milestone.updated, milestone.deleted, member.added,
+        member.role_changed, member.removed, project.updated.
+      responses: { "200": { $ref: "#/components/responses/List" } }
+  /projects/{projectID}/tasks/{taskID}/activities:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { $ref: "#/components/parameters/taskID" }]
+    get:
+      tags: [Collaboration]
+      summary: A task's latest 100 activity entries
+      responses: { "200": { $ref: "#/components/responses/List" } }
+
+  /tenders:
+    get:
+      tags: [Tenders]
+      summary: List tenders
+      parameters:
+        - { $ref: "#/components/parameters/page" }
+        - { $ref: "#/components/parameters/limit" }
+        - { name: status, in: query, schema: { $ref: "#/components/schemas/TenderStatus" } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: deadline_before, in: query, schema: { type: string, format: date-time } }
+        - { name: deadline_after, in: query, schema: { type: string, format: date-time } }
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Tenders]
+      summary: Log a tender (starts as draft or evaluating; number is generated)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, client_name]
+              properties:
+                title: { type: string }
+                client_name: { type: string }
+                source: { type: string }
+                status: { type: string, enum: [draft, evaluating] }
+                priority: { type: string, enum: [low, medium, high, critical] }
+                estimated_value: { type: number }
+                currency: { type: string, default: KES }
+                deadline: { type: string, format: date-time }
+                description: { type: string }
+                submission_type: { type: string, enum: [physical, email, online] }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" } }
+  /tenders/metrics:
+    get:
+      tags: [Tenders]
+      summary: Pipeline by status (count, value), pipeline value, awarded value and win rate
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /tenders/{id}:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    get:
+      tags: [Tenders]
+      summary: Get a tender with committees, evaluations, meetings, documents, sections and submissions
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+    put:
+      tags: [Tenders]
+      summary: Update a tender; a status change follows the same rules as POST /status
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Tenders]
+      summary: Delete a tender and all its records
+      responses: { "204": { description: Deleted }, "404": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/committees:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    get:
+      tags: [Tenders]
+      summary: List evaluation committees
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Tenders]
+      summary: Form an evaluation committee
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { name: { type: string } } }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/committees/{committeeID}/members:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }, { name: committeeID, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      tags: [Tenders]
+      summary: Add a committee member
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { user_id: { type: string, format: uuid }, role: { type: string, default: member } } }
+      responses: { "201": { $ref: "#/components/responses/Object" } }
+  /tenders/{id}/committees/{committeeID}/members/{userID}:
+    parameters:
+      - { $ref: "#/components/parameters/tenderID" }
+      - { name: committeeID, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: userID, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      tags: [Tenders]
+      summary: Remove a committee member
+      responses: { "204": { description: Removed }, "404": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/evaluations:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    get:
+      tags: [Tenders]
+      summary: List evaluations
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Tenders]
+      summary: Submit an evaluation score
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                evaluator_id: { type: string, format: uuid }
+                score: { type: number }
+                criteria: { type: string }
+                notes: { type: string }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/meetings:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    get:
+      tags: [Tenders]
+      summary: List meetings
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Tenders]
+      summary: Schedule a meeting (the link is entered by hand; platform APIs are not integrated)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                scheduled_at: { type: string, format: date-time }
+                platform: { type: string, default: physical, description: Free text such as physical, google_meet, teams or zoom }
+                meeting_url: { type: string }
+                notes: { type: string }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/documents:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    get:
+      tags: [Tenders]
+      summary: List documents (kind supporting or final, with version)
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Tenders]
+      summary: Add a supporting document link
+      requestBody: { $ref: "#/components/requestBodies/Attachment" }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/documents/{docID}:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }, { name: docID, in: path, required: true, schema: { type: string, format: uuid } }]
+    delete:
+      tags: [Tenders]
+      summary: Remove a document
+      responses: { "204": { description: Removed }, "404": { $ref: "#/components/responses/Error" } }
+
+  /tenders/{id}/evaluation-summary:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    get:
+      tags: [Tender workflow]
+      summary: Average, min and max score, per-criterion averages and any decision
+      responses: { "200": { $ref: "#/components/responses/Object" }, "404": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/decision:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    post:
+      tags: [Tender workflow]
+      summary: Go/no-go decision on a draft or evaluating tender (go -> preparing, no_go -> no_go)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, rationale]
+              properties:
+                decision: { type: string, enum: [go, no_go] }
+                rationale: { type: string }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/status:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    post:
+      tags: [Tender workflow]
+      summary: Move the tender to another status; logged in status_history
+      description: |
+        Allowed moves: draft -> evaluating, preparing, no_go, cancelled; evaluating -> draft, preparing,
+        no_go, cancelled; preparing -> evaluating, submitted, cancelled; submitted -> under_review,
+        shortlisted, interview, awarded, lost, cancelled; under_review -> shortlisted, interview,
+        awarded, lost, cancelled; shortlisted -> interview, awarded, lost, cancelled; interview ->
+        awarded, lost, cancelled. awarded, lost, no_go and cancelled are final.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: "#/components/schemas/TenderStatus" }
+                notes: { type: string }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/outcome:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    post:
+      tags: [Tender workflow]
+      summary: Close a submitted tender as awarded or lost with its details
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome]
+              properties:
+                outcome: { type: string, enum: [awarded, lost] }
+                award_date: { type: string, format: date-time }
+                award_value: { type: number }
+                contract_reference: { type: string }
+                contract_details: { type: string }
+                convert_to_project: { type: boolean }
+                loss_reason: { type: string, description: Required when lost }
+                competitor: { type: string }
+                competitor_price: { type: number }
+                lessons_learned: { type: string }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/sections:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    get:
+      tags: [Tender workflow]
+      summary: Sections in order, plus summary (total, by_status, all_approved, overdue)
+      responses: { "200": { $ref: "#/components/responses/List" }, "404": { $ref: "#/components/responses/Error" } }
+    post:
+      tags: [Tender workflow]
+      summary: Add a section, optionally assigned with a reviewer and due date
+      requestBody: { $ref: "#/components/requestBodies/Section" }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/sections/{sectionID}:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }, { $ref: "#/components/parameters/sectionID" }]
+    put:
+      tags: [Tender workflow]
+      summary: Edit a section (status only not_started or in_progress; approved sections are locked)
+      requestBody: { $ref: "#/components/requestBodies/Section" }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Tender workflow]
+      summary: Delete a section
+      responses: { "204": { description: Deleted }, "404": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/sections/{sectionID}/submit:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }, { $ref: "#/components/parameters/sectionID" }]
+    post:
+      tags: [Tender workflow]
+      summary: Send a section for review (needs a document link)
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { document_url: { type: string } } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/sections/{sectionID}/approve:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }, { $ref: "#/components/parameters/sectionID" }]
+    post:
+      tags: [Tender workflow]
+      summary: Approve a section under review
+      requestBody: { $ref: "#/components/requestBodies/Review" }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "409": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/sections/{sectionID}/request-changes:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }, { $ref: "#/components/parameters/sectionID" }]
+    post:
+      tags: [Tender workflow]
+      summary: Send a section back with comments (clears ready_for_submission)
+      requestBody: { $ref: "#/components/requestBodies/Review" }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/final-document:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    post:
+      tags: [Tender workflow]
+      summary: Add the next version of the compiled tender document (clears ready_for_submission)
+      requestBody: { $ref: "#/components/requestBodies/Attachment" }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/ready:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    post:
+      tags: [Tender workflow]
+      summary: Mark ready for submission (needs every section approved and a final document)
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { ready: { type: boolean, default: true } } }
+      responses: { "200": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/submit:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    post:
+      tags: [Tender workflow]
+      summary: Record a submission; the first one moves a preparing tender to submitted
+      description: |
+        email needs recipient_email and email_subject; the record starts queued and the
+        project.tender.submitted event carries the message for notifications-api to send.
+        physical needs address. online takes the portal reference as confirmation_number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method: { type: string, enum: [email, physical, online] }
+                submitted_at: { type: string, format: date-time }
+                recipient_email: { type: string, format: email }
+                email_subject: { type: string }
+                email_body: { type: string }
+                document_url: { type: string, description: Defaults to the latest final document }
+                courier: { type: string }
+                tracking_number: { type: string }
+                address: { type: string }
+                proof_url: { type: string }
+                confirmation_number: { type: string }
+                notes: { type: string }
+      responses: { "201": { $ref: "#/components/responses/Object" }, "400": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+  /tenders/{id}/submissions:
+    parameters: [{ $ref: "#/components/parameters/tenderID" }]
+    get:
+      tags: [Tender workflow]
+      summary: List submission records, newest first
+      responses: { "200": { $ref: "#/components/responses/List" }, "404": { $ref: "#/components/responses/Error" } }
+
+  /financials/portfolio:
+    get:
+      tags: [Financials]
+      summary: Every project's budget, spend, earned value, RAG health and ERP hours
+      parameters: [{ $ref: "#/components/parameters/page" }, { $ref: "#/components/parameters/limit" }, { name: status, in: query, schema: { type: string } }]
+      responses: { "200": { $ref: "#/components/responses/List" }, "403": { $ref: "#/components/responses/Error" } }
+  /financials/projects/{projectID}:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Financials]
+      summary: A project's money from treasury, EVM (CPI, SPI, EAC, VAC) and ERP hours
+      responses: { "200": { $ref: "#/components/responses/Object" }, "403": { $ref: "#/components/responses/Error" } }
+  /financials/projects/{projectID}/budgets:
+    parameters: [{ $ref: "#/components/parameters/projectID" }]
+    get:
+      tags: [Financials]
+      summary: The project's budgets in treasury
+      responses: { "200": { $ref: "#/components/responses/List" } }
+    post:
+      tags: [Financials]
+      summary: Create a project budget in treasury
+      responses: { "201": { $ref: "#/components/responses/Object" } }
+  /financials/projects/{projectID}/budgets/{budgetID}:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { name: budgetID, in: path, required: true, schema: { type: string, format: uuid } }]
+    put:
+      tags: [Financials]
+      summary: Update a project budget in treasury
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /financials/projects/{projectID}/budgets/{budgetID}/submit:
+    parameters: [{ $ref: "#/components/parameters/projectID" }, { name: budgetID, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      tags: [Financials]
+      summary: Submit a project budget for approval in treasury
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+
+  /users:
+    post:
+      tags: [Users]
+      summary: Add a user to the tenant through auth-api (resolved or created by email)
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { email: { type: string, format: email }, roles: { type: array, items: { type: string } } } }
+      responses: { "201": { $ref: "#/components/responses/Object" } }
+  /users/me/roles:
+    get:
+      tags: [Users]
+      summary: The signed-in user's project roles
+      responses: { "200": { $ref: "#/components/responses/Object" } }
+  /roles:
+    get:
+      tags: [Users]
+      summary: List project roles
+      responses: { "200": { $ref: "#/components/responses/List" } }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    apiKey: { type: apiKey, in: header, name: X-API-Key }
+  parameters:
+    page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    limit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+    projectID: { name: projectID, in: path, required: true, schema: { type: string, format: uuid } }
+    taskID: { name: taskID, in: path, required: true, schema: { type: string, format: uuid } }
+    tenderID: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    sectionID: { name: sectionID, in: path, required: true, schema: { type: string, format: uuid } }
+  schemas:
+    TenderStatus:
+      type: string
+      enum: [draft, evaluating, preparing, submitted, under_review, shortlisted, interview, awarded, lost, no_go, cancelled]
+    Error:
+      type: object
+      properties: { error: { type: string } }
+  requestBodies:
+    Project:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name: { type: string }
+              description: { type: string }
+              status: { type: string, enum: [active, on_hold, completed, cancelled] }
+              start_date: { type: string, format: date-time }
+              end_date: { type: string, format: date-time }
+              budget: { type: number }
+              currency: { type: string }
+              metadata: { type: object }
+    Task:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title: { type: string }
+              description: { type: string }
+              status: { type: string, enum: [todo, in_progress, review, done] }
+              priority: { type: string, enum: [low, medium, high, critical] }
+              assignee_id: { type: string, format: uuid }
+              start_date: { type: string, format: date, description: yyyy-mm-dd or RFC 3339 }
+              due_date: { type: string, format: date, description: yyyy-mm-dd or RFC 3339 }
+              estimated_hours: { type: number }
+              progress_pct: { type: integer, minimum: 0, maximum: 100 }
+              parent_id: { type: string, format: uuid }
+              wbs_code: { type: string }
+    Milestone:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name: { type: string }
+              description: { type: string }
+              status: { type: string, enum: [pending, in_progress, completed, missed] }
+              target_date: { type: string, format: date-time }
+    Comment:
+      content:
+        application/json:
+          schema: { type: object, required: [content], properties: { content: { type: string } } }
+    Attachment:
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [file_url]
+            properties:
+              file_url: { type: string, description: An http or https link to the file }
+              file_name: { type: string, description: Defaults to the last part of the link }
+              file_size: { type: integer }
+              mime_type: { type: string }
+    Section:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title: { type: string }
+              description: { type: string }
+              assignee_id: { type: string, format: uuid }
+              reviewer_id: { type: string, format: uuid }
+              due_date: { type: string, format: date-time }
+              sort_order: { type: integer }
+              status: { type: string, enum: [not_started, in_progress] }
+              document_url: { type: string }
+    Review:
+      content:
+        application/json:
+          schema: { type: object, properties: { comments: { type: string, description: Required to request changes } } }
+  responses:
+    Object:
+      description: The resource
+      content: { application/json: { schema: { type: object } } }
+    List:
+      description: A page of resources
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data: { type: array, items: { type: object } }
+              total: { type: integer }
+    Error:
+      description: Error
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }

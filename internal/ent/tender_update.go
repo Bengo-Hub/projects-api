@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	"github.com/bengobox/projects-service/internal/ent/tender"
@@ -17,6 +18,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	"github.com/bengobox/projects-service/internal/ent/tendersection"
+	"github.com/bengobox/projects-service/internal/ent/tendersubmission"
 	"github.com/google/uuid"
 )
 
@@ -284,6 +287,151 @@ func (tu *TenderUpdate) SetNillableCreatedBy(u *uuid.UUID) *TenderUpdate {
 	return tu
 }
 
+// SetDecision sets the "decision" field.
+func (tu *TenderUpdate) SetDecision(s string) *TenderUpdate {
+	tu.mutation.SetDecision(s)
+	return tu
+}
+
+// SetNillableDecision sets the "decision" field if the given value is not nil.
+func (tu *TenderUpdate) SetNillableDecision(s *string) *TenderUpdate {
+	if s != nil {
+		tu.SetDecision(*s)
+	}
+	return tu
+}
+
+// ClearDecision clears the value of the "decision" field.
+func (tu *TenderUpdate) ClearDecision() *TenderUpdate {
+	tu.mutation.ClearDecision()
+	return tu
+}
+
+// SetDecisionRationale sets the "decision_rationale" field.
+func (tu *TenderUpdate) SetDecisionRationale(s string) *TenderUpdate {
+	tu.mutation.SetDecisionRationale(s)
+	return tu
+}
+
+// SetNillableDecisionRationale sets the "decision_rationale" field if the given value is not nil.
+func (tu *TenderUpdate) SetNillableDecisionRationale(s *string) *TenderUpdate {
+	if s != nil {
+		tu.SetDecisionRationale(*s)
+	}
+	return tu
+}
+
+// ClearDecisionRationale clears the value of the "decision_rationale" field.
+func (tu *TenderUpdate) ClearDecisionRationale() *TenderUpdate {
+	tu.mutation.ClearDecisionRationale()
+	return tu
+}
+
+// SetDecidedBy sets the "decided_by" field.
+func (tu *TenderUpdate) SetDecidedBy(u uuid.UUID) *TenderUpdate {
+	tu.mutation.SetDecidedBy(u)
+	return tu
+}
+
+// SetNillableDecidedBy sets the "decided_by" field if the given value is not nil.
+func (tu *TenderUpdate) SetNillableDecidedBy(u *uuid.UUID) *TenderUpdate {
+	if u != nil {
+		tu.SetDecidedBy(*u)
+	}
+	return tu
+}
+
+// ClearDecidedBy clears the value of the "decided_by" field.
+func (tu *TenderUpdate) ClearDecidedBy() *TenderUpdate {
+	tu.mutation.ClearDecidedBy()
+	return tu
+}
+
+// SetDecidedAt sets the "decided_at" field.
+func (tu *TenderUpdate) SetDecidedAt(t time.Time) *TenderUpdate {
+	tu.mutation.SetDecidedAt(t)
+	return tu
+}
+
+// SetNillableDecidedAt sets the "decided_at" field if the given value is not nil.
+func (tu *TenderUpdate) SetNillableDecidedAt(t *time.Time) *TenderUpdate {
+	if t != nil {
+		tu.SetDecidedAt(*t)
+	}
+	return tu
+}
+
+// ClearDecidedAt clears the value of the "decided_at" field.
+func (tu *TenderUpdate) ClearDecidedAt() *TenderUpdate {
+	tu.mutation.ClearDecidedAt()
+	return tu
+}
+
+// SetOutcome sets the "outcome" field.
+func (tu *TenderUpdate) SetOutcome(m map[string]interface{}) *TenderUpdate {
+	tu.mutation.SetOutcome(m)
+	return tu
+}
+
+// ClearOutcome clears the value of the "outcome" field.
+func (tu *TenderUpdate) ClearOutcome() *TenderUpdate {
+	tu.mutation.ClearOutcome()
+	return tu
+}
+
+// SetStatusHistory sets the "status_history" field.
+func (tu *TenderUpdate) SetStatusHistory(m []map[string]interface{}) *TenderUpdate {
+	tu.mutation.SetStatusHistory(m)
+	return tu
+}
+
+// AppendStatusHistory appends m to the "status_history" field.
+func (tu *TenderUpdate) AppendStatusHistory(m []map[string]interface{}) *TenderUpdate {
+	tu.mutation.AppendStatusHistory(m)
+	return tu
+}
+
+// ClearStatusHistory clears the value of the "status_history" field.
+func (tu *TenderUpdate) ClearStatusHistory() *TenderUpdate {
+	tu.mutation.ClearStatusHistory()
+	return tu
+}
+
+// SetFinalDocumentVersion sets the "final_document_version" field.
+func (tu *TenderUpdate) SetFinalDocumentVersion(i int) *TenderUpdate {
+	tu.mutation.ResetFinalDocumentVersion()
+	tu.mutation.SetFinalDocumentVersion(i)
+	return tu
+}
+
+// SetNillableFinalDocumentVersion sets the "final_document_version" field if the given value is not nil.
+func (tu *TenderUpdate) SetNillableFinalDocumentVersion(i *int) *TenderUpdate {
+	if i != nil {
+		tu.SetFinalDocumentVersion(*i)
+	}
+	return tu
+}
+
+// AddFinalDocumentVersion adds i to the "final_document_version" field.
+func (tu *TenderUpdate) AddFinalDocumentVersion(i int) *TenderUpdate {
+	tu.mutation.AddFinalDocumentVersion(i)
+	return tu
+}
+
+// SetReadyForSubmission sets the "ready_for_submission" field.
+func (tu *TenderUpdate) SetReadyForSubmission(b bool) *TenderUpdate {
+	tu.mutation.SetReadyForSubmission(b)
+	return tu
+}
+
+// SetNillableReadyForSubmission sets the "ready_for_submission" field if the given value is not nil.
+func (tu *TenderUpdate) SetNillableReadyForSubmission(b *bool) *TenderUpdate {
+	if b != nil {
+		tu.SetReadyForSubmission(*b)
+	}
+	return tu
+}
+
 // AddDocumentIDs adds the "documents" edge to the TenderDocument entity by IDs.
 func (tu *TenderUpdate) AddDocumentIDs(ids ...uuid.UUID) *TenderUpdate {
 	tu.mutation.AddDocumentIDs(ids...)
@@ -342,6 +490,36 @@ func (tu *TenderUpdate) AddMeetings(t ...*TenderMeeting) *TenderUpdate {
 		ids[i] = t[i].ID
 	}
 	return tu.AddMeetingIDs(ids...)
+}
+
+// AddSectionIDs adds the "sections" edge to the TenderSection entity by IDs.
+func (tu *TenderUpdate) AddSectionIDs(ids ...uuid.UUID) *TenderUpdate {
+	tu.mutation.AddSectionIDs(ids...)
+	return tu
+}
+
+// AddSections adds the "sections" edges to the TenderSection entity.
+func (tu *TenderUpdate) AddSections(t ...*TenderSection) *TenderUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.AddSectionIDs(ids...)
+}
+
+// AddSubmissionIDs adds the "submissions" edge to the TenderSubmission entity by IDs.
+func (tu *TenderUpdate) AddSubmissionIDs(ids ...uuid.UUID) *TenderUpdate {
+	tu.mutation.AddSubmissionIDs(ids...)
+	return tu
+}
+
+// AddSubmissions adds the "submissions" edges to the TenderSubmission entity.
+func (tu *TenderUpdate) AddSubmissions(t ...*TenderSubmission) *TenderUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.AddSubmissionIDs(ids...)
 }
 
 // Mutation returns the TenderMutation object of the builder.
@@ -431,6 +609,48 @@ func (tu *TenderUpdate) RemoveMeetings(t ...*TenderMeeting) *TenderUpdate {
 		ids[i] = t[i].ID
 	}
 	return tu.RemoveMeetingIDs(ids...)
+}
+
+// ClearSections clears all "sections" edges to the TenderSection entity.
+func (tu *TenderUpdate) ClearSections() *TenderUpdate {
+	tu.mutation.ClearSections()
+	return tu
+}
+
+// RemoveSectionIDs removes the "sections" edge to TenderSection entities by IDs.
+func (tu *TenderUpdate) RemoveSectionIDs(ids ...uuid.UUID) *TenderUpdate {
+	tu.mutation.RemoveSectionIDs(ids...)
+	return tu
+}
+
+// RemoveSections removes "sections" edges to TenderSection entities.
+func (tu *TenderUpdate) RemoveSections(t ...*TenderSection) *TenderUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.RemoveSectionIDs(ids...)
+}
+
+// ClearSubmissions clears all "submissions" edges to the TenderSubmission entity.
+func (tu *TenderUpdate) ClearSubmissions() *TenderUpdate {
+	tu.mutation.ClearSubmissions()
+	return tu
+}
+
+// RemoveSubmissionIDs removes the "submissions" edge to TenderSubmission entities by IDs.
+func (tu *TenderUpdate) RemoveSubmissionIDs(ids ...uuid.UUID) *TenderUpdate {
+	tu.mutation.RemoveSubmissionIDs(ids...)
+	return tu
+}
+
+// RemoveSubmissions removes "submissions" edges to TenderSubmission entities.
+func (tu *TenderUpdate) RemoveSubmissions(t ...*TenderSubmission) *TenderUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.RemoveSubmissionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -564,6 +784,56 @@ func (tu *TenderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.CreatedBy(); ok {
 		_spec.SetField(tender.FieldCreatedBy, field.TypeUUID, value)
+	}
+	if value, ok := tu.mutation.Decision(); ok {
+		_spec.SetField(tender.FieldDecision, field.TypeString, value)
+	}
+	if tu.mutation.DecisionCleared() {
+		_spec.ClearField(tender.FieldDecision, field.TypeString)
+	}
+	if value, ok := tu.mutation.DecisionRationale(); ok {
+		_spec.SetField(tender.FieldDecisionRationale, field.TypeString, value)
+	}
+	if tu.mutation.DecisionRationaleCleared() {
+		_spec.ClearField(tender.FieldDecisionRationale, field.TypeString)
+	}
+	if value, ok := tu.mutation.DecidedBy(); ok {
+		_spec.SetField(tender.FieldDecidedBy, field.TypeUUID, value)
+	}
+	if tu.mutation.DecidedByCleared() {
+		_spec.ClearField(tender.FieldDecidedBy, field.TypeUUID)
+	}
+	if value, ok := tu.mutation.DecidedAt(); ok {
+		_spec.SetField(tender.FieldDecidedAt, field.TypeTime, value)
+	}
+	if tu.mutation.DecidedAtCleared() {
+		_spec.ClearField(tender.FieldDecidedAt, field.TypeTime)
+	}
+	if value, ok := tu.mutation.Outcome(); ok {
+		_spec.SetField(tender.FieldOutcome, field.TypeJSON, value)
+	}
+	if tu.mutation.OutcomeCleared() {
+		_spec.ClearField(tender.FieldOutcome, field.TypeJSON)
+	}
+	if value, ok := tu.mutation.StatusHistory(); ok {
+		_spec.SetField(tender.FieldStatusHistory, field.TypeJSON, value)
+	}
+	if value, ok := tu.mutation.AppendedStatusHistory(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, tender.FieldStatusHistory, value)
+		})
+	}
+	if tu.mutation.StatusHistoryCleared() {
+		_spec.ClearField(tender.FieldStatusHistory, field.TypeJSON)
+	}
+	if value, ok := tu.mutation.FinalDocumentVersion(); ok {
+		_spec.SetField(tender.FieldFinalDocumentVersion, field.TypeInt, value)
+	}
+	if value, ok := tu.mutation.AddedFinalDocumentVersion(); ok {
+		_spec.AddField(tender.FieldFinalDocumentVersion, field.TypeInt, value)
+	}
+	if value, ok := tu.mutation.ReadyForSubmission(); ok {
+		_spec.SetField(tender.FieldReadyForSubmission, field.TypeBool, value)
 	}
 	if tu.mutation.DocumentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -738,6 +1008,96 @@ func (tu *TenderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tendermeeting.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tu.mutation.SectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SectionsTable,
+			Columns: []string{tender.SectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersection.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedSectionsIDs(); len(nodes) > 0 && !tu.mutation.SectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SectionsTable,
+			Columns: []string{tender.SectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersection.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.SectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SectionsTable,
+			Columns: []string{tender.SectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersection.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tu.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SubmissionsTable,
+			Columns: []string{tender.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersubmission.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedSubmissionsIDs(); len(nodes) > 0 && !tu.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SubmissionsTable,
+			Columns: []string{tender.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersubmission.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.SubmissionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SubmissionsTable,
+			Columns: []string{tender.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersubmission.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1016,6 +1376,151 @@ func (tuo *TenderUpdateOne) SetNillableCreatedBy(u *uuid.UUID) *TenderUpdateOne 
 	return tuo
 }
 
+// SetDecision sets the "decision" field.
+func (tuo *TenderUpdateOne) SetDecision(s string) *TenderUpdateOne {
+	tuo.mutation.SetDecision(s)
+	return tuo
+}
+
+// SetNillableDecision sets the "decision" field if the given value is not nil.
+func (tuo *TenderUpdateOne) SetNillableDecision(s *string) *TenderUpdateOne {
+	if s != nil {
+		tuo.SetDecision(*s)
+	}
+	return tuo
+}
+
+// ClearDecision clears the value of the "decision" field.
+func (tuo *TenderUpdateOne) ClearDecision() *TenderUpdateOne {
+	tuo.mutation.ClearDecision()
+	return tuo
+}
+
+// SetDecisionRationale sets the "decision_rationale" field.
+func (tuo *TenderUpdateOne) SetDecisionRationale(s string) *TenderUpdateOne {
+	tuo.mutation.SetDecisionRationale(s)
+	return tuo
+}
+
+// SetNillableDecisionRationale sets the "decision_rationale" field if the given value is not nil.
+func (tuo *TenderUpdateOne) SetNillableDecisionRationale(s *string) *TenderUpdateOne {
+	if s != nil {
+		tuo.SetDecisionRationale(*s)
+	}
+	return tuo
+}
+
+// ClearDecisionRationale clears the value of the "decision_rationale" field.
+func (tuo *TenderUpdateOne) ClearDecisionRationale() *TenderUpdateOne {
+	tuo.mutation.ClearDecisionRationale()
+	return tuo
+}
+
+// SetDecidedBy sets the "decided_by" field.
+func (tuo *TenderUpdateOne) SetDecidedBy(u uuid.UUID) *TenderUpdateOne {
+	tuo.mutation.SetDecidedBy(u)
+	return tuo
+}
+
+// SetNillableDecidedBy sets the "decided_by" field if the given value is not nil.
+func (tuo *TenderUpdateOne) SetNillableDecidedBy(u *uuid.UUID) *TenderUpdateOne {
+	if u != nil {
+		tuo.SetDecidedBy(*u)
+	}
+	return tuo
+}
+
+// ClearDecidedBy clears the value of the "decided_by" field.
+func (tuo *TenderUpdateOne) ClearDecidedBy() *TenderUpdateOne {
+	tuo.mutation.ClearDecidedBy()
+	return tuo
+}
+
+// SetDecidedAt sets the "decided_at" field.
+func (tuo *TenderUpdateOne) SetDecidedAt(t time.Time) *TenderUpdateOne {
+	tuo.mutation.SetDecidedAt(t)
+	return tuo
+}
+
+// SetNillableDecidedAt sets the "decided_at" field if the given value is not nil.
+func (tuo *TenderUpdateOne) SetNillableDecidedAt(t *time.Time) *TenderUpdateOne {
+	if t != nil {
+		tuo.SetDecidedAt(*t)
+	}
+	return tuo
+}
+
+// ClearDecidedAt clears the value of the "decided_at" field.
+func (tuo *TenderUpdateOne) ClearDecidedAt() *TenderUpdateOne {
+	tuo.mutation.ClearDecidedAt()
+	return tuo
+}
+
+// SetOutcome sets the "outcome" field.
+func (tuo *TenderUpdateOne) SetOutcome(m map[string]interface{}) *TenderUpdateOne {
+	tuo.mutation.SetOutcome(m)
+	return tuo
+}
+
+// ClearOutcome clears the value of the "outcome" field.
+func (tuo *TenderUpdateOne) ClearOutcome() *TenderUpdateOne {
+	tuo.mutation.ClearOutcome()
+	return tuo
+}
+
+// SetStatusHistory sets the "status_history" field.
+func (tuo *TenderUpdateOne) SetStatusHistory(m []map[string]interface{}) *TenderUpdateOne {
+	tuo.mutation.SetStatusHistory(m)
+	return tuo
+}
+
+// AppendStatusHistory appends m to the "status_history" field.
+func (tuo *TenderUpdateOne) AppendStatusHistory(m []map[string]interface{}) *TenderUpdateOne {
+	tuo.mutation.AppendStatusHistory(m)
+	return tuo
+}
+
+// ClearStatusHistory clears the value of the "status_history" field.
+func (tuo *TenderUpdateOne) ClearStatusHistory() *TenderUpdateOne {
+	tuo.mutation.ClearStatusHistory()
+	return tuo
+}
+
+// SetFinalDocumentVersion sets the "final_document_version" field.
+func (tuo *TenderUpdateOne) SetFinalDocumentVersion(i int) *TenderUpdateOne {
+	tuo.mutation.ResetFinalDocumentVersion()
+	tuo.mutation.SetFinalDocumentVersion(i)
+	return tuo
+}
+
+// SetNillableFinalDocumentVersion sets the "final_document_version" field if the given value is not nil.
+func (tuo *TenderUpdateOne) SetNillableFinalDocumentVersion(i *int) *TenderUpdateOne {
+	if i != nil {
+		tuo.SetFinalDocumentVersion(*i)
+	}
+	return tuo
+}
+
+// AddFinalDocumentVersion adds i to the "final_document_version" field.
+func (tuo *TenderUpdateOne) AddFinalDocumentVersion(i int) *TenderUpdateOne {
+	tuo.mutation.AddFinalDocumentVersion(i)
+	return tuo
+}
+
+// SetReadyForSubmission sets the "ready_for_submission" field.
+func (tuo *TenderUpdateOne) SetReadyForSubmission(b bool) *TenderUpdateOne {
+	tuo.mutation.SetReadyForSubmission(b)
+	return tuo
+}
+
+// SetNillableReadyForSubmission sets the "ready_for_submission" field if the given value is not nil.
+func (tuo *TenderUpdateOne) SetNillableReadyForSubmission(b *bool) *TenderUpdateOne {
+	if b != nil {
+		tuo.SetReadyForSubmission(*b)
+	}
+	return tuo
+}
+
 // AddDocumentIDs adds the "documents" edge to the TenderDocument entity by IDs.
 func (tuo *TenderUpdateOne) AddDocumentIDs(ids ...uuid.UUID) *TenderUpdateOne {
 	tuo.mutation.AddDocumentIDs(ids...)
@@ -1074,6 +1579,36 @@ func (tuo *TenderUpdateOne) AddMeetings(t ...*TenderMeeting) *TenderUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return tuo.AddMeetingIDs(ids...)
+}
+
+// AddSectionIDs adds the "sections" edge to the TenderSection entity by IDs.
+func (tuo *TenderUpdateOne) AddSectionIDs(ids ...uuid.UUID) *TenderUpdateOne {
+	tuo.mutation.AddSectionIDs(ids...)
+	return tuo
+}
+
+// AddSections adds the "sections" edges to the TenderSection entity.
+func (tuo *TenderUpdateOne) AddSections(t ...*TenderSection) *TenderUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.AddSectionIDs(ids...)
+}
+
+// AddSubmissionIDs adds the "submissions" edge to the TenderSubmission entity by IDs.
+func (tuo *TenderUpdateOne) AddSubmissionIDs(ids ...uuid.UUID) *TenderUpdateOne {
+	tuo.mutation.AddSubmissionIDs(ids...)
+	return tuo
+}
+
+// AddSubmissions adds the "submissions" edges to the TenderSubmission entity.
+func (tuo *TenderUpdateOne) AddSubmissions(t ...*TenderSubmission) *TenderUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.AddSubmissionIDs(ids...)
 }
 
 // Mutation returns the TenderMutation object of the builder.
@@ -1163,6 +1698,48 @@ func (tuo *TenderUpdateOne) RemoveMeetings(t ...*TenderMeeting) *TenderUpdateOne
 		ids[i] = t[i].ID
 	}
 	return tuo.RemoveMeetingIDs(ids...)
+}
+
+// ClearSections clears all "sections" edges to the TenderSection entity.
+func (tuo *TenderUpdateOne) ClearSections() *TenderUpdateOne {
+	tuo.mutation.ClearSections()
+	return tuo
+}
+
+// RemoveSectionIDs removes the "sections" edge to TenderSection entities by IDs.
+func (tuo *TenderUpdateOne) RemoveSectionIDs(ids ...uuid.UUID) *TenderUpdateOne {
+	tuo.mutation.RemoveSectionIDs(ids...)
+	return tuo
+}
+
+// RemoveSections removes "sections" edges to TenderSection entities.
+func (tuo *TenderUpdateOne) RemoveSections(t ...*TenderSection) *TenderUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.RemoveSectionIDs(ids...)
+}
+
+// ClearSubmissions clears all "submissions" edges to the TenderSubmission entity.
+func (tuo *TenderUpdateOne) ClearSubmissions() *TenderUpdateOne {
+	tuo.mutation.ClearSubmissions()
+	return tuo
+}
+
+// RemoveSubmissionIDs removes the "submissions" edge to TenderSubmission entities by IDs.
+func (tuo *TenderUpdateOne) RemoveSubmissionIDs(ids ...uuid.UUID) *TenderUpdateOne {
+	tuo.mutation.RemoveSubmissionIDs(ids...)
+	return tuo
+}
+
+// RemoveSubmissions removes "submissions" edges to TenderSubmission entities.
+func (tuo *TenderUpdateOne) RemoveSubmissions(t ...*TenderSubmission) *TenderUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.RemoveSubmissionIDs(ids...)
 }
 
 // Where appends a list predicates to the TenderUpdate builder.
@@ -1326,6 +1903,56 @@ func (tuo *TenderUpdateOne) sqlSave(ctx context.Context) (_node *Tender, err err
 	}
 	if value, ok := tuo.mutation.CreatedBy(); ok {
 		_spec.SetField(tender.FieldCreatedBy, field.TypeUUID, value)
+	}
+	if value, ok := tuo.mutation.Decision(); ok {
+		_spec.SetField(tender.FieldDecision, field.TypeString, value)
+	}
+	if tuo.mutation.DecisionCleared() {
+		_spec.ClearField(tender.FieldDecision, field.TypeString)
+	}
+	if value, ok := tuo.mutation.DecisionRationale(); ok {
+		_spec.SetField(tender.FieldDecisionRationale, field.TypeString, value)
+	}
+	if tuo.mutation.DecisionRationaleCleared() {
+		_spec.ClearField(tender.FieldDecisionRationale, field.TypeString)
+	}
+	if value, ok := tuo.mutation.DecidedBy(); ok {
+		_spec.SetField(tender.FieldDecidedBy, field.TypeUUID, value)
+	}
+	if tuo.mutation.DecidedByCleared() {
+		_spec.ClearField(tender.FieldDecidedBy, field.TypeUUID)
+	}
+	if value, ok := tuo.mutation.DecidedAt(); ok {
+		_spec.SetField(tender.FieldDecidedAt, field.TypeTime, value)
+	}
+	if tuo.mutation.DecidedAtCleared() {
+		_spec.ClearField(tender.FieldDecidedAt, field.TypeTime)
+	}
+	if value, ok := tuo.mutation.Outcome(); ok {
+		_spec.SetField(tender.FieldOutcome, field.TypeJSON, value)
+	}
+	if tuo.mutation.OutcomeCleared() {
+		_spec.ClearField(tender.FieldOutcome, field.TypeJSON)
+	}
+	if value, ok := tuo.mutation.StatusHistory(); ok {
+		_spec.SetField(tender.FieldStatusHistory, field.TypeJSON, value)
+	}
+	if value, ok := tuo.mutation.AppendedStatusHistory(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, tender.FieldStatusHistory, value)
+		})
+	}
+	if tuo.mutation.StatusHistoryCleared() {
+		_spec.ClearField(tender.FieldStatusHistory, field.TypeJSON)
+	}
+	if value, ok := tuo.mutation.FinalDocumentVersion(); ok {
+		_spec.SetField(tender.FieldFinalDocumentVersion, field.TypeInt, value)
+	}
+	if value, ok := tuo.mutation.AddedFinalDocumentVersion(); ok {
+		_spec.AddField(tender.FieldFinalDocumentVersion, field.TypeInt, value)
+	}
+	if value, ok := tuo.mutation.ReadyForSubmission(); ok {
+		_spec.SetField(tender.FieldReadyForSubmission, field.TypeBool, value)
 	}
 	if tuo.mutation.DocumentsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1500,6 +2127,96 @@ func (tuo *TenderUpdateOne) sqlSave(ctx context.Context) (_node *Tender, err err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tendermeeting.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.SectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SectionsTable,
+			Columns: []string{tender.SectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersection.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedSectionsIDs(); len(nodes) > 0 && !tuo.mutation.SectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SectionsTable,
+			Columns: []string{tender.SectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersection.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.SectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SectionsTable,
+			Columns: []string{tender.SectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersection.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SubmissionsTable,
+			Columns: []string{tender.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersubmission.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedSubmissionsIDs(); len(nodes) > 0 && !tuo.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SubmissionsTable,
+			Columns: []string{tender.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersubmission.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.SubmissionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SubmissionsTable,
+			Columns: []string{tender.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersubmission.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

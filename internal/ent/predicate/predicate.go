@@ -60,5 +60,11 @@ type TenderEvaluation func(*sql.Selector)
 // TenderMeeting is the predicate function for tendermeeting builders.
 type TenderMeeting func(*sql.Selector)
 
+// TenderSection is the predicate function for tendersection builders.
+type TenderSection func(*sql.Selector)
+
+// TenderSubmission is the predicate function for tendersubmission builders.
+type TenderSubmission func(*sql.Selector)
+
 // UserRole is the predicate function for userrole builders.
 type UserRole func(*sql.Selector)

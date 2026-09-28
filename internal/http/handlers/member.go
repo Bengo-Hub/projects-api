@@ -10,13 +10,21 @@ import (
 	"go.uber.org/zap"
 
 	httpware "github.com/Bengo-Hub/httpware"
+	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/members"
 )
 
 // MemberHandler handles project member HTTP endpoints.
 type MemberHandler struct {
-	log *zap.Logger
-	svc *members.Service
+	log      *zap.Logger
+	svc      *members.Service
+	activity *activity.Recorder
+}
+
+// WithActivity records changes in the project activity feed.
+func (h *MemberHandler) WithActivity(rec *activity.Recorder) *MemberHandler {
+	h.activity = rec
+	return h
 }
 
 // NewMemberHandler creates a new member handler.
@@ -66,6 +74,10 @@ func (h *MemberHandler) Add(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, UserID: actorID(r),
+		Type: "member.added", Payload: map[string]any{"member_user_id": m.UserID.String(), "role_code": m.RoleCode},
+	})
 	respondJSON(w, http.StatusCreated, m)
 }
 
@@ -93,6 +105,10 @@ func (h *MemberHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, UserID: actorID(r),
+		Type: "member.role_changed", Payload: map[string]any{"member_user_id": userID.String(), "role_code": m.RoleCode},
+	})
 	respondJSON(w, http.StatusOK, m)
 }
 
@@ -113,6 +129,10 @@ func (h *MemberHandler) Remove(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, UserID: actorID(r),
+		Type: "member.removed", Payload: map[string]any{"member_user_id": userID.String()},
+	})
 	w.WriteHeader(http.StatusNoContent)
 }
 

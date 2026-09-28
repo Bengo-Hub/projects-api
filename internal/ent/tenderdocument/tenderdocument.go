@@ -31,6 +31,10 @@ const (
 	FieldUploadedBy = "uploaded_by"
 	// FieldUploadedAt holds the string denoting the uploaded_at field in the database.
 	FieldUploadedAt = "uploaded_at"
+	// FieldKind holds the string denoting the kind field in the database.
+	FieldKind = "kind"
+	// FieldVersion holds the string denoting the version field in the database.
+	FieldVersion = "version"
 	// EdgeTender holds the string denoting the tender edge name in mutations.
 	EdgeTender = "tender"
 	// Table holds the table name of the tenderdocument in the database.
@@ -55,6 +59,8 @@ var Columns = []string{
 	FieldMimeType,
 	FieldUploadedBy,
 	FieldUploadedAt,
+	FieldKind,
+	FieldVersion,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -70,6 +76,10 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultUploadedAt holds the default value on creation for the "uploaded_at" field.
 	DefaultUploadedAt func() time.Time
+	// DefaultKind holds the default value on creation for the "kind" field.
+	DefaultKind string
+	// DefaultVersion holds the default value on creation for the "version" field.
+	DefaultVersion int
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -120,6 +130,16 @@ func ByUploadedBy(opts ...sql.OrderTermOption) OrderOption {
 // ByUploadedAt orders the results by the uploaded_at field.
 func ByUploadedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUploadedAt, opts...).ToFunc()
+}
+
+// ByKind orders the results by the kind field.
+func ByKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKind, opts...).ToFunc()
+}
+
+// ByVersion orders the results by the version field.
+func ByVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
 // ByTenderField orders the results by tender field.

@@ -335,6 +335,14 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "decision", Type: field.TypeString, Nullable: true},
+		{Name: "decision_rationale", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "decided_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "decided_at", Type: field.TypeTime, Nullable: true},
+		{Name: "outcome", Type: field.TypeJSON, Nullable: true},
+		{Name: "status_history", Type: field.TypeJSON, Nullable: true},
+		{Name: "final_document_version", Type: field.TypeInt, Default: 0},
+		{Name: "ready_for_submission", Type: field.TypeBool, Default: false},
 	}
 	// TendersTable holds the schema information for the "tenders" table.
 	TendersTable = &schema.Table{
@@ -409,6 +417,8 @@ var (
 		{Name: "mime_type", Type: field.TypeString, Nullable: true},
 		{Name: "uploaded_by", Type: field.TypeUUID},
 		{Name: "uploaded_at", Type: field.TypeTime},
+		{Name: "kind", Type: field.TypeString, Default: "supporting"},
+		{Name: "version", Type: field.TypeInt, Default: 0},
 		{Name: "tender_id", Type: field.TypeUUID},
 	}
 	// TenderDocumentsTable holds the schema information for the "tender_documents" table.
@@ -419,7 +429,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tender_documents_tenders_documents",
-				Columns:    []*schema.Column{TenderDocumentsColumns[8]},
+				Columns:    []*schema.Column{TenderDocumentsColumns[10]},
 				RefColumns: []*schema.Column{TendersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -477,6 +487,89 @@ var (
 			},
 		},
 	}
+	// TenderSectionsColumns holds the columns for the "tender_sections" table.
+	TenderSectionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "title", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "assignee_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "reviewer_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "due_date", Type: field.TypeTime, Nullable: true},
+		{Name: "status", Type: field.TypeString, Default: "not_started"},
+		{Name: "document_url", Type: field.TypeString, Nullable: true},
+		{Name: "review_comments", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "submitted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "reviewed_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "reviewed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "tender_id", Type: field.TypeUUID},
+	}
+	// TenderSectionsTable holds the schema information for the "tender_sections" table.
+	TenderSectionsTable = &schema.Table{
+		Name:       "tender_sections",
+		Columns:    TenderSectionsColumns,
+		PrimaryKey: []*schema.Column{TenderSectionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tender_sections_tenders_sections",
+				Columns:    []*schema.Column{TenderSectionsColumns[16]},
+				RefColumns: []*schema.Column{TendersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tendersection_tenant_id_tender_id",
+				Unique:  false,
+				Columns: []*schema.Column{TenderSectionsColumns[1], TenderSectionsColumns[16]},
+			},
+		},
+	}
+	// TenderSubmissionsColumns holds the columns for the "tender_submissions" table.
+	TenderSubmissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "method", Type: field.TypeString},
+		{Name: "submitted_at", Type: field.TypeTime},
+		{Name: "submitted_by", Type: field.TypeUUID},
+		{Name: "recipient_email", Type: field.TypeString, Nullable: true},
+		{Name: "email_subject", Type: field.TypeString, Nullable: true},
+		{Name: "email_body", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "document_url", Type: field.TypeString, Nullable: true},
+		{Name: "courier", Type: field.TypeString, Nullable: true},
+		{Name: "tracking_number", Type: field.TypeString, Nullable: true},
+		{Name: "address", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "proof_url", Type: field.TypeString, Nullable: true},
+		{Name: "confirmation_number", Type: field.TypeString, Nullable: true},
+		{Name: "delivery_status", Type: field.TypeString, Default: "recorded"},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "tender_id", Type: field.TypeUUID},
+	}
+	// TenderSubmissionsTable holds the schema information for the "tender_submissions" table.
+	TenderSubmissionsTable = &schema.Table{
+		Name:       "tender_submissions",
+		Columns:    TenderSubmissionsColumns,
+		PrimaryKey: []*schema.Column{TenderSubmissionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tender_submissions_tenders_submissions",
+				Columns:    []*schema.Column{TenderSubmissionsColumns[17]},
+				RefColumns: []*schema.Column{TendersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tendersubmission_tenant_id_tender_id",
+				Unique:  false,
+				Columns: []*schema.Column{TenderSubmissionsColumns[1], TenderSubmissionsColumns[17]},
+			},
+		},
+	}
 	// UserRolesColumns holds the columns for the "user_roles" table.
 	UserRolesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -521,6 +614,8 @@ var (
 		TenderDocumentsTable,
 		TenderEvaluationsTable,
 		TenderMeetingsTable,
+		TenderSectionsTable,
+		TenderSubmissionsTable,
 		UserRolesTable,
 	}
 )
@@ -543,5 +638,7 @@ func init() {
 	TenderDocumentsTable.ForeignKeys[0].RefTable = TendersTable
 	TenderEvaluationsTable.ForeignKeys[0].RefTable = TendersTable
 	TenderMeetingsTable.ForeignKeys[0].RefTable = TendersTable
+	TenderSectionsTable.ForeignKeys[0].RefTable = TendersTable
+	TenderSubmissionsTable.ForeignKeys[0].RefTable = TendersTable
 	UserRolesTable.ForeignKeys[0].RefTable = RolesTable
 }

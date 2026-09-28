@@ -10,13 +10,21 @@ import (
 	"go.uber.org/zap"
 
 	httpware "github.com/Bengo-Hub/httpware"
+	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/milestones"
 )
 
 // MilestoneHandler handles milestone HTTP endpoints.
 type MilestoneHandler struct {
-	log *zap.Logger
-	svc *milestones.Service
+	log      *zap.Logger
+	svc      *milestones.Service
+	activity *activity.Recorder
+}
+
+// WithActivity records changes in the project activity feed.
+func (h *MilestoneHandler) WithActivity(rec *activity.Recorder) *MilestoneHandler {
+	h.activity = rec
+	return h
 }
 
 // NewMilestoneHandler creates a new milestone handler.
@@ -87,6 +95,10 @@ func (h *MilestoneHandler) Create(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, UserID: actorID(r),
+		Type: "milestone.created", Payload: map[string]any{"name": m.Name, "milestone_id": m.ID.String()},
+	})
 	respondJSON(w, http.StatusCreated, m)
 }
 
@@ -114,6 +126,13 @@ func (h *MilestoneHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	payload := map[string]any{"name": m.Name, "milestone_id": m.ID.String()}
+	if input.Status != nil {
+		payload["status"] = m.Status
+	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, UserID: actorID(r), Type: "milestone.updated", Payload: payload,
+	})
 	respondJSON(w, http.StatusOK, m)
 }
 
@@ -127,6 +146,12 @@ func (h *MilestoneHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid milestone id")
 		return
 	}
+	var name string
+	if h.activity != nil {
+		if m, err := h.svc.GetMilestone(r.Context(), tenantID, projectID, id); err == nil {
+			name = m.Name
+		}
+	}
 	if err := h.svc.DeleteMilestone(r.Context(), tenantID, projectID, id); errors.Is(err, milestones.ErrNotFound) {
 		respondError(w, http.StatusNotFound, "milestone not found")
 		return
@@ -134,6 +159,10 @@ func (h *MilestoneHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	h.activity.Record(r.Context(), activity.Entry{
+		TenantID: tenantID, ProjectID: projectID, UserID: actorID(r),
+		Type: "milestone.deleted", Payload: map[string]any{"name": name, "milestone_id": id.String()},
+	})
 	w.WriteHeader(http.StatusNoContent)
 }
 

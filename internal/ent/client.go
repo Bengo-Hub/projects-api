@@ -34,6 +34,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	"github.com/bengobox/projects-service/internal/ent/tendersection"
+	"github.com/bengobox/projects-service/internal/ent/tendersubmission"
 	"github.com/bengobox/projects-service/internal/ent/userrole"
 )
 
@@ -78,6 +80,10 @@ type Client struct {
 	TenderEvaluation *TenderEvaluationClient
 	// TenderMeeting is the client for interacting with the TenderMeeting builders.
 	TenderMeeting *TenderMeetingClient
+	// TenderSection is the client for interacting with the TenderSection builders.
+	TenderSection *TenderSectionClient
+	// TenderSubmission is the client for interacting with the TenderSubmission builders.
+	TenderSubmission *TenderSubmissionClient
 	// UserRole is the client for interacting with the UserRole builders.
 	UserRole *UserRoleClient
 }
@@ -109,6 +115,8 @@ func (c *Client) init() {
 	c.TenderDocument = NewTenderDocumentClient(c.config)
 	c.TenderEvaluation = NewTenderEvaluationClient(c.config)
 	c.TenderMeeting = NewTenderMeetingClient(c.config)
+	c.TenderSection = NewTenderSectionClient(c.config)
+	c.TenderSubmission = NewTenderSubmissionClient(c.config)
 	c.UserRole = NewUserRoleClient(c.config)
 }
 
@@ -220,6 +228,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		TenderDocument:        NewTenderDocumentClient(cfg),
 		TenderEvaluation:      NewTenderEvaluationClient(cfg),
 		TenderMeeting:         NewTenderMeetingClient(cfg),
+		TenderSection:         NewTenderSectionClient(cfg),
+		TenderSubmission:      NewTenderSubmissionClient(cfg),
 		UserRole:              NewUserRoleClient(cfg),
 	}, nil
 }
@@ -258,6 +268,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		TenderDocument:        NewTenderDocumentClient(cfg),
 		TenderEvaluation:      NewTenderEvaluationClient(cfg),
 		TenderMeeting:         NewTenderMeetingClient(cfg),
+		TenderSection:         NewTenderSectionClient(cfg),
+		TenderSubmission:      NewTenderSubmissionClient(cfg),
 		UserRole:              NewUserRoleClient(cfg),
 	}, nil
 }
@@ -291,7 +303,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Activity, c.Attachment, c.Comment, c.Milestone, c.OutboxEvent, c.Permission,
 		c.Project, c.ProjectMember, c.Role, c.RolePermission, c.Task, c.TaskDependency,
 		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
-		c.TenderEvaluation, c.TenderMeeting, c.UserRole,
+		c.TenderEvaluation, c.TenderMeeting, c.TenderSection, c.TenderSubmission,
+		c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -304,7 +317,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Activity, c.Attachment, c.Comment, c.Milestone, c.OutboxEvent, c.Permission,
 		c.Project, c.ProjectMember, c.Role, c.RolePermission, c.Task, c.TaskDependency,
 		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
-		c.TenderEvaluation, c.TenderMeeting, c.UserRole,
+		c.TenderEvaluation, c.TenderMeeting, c.TenderSection, c.TenderSubmission,
+		c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -349,6 +363,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.TenderEvaluation.mutate(ctx, m)
 	case *TenderMeetingMutation:
 		return c.TenderMeeting.mutate(ctx, m)
+	case *TenderSectionMutation:
+		return c.TenderSection.mutate(ctx, m)
+	case *TenderSubmissionMutation:
+		return c.TenderSubmission.mutate(ctx, m)
 	case *UserRoleMutation:
 		return c.UserRole.mutate(ctx, m)
 	default:
@@ -2524,6 +2542,38 @@ func (c *TenderClient) QueryMeetings(t *Tender) *TenderMeetingQuery {
 	return query
 }
 
+// QuerySections queries the sections edge of a Tender.
+func (c *TenderClient) QuerySections(t *Tender) *TenderSectionQuery {
+	query := (&TenderSectionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tender.Table, tender.FieldID, id),
+			sqlgraph.To(tendersection.Table, tendersection.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tender.SectionsTable, tender.SectionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySubmissions queries the submissions edge of a Tender.
+func (c *TenderClient) QuerySubmissions(t *Tender) *TenderSubmissionQuery {
+	query := (&TenderSubmissionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tender.Table, tender.FieldID, id),
+			sqlgraph.To(tendersubmission.Table, tendersubmission.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tender.SubmissionsTable, tender.SubmissionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TenderClient) Hooks() []Hook {
 	return c.hooks.Tender
@@ -3310,6 +3360,304 @@ func (c *TenderMeetingClient) mutate(ctx context.Context, m *TenderMeetingMutati
 	}
 }
 
+// TenderSectionClient is a client for the TenderSection schema.
+type TenderSectionClient struct {
+	config
+}
+
+// NewTenderSectionClient returns a client for the TenderSection from the given config.
+func NewTenderSectionClient(c config) *TenderSectionClient {
+	return &TenderSectionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tendersection.Hooks(f(g(h())))`.
+func (c *TenderSectionClient) Use(hooks ...Hook) {
+	c.hooks.TenderSection = append(c.hooks.TenderSection, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tendersection.Intercept(f(g(h())))`.
+func (c *TenderSectionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TenderSection = append(c.inters.TenderSection, interceptors...)
+}
+
+// Create returns a builder for creating a TenderSection entity.
+func (c *TenderSectionClient) Create() *TenderSectionCreate {
+	mutation := newTenderSectionMutation(c.config, OpCreate)
+	return &TenderSectionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TenderSection entities.
+func (c *TenderSectionClient) CreateBulk(builders ...*TenderSectionCreate) *TenderSectionCreateBulk {
+	return &TenderSectionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TenderSectionClient) MapCreateBulk(slice any, setFunc func(*TenderSectionCreate, int)) *TenderSectionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TenderSectionCreateBulk{err: fmt.Errorf("calling to TenderSectionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TenderSectionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TenderSectionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TenderSection.
+func (c *TenderSectionClient) Update() *TenderSectionUpdate {
+	mutation := newTenderSectionMutation(c.config, OpUpdate)
+	return &TenderSectionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TenderSectionClient) UpdateOne(ts *TenderSection) *TenderSectionUpdateOne {
+	mutation := newTenderSectionMutation(c.config, OpUpdateOne, withTenderSection(ts))
+	return &TenderSectionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TenderSectionClient) UpdateOneID(id uuid.UUID) *TenderSectionUpdateOne {
+	mutation := newTenderSectionMutation(c.config, OpUpdateOne, withTenderSectionID(id))
+	return &TenderSectionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TenderSection.
+func (c *TenderSectionClient) Delete() *TenderSectionDelete {
+	mutation := newTenderSectionMutation(c.config, OpDelete)
+	return &TenderSectionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TenderSectionClient) DeleteOne(ts *TenderSection) *TenderSectionDeleteOne {
+	return c.DeleteOneID(ts.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TenderSectionClient) DeleteOneID(id uuid.UUID) *TenderSectionDeleteOne {
+	builder := c.Delete().Where(tendersection.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TenderSectionDeleteOne{builder}
+}
+
+// Query returns a query builder for TenderSection.
+func (c *TenderSectionClient) Query() *TenderSectionQuery {
+	return &TenderSectionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTenderSection},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TenderSection entity by its id.
+func (c *TenderSectionClient) Get(ctx context.Context, id uuid.UUID) (*TenderSection, error) {
+	return c.Query().Where(tendersection.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TenderSectionClient) GetX(ctx context.Context, id uuid.UUID) *TenderSection {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTender queries the tender edge of a TenderSection.
+func (c *TenderSectionClient) QueryTender(ts *TenderSection) *TenderQuery {
+	query := (&TenderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ts.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tendersection.Table, tendersection.FieldID, id),
+			sqlgraph.To(tender.Table, tender.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, tendersection.TenderTable, tendersection.TenderColumn),
+		)
+		fromV = sqlgraph.Neighbors(ts.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TenderSectionClient) Hooks() []Hook {
+	return c.hooks.TenderSection
+}
+
+// Interceptors returns the client interceptors.
+func (c *TenderSectionClient) Interceptors() []Interceptor {
+	return c.inters.TenderSection
+}
+
+func (c *TenderSectionClient) mutate(ctx context.Context, m *TenderSectionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TenderSectionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TenderSectionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TenderSectionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TenderSectionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TenderSection mutation op: %q", m.Op())
+	}
+}
+
+// TenderSubmissionClient is a client for the TenderSubmission schema.
+type TenderSubmissionClient struct {
+	config
+}
+
+// NewTenderSubmissionClient returns a client for the TenderSubmission from the given config.
+func NewTenderSubmissionClient(c config) *TenderSubmissionClient {
+	return &TenderSubmissionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tendersubmission.Hooks(f(g(h())))`.
+func (c *TenderSubmissionClient) Use(hooks ...Hook) {
+	c.hooks.TenderSubmission = append(c.hooks.TenderSubmission, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tendersubmission.Intercept(f(g(h())))`.
+func (c *TenderSubmissionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TenderSubmission = append(c.inters.TenderSubmission, interceptors...)
+}
+
+// Create returns a builder for creating a TenderSubmission entity.
+func (c *TenderSubmissionClient) Create() *TenderSubmissionCreate {
+	mutation := newTenderSubmissionMutation(c.config, OpCreate)
+	return &TenderSubmissionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TenderSubmission entities.
+func (c *TenderSubmissionClient) CreateBulk(builders ...*TenderSubmissionCreate) *TenderSubmissionCreateBulk {
+	return &TenderSubmissionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TenderSubmissionClient) MapCreateBulk(slice any, setFunc func(*TenderSubmissionCreate, int)) *TenderSubmissionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TenderSubmissionCreateBulk{err: fmt.Errorf("calling to TenderSubmissionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TenderSubmissionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TenderSubmissionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TenderSubmission.
+func (c *TenderSubmissionClient) Update() *TenderSubmissionUpdate {
+	mutation := newTenderSubmissionMutation(c.config, OpUpdate)
+	return &TenderSubmissionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TenderSubmissionClient) UpdateOne(ts *TenderSubmission) *TenderSubmissionUpdateOne {
+	mutation := newTenderSubmissionMutation(c.config, OpUpdateOne, withTenderSubmission(ts))
+	return &TenderSubmissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TenderSubmissionClient) UpdateOneID(id uuid.UUID) *TenderSubmissionUpdateOne {
+	mutation := newTenderSubmissionMutation(c.config, OpUpdateOne, withTenderSubmissionID(id))
+	return &TenderSubmissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TenderSubmission.
+func (c *TenderSubmissionClient) Delete() *TenderSubmissionDelete {
+	mutation := newTenderSubmissionMutation(c.config, OpDelete)
+	return &TenderSubmissionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TenderSubmissionClient) DeleteOne(ts *TenderSubmission) *TenderSubmissionDeleteOne {
+	return c.DeleteOneID(ts.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TenderSubmissionClient) DeleteOneID(id uuid.UUID) *TenderSubmissionDeleteOne {
+	builder := c.Delete().Where(tendersubmission.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TenderSubmissionDeleteOne{builder}
+}
+
+// Query returns a query builder for TenderSubmission.
+func (c *TenderSubmissionClient) Query() *TenderSubmissionQuery {
+	return &TenderSubmissionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTenderSubmission},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TenderSubmission entity by its id.
+func (c *TenderSubmissionClient) Get(ctx context.Context, id uuid.UUID) (*TenderSubmission, error) {
+	return c.Query().Where(tendersubmission.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TenderSubmissionClient) GetX(ctx context.Context, id uuid.UUID) *TenderSubmission {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTender queries the tender edge of a TenderSubmission.
+func (c *TenderSubmissionClient) QueryTender(ts *TenderSubmission) *TenderQuery {
+	query := (&TenderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ts.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tendersubmission.Table, tendersubmission.FieldID, id),
+			sqlgraph.To(tender.Table, tender.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, tendersubmission.TenderTable, tendersubmission.TenderColumn),
+		)
+		fromV = sqlgraph.Neighbors(ts.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TenderSubmissionClient) Hooks() []Hook {
+	return c.hooks.TenderSubmission
+}
+
+// Interceptors returns the client interceptors.
+func (c *TenderSubmissionClient) Interceptors() []Interceptor {
+	return c.inters.TenderSubmission
+}
+
+func (c *TenderSubmissionClient) mutate(ctx context.Context, m *TenderSubmissionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TenderSubmissionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TenderSubmissionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TenderSubmissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TenderSubmissionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TenderSubmission mutation op: %q", m.Op())
+	}
+}
+
 // UserRoleClient is a client for the UserRole schema.
 type UserRoleClient struct {
 	config
@@ -3465,12 +3813,12 @@ type (
 		Activity, Attachment, Comment, Milestone, OutboxEvent, Permission, Project,
 		ProjectMember, Role, RolePermission, Task, TaskDependency, Tender,
 		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
-		TenderMeeting, UserRole []ent.Hook
+		TenderMeeting, TenderSection, TenderSubmission, UserRole []ent.Hook
 	}
 	inters struct {
 		Activity, Attachment, Comment, Milestone, OutboxEvent, Permission, Project,
 		ProjectMember, Role, RolePermission, Task, TaskDependency, Tender,
 		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
-		TenderMeeting, UserRole []ent.Interceptor
+		TenderMeeting, TenderSection, TenderSubmission, UserRole []ent.Interceptor
 	}
 )

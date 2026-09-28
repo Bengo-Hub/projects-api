@@ -94,6 +94,34 @@ func (tdc *TenderDocumentCreate) SetNillableUploadedAt(t *time.Time) *TenderDocu
 	return tdc
 }
 
+// SetKind sets the "kind" field.
+func (tdc *TenderDocumentCreate) SetKind(s string) *TenderDocumentCreate {
+	tdc.mutation.SetKind(s)
+	return tdc
+}
+
+// SetNillableKind sets the "kind" field if the given value is not nil.
+func (tdc *TenderDocumentCreate) SetNillableKind(s *string) *TenderDocumentCreate {
+	if s != nil {
+		tdc.SetKind(*s)
+	}
+	return tdc
+}
+
+// SetVersion sets the "version" field.
+func (tdc *TenderDocumentCreate) SetVersion(i int) *TenderDocumentCreate {
+	tdc.mutation.SetVersion(i)
+	return tdc
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (tdc *TenderDocumentCreate) SetNillableVersion(i *int) *TenderDocumentCreate {
+	if i != nil {
+		tdc.SetVersion(*i)
+	}
+	return tdc
+}
+
 // SetID sets the "id" field.
 func (tdc *TenderDocumentCreate) SetID(u uuid.UUID) *TenderDocumentCreate {
 	tdc.mutation.SetID(u)
@@ -152,6 +180,14 @@ func (tdc *TenderDocumentCreate) defaults() {
 		v := tenderdocument.DefaultUploadedAt()
 		tdc.mutation.SetUploadedAt(v)
 	}
+	if _, ok := tdc.mutation.Kind(); !ok {
+		v := tenderdocument.DefaultKind
+		tdc.mutation.SetKind(v)
+	}
+	if _, ok := tdc.mutation.Version(); !ok {
+		v := tenderdocument.DefaultVersion
+		tdc.mutation.SetVersion(v)
+	}
 	if _, ok := tdc.mutation.ID(); !ok {
 		v := tenderdocument.DefaultID()
 		tdc.mutation.SetID(v)
@@ -177,6 +213,12 @@ func (tdc *TenderDocumentCreate) check() error {
 	}
 	if _, ok := tdc.mutation.UploadedAt(); !ok {
 		return &ValidationError{Name: "uploaded_at", err: errors.New(`ent: missing required field "TenderDocument.uploaded_at"`)}
+	}
+	if _, ok := tdc.mutation.Kind(); !ok {
+		return &ValidationError{Name: "kind", err: errors.New(`ent: missing required field "TenderDocument.kind"`)}
+	}
+	if _, ok := tdc.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "TenderDocument.version"`)}
 	}
 	if _, ok := tdc.mutation.TenderID(); !ok {
 		return &ValidationError{Name: "tender", err: errors.New(`ent: missing required edge "TenderDocument.tender"`)}
@@ -243,6 +285,14 @@ func (tdc *TenderDocumentCreate) createSpec() (*TenderDocument, *sqlgraph.Create
 	if value, ok := tdc.mutation.UploadedAt(); ok {
 		_spec.SetField(tenderdocument.FieldUploadedAt, field.TypeTime, value)
 		_node.UploadedAt = value
+	}
+	if value, ok := tdc.mutation.Kind(); ok {
+		_spec.SetField(tenderdocument.FieldKind, field.TypeString, value)
+		_node.Kind = value
+	}
+	if value, ok := tdc.mutation.Version(); ok {
+		_spec.SetField(tenderdocument.FieldVersion, field.TypeInt, value)
+		_node.Version = value
 	}
 	if nodes := tdc.mutation.TenderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

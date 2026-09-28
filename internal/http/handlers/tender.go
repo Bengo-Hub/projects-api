@@ -51,6 +51,8 @@ func (h *TenderHandler) RegisterRoutes(r chi.Router) {
 			tid.Post("/documents", h.AddDocument)
 			tid.Get("/documents", h.ListDocuments)
 			tid.Delete("/documents/{docID}", h.DeleteDocument)
+
+			h.registerWorkflowRoutes(tid)
 		})
 	})
 }
@@ -67,7 +69,8 @@ func (h *TenderHandler) List(w http.ResponseWriter, r *http.Request) {
 	if p := r.URL.Query().Get("page"); p != "" {
 		filter.Page, _ = strconv.Atoi(p)
 	}
-	if ps := r.URL.Query().Get("page_size"); ps != "" {
+	// limit is the fleet's pagination param; page_size is kept for older clients.
+	if ps := firstQuery(r, "limit", "page_size"); ps != "" {
 		filter.PageSize, _ = strconv.Atoi(ps)
 	}
 	if db := r.URL.Query().Get("deadline_before"); db != "" {
@@ -155,13 +158,10 @@ func (h *TenderHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	input.ChangedBy = actorID(r)
 	t, err := h.svc.UpdateTender(r.Context(), tenantID, tenderID, input)
-	if errors.Is(err, tenders.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "tender not found")
-		return
-	}
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		tenderError(w, err)
 		return
 	}
 	respondJSON(w, http.StatusOK, t)
@@ -194,7 +194,7 @@ func (h *TenderHandler) CreateCommittee(w http.ResponseWriter, r *http.Request) 
 	}
 	c, err := h.svc.CreateCommittee(r.Context(), tenantID, tenderID, input)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		tenderError(w, err)
 		return
 	}
 	respondJSON(w, http.StatusCreated, c)
@@ -278,7 +278,7 @@ func (h *TenderHandler) SubmitEvaluation(w http.ResponseWriter, r *http.Request)
 	}
 	e, err := h.svc.SubmitEvaluation(r.Context(), tenantID, tenderID, input)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		tenderError(w, err)
 		return
 	}
 	respondJSON(w, http.StatusCreated, e)
@@ -314,7 +314,7 @@ func (h *TenderHandler) ScheduleMeeting(w http.ResponseWriter, r *http.Request) 
 	}
 	m, err := h.svc.ScheduleMeeting(r.Context(), tenantID, tenderID, input)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		tenderError(w, err)
 		return
 	}
 	respondJSON(w, http.StatusCreated, m)
@@ -350,7 +350,7 @@ func (h *TenderHandler) AddDocument(w http.ResponseWriter, r *http.Request) {
 	}
 	doc, err := h.svc.AddDocument(r.Context(), tenantID, tenderID, input)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		tenderError(w, err)
 		return
 	}
 	respondJSON(w, http.StatusCreated, doc)

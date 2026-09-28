@@ -11,6 +11,7 @@ import (
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/ent"
 	entcomment "github.com/bengobox/projects-service/internal/ent/comment"
+	enttask "github.com/bengobox/projects-service/internal/ent/task"
 )
 
 // ErrNotFound is returned when a comment is not found.
@@ -30,9 +31,9 @@ func NewService(client *ent.Client, cache *sharedcache.Aside, log *zap.Logger) *
 
 // CreateCommentInput holds data for creating a comment.
 type CreateCommentInput struct {
-	UserID    uuid.UUID      `json:"user_id"`
-	Content   string         `json:"content"`
-	Metadata  map[string]any `json:"metadata"`
+	UserID   uuid.UUID      `json:"user_id"`
+	Content  string         `json:"content"`
+	Metadata map[string]any `json:"metadata"`
 }
 
 // UpdateCommentInput holds data for updating a comment.
@@ -84,13 +85,24 @@ func (s *Service) CreateProjectComment(ctx context.Context, tenantID, projectID 
 	return comment, nil
 }
 
-// CreateTaskComment creates a comment on a task.
-func (s *Service) CreateTaskComment(ctx context.Context, tenantID, taskID uuid.UUID, input CreateCommentInput) (*ent.Comment, error) {
+// CreateTaskComment creates a comment on a task of the tenant's project. The comment also carries
+// the project id, so the project's comment list includes its task comments (task_id tells them
+// apart).
+func (s *Service) CreateTaskComment(ctx context.Context, tenantID, projectID, taskID uuid.UUID, input CreateCommentInput) (*ent.Comment, error) {
 	if input.Content == "" {
 		return nil, fmt.Errorf("content is required")
 	}
+	ok, err := s.client.Task.Query().
+		Where(enttask.ID(taskID), enttask.TenantID(tenantID), enttask.ProjectID(projectID)).Exist(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("check task: %w", err)
+	}
+	if !ok {
+		return nil, ErrNotFound
+	}
 	c := s.client.Comment.Create().
 		SetTenantID(tenantID).
+		SetProjectID(projectID).
 		SetTaskID(taskID).
 		SetUserID(input.UserID).
 		SetContent(input.Content)

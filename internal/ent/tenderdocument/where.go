@@ -96,6 +96,16 @@ func UploadedAt(v time.Time) predicate.TenderDocument {
 	return predicate.TenderDocument(sql.FieldEQ(FieldUploadedAt, v))
 }
 
+// Kind applies equality check predicate on the "kind" field. It's identical to KindEQ.
+func Kind(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldEQ(FieldKind, v))
+}
+
+// Version applies equality check predicate on the "version" field. It's identical to VersionEQ.
+func Version(v int) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldEQ(FieldVersion, v))
+}
+
 // TenderIDEQ applies the EQ predicate on the "tender_id" field.
 func TenderIDEQ(v uuid.UUID) predicate.TenderDocument {
 	return predicate.TenderDocument(sql.FieldEQ(FieldTenderID, v))
@@ -489,6 +499,111 @@ func UploadedAtLT(v time.Time) predicate.TenderDocument {
 // UploadedAtLTE applies the LTE predicate on the "uploaded_at" field.
 func UploadedAtLTE(v time.Time) predicate.TenderDocument {
 	return predicate.TenderDocument(sql.FieldLTE(FieldUploadedAt, v))
+}
+
+// KindEQ applies the EQ predicate on the "kind" field.
+func KindEQ(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldEQ(FieldKind, v))
+}
+
+// KindNEQ applies the NEQ predicate on the "kind" field.
+func KindNEQ(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldNEQ(FieldKind, v))
+}
+
+// KindIn applies the In predicate on the "kind" field.
+func KindIn(vs ...string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldIn(FieldKind, vs...))
+}
+
+// KindNotIn applies the NotIn predicate on the "kind" field.
+func KindNotIn(vs ...string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldNotIn(FieldKind, vs...))
+}
+
+// KindGT applies the GT predicate on the "kind" field.
+func KindGT(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldGT(FieldKind, v))
+}
+
+// KindGTE applies the GTE predicate on the "kind" field.
+func KindGTE(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldGTE(FieldKind, v))
+}
+
+// KindLT applies the LT predicate on the "kind" field.
+func KindLT(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldLT(FieldKind, v))
+}
+
+// KindLTE applies the LTE predicate on the "kind" field.
+func KindLTE(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldLTE(FieldKind, v))
+}
+
+// KindContains applies the Contains predicate on the "kind" field.
+func KindContains(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldContains(FieldKind, v))
+}
+
+// KindHasPrefix applies the HasPrefix predicate on the "kind" field.
+func KindHasPrefix(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldHasPrefix(FieldKind, v))
+}
+
+// KindHasSuffix applies the HasSuffix predicate on the "kind" field.
+func KindHasSuffix(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldHasSuffix(FieldKind, v))
+}
+
+// KindEqualFold applies the EqualFold predicate on the "kind" field.
+func KindEqualFold(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldEqualFold(FieldKind, v))
+}
+
+// KindContainsFold applies the ContainsFold predicate on the "kind" field.
+func KindContainsFold(v string) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldContainsFold(FieldKind, v))
+}
+
+// VersionEQ applies the EQ predicate on the "version" field.
+func VersionEQ(v int) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldEQ(FieldVersion, v))
+}
+
+// VersionNEQ applies the NEQ predicate on the "version" field.
+func VersionNEQ(v int) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldNEQ(FieldVersion, v))
+}
+
+// VersionIn applies the In predicate on the "version" field.
+func VersionIn(vs ...int) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldIn(FieldVersion, vs...))
+}
+
+// VersionNotIn applies the NotIn predicate on the "version" field.
+func VersionNotIn(vs ...int) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldNotIn(FieldVersion, vs...))
+}
+
+// VersionGT applies the GT predicate on the "version" field.
+func VersionGT(v int) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldGT(FieldVersion, v))
+}
+
+// VersionGTE applies the GTE predicate on the "version" field.
+func VersionGTE(v int) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldGTE(FieldVersion, v))
+}
+
+// VersionLT applies the LT predicate on the "version" field.
+func VersionLT(v int) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldLT(FieldVersion, v))
+}
+
+// VersionLTE applies the LTE predicate on the "version" field.
+func VersionLTE(v int) predicate.TenderDocument {
+	return predicate.TenderDocument(sql.FieldLTE(FieldVersion, v))
 }
 
 // HasTender applies the HasEdge predicate on the "tender" edge.

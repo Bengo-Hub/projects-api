@@ -61,3 +61,10 @@ func (p *Publisher) PublishMilestoneReached(ctx context.Context, tenantID, miles
 func (p *Publisher) PublishProjectEvent(ctx context.Context, tenantID, projectID uuid.UUID, eventType string, payload map[string]any) error {
 	return p.publish(ctx, "project", eventType, projectID, tenantID, payload)
 }
+
+// PublishTenderEvent emits project.tender.* (created, decision.made, section.*, submitted,
+// status.changed, awarded, lost, ...) with the tender as the aggregate. notifications-api
+// consumes project.> and sends the stakeholder emails, including the email submission itself.
+func (p *Publisher) PublishTenderEvent(ctx context.Context, tenantID, tenderID uuid.UUID, eventType string, payload map[string]any) error {
+	return p.publish(ctx, "project", eventType, tenderID, tenantID, payload)
+}

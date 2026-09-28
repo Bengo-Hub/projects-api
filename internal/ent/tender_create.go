@@ -15,6 +15,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	"github.com/bengobox/projects-service/internal/ent/tendersection"
+	"github.com/bengobox/projects-service/internal/ent/tendersubmission"
 	"github.com/google/uuid"
 )
 
@@ -215,6 +217,102 @@ func (tc *TenderCreate) SetCreatedBy(u uuid.UUID) *TenderCreate {
 	return tc
 }
 
+// SetDecision sets the "decision" field.
+func (tc *TenderCreate) SetDecision(s string) *TenderCreate {
+	tc.mutation.SetDecision(s)
+	return tc
+}
+
+// SetNillableDecision sets the "decision" field if the given value is not nil.
+func (tc *TenderCreate) SetNillableDecision(s *string) *TenderCreate {
+	if s != nil {
+		tc.SetDecision(*s)
+	}
+	return tc
+}
+
+// SetDecisionRationale sets the "decision_rationale" field.
+func (tc *TenderCreate) SetDecisionRationale(s string) *TenderCreate {
+	tc.mutation.SetDecisionRationale(s)
+	return tc
+}
+
+// SetNillableDecisionRationale sets the "decision_rationale" field if the given value is not nil.
+func (tc *TenderCreate) SetNillableDecisionRationale(s *string) *TenderCreate {
+	if s != nil {
+		tc.SetDecisionRationale(*s)
+	}
+	return tc
+}
+
+// SetDecidedBy sets the "decided_by" field.
+func (tc *TenderCreate) SetDecidedBy(u uuid.UUID) *TenderCreate {
+	tc.mutation.SetDecidedBy(u)
+	return tc
+}
+
+// SetNillableDecidedBy sets the "decided_by" field if the given value is not nil.
+func (tc *TenderCreate) SetNillableDecidedBy(u *uuid.UUID) *TenderCreate {
+	if u != nil {
+		tc.SetDecidedBy(*u)
+	}
+	return tc
+}
+
+// SetDecidedAt sets the "decided_at" field.
+func (tc *TenderCreate) SetDecidedAt(t time.Time) *TenderCreate {
+	tc.mutation.SetDecidedAt(t)
+	return tc
+}
+
+// SetNillableDecidedAt sets the "decided_at" field if the given value is not nil.
+func (tc *TenderCreate) SetNillableDecidedAt(t *time.Time) *TenderCreate {
+	if t != nil {
+		tc.SetDecidedAt(*t)
+	}
+	return tc
+}
+
+// SetOutcome sets the "outcome" field.
+func (tc *TenderCreate) SetOutcome(m map[string]interface{}) *TenderCreate {
+	tc.mutation.SetOutcome(m)
+	return tc
+}
+
+// SetStatusHistory sets the "status_history" field.
+func (tc *TenderCreate) SetStatusHistory(m []map[string]interface{}) *TenderCreate {
+	tc.mutation.SetStatusHistory(m)
+	return tc
+}
+
+// SetFinalDocumentVersion sets the "final_document_version" field.
+func (tc *TenderCreate) SetFinalDocumentVersion(i int) *TenderCreate {
+	tc.mutation.SetFinalDocumentVersion(i)
+	return tc
+}
+
+// SetNillableFinalDocumentVersion sets the "final_document_version" field if the given value is not nil.
+func (tc *TenderCreate) SetNillableFinalDocumentVersion(i *int) *TenderCreate {
+	if i != nil {
+		tc.SetFinalDocumentVersion(*i)
+	}
+	return tc
+}
+
+// SetReadyForSubmission sets the "ready_for_submission" field.
+func (tc *TenderCreate) SetReadyForSubmission(b bool) *TenderCreate {
+	tc.mutation.SetReadyForSubmission(b)
+	return tc
+}
+
+// SetNillableReadyForSubmission sets the "ready_for_submission" field if the given value is not nil.
+func (tc *TenderCreate) SetNillableReadyForSubmission(b *bool) *TenderCreate {
+	if b != nil {
+		tc.SetReadyForSubmission(*b)
+	}
+	return tc
+}
+
 // SetID sets the "id" field.
 func (tc *TenderCreate) SetID(u uuid.UUID) *TenderCreate {
 	tc.mutation.SetID(u)
@@ -289,6 +387,36 @@ func (tc *TenderCreate) AddMeetings(t ...*TenderMeeting) *TenderCreate {
 	return tc.AddMeetingIDs(ids...)
 }
 
+// AddSectionIDs adds the "sections" edge to the TenderSection entity by IDs.
+func (tc *TenderCreate) AddSectionIDs(ids ...uuid.UUID) *TenderCreate {
+	tc.mutation.AddSectionIDs(ids...)
+	return tc
+}
+
+// AddSections adds the "sections" edges to the TenderSection entity.
+func (tc *TenderCreate) AddSections(t ...*TenderSection) *TenderCreate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tc.AddSectionIDs(ids...)
+}
+
+// AddSubmissionIDs adds the "submissions" edge to the TenderSubmission entity by IDs.
+func (tc *TenderCreate) AddSubmissionIDs(ids ...uuid.UUID) *TenderCreate {
+	tc.mutation.AddSubmissionIDs(ids...)
+	return tc
+}
+
+// AddSubmissions adds the "submissions" edges to the TenderSubmission entity.
+func (tc *TenderCreate) AddSubmissions(t ...*TenderSubmission) *TenderCreate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tc.AddSubmissionIDs(ids...)
+}
+
 // Mutation returns the TenderMutation object of the builder.
 func (tc *TenderCreate) Mutation() *TenderMutation {
 	return tc.mutation
@@ -348,6 +476,14 @@ func (tc *TenderCreate) defaults() {
 		v := tender.DefaultUpdatedAt()
 		tc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := tc.mutation.FinalDocumentVersion(); !ok {
+		v := tender.DefaultFinalDocumentVersion
+		tc.mutation.SetFinalDocumentVersion(v)
+	}
+	if _, ok := tc.mutation.ReadyForSubmission(); !ok {
+		v := tender.DefaultReadyForSubmission
+		tc.mutation.SetReadyForSubmission(v)
+	}
 	if _, ok := tc.mutation.ID(); !ok {
 		v := tender.DefaultID()
 		tc.mutation.SetID(v)
@@ -398,6 +534,12 @@ func (tc *TenderCreate) check() error {
 	}
 	if _, ok := tc.mutation.CreatedBy(); !ok {
 		return &ValidationError{Name: "created_by", err: errors.New(`ent: missing required field "Tender.created_by"`)}
+	}
+	if _, ok := tc.mutation.FinalDocumentVersion(); !ok {
+		return &ValidationError{Name: "final_document_version", err: errors.New(`ent: missing required field "Tender.final_document_version"`)}
+	}
+	if _, ok := tc.mutation.ReadyForSubmission(); !ok {
+		return &ValidationError{Name: "ready_for_submission", err: errors.New(`ent: missing required field "Tender.ready_for_submission"`)}
 	}
 	return nil
 }
@@ -502,6 +644,38 @@ func (tc *TenderCreate) createSpec() (*Tender, *sqlgraph.CreateSpec) {
 		_spec.SetField(tender.FieldCreatedBy, field.TypeUUID, value)
 		_node.CreatedBy = value
 	}
+	if value, ok := tc.mutation.Decision(); ok {
+		_spec.SetField(tender.FieldDecision, field.TypeString, value)
+		_node.Decision = value
+	}
+	if value, ok := tc.mutation.DecisionRationale(); ok {
+		_spec.SetField(tender.FieldDecisionRationale, field.TypeString, value)
+		_node.DecisionRationale = value
+	}
+	if value, ok := tc.mutation.DecidedBy(); ok {
+		_spec.SetField(tender.FieldDecidedBy, field.TypeUUID, value)
+		_node.DecidedBy = &value
+	}
+	if value, ok := tc.mutation.DecidedAt(); ok {
+		_spec.SetField(tender.FieldDecidedAt, field.TypeTime, value)
+		_node.DecidedAt = &value
+	}
+	if value, ok := tc.mutation.Outcome(); ok {
+		_spec.SetField(tender.FieldOutcome, field.TypeJSON, value)
+		_node.Outcome = value
+	}
+	if value, ok := tc.mutation.StatusHistory(); ok {
+		_spec.SetField(tender.FieldStatusHistory, field.TypeJSON, value)
+		_node.StatusHistory = value
+	}
+	if value, ok := tc.mutation.FinalDocumentVersion(); ok {
+		_spec.SetField(tender.FieldFinalDocumentVersion, field.TypeInt, value)
+		_node.FinalDocumentVersion = value
+	}
+	if value, ok := tc.mutation.ReadyForSubmission(); ok {
+		_spec.SetField(tender.FieldReadyForSubmission, field.TypeBool, value)
+		_node.ReadyForSubmission = value
+	}
 	if nodes := tc.mutation.DocumentsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -559,6 +733,38 @@ func (tc *TenderCreate) createSpec() (*Tender, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tendermeeting.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.SectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SectionsTable,
+			Columns: []string{tender.SectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersection.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.SubmissionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tender.SubmissionsTable,
+			Columns: []string{tender.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tendersubmission.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

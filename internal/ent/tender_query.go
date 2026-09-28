@@ -17,6 +17,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	"github.com/bengobox/projects-service/internal/ent/tendersection"
+	"github.com/bengobox/projects-service/internal/ent/tendersubmission"
 	"github.com/google/uuid"
 )
 
@@ -31,6 +33,8 @@ type TenderQuery struct {
 	withCommittees  *TenderCommitteeQuery
 	withEvaluations *TenderEvaluationQuery
 	withMeetings    *TenderMeetingQuery
+	withSections    *TenderSectionQuery
+	withSubmissions *TenderSubmissionQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -148,6 +152,50 @@ func (tq *TenderQuery) QueryMeetings() *TenderMeetingQuery {
 			sqlgraph.From(tender.Table, tender.FieldID, selector),
 			sqlgraph.To(tendermeeting.Table, tendermeeting.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, tender.MeetingsTable, tender.MeetingsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySections chains the current query on the "sections" edge.
+func (tq *TenderQuery) QuerySections() *TenderSectionQuery {
+	query := (&TenderSectionClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tender.Table, tender.FieldID, selector),
+			sqlgraph.To(tendersection.Table, tendersection.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tender.SectionsTable, tender.SectionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySubmissions chains the current query on the "submissions" edge.
+func (tq *TenderQuery) QuerySubmissions() *TenderSubmissionQuery {
+	query := (&TenderSubmissionClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tender.Table, tender.FieldID, selector),
+			sqlgraph.To(tendersubmission.Table, tendersubmission.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tender.SubmissionsTable, tender.SubmissionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -351,6 +399,8 @@ func (tq *TenderQuery) Clone() *TenderQuery {
 		withCommittees:  tq.withCommittees.Clone(),
 		withEvaluations: tq.withEvaluations.Clone(),
 		withMeetings:    tq.withMeetings.Clone(),
+		withSections:    tq.withSections.Clone(),
+		withSubmissions: tq.withSubmissions.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -398,6 +448,28 @@ func (tq *TenderQuery) WithMeetings(opts ...func(*TenderMeetingQuery)) *TenderQu
 		opt(query)
 	}
 	tq.withMeetings = query
+	return tq
+}
+
+// WithSections tells the query-builder to eager-load the nodes that are connected to
+// the "sections" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TenderQuery) WithSections(opts ...func(*TenderSectionQuery)) *TenderQuery {
+	query := (&TenderSectionClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withSections = query
+	return tq
+}
+
+// WithSubmissions tells the query-builder to eager-load the nodes that are connected to
+// the "submissions" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TenderQuery) WithSubmissions(opts ...func(*TenderSubmissionQuery)) *TenderQuery {
+	query := (&TenderSubmissionClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withSubmissions = query
 	return tq
 }
 
@@ -479,11 +551,13 @@ func (tq *TenderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tende
 	var (
 		nodes       = []*Tender{}
 		_spec       = tq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [6]bool{
 			tq.withDocuments != nil,
 			tq.withCommittees != nil,
 			tq.withEvaluations != nil,
 			tq.withMeetings != nil,
+			tq.withSections != nil,
+			tq.withSubmissions != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -529,6 +603,20 @@ func (tq *TenderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tende
 		if err := tq.loadMeetings(ctx, query, nodes,
 			func(n *Tender) { n.Edges.Meetings = []*TenderMeeting{} },
 			func(n *Tender, e *TenderMeeting) { n.Edges.Meetings = append(n.Edges.Meetings, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withSections; query != nil {
+		if err := tq.loadSections(ctx, query, nodes,
+			func(n *Tender) { n.Edges.Sections = []*TenderSection{} },
+			func(n *Tender, e *TenderSection) { n.Edges.Sections = append(n.Edges.Sections, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withSubmissions; query != nil {
+		if err := tq.loadSubmissions(ctx, query, nodes,
+			func(n *Tender) { n.Edges.Submissions = []*TenderSubmission{} },
+			func(n *Tender, e *TenderSubmission) { n.Edges.Submissions = append(n.Edges.Submissions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -640,6 +728,66 @@ func (tq *TenderQuery) loadMeetings(ctx context.Context, query *TenderMeetingQue
 	}
 	query.Where(predicate.TenderMeeting(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(tender.MeetingsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.TenderID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "tender_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (tq *TenderQuery) loadSections(ctx context.Context, query *TenderSectionQuery, nodes []*Tender, init func(*Tender), assign func(*Tender, *TenderSection)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Tender)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(tendersection.FieldTenderID)
+	}
+	query.Where(predicate.TenderSection(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(tender.SectionsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.TenderID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "tender_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (tq *TenderQuery) loadSubmissions(ctx context.Context, query *TenderSubmissionQuery, nodes []*Tender, init func(*Tender), assign func(*Tender, *TenderSubmission)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Tender)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(tendersubmission.FieldTenderID)
+	}
+	query.Where(predicate.TenderSubmission(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(tender.SubmissionsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

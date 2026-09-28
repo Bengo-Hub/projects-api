@@ -48,6 +48,10 @@ type Tx struct {
 	TenderEvaluation *TenderEvaluationClient
 	// TenderMeeting is the client for interacting with the TenderMeeting builders.
 	TenderMeeting *TenderMeetingClient
+	// TenderSection is the client for interacting with the TenderSection builders.
+	TenderSection *TenderSectionClient
+	// TenderSubmission is the client for interacting with the TenderSubmission builders.
+	TenderSubmission *TenderSubmissionClient
 	// UserRole is the client for interacting with the UserRole builders.
 	UserRole *UserRoleClient
 
@@ -199,6 +203,8 @@ func (tx *Tx) init() {
 	tx.TenderDocument = NewTenderDocumentClient(tx.config)
 	tx.TenderEvaluation = NewTenderEvaluationClient(tx.config)
 	tx.TenderMeeting = NewTenderMeetingClient(tx.config)
+	tx.TenderSection = NewTenderSectionClient(tx.config)
+	tx.TenderSubmission = NewTenderSubmissionClient(tx.config)
 	tx.UserRole = NewUserRoleClient(tx.config)
 }
 

@@ -33,6 +33,19 @@ func (Tender) Fields() []ent.Field {
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 		field.UUID("created_by", uuid.UUID{}),
+		// Go/no-go decision (US-1.6): "go" moves the tender to preparing, "no_go" closes it.
+		field.String("decision").Optional().Comment("go or no_go"),
+		field.Text("decision_rationale").Optional(),
+		field.UUID("decided_by", uuid.UUID{}).Optional().Nillable(),
+		field.Time("decided_at").Optional().Nillable(),
+		// Outcome (US-1.13): award date, value and contract details, or loss reason and
+		// competitor, plus lessons learned.
+		field.JSON("outcome", map[string]any{}).Optional(),
+		// Every status change with who made it, when and why (US-1.12).
+		field.JSON("status_history", []map[string]any{}).Optional(),
+		// Final document (US-1.9): the latest compiled version and whether it may be submitted.
+		field.Int("final_document_version").Default(0),
+		field.Bool("ready_for_submission").Default(false),
 	}
 }
 
@@ -42,6 +55,8 @@ func (Tender) Edges() []ent.Edge {
 		edge.To("committees", TenderCommittee.Type),
 		edge.To("evaluations", TenderEvaluation.Type),
 		edge.To("meetings", TenderMeeting.Type),
+		edge.To("sections", TenderSection.Type),
+		edge.To("submissions", TenderSubmission.Type),
 	}
 }
 

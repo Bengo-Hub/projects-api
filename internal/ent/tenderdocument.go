@@ -35,6 +35,10 @@ type TenderDocument struct {
 	UploadedBy uuid.UUID `json:"uploaded_by,omitempty"`
 	// UploadedAt holds the value of the "uploaded_at" field.
 	UploadedAt time.Time `json:"uploaded_at,omitempty"`
+	// Kind holds the value of the "kind" field.
+	Kind string `json:"kind,omitempty"`
+	// Version holds the value of the "version" field.
+	Version int `json:"version,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TenderDocumentQuery when eager-loading is set.
 	Edges        TenderDocumentEdges `json:"edges"`
@@ -66,9 +70,9 @@ func (*TenderDocument) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tenderdocument.FieldFileSize:
+		case tenderdocument.FieldFileSize, tenderdocument.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case tenderdocument.FieldFileURL, tenderdocument.FieldFileName, tenderdocument.FieldMimeType:
+		case tenderdocument.FieldFileURL, tenderdocument.FieldFileName, tenderdocument.FieldMimeType, tenderdocument.FieldKind:
 			values[i] = new(sql.NullString)
 		case tenderdocument.FieldUploadedAt:
 			values[i] = new(sql.NullTime)
@@ -143,6 +147,18 @@ func (td *TenderDocument) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				td.UploadedAt = value.Time
 			}
+		case tenderdocument.FieldKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field kind", values[i])
+			} else if value.Valid {
+				td.Kind = value.String
+			}
+		case tenderdocument.FieldVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				td.Version = int(value.Int64)
+			}
 		default:
 			td.selectValues.Set(columns[i], values[i])
 		}
@@ -207,6 +223,12 @@ func (td *TenderDocument) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("uploaded_at=")
 	builder.WriteString(td.UploadedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("kind=")
+	builder.WriteString(td.Kind)
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", td.Version))
 	builder.WriteByte(')')
 	return builder.String()
 }

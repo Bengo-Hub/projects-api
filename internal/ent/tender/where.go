@@ -136,6 +136,36 @@ func CreatedBy(v uuid.UUID) predicate.Tender {
 	return predicate.Tender(sql.FieldEQ(FieldCreatedBy, v))
 }
 
+// Decision applies equality check predicate on the "decision" field. It's identical to DecisionEQ.
+func Decision(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldDecision, v))
+}
+
+// DecisionRationale applies equality check predicate on the "decision_rationale" field. It's identical to DecisionRationaleEQ.
+func DecisionRationale(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldDecisionRationale, v))
+}
+
+// DecidedBy applies equality check predicate on the "decided_by" field. It's identical to DecidedByEQ.
+func DecidedBy(v uuid.UUID) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldDecidedBy, v))
+}
+
+// DecidedAt applies equality check predicate on the "decided_at" field. It's identical to DecidedAtEQ.
+func DecidedAt(v time.Time) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldDecidedAt, v))
+}
+
+// FinalDocumentVersion applies equality check predicate on the "final_document_version" field. It's identical to FinalDocumentVersionEQ.
+func FinalDocumentVersion(v int) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldFinalDocumentVersion, v))
+}
+
+// ReadyForSubmission applies equality check predicate on the "ready_for_submission" field. It's identical to ReadyForSubmissionEQ.
+func ReadyForSubmission(v bool) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldReadyForSubmission, v))
+}
+
 // TenantIDEQ applies the EQ predicate on the "tenant_id" field.
 func TenantIDEQ(v uuid.UUID) predicate.Tender {
 	return predicate.Tender(sql.FieldEQ(FieldTenantID, v))
@@ -1061,6 +1091,326 @@ func CreatedByLTE(v uuid.UUID) predicate.Tender {
 	return predicate.Tender(sql.FieldLTE(FieldCreatedBy, v))
 }
 
+// DecisionEQ applies the EQ predicate on the "decision" field.
+func DecisionEQ(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldDecision, v))
+}
+
+// DecisionNEQ applies the NEQ predicate on the "decision" field.
+func DecisionNEQ(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldNEQ(FieldDecision, v))
+}
+
+// DecisionIn applies the In predicate on the "decision" field.
+func DecisionIn(vs ...string) predicate.Tender {
+	return predicate.Tender(sql.FieldIn(FieldDecision, vs...))
+}
+
+// DecisionNotIn applies the NotIn predicate on the "decision" field.
+func DecisionNotIn(vs ...string) predicate.Tender {
+	return predicate.Tender(sql.FieldNotIn(FieldDecision, vs...))
+}
+
+// DecisionGT applies the GT predicate on the "decision" field.
+func DecisionGT(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldGT(FieldDecision, v))
+}
+
+// DecisionGTE applies the GTE predicate on the "decision" field.
+func DecisionGTE(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldGTE(FieldDecision, v))
+}
+
+// DecisionLT applies the LT predicate on the "decision" field.
+func DecisionLT(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldLT(FieldDecision, v))
+}
+
+// DecisionLTE applies the LTE predicate on the "decision" field.
+func DecisionLTE(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldLTE(FieldDecision, v))
+}
+
+// DecisionContains applies the Contains predicate on the "decision" field.
+func DecisionContains(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldContains(FieldDecision, v))
+}
+
+// DecisionHasPrefix applies the HasPrefix predicate on the "decision" field.
+func DecisionHasPrefix(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldHasPrefix(FieldDecision, v))
+}
+
+// DecisionHasSuffix applies the HasSuffix predicate on the "decision" field.
+func DecisionHasSuffix(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldHasSuffix(FieldDecision, v))
+}
+
+// DecisionIsNil applies the IsNil predicate on the "decision" field.
+func DecisionIsNil() predicate.Tender {
+	return predicate.Tender(sql.FieldIsNull(FieldDecision))
+}
+
+// DecisionNotNil applies the NotNil predicate on the "decision" field.
+func DecisionNotNil() predicate.Tender {
+	return predicate.Tender(sql.FieldNotNull(FieldDecision))
+}
+
+// DecisionEqualFold applies the EqualFold predicate on the "decision" field.
+func DecisionEqualFold(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldEqualFold(FieldDecision, v))
+}
+
+// DecisionContainsFold applies the ContainsFold predicate on the "decision" field.
+func DecisionContainsFold(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldContainsFold(FieldDecision, v))
+}
+
+// DecisionRationaleEQ applies the EQ predicate on the "decision_rationale" field.
+func DecisionRationaleEQ(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleNEQ applies the NEQ predicate on the "decision_rationale" field.
+func DecisionRationaleNEQ(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldNEQ(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleIn applies the In predicate on the "decision_rationale" field.
+func DecisionRationaleIn(vs ...string) predicate.Tender {
+	return predicate.Tender(sql.FieldIn(FieldDecisionRationale, vs...))
+}
+
+// DecisionRationaleNotIn applies the NotIn predicate on the "decision_rationale" field.
+func DecisionRationaleNotIn(vs ...string) predicate.Tender {
+	return predicate.Tender(sql.FieldNotIn(FieldDecisionRationale, vs...))
+}
+
+// DecisionRationaleGT applies the GT predicate on the "decision_rationale" field.
+func DecisionRationaleGT(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldGT(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleGTE applies the GTE predicate on the "decision_rationale" field.
+func DecisionRationaleGTE(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldGTE(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleLT applies the LT predicate on the "decision_rationale" field.
+func DecisionRationaleLT(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldLT(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleLTE applies the LTE predicate on the "decision_rationale" field.
+func DecisionRationaleLTE(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldLTE(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleContains applies the Contains predicate on the "decision_rationale" field.
+func DecisionRationaleContains(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldContains(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleHasPrefix applies the HasPrefix predicate on the "decision_rationale" field.
+func DecisionRationaleHasPrefix(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldHasPrefix(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleHasSuffix applies the HasSuffix predicate on the "decision_rationale" field.
+func DecisionRationaleHasSuffix(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldHasSuffix(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleIsNil applies the IsNil predicate on the "decision_rationale" field.
+func DecisionRationaleIsNil() predicate.Tender {
+	return predicate.Tender(sql.FieldIsNull(FieldDecisionRationale))
+}
+
+// DecisionRationaleNotNil applies the NotNil predicate on the "decision_rationale" field.
+func DecisionRationaleNotNil() predicate.Tender {
+	return predicate.Tender(sql.FieldNotNull(FieldDecisionRationale))
+}
+
+// DecisionRationaleEqualFold applies the EqualFold predicate on the "decision_rationale" field.
+func DecisionRationaleEqualFold(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldEqualFold(FieldDecisionRationale, v))
+}
+
+// DecisionRationaleContainsFold applies the ContainsFold predicate on the "decision_rationale" field.
+func DecisionRationaleContainsFold(v string) predicate.Tender {
+	return predicate.Tender(sql.FieldContainsFold(FieldDecisionRationale, v))
+}
+
+// DecidedByEQ applies the EQ predicate on the "decided_by" field.
+func DecidedByEQ(v uuid.UUID) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldDecidedBy, v))
+}
+
+// DecidedByNEQ applies the NEQ predicate on the "decided_by" field.
+func DecidedByNEQ(v uuid.UUID) predicate.Tender {
+	return predicate.Tender(sql.FieldNEQ(FieldDecidedBy, v))
+}
+
+// DecidedByIn applies the In predicate on the "decided_by" field.
+func DecidedByIn(vs ...uuid.UUID) predicate.Tender {
+	return predicate.Tender(sql.FieldIn(FieldDecidedBy, vs...))
+}
+
+// DecidedByNotIn applies the NotIn predicate on the "decided_by" field.
+func DecidedByNotIn(vs ...uuid.UUID) predicate.Tender {
+	return predicate.Tender(sql.FieldNotIn(FieldDecidedBy, vs...))
+}
+
+// DecidedByGT applies the GT predicate on the "decided_by" field.
+func DecidedByGT(v uuid.UUID) predicate.Tender {
+	return predicate.Tender(sql.FieldGT(FieldDecidedBy, v))
+}
+
+// DecidedByGTE applies the GTE predicate on the "decided_by" field.
+func DecidedByGTE(v uuid.UUID) predicate.Tender {
+	return predicate.Tender(sql.FieldGTE(FieldDecidedBy, v))
+}
+
+// DecidedByLT applies the LT predicate on the "decided_by" field.
+func DecidedByLT(v uuid.UUID) predicate.Tender {
+	return predicate.Tender(sql.FieldLT(FieldDecidedBy, v))
+}
+
+// DecidedByLTE applies the LTE predicate on the "decided_by" field.
+func DecidedByLTE(v uuid.UUID) predicate.Tender {
+	return predicate.Tender(sql.FieldLTE(FieldDecidedBy, v))
+}
+
+// DecidedByIsNil applies the IsNil predicate on the "decided_by" field.
+func DecidedByIsNil() predicate.Tender {
+	return predicate.Tender(sql.FieldIsNull(FieldDecidedBy))
+}
+
+// DecidedByNotNil applies the NotNil predicate on the "decided_by" field.
+func DecidedByNotNil() predicate.Tender {
+	return predicate.Tender(sql.FieldNotNull(FieldDecidedBy))
+}
+
+// DecidedAtEQ applies the EQ predicate on the "decided_at" field.
+func DecidedAtEQ(v time.Time) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldDecidedAt, v))
+}
+
+// DecidedAtNEQ applies the NEQ predicate on the "decided_at" field.
+func DecidedAtNEQ(v time.Time) predicate.Tender {
+	return predicate.Tender(sql.FieldNEQ(FieldDecidedAt, v))
+}
+
+// DecidedAtIn applies the In predicate on the "decided_at" field.
+func DecidedAtIn(vs ...time.Time) predicate.Tender {
+	return predicate.Tender(sql.FieldIn(FieldDecidedAt, vs...))
+}
+
+// DecidedAtNotIn applies the NotIn predicate on the "decided_at" field.
+func DecidedAtNotIn(vs ...time.Time) predicate.Tender {
+	return predicate.Tender(sql.FieldNotIn(FieldDecidedAt, vs...))
+}
+
+// DecidedAtGT applies the GT predicate on the "decided_at" field.
+func DecidedAtGT(v time.Time) predicate.Tender {
+	return predicate.Tender(sql.FieldGT(FieldDecidedAt, v))
+}
+
+// DecidedAtGTE applies the GTE predicate on the "decided_at" field.
+func DecidedAtGTE(v time.Time) predicate.Tender {
+	return predicate.Tender(sql.FieldGTE(FieldDecidedAt, v))
+}
+
+// DecidedAtLT applies the LT predicate on the "decided_at" field.
+func DecidedAtLT(v time.Time) predicate.Tender {
+	return predicate.Tender(sql.FieldLT(FieldDecidedAt, v))
+}
+
+// DecidedAtLTE applies the LTE predicate on the "decided_at" field.
+func DecidedAtLTE(v time.Time) predicate.Tender {
+	return predicate.Tender(sql.FieldLTE(FieldDecidedAt, v))
+}
+
+// DecidedAtIsNil applies the IsNil predicate on the "decided_at" field.
+func DecidedAtIsNil() predicate.Tender {
+	return predicate.Tender(sql.FieldIsNull(FieldDecidedAt))
+}
+
+// DecidedAtNotNil applies the NotNil predicate on the "decided_at" field.
+func DecidedAtNotNil() predicate.Tender {
+	return predicate.Tender(sql.FieldNotNull(FieldDecidedAt))
+}
+
+// OutcomeIsNil applies the IsNil predicate on the "outcome" field.
+func OutcomeIsNil() predicate.Tender {
+	return predicate.Tender(sql.FieldIsNull(FieldOutcome))
+}
+
+// OutcomeNotNil applies the NotNil predicate on the "outcome" field.
+func OutcomeNotNil() predicate.Tender {
+	return predicate.Tender(sql.FieldNotNull(FieldOutcome))
+}
+
+// StatusHistoryIsNil applies the IsNil predicate on the "status_history" field.
+func StatusHistoryIsNil() predicate.Tender {
+	return predicate.Tender(sql.FieldIsNull(FieldStatusHistory))
+}
+
+// StatusHistoryNotNil applies the NotNil predicate on the "status_history" field.
+func StatusHistoryNotNil() predicate.Tender {
+	return predicate.Tender(sql.FieldNotNull(FieldStatusHistory))
+}
+
+// FinalDocumentVersionEQ applies the EQ predicate on the "final_document_version" field.
+func FinalDocumentVersionEQ(v int) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldFinalDocumentVersion, v))
+}
+
+// FinalDocumentVersionNEQ applies the NEQ predicate on the "final_document_version" field.
+func FinalDocumentVersionNEQ(v int) predicate.Tender {
+	return predicate.Tender(sql.FieldNEQ(FieldFinalDocumentVersion, v))
+}
+
+// FinalDocumentVersionIn applies the In predicate on the "final_document_version" field.
+func FinalDocumentVersionIn(vs ...int) predicate.Tender {
+	return predicate.Tender(sql.FieldIn(FieldFinalDocumentVersion, vs...))
+}
+
+// FinalDocumentVersionNotIn applies the NotIn predicate on the "final_document_version" field.
+func FinalDocumentVersionNotIn(vs ...int) predicate.Tender {
+	return predicate.Tender(sql.FieldNotIn(FieldFinalDocumentVersion, vs...))
+}
+
+// FinalDocumentVersionGT applies the GT predicate on the "final_document_version" field.
+func FinalDocumentVersionGT(v int) predicate.Tender {
+	return predicate.Tender(sql.FieldGT(FieldFinalDocumentVersion, v))
+}
+
+// FinalDocumentVersionGTE applies the GTE predicate on the "final_document_version" field.
+func FinalDocumentVersionGTE(v int) predicate.Tender {
+	return predicate.Tender(sql.FieldGTE(FieldFinalDocumentVersion, v))
+}
+
+// FinalDocumentVersionLT applies the LT predicate on the "final_document_version" field.
+func FinalDocumentVersionLT(v int) predicate.Tender {
+	return predicate.Tender(sql.FieldLT(FieldFinalDocumentVersion, v))
+}
+
+// FinalDocumentVersionLTE applies the LTE predicate on the "final_document_version" field.
+func FinalDocumentVersionLTE(v int) predicate.Tender {
+	return predicate.Tender(sql.FieldLTE(FieldFinalDocumentVersion, v))
+}
+
+// ReadyForSubmissionEQ applies the EQ predicate on the "ready_for_submission" field.
+func ReadyForSubmissionEQ(v bool) predicate.Tender {
+	return predicate.Tender(sql.FieldEQ(FieldReadyForSubmission, v))
+}
+
+// ReadyForSubmissionNEQ applies the NEQ predicate on the "ready_for_submission" field.
+func ReadyForSubmissionNEQ(v bool) predicate.Tender {
+	return predicate.Tender(sql.FieldNEQ(FieldReadyForSubmission, v))
+}
+
 // HasDocuments applies the HasEdge predicate on the "documents" edge.
 func HasDocuments() predicate.Tender {
 	return predicate.Tender(func(s *sql.Selector) {
@@ -1145,6 +1495,52 @@ func HasMeetings() predicate.Tender {
 func HasMeetingsWith(preds ...predicate.TenderMeeting) predicate.Tender {
 	return predicate.Tender(func(s *sql.Selector) {
 		step := newMeetingsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSections applies the HasEdge predicate on the "sections" edge.
+func HasSections() predicate.Tender {
+	return predicate.Tender(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SectionsTable, SectionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSectionsWith applies the HasEdge predicate on the "sections" edge with a given conditions (other predicates).
+func HasSectionsWith(preds ...predicate.TenderSection) predicate.Tender {
+	return predicate.Tender(func(s *sql.Selector) {
+		step := newSectionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSubmissions applies the HasEdge predicate on the "submissions" edge.
+func HasSubmissions() predicate.Tender {
+	return predicate.Tender(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SubmissionsTable, SubmissionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSubmissionsWith applies the HasEdge predicate on the "submissions" edge with a given conditions (other predicates).
+func HasSubmissionsWith(preds ...predicate.TenderSubmission) predicate.Tender {
+	return predicate.Tender(func(s *sql.Selector) {
+		step := newSubmissionsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

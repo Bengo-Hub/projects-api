@@ -26,6 +26,8 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/erp"
 	"github.com/bengobox/projects-service/internal/platform/events"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
+	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/attachments"
 	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/financials"
 	"github.com/bengobox/projects-service/internal/services/members"
@@ -130,6 +132,10 @@ func New(ctx context.Context) (*App, error) {
 	memberService := members.NewService(entClient, cacheClient, log)
 	commentService := comments.NewService(entClient, cacheClient, log)
 	tenderService := tenders.NewService(entClient, cacheClient, log)
+	// project.tender.* (decisions, sections, submissions, outcomes) for notifications-api.
+	tenderService.SetPublisher(events.NewPublisher(runtimeSQLDB, log))
+	// The project activity feed: task, comment, file, milestone and member changes.
+	activityRecorder := activity.NewRecorder(entClient, log)
 	rbacService := rbac.NewService(entClient, cacheClient, log)
 	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
 	authEventsConsumer := usersync.NewAuthEventsConsumer(entClient, log)
@@ -141,11 +147,12 @@ func New(ctx context.Context) (*App, error) {
 
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(log, rbacService, syncService)
-	projectHandler := handlers.NewProjectHandler(log, projectService)
-	taskHandler := handlers.NewTaskHandler(log, taskService)
-	milestoneHandler := handlers.NewMilestoneHandler(log, milestoneService)
-	memberHandler := handlers.NewMemberHandler(log, memberService)
-	commentHandler := handlers.NewCommentHandler(log, commentService)
+	projectHandler := handlers.NewProjectHandler(log, projectService).WithActivity(activityRecorder)
+	taskHandler := handlers.NewTaskHandler(log, taskService).WithActivity(activityRecorder)
+	milestoneHandler := handlers.NewMilestoneHandler(log, milestoneService).WithActivity(activityRecorder)
+	memberHandler := handlers.NewMemberHandler(log, memberService).WithActivity(activityRecorder)
+	commentHandler := handlers.NewCommentHandler(log, commentService).WithActivity(activityRecorder)
+	attachmentHandler := handlers.NewAttachmentHandler(log, attachments.NewService(entClient, log), activityRecorder)
 	activityHandler := handlers.NewActivityHandler(log, entClient)
 	tenderHandler := handlers.NewTenderHandler(log, tenderService)
 	// Project money lives in treasury (budgets, booked costs); financials joins it with task
@@ -199,7 +206,7 @@ func New(ctx context.Context) (*App, error) {
 
 	chiRouter := router.New(log, healthHandler, userHandler,
 		projectHandler, taskHandler, milestoneHandler, memberHandler,
-		commentHandler, activityHandler, tenderHandler, financialsHandler,
+		commentHandler, activityHandler, attachmentHandler, tenderHandler, financialsHandler,
 		authMiddleware, cfg.HTTP.AllowedOrigins)
 
 	httpServer := &http.Server{

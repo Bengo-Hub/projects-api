@@ -54,6 +54,7 @@ type App struct {
 	events             *nats.Conn
 	outboxPublisher    *eventslib.Publisher
 	authEventsConsumer *usersync.AuthEventsConsumer
+	budgetEvents       *financials.BudgetEventsConsumer
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -220,6 +221,8 @@ func New(ctx context.Context) (*App, error) {
 		events:             natsConn,
 		outboxPublisher:    outboxPublisher,
 		authEventsConsumer: authEventsConsumer,
+		// Project.budget follows the approved treasury project budget (treasury.budget.approved).
+		budgetEvents: financials.NewBudgetEventsConsumer(entClient, log),
 	}, nil
 }
 
@@ -241,6 +244,13 @@ func (a *App) Run(ctx context.Context) error {
 			}
 		}()
 		a.log.Info("auth.user.deleted consumer started")
+	}
+	if a.budgetEvents != nil && a.events != nil {
+		go func() {
+			if err := a.budgetEvents.Start(ctx, a.events); err != nil {
+				a.log.Error("treasury budget events consumer failed", zap.Error(err))
+			}
+		}()
 	}
 
 	errCh := make(chan error, 1)

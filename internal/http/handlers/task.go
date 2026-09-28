@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -39,6 +40,35 @@ func (h *TaskHandler) RegisterRoutes(r chi.Router) {
 		})
 	})
 	r.Get("/projects/{projectID}/gantt", h.Gantt)
+	r.Get("/tasks/trend", h.Trend)
+}
+
+// Trend returns monthly task flow (created, completed, overdue at month end) for the tenant or
+// one project (?project_id=), over the last ?months= (1..24, default 6).
+func (h *TaskHandler) Trend(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := uuid.Parse(httpware.GetTenantID(r.Context()))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid tenant id")
+		return
+	}
+	q := r.URL.Query()
+	var projectID *uuid.UUID
+	if v := q.Get("project_id"); v != "" {
+		id, err := uuid.Parse(v)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid project id")
+			return
+		}
+		projectID = &id
+	}
+	months, _ := strconv.Atoi(q.Get("months"))
+	rows, err := h.svc.Trend(r.Context(), tenantID, projectID, months, time.Now())
+	if err != nil {
+		h.log.Error("task trend failed", zap.Error(err))
+		respondError(w, http.StatusInternalServerError, "failed to build the task trend")
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]any{"data": rows})
 }
 
 // List returns paginated tasks for a project.

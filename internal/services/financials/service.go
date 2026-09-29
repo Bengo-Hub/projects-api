@@ -95,6 +95,7 @@ type ProjectFinancials struct {
 	TasksDone    int                         `json:"tasks_done"`
 	TasksOverdue int                         `json:"tasks_overdue"`
 	Hours        *Hours                      `json:"hours,omitempty"`
+	Commercial   Commercial                  `json:"commercial"`
 }
 
 func (s *Service) build(p *ent.Project, stats taskStats, money *treasury.ProjectFinancials, moneyErr error, hours map[uuid.UUID]erp.Hours) *ProjectFinancials {
@@ -122,6 +123,11 @@ func (s *Service) build(p *ent.Project, stats taskStats, money *treasury.Project
 		}
 	}
 	pf.EVM = EVMFromWeights(bac, ac, stats.weights())
+	invoiced := 0.0
+	if money != nil {
+		invoiced = float64(money.ActualRevenue)
+	}
+	pf.Commercial = commercialFrom(p.Metadata, invoiced, ac, pf.EVM.EAC)
 	if hours != nil {
 		var logged *erp.Hours
 		if h, ok := hours[p.ID]; ok {

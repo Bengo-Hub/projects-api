@@ -160,6 +160,25 @@ func (c *Client) ProjectsFinancials(ctx context.Context, tenantID uuid.UUID, pro
 	return out, nil
 }
 
+// CostCenter is one of the tenant's treasury cost centres.
+type CostCenter struct {
+	ID       uuid.UUID `json:"id"`
+	Code     string    `json:"code"`
+	Name     string    `json:"name"`
+	IsActive bool      `json:"is_active"`
+}
+
+// CostCenters lists the tenant's active cost centres (the project cost-centre picker).
+func (c *Client) CostCenters(ctx context.Context, tenantID uuid.UUID) ([]CostCenter, error) {
+	var resp struct {
+		CostCenters []CostCenter `json:"cost_centers"`
+	}
+	if err := c.do(ctx, http.MethodGet, s2s(tenantID, "/cost-centers?active_only=true"), nil, nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp.CostCenters, nil
+}
+
 // ProjectBudgets lists the treasury budgets of one project (all versions, newest first). The raw
 // treasury JSON is returned so the UI sees treasury's budget model unchanged.
 func (c *Client) ProjectBudgets(ctx context.Context, tenantID, projectID uuid.UUID) (json.RawMessage, error) {

@@ -30,6 +30,8 @@ type ServicesConfig struct {
 	TreasuryURL string `envconfig:"TREASURY_SERVICE_URL" default:"https://booksapi.codevertexafrica.com"`
 	// ERPURL is erp-api, read for timesheet hours per project (project utilisation).
 	ERPURL string `envconfig:"ERP_SERVICE_URL" default:"http://erp-api.erp.svc.cluster.local:80"`
+	// MarketflowURL is marketflow-api, the CRM, searched for a project's client contact.
+	MarketflowURL string `envconfig:"MARKETFLOW_API_URL" default:"http://marketflow-api.marketflow.svc.cluster.local:4000"`
 }
 
 type AppConfig struct {

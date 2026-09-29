@@ -126,7 +126,10 @@ func (s *Service) CreateProject(ctx context.Context, tenantID uuid.UUID, input C
 		c = c.SetBudget(*input.Budget)
 	}
 	if input.Metadata != nil {
-		c = c.SetMetadata(input.Metadata)
+		if err := normalizeCommercial(input.Metadata); err != nil {
+			return nil, err
+		}
+		c = c.SetMetadata(mergeMetadata(nil, input.Metadata))
 	}
 	p, err := c.Save(ctx)
 	if err != nil {
@@ -170,7 +173,11 @@ func (s *Service) UpdateProject(ctx context.Context, tenantID, id uuid.UUID, inp
 		u = u.SetBudget(*input.Budget)
 	}
 	if input.Metadata != nil {
-		u = u.SetMetadata(input.Metadata)
+		// A partial update: keys sent as null are removed, keys not sent are kept.
+		if err := normalizeCommercial(input.Metadata); err != nil {
+			return nil, err
+		}
+		u = u.SetMetadata(mergeMetadata(p.Metadata, input.Metadata))
 	}
 	prevStatus := p.Status
 	updated, err := u.Save(ctx)

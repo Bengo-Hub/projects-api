@@ -17,8 +17,10 @@ import (
 
 // ProjectHandler handles project HTTP endpoints.
 type ProjectHandler struct {
-	log *zap.Logger
-	svc *projects.Service
+	log         *zap.Logger
+	svc         *projects.Service
+	contacts    contactSearcher
+	costCenters costCenterLister
 }
 
 // NewProjectHandler creates a new project handler.
@@ -39,6 +41,7 @@ func (h *ProjectHandler) RegisterRoutes(r chi.Router) {
 			p.Get("/summary", h.Summary)
 		})
 	})
+	h.registerLookups(r)
 }
 
 // List returns a paginated list of projects.
@@ -143,6 +146,11 @@ func (h *ProjectHandler) Update(w http.ResponseWriter, r *http.Request) {
 	p, err := h.svc.UpdateProject(r.Context(), tenantID, id, input)
 	if errors.Is(err, projects.ErrNotFound) {
 		respondError(w, http.StatusNotFound, "project not found")
+		return
+	}
+	var verr projects.ValidationError
+	if errors.As(err, &verr) {
+		respondError(w, http.StatusBadRequest, verr.Error())
 		return
 	}
 	if err != nil {

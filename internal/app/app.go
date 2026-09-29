@@ -24,6 +24,7 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/cache"
 	"github.com/bengobox/projects-service/internal/platform/database"
 	"github.com/bengobox/projects-service/internal/platform/erp"
+	"github.com/bengobox/projects-service/internal/platform/marketflow"
 	"github.com/bengobox/projects-service/internal/platform/events"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/comments"
@@ -154,6 +155,8 @@ func New(ctx context.Context) (*App, error) {
 	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey)
 	erpClient := erp.NewClient(cfg.Services.ERPURL, cfg.Auth.APIKey)
 	financialsHandler := handlers.NewFinancialsHandler(log, financials.NewService(entClient, treasuryClient, log).WithERP(erpClient))
+	// Project form pickers: the client from the CRM (marketflow), the cost centre from treasury.
+	projectHandler.WithLookups(marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey), treasuryClient)
 
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware

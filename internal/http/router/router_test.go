@@ -26,7 +26,7 @@ func TestRoutesMount(t *testing.T) {
 		handlers.NewActivityHandler(log, nil),
 		handlers.NewTenderHandler(log, nil),
 		handlers.NewFinancialsHandler(log, nil),
-		nil, []string{"*"},
+		nil, []string{"*"}, nil,
 	)
 	// With no tenant header the handler answers 400 (invalid tenant): the route exists.
 	for _, path := range []string{

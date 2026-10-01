@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -32,14 +31,3 @@ func NewClient(ctx context.Context, cfg config.PostgresConfig) (*ent.Client, err
 	client := ent.NewClient(ent.Driver(drv))
 	return client, nil
 }
-
-// RunMigrations executes Ent schema migrations.
-func RunMigrations(ctx context.Context, client *ent.Client) error {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-	defer cancel()
-	if err := client.Schema.Create(ctx); err != nil {
-		return fmt.Errorf("run migrations: %w", err)
-	}
-	return nil
-}
-

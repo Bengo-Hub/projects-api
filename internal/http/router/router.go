@@ -1,6 +1,7 @@
 package router
 
 import (
+	ratelimit "github.com/Bengo-Hub/shared-ratelimit"
 	"net/http"
 	"strconv"
 	"time"
@@ -29,15 +30,17 @@ func New(
 	financialsHandler *handlers.FinancialsHandler,
 	authMiddleware *authclient.AuthMiddleware,
 	allowedOrigins []string,
+	limiter *ratelimit.Limiter,
 ) http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(middleware.RealIP)
+	// Never chi RealIP: it trusts client-sent True-Client-IP/X-Forwarded-For.
+	r.Use(ratelimit.TrustedRealIP)
 	r.Use(httpware.RequestID)
 	r.Use(httpware.Tenant)
 	r.Use(httpware.Logging(log))
 	r.Use(httpware.Recover(log))
-	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(httpware.BypassForStreaming(middleware.Timeout(30 * time.Second)))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -46,6 +49,10 @@ func New(
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	// Per-IP abuse limit (projects had none); after CORS so 429s carry CORS headers.
+	if limiter != nil {
+		r.Use(limiter.Middleware(ratelimit.IPKey, 300, time.Minute))
+	}
 
 	r.Get("/healthz", health.Liveness)
 	r.Get("/readyz", health.Readiness)

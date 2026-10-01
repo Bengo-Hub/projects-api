@@ -18,6 +18,11 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/database"
 )
 
+// migrationLockKey serializes migrations across pods: every replica's entrypoint runs this
+// binary and concurrent schema runs can race on the same DDL. Stable and unique per service
+// ("PRJM", projects migrate).
+const migrationLockKey int64 = 0x5052_4A4D
+
 func main() {
 	_ = godotenv.Load()
 
@@ -41,9 +46,17 @@ func main() {
 	}
 	defer db.Close()
 
-	db.SetMaxOpenConns(4)
-	db.SetMaxIdleConns(2)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	// One connection: the advisory lock and every migration statement share one session.
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	if _, err := db.ExecContext(ctx, "SELECT pg_advisory_lock($1)", migrationLockKey); err != nil {
+		log.Fatalf("acquire migration lock: %v", err)
+	}
+	unlock := func() {
+		if _, err := db.ExecContext(context.Background(), "SELECT pg_advisory_unlock($1)", migrationLockKey); err != nil {
+			log.Printf("release migration lock: %v", err)
+		}
+	}
 
 	if err := database.DropRetiredTables(ctx, db); err != nil {
 		log.Fatalf("migrate: %v", err)
@@ -52,8 +65,10 @@ func main() {
 	client := ent.NewClient(ent.Driver(drv))
 	defer client.Close()
 
-	if err := client.Schema.Create(ctx, schema.WithDir(migrate.Dir)); err != nil {
-		log.Fatalf("migrate: %v", err)
+	migrateErr := client.Schema.Create(ctx, schema.WithDir(migrate.Dir))
+	unlock()
+	if migrateErr != nil {
+		log.Fatalf("migrate: %v", migrateErr)
 	}
 	log.Println("migrations completed")
 }

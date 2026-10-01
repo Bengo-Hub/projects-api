@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	ratelimit "github.com/Bengo-Hub/shared-ratelimit"
 	"net/http"
 	"time"
 
@@ -18,14 +19,12 @@ import (
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/config"
 	"github.com/bengobox/projects-service/internal/ent"
-	"github.com/bengobox/projects-service/internal/ent/migrate"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 	router "github.com/bengobox/projects-service/internal/http/router"
-	"github.com/bengobox/projects-service/internal/platform/cache"
 	"github.com/bengobox/projects-service/internal/platform/database"
 	"github.com/bengobox/projects-service/internal/platform/erp"
-	"github.com/bengobox/projects-service/internal/platform/marketflow"
 	"github.com/bengobox/projects-service/internal/platform/events"
+	"github.com/bengobox/projects-service/internal/platform/marketflow"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/financials"
@@ -42,7 +41,6 @@ import (
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/schema"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -74,33 +72,27 @@ func New(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("postgres init: %w", err)
 	}
 
-	if cfg.Postgres.RunMigrations {
-		migrateURL := cfg.Postgres.URL
-		if cfg.Postgres.MigrateURL != "" {
-			migrateURL = cfg.Postgres.MigrateURL
-		}
-		sqlDB, err := sql.Open("pgx", migrateURL)
-		if err != nil {
-			return nil, fmt.Errorf("sql open for migrations: %w", err)
-		}
-		defer sqlDB.Close()
-		if err := database.DropRetiredTables(ctx, sqlDB); err != nil {
-			return nil, err
-		}
-		drv := entsql.OpenDB(dialect.Postgres, sqlDB)
-		entClient := ent.NewClient(ent.Driver(drv))
-		defer entClient.Close()
-		if err := entClient.Schema.Create(ctx, schema.WithDir(migrate.Dir)); err != nil {
-			return nil, fmt.Errorf("ent migrate: %w", err)
-		}
-		log.Info("versioned migrations completed")
-	}
+	// Schema migrations run once per rollout in projects-migrate (entrypoint, advisory-locked,
+	// direct DSN); the optional in-app copy that used to live here is gone.
 
-	redisClient := cache.NewClient(cfg.Redis)
+	redisClient, redisErr := sharedcache.NewRedis(ctx, sharedcache.RedisConfig{
+		Addr: cfg.Redis.Addr, Username: cfg.Redis.Username, Password: cfg.Redis.Password,
+		DB: cfg.Redis.DB, TLS: cfg.Redis.TLSRequired, DialTimeout: cfg.Redis.DialTimeout,
+	})
+	if redisErr != nil {
+		log.Warn("redis not reachable at startup", zap.Error(redisErr))
+	}
+	sharedcache.SetLeaseClient(redisClient)
 
 	natsConn, err := events.Connect(cfg.Events)
 	if err != nil {
 		log.Warn("event bus connection failed", zap.Error(err))
+	}
+	if natsConn != nil {
+		// Drop revoked/rotated API keys from every validator on this pod at once.
+		_ = eventslib.NewBroadcaster(log, natsConn, "auth").Subscribe("apikey.changed", func(m eventslib.BroadcastMessage) {
+			authclient.InvalidateAPIKeyHash(string(m.Data))
+		})
 	}
 	// The projects stream (project.>) must exist before the outbox can publish: without it every
 	// project.* event, milestone emails included, had nowhere to go.
@@ -204,7 +196,7 @@ func New(ctx context.Context) (*App, error) {
 	chiRouter := router.New(log, healthHandler, userHandler,
 		projectHandler, taskHandler, milestoneHandler, memberHandler,
 		commentHandler, activityHandler, tenderHandler, financialsHandler,
-		authMiddleware, cfg.HTTP.AllowedOrigins)
+		authMiddleware, cfg.HTTP.AllowedOrigins, ratelimit.NewLimiter(redisClient, log, "projects"))
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

@@ -1,10 +1,10 @@
 # Projects API Backlog
 
-**Last updated:** 2026-09-28. Built by checking `plan.md`, `docs/sprints/*.md`, `docs/erd.md` and `docs/integrations.md` against the code. Each item names the doc it came from. The budgets, planning, project costing and BI plan is complete here; its items are under Done. UI gaps live in `projects-service/projects-ui/docs/backlog.md`.
+**Last updated:** 2026-10-16. Built by checking `plan.md`, `docs/sprints/*.md`, `docs/erd.md` and `docs/integrations.md` against the code. Each item names the doc it came from. The budgets, planning, project costing and BI plan is complete here; its items are under Done. UI gaps live in `projects-service/projects-ui/docs/backlog.md`.
 
-## Project finance, open
+## Project finance, done 2026-09-29
 
-- Project `billing_type`, `crm_contact_id`, `cost_center_id` and `contract_value` in metadata (margin against contract value, billing mode on the financials tab). Source: sprint-3, sprint-5.
+- Commercial terms in project metadata: `billing_type` (fixed, time_and_materials, non_billable), `contract_value`, `crm_contact_id`/`crm_contact_name` (a marketflow CRM contact) and `cost_center_id`/`cost_center_name` (a treasury cost centre), validated on create and update. Metadata updates merge (null removes a key). The financials response has a `commercial` block: fixed price margin at completion (contract value less EAC) and unbilled; time and materials margin to date (invoiced less cost). `GET /lookups/contacts?q=` (marketflow S2S search) and `GET /lookups/cost-centers` (treasury S2S list) feed the pickers. Commits `4c876f7`, projects-ui `4d46e68`, treasury `08cc2a8`. Source: sprint-3, sprint-5.
 
 ## Done (plan budgets-planning-projects-bi-2026-09-27, updated 2026-09-28)
 

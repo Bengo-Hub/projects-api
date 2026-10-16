@@ -56,7 +56,7 @@ This document provides detailed integration information for all external service
 
 ### Treasury App
 
-> **Status (verified 2026-09-27): not integrated.** projects-api has no treasury client and publishes only `project.milestone.reached`. `treasury.budget.approved` and `treasury.budget.rejected` are not emitted by treasury yet, and treasury consumes no `projects.*` event. Decision: treasury owns all budgets; projects will read budget and financials through `GET /s2s/{tenant}/projects/{id}/financials` and proxy budget edits to treasury budgets of `budget_type=project`. In progress (plan budgets-planning-projects-bi-2026-09-27, Phase 3). The design below predates that decision.
+> **Status (verified 2026-10-16): integrated.** Treasury owns all budgets. projects-api's treasury client (X-API-Key) reads `GET /s2s/{tenant}/budgets/projects/financials?ids=` in one batch per page and computes earned value from task estimates and progress; it creates, edits and submits project budgets in treasury over S2S acting as the user (`X-User-ID`), and reads `GET /s2s/{tenant}/cost-centers` for the project cost-centre picker. projects-api publishes `project.created|updated|closed|deleted`; treasury closes a closed project's budgets and releases its commitments. `Project.budget` follows `treasury.budget.approved` (`planned_cost`). The client contact comes from marketflow (`GET /api/v1/internal/contacts/search`, X-API-Key). Workflow detail: `finance-service/treasury-api/docs/budgets-and-planning.md`. The design below predates this and is kept for history.
 
 **Integration Type**: REST API + Events (NATS)
 

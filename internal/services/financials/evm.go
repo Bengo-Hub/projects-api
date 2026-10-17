@@ -5,6 +5,8 @@ package financials
 import (
 	"math"
 	"time"
+
+	"github.com/Bengo-Hub/httpware/money"
 )
 
 // TaskWork is the slice of a task earned value needs.
@@ -28,8 +30,8 @@ type EVM struct {
 	SV              float64 `json:"sv"` // EV - PV
 	CPI             float64 `json:"cpi"`
 	SPI             float64 `json:"spi"`
-	EAC             float64 `json:"eac"`              // BAC / CPI: current efficiency continues
-	EACAtBudgetRate float64 `json:"eac_budget_rate"`  // AC + (BAC - EV): remaining work at plan
+	EAC             float64 `json:"eac"`             // BAC / CPI: current efficiency continues
+	EACAtBudgetRate float64 `json:"eac_budget_rate"` // AC + (BAC - EV): remaining work at plan
 	ETC             float64 `json:"etc"`
 	VAC             float64 `json:"vac"`
 	PercentComplete float64 `json:"percent_complete"` // earned share of the work
@@ -108,32 +110,32 @@ func ComputeEVM(bac, ac float64, tasks []TaskWork, projStart, projEnd *time.Time
 
 // EVMFromWeights derives the earned-value figures from task weights, budget and actual cost.
 func EVMFromWeights(bac, ac float64, w Weights) EVM {
-	e := EVM{BAC: round2(bac), AC: round2(ac), Health: "none"}
+	e := EVM{BAC: money.Round2(bac), AC: money.Round2(ac), Health: "none"}
 	if w.Total > 0 {
-		e.PercentComplete = round2(w.Earned / w.Total * 100)
-		e.PercentPlanned = round2(w.Planned / w.Total * 100)
+		e.PercentComplete = money.Round2(w.Earned / w.Total * 100)
+		e.PercentPlanned = money.Round2(w.Planned / w.Total * 100)
 	}
-	e.EV = round2(bac * e.PercentComplete / 100)
-	e.PV = round2(bac * e.PercentPlanned / 100)
-	e.CV = round2(e.EV - e.AC)
-	e.SV = round2(e.EV - e.PV)
+	e.EV = money.Round2(bac * e.PercentComplete / 100)
+	e.PV = money.Round2(bac * e.PercentPlanned / 100)
+	e.CV = money.Round2(e.EV - e.AC)
+	e.SV = money.Round2(e.EV - e.PV)
 	if e.AC > 0 {
-		e.CPI = round2(e.EV / e.AC)
+		e.CPI = money.Round2(e.EV / e.AC)
 	}
 	if e.PV > 0 {
-		e.SPI = round2(e.EV / e.PV)
+		e.SPI = money.Round2(e.EV / e.PV)
 	}
 	switch {
 	case e.CPI > 0:
-		e.EAC = round2(bac / (e.EV / e.AC))
+		e.EAC = money.Round2(bac / (e.EV / e.AC))
 	default:
-		e.EAC = round2(math.Max(bac, e.AC))
+		e.EAC = money.Round2(math.Max(bac, e.AC))
 	}
-	e.EACAtBudgetRate = round2(e.AC + (bac - e.EV))
-	e.ETC = round2(math.Max(0, e.EAC-e.AC))
-	e.VAC = round2(bac - e.EAC)
+	e.EACAtBudgetRate = money.Round2(e.AC + (bac - e.EV))
+	e.ETC = money.Round2(math.Max(0, e.EAC-e.AC))
+	e.VAC = money.Round2(bac - e.EAC)
 	if bac > 0 {
-		e.PercentSpent = round2(e.AC / bac * 100)
+		e.PercentSpent = money.Round2(e.AC / bac * 100)
 	}
 	e.Health, e.HealthReason = health(e, bac)
 	return e
@@ -164,5 +166,3 @@ func health(e EVM, bac float64) (string, string) {
 	}
 	return "green", ""
 }
-
-func round2(v float64) float64 { return math.Round(v*100) / 100 }

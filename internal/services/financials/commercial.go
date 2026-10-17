@@ -3,6 +3,8 @@ package financials
 import (
 	"strconv"
 	"strings"
+
+	"github.com/Bengo-Hub/httpware/money"
 )
 
 // Commercial is the project's contract side: what the client pays against what the work costs.
@@ -30,7 +32,7 @@ type Commercial struct {
 func commercialFrom(meta map[string]any, invoiced, actualCost, eac float64) Commercial {
 	c := Commercial{
 		BillingType:    metaString(meta, "billing_type"),
-		Invoiced:       round2(invoiced),
+		Invoiced:       money.Round2(invoiced),
 		ClientID:       metaString(meta, "crm_contact_id"),
 		ClientName:     metaString(meta, "crm_contact_name"),
 		CostCenterID:   metaString(meta, "cost_center_id"),
@@ -45,18 +47,18 @@ func commercialFrom(meta map[string]any, invoiced, actualCost, eac float64) Comm
 			return c
 		}
 		cv := *c.ContractValue
-		unbilled := round2(max0(cv - invoiced))
-		margin := round2(cv - eac)
+		unbilled := money.Round2(max0(cv - invoiced))
+		margin := money.Round2(cv - eac)
 		c.Unbilled, c.ProjectedMargin, c.MarginBasis = &unbilled, &margin, "at_completion"
 		if cv > 0 {
-			pct := round2(margin / cv * 100)
+			pct := money.Round2(margin / cv * 100)
 			c.ProjectedMarginPct = &pct
 		}
 	case "time_and_materials":
-		margin := round2(invoiced - actualCost)
+		margin := money.Round2(invoiced - actualCost)
 		c.ProjectedMargin, c.MarginBasis = &margin, "to_date"
 		if invoiced > 0 {
-			pct := round2(margin / invoiced * 100)
+			pct := money.Round2(margin / invoiced * 100)
 			c.ProjectedMarginPct = &pct
 		}
 	}

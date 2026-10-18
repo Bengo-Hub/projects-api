@@ -11,7 +11,7 @@ require (
 	ariga.io/atlas v0.19.1-0.20240203083654-5948b60a8e43
 	entgo.io/ent v0.13.1
 	github.com/Bengo-Hub/cache v0.5.7
-	github.com/Bengo-Hub/httpware v0.11.0
+	github.com/Bengo-Hub/httpware v0.14.2
 	github.com/Bengo-Hub/pagination v0.3.0
 	github.com/Bengo-Hub/shared-auth-client v0.3.1
 	github.com/Bengo-Hub/shared-events v0.7.1

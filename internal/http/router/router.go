@@ -31,6 +31,7 @@ func New(
 	authMiddleware *authclient.AuthMiddleware,
 	allowedOrigins []string,
 	limiter *ratelimit.Limiter,
+	tenantExport http.Handler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -55,6 +56,11 @@ func New(
 	}
 
 	r.Get("/healthz", health.Liveness)
+	// Tenant export for auth-api's SSO tenant backups; the handler checks INTERNAL_SERVICE_KEY
+	// itself (httpware/tenantexport, Options.InternalKey).
+	if tenantExport != nil {
+		r.Get("/api/v1/s2s/tenant-export", tenantExport.ServeHTTP)
+	}
 	r.Get("/readyz", health.Readiness)
 	r.Get("/metrics", health.Metrics)
 

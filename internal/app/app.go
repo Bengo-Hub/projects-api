@@ -17,6 +17,7 @@ import (
 	eventslib "github.com/Bengo-Hub/shared-events"
 
 	sharedcache "github.com/Bengo-Hub/cache"
+	"github.com/Bengo-Hub/httpware/tenantexport"
 	"github.com/bengobox/projects-service/internal/config"
 	"github.com/bengobox/projects-service/internal/ent"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
@@ -54,6 +55,15 @@ type App struct {
 	outboxPublisher    *eventslib.Publisher
 	authEventsConsumer *usersync.AuthEventsConsumer
 	budgetEvents       *financials.BudgetEventsConsumer
+}
+
+// tenantExportHandler serves auth-api's SSO tenant backups (httpware/tenantexport). Nil without an
+// INTERNAL_SERVICE_KEY, so the export is never reachable unauthenticated.
+func tenantExportHandler(db *sql.DB, internalKey string) http.Handler {
+	if internalKey == "" {
+		return nil
+	}
+	return tenantexport.Handler(db, tenantexport.Options{Service: "projects", InternalKey: internalKey})
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -196,7 +206,8 @@ func New(ctx context.Context) (*App, error) {
 	chiRouter := router.New(log, healthHandler, userHandler,
 		projectHandler, taskHandler, milestoneHandler, memberHandler,
 		commentHandler, activityHandler, tenderHandler, financialsHandler,
-		authMiddleware, cfg.HTTP.AllowedOrigins, ratelimit.NewLimiter(redisClient, log, "projects"))
+		authMiddleware, cfg.HTTP.AllowedOrigins, ratelimit.NewLimiter(redisClient, log, "projects"),
+		tenantExportHandler(runtimeSQLDB, cfg.Auth.APIKey))
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

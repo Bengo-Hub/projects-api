@@ -83,6 +83,9 @@ func New(
 		// Apply auth middleware to all v1 routes
 		if authMiddleware != nil {
 			api.Use(authMiddleware.RequireAuth)
+			// Layer 1.5: the whole projects module (reads included) is closed to a tenant whose plan
+			// has no projects entitlement at all.
+			api.Use(authclient.RequireServiceAccess("projects"))
 			// Layer 2: Subscription + feature enforcement — mutations only (GET/HEAD/OPTIONS
 			// pass through). Exemption funnels through claims.IsGatingExempt() (platform owner /
 			// demo / service-charge / sub-exempt), uniform with the rest of the fleet — note a

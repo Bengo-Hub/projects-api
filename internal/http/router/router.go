@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 
 	httpware "github.com/Bengo-Hub/httpware"
@@ -42,14 +41,7 @@ func New(
 	r.Use(httpware.Logging(log))
 	r.Use(httpware.Recover(log))
 	r.Use(httpware.BypassForStreaming(middleware.Timeout(30 * time.Second)))
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type", "X-Tenant-ID", "X-Tenant-Slug", "X-Request-ID", "X-Outlet-ID", "X-API-Key"},
-		ExposedHeaders:   []string{"Link", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+	r.Use(httpware.CORS(httpware.StandardCORS(allowedOrigins)))
 	// Per-IP abuse limit (projects had none); after CORS so 429s carry CORS headers.
 	if limiter != nil {
 		r.Use(limiter.Middleware(ratelimit.IPKey, 300, time.Minute))

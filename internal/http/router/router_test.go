@@ -29,9 +29,25 @@ func TestRoutesMount(t *testing.T) {
 		nil, []string{"*"}, nil, nil,
 	)
 	// With no tenant header the handler answers 400 (invalid tenant): the route exists.
+	const id = "00000000-0000-0000-0000-000000000001"
 	for _, path := range []string{
 		"/api/v1/acme/financials/portfolio",
-		"/api/v1/acme/financials/projects/00000000-0000-0000-0000-000000000001",
+		"/api/v1/acme/financials/projects/" + id,
+		// Project routes live under two mounts (/projects and /projects/{projectID}); chi prefers
+		// the parameter, so these were swallowed by the comments subrouter and answered 404.
+		"/api/v1/acme/projects",
+		"/api/v1/acme/projects/metrics",
+		"/api/v1/acme/projects/" + id,
+		"/api/v1/acme/projects/" + id + "/summary",
+		"/api/v1/acme/projects/" + id + "/comments",
+		"/api/v1/acme/projects/" + id + "/tasks/" + id + "/comments",
+		"/api/v1/acme/projects/" + id + "/tasks/" + id,
+		"/api/v1/acme/projects/" + id + "/tasks",
+		"/api/v1/acme/projects/" + id + "/members",
+		"/api/v1/acme/projects/" + id + "/milestones",
+		"/api/v1/acme/projects/" + id + "/activities",
+		"/api/v1/acme/projects/" + id + "/gantt",
+		"/api/v1/acme/tasks/trend",
 	} {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))

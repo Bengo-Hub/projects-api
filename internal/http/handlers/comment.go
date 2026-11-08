@@ -26,17 +26,16 @@ func NewCommentHandler(log *zap.Logger, svc *comments.Service) *CommentHandler {
 }
 
 // RegisterRoutes registers comment routes.
+// Flat patterns on purpose: a Route("/projects/{projectID}") subrouter also claims the bare
+// /projects/{projectID} path, and chi prefers it over the /projects mount, so getting a project,
+// its summary and /projects/metrics all answered 404.
 func (h *CommentHandler) RegisterRoutes(r chi.Router) {
-	r.Route("/projects/{projectID}", func(pr chi.Router) {
-		pr.Get("/comments", h.ListByProject)
-		pr.Post("/comments", h.CreateProjectComment)
-		pr.Route("/tasks/{taskID}/comments", func(tr chi.Router) {
-			tr.Get("/", h.ListByTask)
-			tr.Post("/", h.CreateTaskComment)
-		})
-		pr.Put("/comments/{commentID}", h.Update)
-		pr.Delete("/comments/{commentID}", h.Delete)
-	})
+	r.Get("/projects/{projectID}/comments", h.ListByProject)
+	r.Post("/projects/{projectID}/comments", h.CreateProjectComment)
+	r.Get("/projects/{projectID}/tasks/{taskID}/comments", h.ListByTask)
+	r.Post("/projects/{projectID}/tasks/{taskID}/comments", h.CreateTaskComment)
+	r.Put("/projects/{projectID}/comments/{commentID}", h.Update)
+	r.Delete("/projects/{projectID}/comments/{commentID}", h.Delete)
 }
 
 func (h *CommentHandler) ListByProject(w http.ResponseWriter, r *http.Request) {

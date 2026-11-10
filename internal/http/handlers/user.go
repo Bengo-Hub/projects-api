@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"strings"
 	"encoding/json"
 	"net/http"
 
@@ -56,6 +57,17 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if tenantID == nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "tenant ID required"})
 		return
+	}
+	// Only an organisation admin creates users, never with an admin-tier role (audit 2026-11-11).
+	if !claims.IsPlatformOwner && !claims.IsAdmin() && !claims.IsSuperuser() {
+		respondJSON(w, http.StatusForbidden, map[string]string{"error": "only an organisation admin can add users"})
+		return
+	}
+	for _, role := range req.Roles {
+		if adminTierRole(role) {
+			respondJSON(w, http.StatusBadRequest, map[string]string{"error": "admin, owner and superuser roles are given in the accounts site"})
+			return
+		}
 	}
 
 	// Provision the user in auth-service (S2S member add — resolves-or-creates by email).
@@ -139,3 +151,12 @@ func (h *UserHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/roles", h.ListRoles)
 }
 
+
+// adminTierRole reports a role only an organisation admin may give, in the accounts site.
+func adminTierRole(role string) bool {
+	switch strings.ToLower(strings.TrimSpace(role)) {
+	case "admin", "administrator", "superuser", "superusers", "super_admin", "owner", "tenant_admin", "system_admin":
+		return true
+	}
+	return false
+}

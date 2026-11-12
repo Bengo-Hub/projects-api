@@ -28,6 +28,7 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/marketflow"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/comments"
+	"github.com/bengobox/projects-service/internal/services/crmsync"
 	"github.com/bengobox/projects-service/internal/services/financials"
 	"github.com/bengobox/projects-service/internal/services/members"
 	"github.com/bengobox/projects-service/internal/services/milestones"
@@ -55,6 +56,8 @@ type App struct {
 	outboxPublisher    *eventslib.Publisher
 	authEventsConsumer *usersync.AuthEventsConsumer
 	budgetEvents       *financials.BudgetEventsConsumer
+	// crmContacts clears a project's copied client name when the CRM contact is erased or deleted.
+	crmContacts *crmsync.ContactEventsConsumer
 }
 
 // tenantExportHandler serves auth-api's SSO tenant backups (httpware/tenantexport). Nil without an
@@ -64,6 +67,16 @@ func tenantExportHandler(db *sql.DB, internalKey string) http.Handler {
 		return nil
 	}
 	return tenantexport.Handler(db, tenantexport.Options{Service: "projects", InternalKey: internalKey})
+}
+
+// crmLinksHandler answers marketflow's CRM contact link check (X-API-Key = INTERNAL_SERVICE_KEY).
+// Nil without a key, so the route is not mounted; the handler also refuses an empty key itself.
+func crmLinksHandler(db *ent.Client, aside *sharedcache.Aside, authURL, internalKey string, log *zap.Logger) http.Handler {
+	if internalKey == "" {
+		return nil
+	}
+	h := handlers.NewCRMLinksHandler(db, handlers.NewTenantResolver(aside, authURL), internalKey, log)
+	return http.HandlerFunc(h.Referenced)
 }
 
 func New(ctx context.Context) (*App, error) {
@@ -213,7 +226,8 @@ func New(ctx context.Context) (*App, error) {
 		projectHandler, taskHandler, milestoneHandler, memberHandler,
 		commentHandler, activityHandler, tenderHandler, financialsHandler,
 		authMiddleware, cfg.HTTP.AllowedOrigins, ratelimit.NewLimiter(redisClient, log, "projects"),
-		tenantExportHandler(runtimeSQLDB, cfg.Auth.APIKey))
+		tenantExportHandler(runtimeSQLDB, cfg.Auth.APIKey),
+		crmLinksHandler(entClient, cacheClient, cfg.Auth.ServiceURL, cfg.Auth.APIKey, log))
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
@@ -235,6 +249,7 @@ func New(ctx context.Context) (*App, error) {
 		authEventsConsumer: authEventsConsumer,
 		// Project.budget follows the approved treasury project budget (treasury.budget.approved).
 		budgetEvents: financials.NewBudgetEventsConsumer(entClient, log),
+		crmContacts:  crmsync.NewContactEventsConsumer(entClient, marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey), log),
 	}, nil
 }
 
@@ -261,6 +276,13 @@ func (a *App) Run(ctx context.Context) error {
 		go func() {
 			if err := a.budgetEvents.Start(ctx, a.events); err != nil {
 				a.log.Error("treasury budget events consumer failed", zap.Error(err))
+			}
+		}()
+	}
+	if a.crmContacts != nil && a.events != nil {
+		go func() {
+			if err := a.crmContacts.Start(ctx, a.events); err != nil {
+				a.log.Error("crm contact events consumer failed", zap.Error(err))
 			}
 		}()
 	}

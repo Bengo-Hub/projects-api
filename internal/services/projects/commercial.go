@@ -59,9 +59,14 @@ func normalizeCommercial(meta map[string]any) error {
 			meta[idKey], meta[nameKey] = nil, nil
 			continue
 		}
-		if _, err := uuid.Parse(s); err != nil {
+		parsed, err := uuid.Parse(strings.TrimSpace(s))
+		if err != nil {
 			return ErrValidation(fmt.Sprintf("%s must be a UUID", idKey))
 		}
+		// Store the canonical lower-case hyphenated form: uuid.Parse also accepts upper case,
+		// 32 hex digits, {...} and urn:uuid: forms, and the crm-links check matches the
+		// canonical form only.
+		meta[idKey] = parsed.String()
 	}
 	return nil
 }

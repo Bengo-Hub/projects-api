@@ -27,7 +27,16 @@ func TestRoutesMount(t *testing.T) {
 		handlers.NewTenderHandler(log, nil),
 		handlers.NewFinancialsHandler(log, nil),
 		nil, []string{"*"}, nil, nil,
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusTeapot) }),
 	)
+	// The S2S CRM link check is mounted outside the authenticated group and reaches its handler.
+	{
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/api/v1/s2s/acme/crm-links/00000000-0000-0000-0000-000000000001", nil))
+		if w.Code != http.StatusTeapot {
+			t.Errorf("crm-links route not mounted: %d", w.Code)
+		}
+	}
 	// With no tenant header the handler answers 400 (invalid tenant): the route exists.
 	const id = "00000000-0000-0000-0000-000000000001"
 	for _, path := range []string{

@@ -88,6 +88,16 @@ This document provides detailed integration information for all external service
 - `treasury.budget.rejected` - Budget rejected
 - `treasury.voucher.approved` - Voucher approved
 
+### Marketflow CRM
+
+A project keeps its client as a CRM contact id in its metadata (`crm_contact_id`). When a person asks to be erased, marketflow needs to know whether projects still links that contact before it deletes it, so projects answers `GET /api/v1/s2s/{tenant}/crm-links/{contactID}` with `{"referenced": true}` or `{"referenced": false}`. The call carries the shared service key in the `X-API-Key` header (the same `INTERNAL_SERVICE_KEY` the other service-to-service routes use); a missing or wrong key gets 401, and the route is not mounted at all when the service has no key set. The `{tenant}` segment may be the tenant UUID or its slug. Projects has no tenant table of its own, so a UUID is accepted as given and a slug is resolved through auth-api; a slug auth-api does not know gets 404. The contact id is matched in every tenant, because CRM contact ids are random and unique, so a match anywhere is the same person and a tenant mismatch can only make the answer "referenced", which keeps the contact. A contact id that is not a UUID gets 400, and a failed database read gets 500, never "not referenced". The answer is only the flag: no project names, ids or client details are returned, and logs carry ids only. Marketflow reaches projects at `projects-api.projects.svc.cluster.local:4000`.
+
+Projects also keeps a copy of the client's name in the metadata (`crm_contact_name`) so project lists need no CRM call, and clears it when the person is erased or deleted in the CRM. It listens to `crm.contact.deleted` and `crm.contact.updated`, which marketflow publishes with ids only:
+- **Deleted.** `crm_contact_id` and `crm_contact_name` are removed from every project that names the contact, in any tenant. The rest of the metadata stays.
+- **Updated.** The event does not say why the contact changed, so when a project still holds a name for the contact, projects reads the contact back from marketflow (`GET /api/v1/internal/contacts/{id}`, in the event's tenant). If marketflow now holds it as erased (first name "Erased" and no last name, email or phone, which is the minimal record marketflow keeps after an erasure) the copied name is removed from every project that names it, and the link stays so the project still points at the contact. Any other edit changes nothing here: projects does not refresh the name on an ordinary rename. A contact marketflow no longer knows changes nothing either, since its delete event unlinks it.
+- **Retries.** When the database or marketflow cannot answer, the event is redelivered after 30 seconds, up to five deliveries. Both handlers are idempotent: a repeat delivery finds nothing left to change and makes no CRM call. On first start the consumer replays what is still in the stream (three days), so a recent erasure is applied too.
+- Projects are matched on the canonical lower-case contact id, like the link check. Logs carry tenant and contact ids and a project count only.
+
 ### Notifications Service
 
 **Integration Type**: Events (NATS) + REST API
@@ -449,6 +459,10 @@ This document provides detailed integration information for all external service
   }
 }
 ```
+
+**crm.contact.updated and crm.contact.deleted** (marketflow, ids only)
+
+`crm.contact.updated` carries `{"contact_id", "fields"}` and `crm.contact.deleted` carries `{"contact_id"}`, with the tenant on the envelope. `internal/services/crmsync` handles both (durables `projects-crm-contact-updated` and `projects-crm-contact-deleted` on the stream that holds `crm.>`, five deliveries, 30 seconds between retries). See "Marketflow CRM" above for what each one does.
 
 ---
 

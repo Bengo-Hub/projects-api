@@ -31,6 +31,7 @@ func New(
 	allowedOrigins []string,
 	limiter *ratelimit.Limiter,
 	tenantExport http.Handler,
+	crmLinks http.Handler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -52,6 +53,12 @@ func New(
 	// itself (httpware/tenantexport, Options.InternalKey).
 	if tenantExport != nil {
 		r.Get("/api/v1/s2s/tenant-export", tenantExport.ServeHTTP)
+	}
+	// marketflow's "does projects still link this CRM contact" check before it deletes an erased
+	// person's contact. Outside the authenticated /api/v1 group: the handler checks the service key
+	// (X-API-Key = INTERNAL_SERVICE_KEY) itself. Not mounted when no key is configured.
+	if crmLinks != nil {
+		r.Get("/api/v1/s2s/{tenant}/crm-links/{contactID}", crmLinks.ServeHTTP)
 	}
 	r.Get("/readyz", health.Readiness)
 	r.Get("/metrics", health.Metrics)

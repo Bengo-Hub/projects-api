@@ -30,6 +30,24 @@ type Project func(*sql.Selector)
 // ProjectMember is the predicate function for projectmember builders.
 type ProjectMember func(*sql.Selector)
 
+// QACriterion is the predicate function for qacriterion builders.
+type QACriterion func(*sql.Selector)
+
+// QADefect is the predicate function for qadefect builders.
+type QADefect func(*sql.Selector)
+
+// QAInvite is the predicate function for qainvite builders.
+type QAInvite func(*sql.Selector)
+
+// QAResult is the predicate function for qaresult builders.
+type QAResult func(*sql.Selector)
+
+// QASession is the predicate function for qasession builders.
+type QASession func(*sql.Selector)
+
+// QATemplate is the predicate function for qatemplate builders.
+type QATemplate func(*sql.Selector)
+
 // Role is the predicate function for role builders.
 type Role func(*sql.Selector)
 

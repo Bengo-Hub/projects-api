@@ -12,6 +12,8 @@ Welcome to the Projects Service documentation. This service provides world-class
 | [**erd.md**](erd.md) | Complete Entity Relationship Diagram with all database entities, relationships, and pgvector columns |
 | [**integrations.md**](integrations.md) | Detailed integration architecture with internal microservices and external platforms |
 | [**superset-setup.md**](superset-setup.md) | Apache Superset setup, configuration, and dashboard creation guide |
+| [**api.md**](api.md) | API reference for the QA and acceptance module (routes, permissions, events) |
+| [**architecture.md**](architecture.md) | Architecture notes, starting with the QA and acceptance module |
 
 ### Sprint Planning
 

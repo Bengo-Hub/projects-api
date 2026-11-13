@@ -24,6 +24,12 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/permission"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/ent/qacriterion"
+	"github.com/bengobox/projects-service/internal/ent/qadefect"
+	"github.com/bengobox/projects-service/internal/ent/qainvite"
+	"github.com/bengobox/projects-service/internal/ent/qaresult"
+	"github.com/bengobox/projects-service/internal/ent/qasession"
+	"github.com/bengobox/projects-service/internal/ent/qatemplate"
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/task"
@@ -58,6 +64,18 @@ type Client struct {
 	Project *ProjectClient
 	// ProjectMember is the client for interacting with the ProjectMember builders.
 	ProjectMember *ProjectMemberClient
+	// QACriterion is the client for interacting with the QACriterion builders.
+	QACriterion *QACriterionClient
+	// QADefect is the client for interacting with the QADefect builders.
+	QADefect *QADefectClient
+	// QAInvite is the client for interacting with the QAInvite builders.
+	QAInvite *QAInviteClient
+	// QAResult is the client for interacting with the QAResult builders.
+	QAResult *QAResultClient
+	// QASession is the client for interacting with the QASession builders.
+	QASession *QASessionClient
+	// QATemplate is the client for interacting with the QATemplate builders.
+	QATemplate *QATemplateClient
 	// Role is the client for interacting with the Role builders.
 	Role *RoleClient
 	// RolePermission is the client for interacting with the RolePermission builders.
@@ -99,6 +117,12 @@ func (c *Client) init() {
 	c.Permission = NewPermissionClient(c.config)
 	c.Project = NewProjectClient(c.config)
 	c.ProjectMember = NewProjectMemberClient(c.config)
+	c.QACriterion = NewQACriterionClient(c.config)
+	c.QADefect = NewQADefectClient(c.config)
+	c.QAInvite = NewQAInviteClient(c.config)
+	c.QAResult = NewQAResultClient(c.config)
+	c.QASession = NewQASessionClient(c.config)
+	c.QATemplate = NewQATemplateClient(c.config)
 	c.Role = NewRoleClient(c.config)
 	c.RolePermission = NewRolePermissionClient(c.config)
 	c.Task = NewTaskClient(c.config)
@@ -210,6 +234,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Permission:            NewPermissionClient(cfg),
 		Project:               NewProjectClient(cfg),
 		ProjectMember:         NewProjectMemberClient(cfg),
+		QACriterion:           NewQACriterionClient(cfg),
+		QADefect:              NewQADefectClient(cfg),
+		QAInvite:              NewQAInviteClient(cfg),
+		QAResult:              NewQAResultClient(cfg),
+		QASession:             NewQASessionClient(cfg),
+		QATemplate:            NewQATemplateClient(cfg),
 		Role:                  NewRoleClient(cfg),
 		RolePermission:        NewRolePermissionClient(cfg),
 		Task:                  NewTaskClient(cfg),
@@ -248,6 +278,12 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Permission:            NewPermissionClient(cfg),
 		Project:               NewProjectClient(cfg),
 		ProjectMember:         NewProjectMemberClient(cfg),
+		QACriterion:           NewQACriterionClient(cfg),
+		QADefect:              NewQADefectClient(cfg),
+		QAInvite:              NewQAInviteClient(cfg),
+		QAResult:              NewQAResultClient(cfg),
+		QASession:             NewQASessionClient(cfg),
+		QATemplate:            NewQATemplateClient(cfg),
 		Role:                  NewRoleClient(cfg),
 		RolePermission:        NewRolePermissionClient(cfg),
 		Task:                  NewTaskClient(cfg),
@@ -289,7 +325,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Activity, c.Attachment, c.Comment, c.Milestone, c.OutboxEvent, c.Permission,
-		c.Project, c.ProjectMember, c.Role, c.RolePermission, c.Task, c.TaskDependency,
+		c.Project, c.ProjectMember, c.QACriterion, c.QADefect, c.QAInvite, c.QAResult,
+		c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task, c.TaskDependency,
 		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
 		c.TenderEvaluation, c.TenderMeeting, c.UserRole,
 	} {
@@ -302,7 +339,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Activity, c.Attachment, c.Comment, c.Milestone, c.OutboxEvent, c.Permission,
-		c.Project, c.ProjectMember, c.Role, c.RolePermission, c.Task, c.TaskDependency,
+		c.Project, c.ProjectMember, c.QACriterion, c.QADefect, c.QAInvite, c.QAResult,
+		c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task, c.TaskDependency,
 		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
 		c.TenderEvaluation, c.TenderMeeting, c.UserRole,
 	} {
@@ -329,6 +367,18 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Project.mutate(ctx, m)
 	case *ProjectMemberMutation:
 		return c.ProjectMember.mutate(ctx, m)
+	case *QACriterionMutation:
+		return c.QACriterion.mutate(ctx, m)
+	case *QADefectMutation:
+		return c.QADefect.mutate(ctx, m)
+	case *QAInviteMutation:
+		return c.QAInvite.mutate(ctx, m)
+	case *QAResultMutation:
+		return c.QAResult.mutate(ctx, m)
+	case *QASessionMutation:
+		return c.QASession.mutate(ctx, m)
+	case *QATemplateMutation:
+		return c.QATemplate.mutate(ctx, m)
 	case *RoleMutation:
 		return c.Role.mutate(ctx, m)
 	case *RolePermissionMutation:
@@ -1657,6 +1707,836 @@ func (c *ProjectMemberClient) mutate(ctx context.Context, m *ProjectMemberMutati
 		return (&ProjectMemberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ProjectMember mutation op: %q", m.Op())
+	}
+}
+
+// QACriterionClient is a client for the QACriterion schema.
+type QACriterionClient struct {
+	config
+}
+
+// NewQACriterionClient returns a client for the QACriterion from the given config.
+func NewQACriterionClient(c config) *QACriterionClient {
+	return &QACriterionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `qacriterion.Hooks(f(g(h())))`.
+func (c *QACriterionClient) Use(hooks ...Hook) {
+	c.hooks.QACriterion = append(c.hooks.QACriterion, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `qacriterion.Intercept(f(g(h())))`.
+func (c *QACriterionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.QACriterion = append(c.inters.QACriterion, interceptors...)
+}
+
+// Create returns a builder for creating a QACriterion entity.
+func (c *QACriterionClient) Create() *QACriterionCreate {
+	mutation := newQACriterionMutation(c.config, OpCreate)
+	return &QACriterionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of QACriterion entities.
+func (c *QACriterionClient) CreateBulk(builders ...*QACriterionCreate) *QACriterionCreateBulk {
+	return &QACriterionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *QACriterionClient) MapCreateBulk(slice any, setFunc func(*QACriterionCreate, int)) *QACriterionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &QACriterionCreateBulk{err: fmt.Errorf("calling to QACriterionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*QACriterionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &QACriterionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for QACriterion.
+func (c *QACriterionClient) Update() *QACriterionUpdate {
+	mutation := newQACriterionMutation(c.config, OpUpdate)
+	return &QACriterionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *QACriterionClient) UpdateOne(qc *QACriterion) *QACriterionUpdateOne {
+	mutation := newQACriterionMutation(c.config, OpUpdateOne, withQACriterion(qc))
+	return &QACriterionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *QACriterionClient) UpdateOneID(id uuid.UUID) *QACriterionUpdateOne {
+	mutation := newQACriterionMutation(c.config, OpUpdateOne, withQACriterionID(id))
+	return &QACriterionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for QACriterion.
+func (c *QACriterionClient) Delete() *QACriterionDelete {
+	mutation := newQACriterionMutation(c.config, OpDelete)
+	return &QACriterionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *QACriterionClient) DeleteOne(qc *QACriterion) *QACriterionDeleteOne {
+	return c.DeleteOneID(qc.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *QACriterionClient) DeleteOneID(id uuid.UUID) *QACriterionDeleteOne {
+	builder := c.Delete().Where(qacriterion.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &QACriterionDeleteOne{builder}
+}
+
+// Query returns a query builder for QACriterion.
+func (c *QACriterionClient) Query() *QACriterionQuery {
+	return &QACriterionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeQACriterion},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a QACriterion entity by its id.
+func (c *QACriterionClient) Get(ctx context.Context, id uuid.UUID) (*QACriterion, error) {
+	return c.Query().Where(qacriterion.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *QACriterionClient) GetX(ctx context.Context, id uuid.UUID) *QACriterion {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTemplate queries the template edge of a QACriterion.
+func (c *QACriterionClient) QueryTemplate(qc *QACriterion) *QATemplateQuery {
+	query := (&QATemplateClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := qc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(qacriterion.Table, qacriterion.FieldID, id),
+			sqlgraph.To(qatemplate.Table, qatemplate.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, qacriterion.TemplateTable, qacriterion.TemplateColumn),
+		)
+		fromV = sqlgraph.Neighbors(qc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *QACriterionClient) Hooks() []Hook {
+	return c.hooks.QACriterion
+}
+
+// Interceptors returns the client interceptors.
+func (c *QACriterionClient) Interceptors() []Interceptor {
+	return c.inters.QACriterion
+}
+
+func (c *QACriterionClient) mutate(ctx context.Context, m *QACriterionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&QACriterionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&QACriterionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&QACriterionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&QACriterionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown QACriterion mutation op: %q", m.Op())
+	}
+}
+
+// QADefectClient is a client for the QADefect schema.
+type QADefectClient struct {
+	config
+}
+
+// NewQADefectClient returns a client for the QADefect from the given config.
+func NewQADefectClient(c config) *QADefectClient {
+	return &QADefectClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `qadefect.Hooks(f(g(h())))`.
+func (c *QADefectClient) Use(hooks ...Hook) {
+	c.hooks.QADefect = append(c.hooks.QADefect, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `qadefect.Intercept(f(g(h())))`.
+func (c *QADefectClient) Intercept(interceptors ...Interceptor) {
+	c.inters.QADefect = append(c.inters.QADefect, interceptors...)
+}
+
+// Create returns a builder for creating a QADefect entity.
+func (c *QADefectClient) Create() *QADefectCreate {
+	mutation := newQADefectMutation(c.config, OpCreate)
+	return &QADefectCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of QADefect entities.
+func (c *QADefectClient) CreateBulk(builders ...*QADefectCreate) *QADefectCreateBulk {
+	return &QADefectCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *QADefectClient) MapCreateBulk(slice any, setFunc func(*QADefectCreate, int)) *QADefectCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &QADefectCreateBulk{err: fmt.Errorf("calling to QADefectClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*QADefectCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &QADefectCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for QADefect.
+func (c *QADefectClient) Update() *QADefectUpdate {
+	mutation := newQADefectMutation(c.config, OpUpdate)
+	return &QADefectUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *QADefectClient) UpdateOne(qd *QADefect) *QADefectUpdateOne {
+	mutation := newQADefectMutation(c.config, OpUpdateOne, withQADefect(qd))
+	return &QADefectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *QADefectClient) UpdateOneID(id uuid.UUID) *QADefectUpdateOne {
+	mutation := newQADefectMutation(c.config, OpUpdateOne, withQADefectID(id))
+	return &QADefectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for QADefect.
+func (c *QADefectClient) Delete() *QADefectDelete {
+	mutation := newQADefectMutation(c.config, OpDelete)
+	return &QADefectDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *QADefectClient) DeleteOne(qd *QADefect) *QADefectDeleteOne {
+	return c.DeleteOneID(qd.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *QADefectClient) DeleteOneID(id uuid.UUID) *QADefectDeleteOne {
+	builder := c.Delete().Where(qadefect.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &QADefectDeleteOne{builder}
+}
+
+// Query returns a query builder for QADefect.
+func (c *QADefectClient) Query() *QADefectQuery {
+	return &QADefectQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeQADefect},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a QADefect entity by its id.
+func (c *QADefectClient) Get(ctx context.Context, id uuid.UUID) (*QADefect, error) {
+	return c.Query().Where(qadefect.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *QADefectClient) GetX(ctx context.Context, id uuid.UUID) *QADefect {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *QADefectClient) Hooks() []Hook {
+	return c.hooks.QADefect
+}
+
+// Interceptors returns the client interceptors.
+func (c *QADefectClient) Interceptors() []Interceptor {
+	return c.inters.QADefect
+}
+
+func (c *QADefectClient) mutate(ctx context.Context, m *QADefectMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&QADefectCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&QADefectUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&QADefectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&QADefectDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown QADefect mutation op: %q", m.Op())
+	}
+}
+
+// QAInviteClient is a client for the QAInvite schema.
+type QAInviteClient struct {
+	config
+}
+
+// NewQAInviteClient returns a client for the QAInvite from the given config.
+func NewQAInviteClient(c config) *QAInviteClient {
+	return &QAInviteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `qainvite.Hooks(f(g(h())))`.
+func (c *QAInviteClient) Use(hooks ...Hook) {
+	c.hooks.QAInvite = append(c.hooks.QAInvite, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `qainvite.Intercept(f(g(h())))`.
+func (c *QAInviteClient) Intercept(interceptors ...Interceptor) {
+	c.inters.QAInvite = append(c.inters.QAInvite, interceptors...)
+}
+
+// Create returns a builder for creating a QAInvite entity.
+func (c *QAInviteClient) Create() *QAInviteCreate {
+	mutation := newQAInviteMutation(c.config, OpCreate)
+	return &QAInviteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of QAInvite entities.
+func (c *QAInviteClient) CreateBulk(builders ...*QAInviteCreate) *QAInviteCreateBulk {
+	return &QAInviteCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *QAInviteClient) MapCreateBulk(slice any, setFunc func(*QAInviteCreate, int)) *QAInviteCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &QAInviteCreateBulk{err: fmt.Errorf("calling to QAInviteClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*QAInviteCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &QAInviteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for QAInvite.
+func (c *QAInviteClient) Update() *QAInviteUpdate {
+	mutation := newQAInviteMutation(c.config, OpUpdate)
+	return &QAInviteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *QAInviteClient) UpdateOne(qi *QAInvite) *QAInviteUpdateOne {
+	mutation := newQAInviteMutation(c.config, OpUpdateOne, withQAInvite(qi))
+	return &QAInviteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *QAInviteClient) UpdateOneID(id uuid.UUID) *QAInviteUpdateOne {
+	mutation := newQAInviteMutation(c.config, OpUpdateOne, withQAInviteID(id))
+	return &QAInviteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for QAInvite.
+func (c *QAInviteClient) Delete() *QAInviteDelete {
+	mutation := newQAInviteMutation(c.config, OpDelete)
+	return &QAInviteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *QAInviteClient) DeleteOne(qi *QAInvite) *QAInviteDeleteOne {
+	return c.DeleteOneID(qi.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *QAInviteClient) DeleteOneID(id uuid.UUID) *QAInviteDeleteOne {
+	builder := c.Delete().Where(qainvite.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &QAInviteDeleteOne{builder}
+}
+
+// Query returns a query builder for QAInvite.
+func (c *QAInviteClient) Query() *QAInviteQuery {
+	return &QAInviteQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeQAInvite},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a QAInvite entity by its id.
+func (c *QAInviteClient) Get(ctx context.Context, id uuid.UUID) (*QAInvite, error) {
+	return c.Query().Where(qainvite.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *QAInviteClient) GetX(ctx context.Context, id uuid.UUID) *QAInvite {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *QAInviteClient) Hooks() []Hook {
+	return c.hooks.QAInvite
+}
+
+// Interceptors returns the client interceptors.
+func (c *QAInviteClient) Interceptors() []Interceptor {
+	return c.inters.QAInvite
+}
+
+func (c *QAInviteClient) mutate(ctx context.Context, m *QAInviteMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&QAInviteCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&QAInviteUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&QAInviteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&QAInviteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown QAInvite mutation op: %q", m.Op())
+	}
+}
+
+// QAResultClient is a client for the QAResult schema.
+type QAResultClient struct {
+	config
+}
+
+// NewQAResultClient returns a client for the QAResult from the given config.
+func NewQAResultClient(c config) *QAResultClient {
+	return &QAResultClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `qaresult.Hooks(f(g(h())))`.
+func (c *QAResultClient) Use(hooks ...Hook) {
+	c.hooks.QAResult = append(c.hooks.QAResult, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `qaresult.Intercept(f(g(h())))`.
+func (c *QAResultClient) Intercept(interceptors ...Interceptor) {
+	c.inters.QAResult = append(c.inters.QAResult, interceptors...)
+}
+
+// Create returns a builder for creating a QAResult entity.
+func (c *QAResultClient) Create() *QAResultCreate {
+	mutation := newQAResultMutation(c.config, OpCreate)
+	return &QAResultCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of QAResult entities.
+func (c *QAResultClient) CreateBulk(builders ...*QAResultCreate) *QAResultCreateBulk {
+	return &QAResultCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *QAResultClient) MapCreateBulk(slice any, setFunc func(*QAResultCreate, int)) *QAResultCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &QAResultCreateBulk{err: fmt.Errorf("calling to QAResultClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*QAResultCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &QAResultCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for QAResult.
+func (c *QAResultClient) Update() *QAResultUpdate {
+	mutation := newQAResultMutation(c.config, OpUpdate)
+	return &QAResultUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *QAResultClient) UpdateOne(qr *QAResult) *QAResultUpdateOne {
+	mutation := newQAResultMutation(c.config, OpUpdateOne, withQAResult(qr))
+	return &QAResultUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *QAResultClient) UpdateOneID(id uuid.UUID) *QAResultUpdateOne {
+	mutation := newQAResultMutation(c.config, OpUpdateOne, withQAResultID(id))
+	return &QAResultUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for QAResult.
+func (c *QAResultClient) Delete() *QAResultDelete {
+	mutation := newQAResultMutation(c.config, OpDelete)
+	return &QAResultDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *QAResultClient) DeleteOne(qr *QAResult) *QAResultDeleteOne {
+	return c.DeleteOneID(qr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *QAResultClient) DeleteOneID(id uuid.UUID) *QAResultDeleteOne {
+	builder := c.Delete().Where(qaresult.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &QAResultDeleteOne{builder}
+}
+
+// Query returns a query builder for QAResult.
+func (c *QAResultClient) Query() *QAResultQuery {
+	return &QAResultQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeQAResult},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a QAResult entity by its id.
+func (c *QAResultClient) Get(ctx context.Context, id uuid.UUID) (*QAResult, error) {
+	return c.Query().Where(qaresult.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *QAResultClient) GetX(ctx context.Context, id uuid.UUID) *QAResult {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *QAResultClient) Hooks() []Hook {
+	return c.hooks.QAResult
+}
+
+// Interceptors returns the client interceptors.
+func (c *QAResultClient) Interceptors() []Interceptor {
+	return c.inters.QAResult
+}
+
+func (c *QAResultClient) mutate(ctx context.Context, m *QAResultMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&QAResultCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&QAResultUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&QAResultUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&QAResultDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown QAResult mutation op: %q", m.Op())
+	}
+}
+
+// QASessionClient is a client for the QASession schema.
+type QASessionClient struct {
+	config
+}
+
+// NewQASessionClient returns a client for the QASession from the given config.
+func NewQASessionClient(c config) *QASessionClient {
+	return &QASessionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `qasession.Hooks(f(g(h())))`.
+func (c *QASessionClient) Use(hooks ...Hook) {
+	c.hooks.QASession = append(c.hooks.QASession, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `qasession.Intercept(f(g(h())))`.
+func (c *QASessionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.QASession = append(c.inters.QASession, interceptors...)
+}
+
+// Create returns a builder for creating a QASession entity.
+func (c *QASessionClient) Create() *QASessionCreate {
+	mutation := newQASessionMutation(c.config, OpCreate)
+	return &QASessionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of QASession entities.
+func (c *QASessionClient) CreateBulk(builders ...*QASessionCreate) *QASessionCreateBulk {
+	return &QASessionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *QASessionClient) MapCreateBulk(slice any, setFunc func(*QASessionCreate, int)) *QASessionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &QASessionCreateBulk{err: fmt.Errorf("calling to QASessionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*QASessionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &QASessionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for QASession.
+func (c *QASessionClient) Update() *QASessionUpdate {
+	mutation := newQASessionMutation(c.config, OpUpdate)
+	return &QASessionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *QASessionClient) UpdateOne(qs *QASession) *QASessionUpdateOne {
+	mutation := newQASessionMutation(c.config, OpUpdateOne, withQASession(qs))
+	return &QASessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *QASessionClient) UpdateOneID(id uuid.UUID) *QASessionUpdateOne {
+	mutation := newQASessionMutation(c.config, OpUpdateOne, withQASessionID(id))
+	return &QASessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for QASession.
+func (c *QASessionClient) Delete() *QASessionDelete {
+	mutation := newQASessionMutation(c.config, OpDelete)
+	return &QASessionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *QASessionClient) DeleteOne(qs *QASession) *QASessionDeleteOne {
+	return c.DeleteOneID(qs.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *QASessionClient) DeleteOneID(id uuid.UUID) *QASessionDeleteOne {
+	builder := c.Delete().Where(qasession.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &QASessionDeleteOne{builder}
+}
+
+// Query returns a query builder for QASession.
+func (c *QASessionClient) Query() *QASessionQuery {
+	return &QASessionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeQASession},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a QASession entity by its id.
+func (c *QASessionClient) Get(ctx context.Context, id uuid.UUID) (*QASession, error) {
+	return c.Query().Where(qasession.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *QASessionClient) GetX(ctx context.Context, id uuid.UUID) *QASession {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *QASessionClient) Hooks() []Hook {
+	return c.hooks.QASession
+}
+
+// Interceptors returns the client interceptors.
+func (c *QASessionClient) Interceptors() []Interceptor {
+	return c.inters.QASession
+}
+
+func (c *QASessionClient) mutate(ctx context.Context, m *QASessionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&QASessionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&QASessionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&QASessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&QASessionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown QASession mutation op: %q", m.Op())
+	}
+}
+
+// QATemplateClient is a client for the QATemplate schema.
+type QATemplateClient struct {
+	config
+}
+
+// NewQATemplateClient returns a client for the QATemplate from the given config.
+func NewQATemplateClient(c config) *QATemplateClient {
+	return &QATemplateClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `qatemplate.Hooks(f(g(h())))`.
+func (c *QATemplateClient) Use(hooks ...Hook) {
+	c.hooks.QATemplate = append(c.hooks.QATemplate, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `qatemplate.Intercept(f(g(h())))`.
+func (c *QATemplateClient) Intercept(interceptors ...Interceptor) {
+	c.inters.QATemplate = append(c.inters.QATemplate, interceptors...)
+}
+
+// Create returns a builder for creating a QATemplate entity.
+func (c *QATemplateClient) Create() *QATemplateCreate {
+	mutation := newQATemplateMutation(c.config, OpCreate)
+	return &QATemplateCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of QATemplate entities.
+func (c *QATemplateClient) CreateBulk(builders ...*QATemplateCreate) *QATemplateCreateBulk {
+	return &QATemplateCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *QATemplateClient) MapCreateBulk(slice any, setFunc func(*QATemplateCreate, int)) *QATemplateCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &QATemplateCreateBulk{err: fmt.Errorf("calling to QATemplateClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*QATemplateCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &QATemplateCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for QATemplate.
+func (c *QATemplateClient) Update() *QATemplateUpdate {
+	mutation := newQATemplateMutation(c.config, OpUpdate)
+	return &QATemplateUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *QATemplateClient) UpdateOne(qt *QATemplate) *QATemplateUpdateOne {
+	mutation := newQATemplateMutation(c.config, OpUpdateOne, withQATemplate(qt))
+	return &QATemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *QATemplateClient) UpdateOneID(id uuid.UUID) *QATemplateUpdateOne {
+	mutation := newQATemplateMutation(c.config, OpUpdateOne, withQATemplateID(id))
+	return &QATemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for QATemplate.
+func (c *QATemplateClient) Delete() *QATemplateDelete {
+	mutation := newQATemplateMutation(c.config, OpDelete)
+	return &QATemplateDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *QATemplateClient) DeleteOne(qt *QATemplate) *QATemplateDeleteOne {
+	return c.DeleteOneID(qt.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *QATemplateClient) DeleteOneID(id uuid.UUID) *QATemplateDeleteOne {
+	builder := c.Delete().Where(qatemplate.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &QATemplateDeleteOne{builder}
+}
+
+// Query returns a query builder for QATemplate.
+func (c *QATemplateClient) Query() *QATemplateQuery {
+	return &QATemplateQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeQATemplate},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a QATemplate entity by its id.
+func (c *QATemplateClient) Get(ctx context.Context, id uuid.UUID) (*QATemplate, error) {
+	return c.Query().Where(qatemplate.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *QATemplateClient) GetX(ctx context.Context, id uuid.UUID) *QATemplate {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCriteria queries the criteria edge of a QATemplate.
+func (c *QATemplateClient) QueryCriteria(qt *QATemplate) *QACriterionQuery {
+	query := (&QACriterionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := qt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(qatemplate.Table, qatemplate.FieldID, id),
+			sqlgraph.To(qacriterion.Table, qacriterion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, qatemplate.CriteriaTable, qatemplate.CriteriaColumn),
+		)
+		fromV = sqlgraph.Neighbors(qt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *QATemplateClient) Hooks() []Hook {
+	return c.hooks.QATemplate
+}
+
+// Interceptors returns the client interceptors.
+func (c *QATemplateClient) Interceptors() []Interceptor {
+	return c.inters.QATemplate
+}
+
+func (c *QATemplateClient) mutate(ctx context.Context, m *QATemplateMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&QATemplateCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&QATemplateUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&QATemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&QATemplateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown QATemplate mutation op: %q", m.Op())
 	}
 }
 
@@ -3463,13 +4343,15 @@ func (c *UserRoleClient) mutate(ctx context.Context, m *UserRoleMutation) (Value
 type (
 	hooks struct {
 		Activity, Attachment, Comment, Milestone, OutboxEvent, Permission, Project,
-		ProjectMember, Role, RolePermission, Task, TaskDependency, Tender,
+		ProjectMember, QACriterion, QADefect, QAInvite, QAResult, QASession,
+		QATemplate, Role, RolePermission, Task, TaskDependency, Tender,
 		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
 		TenderMeeting, UserRole []ent.Hook
 	}
 	inters struct {
 		Activity, Attachment, Comment, Milestone, OutboxEvent, Permission, Project,
-		ProjectMember, Role, RolePermission, Task, TaskDependency, Tender,
+		ProjectMember, QACriterion, QADefect, QAInvite, QAResult, QASession,
+		QATemplate, Role, RolePermission, Task, TaskDependency, Tender,
 		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
 		TenderMeeting, UserRole []ent.Interceptor
 	}

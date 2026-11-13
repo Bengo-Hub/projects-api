@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -281,6 +282,221 @@ var (
 				Name:    "projectmember_tenant_id_project_id_user_id",
 				Unique:  false,
 				Columns: []*schema.Column{ProjectMembersColumns[1], ProjectMembersColumns[7], ProjectMembersColumns[2]},
+			},
+		},
+	}
+	// QaCriteriaColumns holds the columns for the "qa_criteria" table.
+	QaCriteriaColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "subject_kind", Type: field.TypeString, Default: "none"},
+		{Name: "subject_ref", Type: field.TypeString, Nullable: true, Size: 200},
+		{Name: "area_code", Type: field.TypeString, Nullable: true, Size: 32},
+		{Name: "title", Type: field.TypeString, Size: 300},
+		{Name: "requirement_ref", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "preconditions", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "steps", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "expected_result", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "weight", Type: field.TypeString, Default: "must"},
+		{Name: "automated_ref", Type: field.TypeString, Nullable: true, Size: 300},
+		{Name: "sort_order", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "template_id", Type: field.TypeUUID},
+	}
+	// QaCriteriaTable holds the schema information for the "qa_criteria" table.
+	QaCriteriaTable = &schema.Table{
+		Name:       "qa_criteria",
+		Columns:    QaCriteriaColumns,
+		PrimaryKey: []*schema.Column{QaCriteriaColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "qa_criteria_qa_templates_criteria",
+				Columns:    []*schema.Column{QaCriteriaColumns[15]},
+				RefColumns: []*schema.Column{QaTemplatesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "qacriterion_template_id_sort_order",
+				Unique:  false,
+				Columns: []*schema.Column{QaCriteriaColumns[15], QaCriteriaColumns[12]},
+			},
+			{
+				Name:    "qacriterion_subject_kind_subject_ref",
+				Unique:  false,
+				Columns: []*schema.Column{QaCriteriaColumns[2], QaCriteriaColumns[3]},
+			},
+		},
+	}
+	// QaDefectsColumns holds the columns for the "qa_defects" table.
+	QaDefectsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "session_id", Type: field.TypeUUID},
+		{Name: "criterion_id", Type: field.TypeUUID},
+		{Name: "first_result_id", Type: field.TypeUUID},
+		{Name: "severity", Type: field.TypeInt},
+		{Name: "status", Type: field.TypeString, Default: "open"},
+		{Name: "ticket_id", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "ticket_number", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "last_error", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// QaDefectsTable holds the schema information for the "qa_defects" table.
+	QaDefectsTable = &schema.Table{
+		Name:       "qa_defects",
+		Columns:    QaDefectsColumns,
+		PrimaryKey: []*schema.Column{QaDefectsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "qadefect_session_id_criterion_id",
+				Unique:  true,
+				Columns: []*schema.Column{QaDefectsColumns[2], QaDefectsColumns[3]},
+			},
+		},
+	}
+	// QaInvitesColumns holds the columns for the "qa_invites" table.
+	QaInvitesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "session_id", Type: field.TypeUUID},
+		{Name: "email_hash", Type: field.TypeString, Size: 64},
+		{Name: "email_hint", Type: field.TypeString, Nullable: true, Size: 200},
+		{Name: "email_enc", Type: field.TypeString, Nullable: true, Size: 1000},
+		{Name: "name", Type: field.TypeString, Nullable: true, Size: 200},
+		{Name: "role", Type: field.TypeString, Default: "tester"},
+		{Name: "status", Type: field.TypeString, Default: "invited"},
+		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
+		{Name: "invited_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// QaInvitesTable holds the schema information for the "qa_invites" table.
+	QaInvitesTable = &schema.Table{
+		Name:       "qa_invites",
+		Columns:    QaInvitesColumns,
+		PrimaryKey: []*schema.Column{QaInvitesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "qainvite_session_id_email_hash",
+				Unique:  true,
+				Columns: []*schema.Column{QaInvitesColumns[2], QaInvitesColumns[3]},
+			},
+		},
+	}
+	// QaResultsColumns holds the columns for the "qa_results" table.
+	QaResultsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "session_id", Type: field.TypeUUID},
+		{Name: "criterion_id", Type: field.TypeUUID},
+		{Name: "tester_key", Type: field.TypeString, Size: 64},
+		{Name: "tester_hint", Type: field.TypeString, Nullable: true, Size: 200},
+		{Name: "tester_user_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "invite_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "result", Type: field.TypeString},
+		{Name: "severity", Type: field.TypeInt, Nullable: true},
+		{Name: "device", Type: field.TypeString, Nullable: true, Size: 200},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "evidence_keys", Type: field.TypeJSON, Nullable: true},
+		{Name: "defect_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "is_current", Type: field.TypeBool, Default: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// QaResultsTable holds the schema information for the "qa_results" table.
+	QaResultsTable = &schema.Table{
+		Name:       "qa_results",
+		Columns:    QaResultsColumns,
+		PrimaryKey: []*schema.Column{QaResultsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "qaresult_session_id_criterion_id_tester_key",
+				Unique:  true,
+				Columns: []*schema.Column{QaResultsColumns[2], QaResultsColumns[3], QaResultsColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "is_current",
+				},
+			},
+			{
+				Name:    "qaresult_session_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{QaResultsColumns[2], QaResultsColumns[15]},
+			},
+		},
+	}
+	// QaSessionsColumns holds the columns for the "qa_sessions" table.
+	QaSessionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "template_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "template_version", Type: field.TypeInt, Default: 1},
+		{Name: "title", Type: field.TypeString, Size: 200},
+		{Name: "subject_kind", Type: field.TypeString, Default: "general"},
+		{Name: "subject_ref", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "criteria_snapshot", Type: field.TypeJSON, Nullable: true},
+		{Name: "pass_rule", Type: field.TypeJSON, Nullable: true},
+		{Name: "status", Type: field.TypeString, Default: "draft"},
+		{Name: "share_code", Type: field.TypeString, Unique: true},
+		{Name: "owner_id", Type: field.TypeUUID},
+		{Name: "opened_at", Type: field.TypeTime, Nullable: true},
+		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "document_hash", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// QaSessionsTable holds the schema information for the "qa_sessions" table.
+	QaSessionsTable = &schema.Table{
+		Name:       "qa_sessions",
+		Columns:    QaSessionsColumns,
+		PrimaryKey: []*schema.Column{QaSessionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "qasession_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{QaSessionsColumns[1], QaSessionsColumns[16]},
+			},
+			{
+				Name:    "qasession_tenant_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{QaSessionsColumns[1], QaSessionsColumns[9]},
+			},
+		},
+	}
+	// QaTemplatesColumns holds the columns for the "qa_templates" table.
+	QaTemplatesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "name", Type: field.TypeString, Size: 200},
+		{Name: "kind", Type: field.TypeString, Default: "software"},
+		{Name: "service_tag", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "version", Type: field.TypeInt, Default: 1},
+		{Name: "status", Type: field.TypeString, Default: "draft"},
+		{Name: "needs_review", Type: field.TypeBool, Default: false},
+		{Name: "pass_rule", Type: field.TypeJSON, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// QaTemplatesTable holds the schema information for the "qa_templates" table.
+	QaTemplatesTable = &schema.Table{
+		Name:       "qa_templates",
+		Columns:    QaTemplatesColumns,
+		PrimaryKey: []*schema.Column{QaTemplatesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "qatemplate_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{QaTemplatesColumns[1], QaTemplatesColumns[11]},
+			},
+			{
+				Name:    "qatemplate_service_tag",
+				Unique:  false,
+				Columns: []*schema.Column{QaTemplatesColumns[4]},
 			},
 		},
 	}
@@ -656,6 +872,12 @@ var (
 		PermissionsTable,
 		ProjectsTable,
 		ProjectMembersTable,
+		QaCriteriaTable,
+		QaDefectsTable,
+		QaInvitesTable,
+		QaResultsTable,
+		QaSessionsTable,
+		QaTemplatesTable,
 		RolesTable,
 		RolePermissionsTable,
 		TasksTable,
@@ -679,6 +901,25 @@ func init() {
 	CommentsTable.ForeignKeys[1].RefTable = TasksTable
 	MilestonesTable.ForeignKeys[0].RefTable = ProjectsTable
 	ProjectMembersTable.ForeignKeys[0].RefTable = ProjectsTable
+	QaCriteriaTable.ForeignKeys[0].RefTable = QaTemplatesTable
+	QaCriteriaTable.Annotation = &entsql.Annotation{
+		Table: "qa_criteria",
+	}
+	QaDefectsTable.Annotation = &entsql.Annotation{
+		Table: "qa_defects",
+	}
+	QaInvitesTable.Annotation = &entsql.Annotation{
+		Table: "qa_invites",
+	}
+	QaResultsTable.Annotation = &entsql.Annotation{
+		Table: "qa_results",
+	}
+	QaSessionsTable.Annotation = &entsql.Annotation{
+		Table: "qa_sessions",
+	}
+	QaTemplatesTable.Annotation = &entsql.Annotation{
+		Table: "qa_templates",
+	}
 	RolePermissionsTable.ForeignKeys[0].RefTable = PermissionsTable
 	RolePermissionsTable.ForeignKeys[1].RefTable = RolesTable
 	TasksTable.ForeignKeys[0].RefTable = ProjectsTable

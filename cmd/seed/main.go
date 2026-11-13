@@ -45,9 +45,11 @@ func main() {
 		description string
 		permissions []string
 	}{
-		{"admin", "Admin", "Full access to all projects and settings", []string{"projects:read", "projects:write", "projects:delete", "projects:manage"}},
-		{"member", "Member", "Can create and manage assigned projects", []string{"projects:read", "projects:write"}},
-		{"viewer", "Viewer", "Read-only access to projects", []string{"projects:read"}},
+		// QA and acceptance codes (projects.qa.view, run, manage) are also carried in the auth-api
+		// token; tenant admins pass without them.
+		{"admin", "Admin", "Full access to all projects and settings", []string{"projects:read", "projects:write", "projects:delete", "projects:manage", "projects.qa.view", "projects.qa.run", "projects.qa.manage"}},
+		{"member", "Member", "Can create and manage assigned projects", []string{"projects:read", "projects:write", "projects.qa.view", "projects.qa.run"}},
+		{"viewer", "Viewer", "Read-only access to projects", []string{"projects:read", "projects.qa.view"}},
 	}
 
 	for _, r := range defaultRoles {

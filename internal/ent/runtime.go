@@ -13,6 +13,12 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/permission"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/ent/qacriterion"
+	"github.com/bengobox/projects-service/internal/ent/qadefect"
+	"github.com/bengobox/projects-service/internal/ent/qainvite"
+	"github.com/bengobox/projects-service/internal/ent/qaresult"
+	"github.com/bengobox/projects-service/internal/ent/qasession"
+	"github.com/bengobox/projects-service/internal/ent/qatemplate"
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/schema"
@@ -194,6 +200,306 @@ func init() {
 	projectmemberDescID := projectmemberFields[0].Descriptor()
 	// projectmember.DefaultID holds the default value on creation for the id field.
 	projectmember.DefaultID = projectmemberDescID.Default.(func() uuid.UUID)
+	qacriterionFields := schema.QACriterion{}.Fields()
+	_ = qacriterionFields
+	// qacriterionDescSubjectKind is the schema descriptor for subject_kind field.
+	qacriterionDescSubjectKind := qacriterionFields[3].Descriptor()
+	// qacriterion.DefaultSubjectKind holds the default value on creation for the subject_kind field.
+	qacriterion.DefaultSubjectKind = qacriterionDescSubjectKind.Default.(string)
+	// qacriterionDescSubjectRef is the schema descriptor for subject_ref field.
+	qacriterionDescSubjectRef := qacriterionFields[4].Descriptor()
+	// qacriterion.SubjectRefValidator is a validator for the "subject_ref" field. It is called by the builders before save.
+	qacriterion.SubjectRefValidator = qacriterionDescSubjectRef.Validators[0].(func(string) error)
+	// qacriterionDescAreaCode is the schema descriptor for area_code field.
+	qacriterionDescAreaCode := qacriterionFields[5].Descriptor()
+	// qacriterion.AreaCodeValidator is a validator for the "area_code" field. It is called by the builders before save.
+	qacriterion.AreaCodeValidator = qacriterionDescAreaCode.Validators[0].(func(string) error)
+	// qacriterionDescTitle is the schema descriptor for title field.
+	qacriterionDescTitle := qacriterionFields[6].Descriptor()
+	// qacriterion.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	qacriterion.TitleValidator = func() func(string) error {
+		validators := qacriterionDescTitle.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(title string) error {
+			for _, fn := range fns {
+				if err := fn(title); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// qacriterionDescRequirementRef is the schema descriptor for requirement_ref field.
+	qacriterionDescRequirementRef := qacriterionFields[7].Descriptor()
+	// qacriterion.RequirementRefValidator is a validator for the "requirement_ref" field. It is called by the builders before save.
+	qacriterion.RequirementRefValidator = qacriterionDescRequirementRef.Validators[0].(func(string) error)
+	// qacriterionDescWeight is the schema descriptor for weight field.
+	qacriterionDescWeight := qacriterionFields[11].Descriptor()
+	// qacriterion.DefaultWeight holds the default value on creation for the weight field.
+	qacriterion.DefaultWeight = qacriterionDescWeight.Default.(string)
+	// qacriterionDescAutomatedRef is the schema descriptor for automated_ref field.
+	qacriterionDescAutomatedRef := qacriterionFields[12].Descriptor()
+	// qacriterion.AutomatedRefValidator is a validator for the "automated_ref" field. It is called by the builders before save.
+	qacriterion.AutomatedRefValidator = qacriterionDescAutomatedRef.Validators[0].(func(string) error)
+	// qacriterionDescSortOrder is the schema descriptor for sort_order field.
+	qacriterionDescSortOrder := qacriterionFields[13].Descriptor()
+	// qacriterion.DefaultSortOrder holds the default value on creation for the sort_order field.
+	qacriterion.DefaultSortOrder = qacriterionDescSortOrder.Default.(int)
+	// qacriterionDescCreatedAt is the schema descriptor for created_at field.
+	qacriterionDescCreatedAt := qacriterionFields[14].Descriptor()
+	// qacriterion.DefaultCreatedAt holds the default value on creation for the created_at field.
+	qacriterion.DefaultCreatedAt = qacriterionDescCreatedAt.Default.(func() time.Time)
+	// qacriterionDescUpdatedAt is the schema descriptor for updated_at field.
+	qacriterionDescUpdatedAt := qacriterionFields[15].Descriptor()
+	// qacriterion.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	qacriterion.DefaultUpdatedAt = qacriterionDescUpdatedAt.Default.(func() time.Time)
+	// qacriterion.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	qacriterion.UpdateDefaultUpdatedAt = qacriterionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// qacriterionDescID is the schema descriptor for id field.
+	qacriterionDescID := qacriterionFields[0].Descriptor()
+	// qacriterion.DefaultID holds the default value on creation for the id field.
+	qacriterion.DefaultID = qacriterionDescID.Default.(func() uuid.UUID)
+	qadefectFields := schema.QADefect{}.Fields()
+	_ = qadefectFields
+	// qadefectDescStatus is the schema descriptor for status field.
+	qadefectDescStatus := qadefectFields[6].Descriptor()
+	// qadefect.DefaultStatus holds the default value on creation for the status field.
+	qadefect.DefaultStatus = qadefectDescStatus.Default.(string)
+	// qadefectDescTicketID is the schema descriptor for ticket_id field.
+	qadefectDescTicketID := qadefectFields[7].Descriptor()
+	// qadefect.TicketIDValidator is a validator for the "ticket_id" field. It is called by the builders before save.
+	qadefect.TicketIDValidator = qadefectDescTicketID.Validators[0].(func(string) error)
+	// qadefectDescTicketNumber is the schema descriptor for ticket_number field.
+	qadefectDescTicketNumber := qadefectFields[8].Descriptor()
+	// qadefect.TicketNumberValidator is a validator for the "ticket_number" field. It is called by the builders before save.
+	qadefect.TicketNumberValidator = qadefectDescTicketNumber.Validators[0].(func(string) error)
+	// qadefectDescLastError is the schema descriptor for last_error field.
+	qadefectDescLastError := qadefectFields[9].Descriptor()
+	// qadefect.LastErrorValidator is a validator for the "last_error" field. It is called by the builders before save.
+	qadefect.LastErrorValidator = qadefectDescLastError.Validators[0].(func(string) error)
+	// qadefectDescCreatedAt is the schema descriptor for created_at field.
+	qadefectDescCreatedAt := qadefectFields[10].Descriptor()
+	// qadefect.DefaultCreatedAt holds the default value on creation for the created_at field.
+	qadefect.DefaultCreatedAt = qadefectDescCreatedAt.Default.(func() time.Time)
+	// qadefectDescUpdatedAt is the schema descriptor for updated_at field.
+	qadefectDescUpdatedAt := qadefectFields[11].Descriptor()
+	// qadefect.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	qadefect.DefaultUpdatedAt = qadefectDescUpdatedAt.Default.(func() time.Time)
+	// qadefect.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	qadefect.UpdateDefaultUpdatedAt = qadefectDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// qadefectDescID is the schema descriptor for id field.
+	qadefectDescID := qadefectFields[0].Descriptor()
+	// qadefect.DefaultID holds the default value on creation for the id field.
+	qadefect.DefaultID = qadefectDescID.Default.(func() uuid.UUID)
+	qainviteFields := schema.QAInvite{}.Fields()
+	_ = qainviteFields
+	// qainviteDescEmailHash is the schema descriptor for email_hash field.
+	qainviteDescEmailHash := qainviteFields[3].Descriptor()
+	// qainvite.EmailHashValidator is a validator for the "email_hash" field. It is called by the builders before save.
+	qainvite.EmailHashValidator = func() func(string) error {
+		validators := qainviteDescEmailHash.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(email_hash string) error {
+			for _, fn := range fns {
+				if err := fn(email_hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// qainviteDescEmailHint is the schema descriptor for email_hint field.
+	qainviteDescEmailHint := qainviteFields[4].Descriptor()
+	// qainvite.EmailHintValidator is a validator for the "email_hint" field. It is called by the builders before save.
+	qainvite.EmailHintValidator = qainviteDescEmailHint.Validators[0].(func(string) error)
+	// qainviteDescEmailEnc is the schema descriptor for email_enc field.
+	qainviteDescEmailEnc := qainviteFields[5].Descriptor()
+	// qainvite.EmailEncValidator is a validator for the "email_enc" field. It is called by the builders before save.
+	qainvite.EmailEncValidator = qainviteDescEmailEnc.Validators[0].(func(string) error)
+	// qainviteDescName is the schema descriptor for name field.
+	qainviteDescName := qainviteFields[6].Descriptor()
+	// qainvite.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	qainvite.NameValidator = qainviteDescName.Validators[0].(func(string) error)
+	// qainviteDescRole is the schema descriptor for role field.
+	qainviteDescRole := qainviteFields[7].Descriptor()
+	// qainvite.DefaultRole holds the default value on creation for the role field.
+	qainvite.DefaultRole = qainviteDescRole.Default.(string)
+	// qainviteDescStatus is the schema descriptor for status field.
+	qainviteDescStatus := qainviteFields[8].Descriptor()
+	// qainvite.DefaultStatus holds the default value on creation for the status field.
+	qainvite.DefaultStatus = qainviteDescStatus.Default.(string)
+	// qainviteDescCreatedAt is the schema descriptor for created_at field.
+	qainviteDescCreatedAt := qainviteFields[11].Descriptor()
+	// qainvite.DefaultCreatedAt holds the default value on creation for the created_at field.
+	qainvite.DefaultCreatedAt = qainviteDescCreatedAt.Default.(func() time.Time)
+	// qainviteDescUpdatedAt is the schema descriptor for updated_at field.
+	qainviteDescUpdatedAt := qainviteFields[12].Descriptor()
+	// qainvite.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	qainvite.DefaultUpdatedAt = qainviteDescUpdatedAt.Default.(func() time.Time)
+	// qainvite.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	qainvite.UpdateDefaultUpdatedAt = qainviteDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// qainviteDescID is the schema descriptor for id field.
+	qainviteDescID := qainviteFields[0].Descriptor()
+	// qainvite.DefaultID holds the default value on creation for the id field.
+	qainvite.DefaultID = qainviteDescID.Default.(func() uuid.UUID)
+	qaresultFields := schema.QAResult{}.Fields()
+	_ = qaresultFields
+	// qaresultDescTesterKey is the schema descriptor for tester_key field.
+	qaresultDescTesterKey := qaresultFields[4].Descriptor()
+	// qaresult.TesterKeyValidator is a validator for the "tester_key" field. It is called by the builders before save.
+	qaresult.TesterKeyValidator = func() func(string) error {
+		validators := qaresultDescTesterKey.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(tester_key string) error {
+			for _, fn := range fns {
+				if err := fn(tester_key); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// qaresultDescTesterHint is the schema descriptor for tester_hint field.
+	qaresultDescTesterHint := qaresultFields[5].Descriptor()
+	// qaresult.TesterHintValidator is a validator for the "tester_hint" field. It is called by the builders before save.
+	qaresult.TesterHintValidator = qaresultDescTesterHint.Validators[0].(func(string) error)
+	// qaresultDescDevice is the schema descriptor for device field.
+	qaresultDescDevice := qaresultFields[10].Descriptor()
+	// qaresult.DeviceValidator is a validator for the "device" field. It is called by the builders before save.
+	qaresult.DeviceValidator = qaresultDescDevice.Validators[0].(func(string) error)
+	// qaresultDescIsCurrent is the schema descriptor for is_current field.
+	qaresultDescIsCurrent := qaresultFields[14].Descriptor()
+	// qaresult.DefaultIsCurrent holds the default value on creation for the is_current field.
+	qaresult.DefaultIsCurrent = qaresultDescIsCurrent.Default.(bool)
+	// qaresultDescCreatedAt is the schema descriptor for created_at field.
+	qaresultDescCreatedAt := qaresultFields[15].Descriptor()
+	// qaresult.DefaultCreatedAt holds the default value on creation for the created_at field.
+	qaresult.DefaultCreatedAt = qaresultDescCreatedAt.Default.(func() time.Time)
+	// qaresultDescID is the schema descriptor for id field.
+	qaresultDescID := qaresultFields[0].Descriptor()
+	// qaresult.DefaultID holds the default value on creation for the id field.
+	qaresult.DefaultID = qaresultDescID.Default.(func() uuid.UUID)
+	qasessionFields := schema.QASession{}.Fields()
+	_ = qasessionFields
+	// qasessionDescTemplateVersion is the schema descriptor for template_version field.
+	qasessionDescTemplateVersion := qasessionFields[3].Descriptor()
+	// qasession.DefaultTemplateVersion holds the default value on creation for the template_version field.
+	qasession.DefaultTemplateVersion = qasessionDescTemplateVersion.Default.(int)
+	// qasessionDescTitle is the schema descriptor for title field.
+	qasessionDescTitle := qasessionFields[4].Descriptor()
+	// qasession.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	qasession.TitleValidator = func() func(string) error {
+		validators := qasessionDescTitle.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(title string) error {
+			for _, fn := range fns {
+				if err := fn(title); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// qasessionDescSubjectKind is the schema descriptor for subject_kind field.
+	qasessionDescSubjectKind := qasessionFields[5].Descriptor()
+	// qasession.DefaultSubjectKind holds the default value on creation for the subject_kind field.
+	qasession.DefaultSubjectKind = qasessionDescSubjectKind.Default.(string)
+	// qasessionDescSubjectRef is the schema descriptor for subject_ref field.
+	qasessionDescSubjectRef := qasessionFields[6].Descriptor()
+	// qasession.SubjectRefValidator is a validator for the "subject_ref" field. It is called by the builders before save.
+	qasession.SubjectRefValidator = qasessionDescSubjectRef.Validators[0].(func(string) error)
+	// qasessionDescStatus is the schema descriptor for status field.
+	qasessionDescStatus := qasessionFields[9].Descriptor()
+	// qasession.DefaultStatus holds the default value on creation for the status field.
+	qasession.DefaultStatus = qasessionDescStatus.Default.(string)
+	// qasessionDescShareCode is the schema descriptor for share_code field.
+	qasessionDescShareCode := qasessionFields[10].Descriptor()
+	// qasession.ShareCodeValidator is a validator for the "share_code" field. It is called by the builders before save.
+	qasession.ShareCodeValidator = qasessionDescShareCode.Validators[0].(func(string) error)
+	// qasessionDescDocumentHash is the schema descriptor for document_hash field.
+	qasessionDescDocumentHash := qasessionFields[14].Descriptor()
+	// qasession.DocumentHashValidator is a validator for the "document_hash" field. It is called by the builders before save.
+	qasession.DocumentHashValidator = qasessionDescDocumentHash.Validators[0].(func(string) error)
+	// qasessionDescCreatedAt is the schema descriptor for created_at field.
+	qasessionDescCreatedAt := qasessionFields[16].Descriptor()
+	// qasession.DefaultCreatedAt holds the default value on creation for the created_at field.
+	qasession.DefaultCreatedAt = qasessionDescCreatedAt.Default.(func() time.Time)
+	// qasessionDescUpdatedAt is the schema descriptor for updated_at field.
+	qasessionDescUpdatedAt := qasessionFields[17].Descriptor()
+	// qasession.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	qasession.DefaultUpdatedAt = qasessionDescUpdatedAt.Default.(func() time.Time)
+	// qasession.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	qasession.UpdateDefaultUpdatedAt = qasessionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// qasessionDescID is the schema descriptor for id field.
+	qasessionDescID := qasessionFields[0].Descriptor()
+	// qasession.DefaultID holds the default value on creation for the id field.
+	qasession.DefaultID = qasessionDescID.Default.(func() uuid.UUID)
+	qatemplateFields := schema.QATemplate{}.Fields()
+	_ = qatemplateFields
+	// qatemplateDescName is the schema descriptor for name field.
+	qatemplateDescName := qatemplateFields[2].Descriptor()
+	// qatemplate.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	qatemplate.NameValidator = func() func(string) error {
+		validators := qatemplateDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// qatemplateDescKind is the schema descriptor for kind field.
+	qatemplateDescKind := qatemplateFields[3].Descriptor()
+	// qatemplate.DefaultKind holds the default value on creation for the kind field.
+	qatemplate.DefaultKind = qatemplateDescKind.Default.(string)
+	// qatemplateDescServiceTag is the schema descriptor for service_tag field.
+	qatemplateDescServiceTag := qatemplateFields[4].Descriptor()
+	// qatemplate.ServiceTagValidator is a validator for the "service_tag" field. It is called by the builders before save.
+	qatemplate.ServiceTagValidator = qatemplateDescServiceTag.Validators[0].(func(string) error)
+	// qatemplateDescVersion is the schema descriptor for version field.
+	qatemplateDescVersion := qatemplateFields[5].Descriptor()
+	// qatemplate.DefaultVersion holds the default value on creation for the version field.
+	qatemplate.DefaultVersion = qatemplateDescVersion.Default.(int)
+	// qatemplateDescStatus is the schema descriptor for status field.
+	qatemplateDescStatus := qatemplateFields[6].Descriptor()
+	// qatemplate.DefaultStatus holds the default value on creation for the status field.
+	qatemplate.DefaultStatus = qatemplateDescStatus.Default.(string)
+	// qatemplateDescNeedsReview is the schema descriptor for needs_review field.
+	qatemplateDescNeedsReview := qatemplateFields[7].Descriptor()
+	// qatemplate.DefaultNeedsReview holds the default value on creation for the needs_review field.
+	qatemplate.DefaultNeedsReview = qatemplateDescNeedsReview.Default.(bool)
+	// qatemplateDescCreatedAt is the schema descriptor for created_at field.
+	qatemplateDescCreatedAt := qatemplateFields[11].Descriptor()
+	// qatemplate.DefaultCreatedAt holds the default value on creation for the created_at field.
+	qatemplate.DefaultCreatedAt = qatemplateDescCreatedAt.Default.(func() time.Time)
+	// qatemplateDescUpdatedAt is the schema descriptor for updated_at field.
+	qatemplateDescUpdatedAt := qatemplateFields[12].Descriptor()
+	// qatemplate.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	qatemplate.DefaultUpdatedAt = qatemplateDescUpdatedAt.Default.(func() time.Time)
+	// qatemplate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	qatemplate.UpdateDefaultUpdatedAt = qatemplateDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// qatemplateDescID is the schema descriptor for id field.
+	qatemplateDescID := qatemplateFields[0].Descriptor()
+	// qatemplate.DefaultID holds the default value on creation for the id field.
+	qatemplate.DefaultID = qatemplateDescID.Default.(func() uuid.UUID)
 	roleFields := schema.Role{}.Fields()
 	_ = roleFields
 	// roleDescName is the schema descriptor for name field.

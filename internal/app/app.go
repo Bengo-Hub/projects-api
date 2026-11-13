@@ -6,6 +6,7 @@ import (
 	"fmt"
 	ratelimit "github.com/Bengo-Hub/shared-ratelimit"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,10 +23,14 @@ import (
 	"github.com/bengobox/projects-service/internal/ent"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 	router "github.com/bengobox/projects-service/internal/http/router"
+	"github.com/bengobox/projects-service/internal/platform/authotp"
+	"github.com/bengobox/projects-service/internal/platform/authusers"
+	"github.com/bengobox/projects-service/internal/platform/catalog"
 	"github.com/bengobox/projects-service/internal/platform/database"
 	"github.com/bengobox/projects-service/internal/platform/erp"
 	"github.com/bengobox/projects-service/internal/platform/events"
 	"github.com/bengobox/projects-service/internal/platform/marketflow"
+	"github.com/bengobox/projects-service/internal/platform/ticketing"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/crmsync"
@@ -33,10 +38,12 @@ import (
 	"github.com/bengobox/projects-service/internal/services/members"
 	"github.com/bengobox/projects-service/internal/services/milestones"
 	projectssvc "github.com/bengobox/projects-service/internal/services/projects"
+	"github.com/bengobox/projects-service/internal/services/qa"
 	"github.com/bengobox/projects-service/internal/services/rbac"
 	"github.com/bengobox/projects-service/internal/services/tasks"
 	"github.com/bengobox/projects-service/internal/services/tenders"
 	"github.com/bengobox/projects-service/internal/services/usersync"
+	"github.com/bengobox/projects-service/internal/shared/fieldcrypt"
 	"github.com/bengobox/projects-service/internal/shared/logger"
 
 	"database/sql"
@@ -58,6 +65,8 @@ type App struct {
 	budgetEvents       *financials.BudgetEventsConsumer
 	// crmContacts clears a project's copied client name when the CRM contact is erased or deleted.
 	crmContacts *crmsync.ContactEventsConsumer
+	// qaFeatures flags QA templates for review when a catalogue feature they check changes.
+	qaFeatures *qa.FeatureEventsConsumer
 }
 
 // tenantExportHandler serves auth-api's SSO tenant backups (httpware/tenantexport). Nil without an
@@ -173,6 +182,36 @@ func New(ctx context.Context) (*App, error) {
 	// Project form pickers: the client from the CRM (marketflow), the cost centre from treasury.
 	projectHandler.WithLookups(marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey), treasuryClient)
 
+	// QA and acceptance: templates, sessions, invitees, results, defects and the report.
+	// In production QA_HASH_KEY is required: the fallback to INTERNAL_SERVICE_KEY would let any
+	// service holding that fleet-wide key forge invitee access tokens, and a random key would
+	// break invites across replicas. The fallback stays for local development only.
+	if strings.EqualFold(cfg.App.Env, "production") && strings.TrimSpace(cfg.QA.HashKey) == "" {
+		return nil, fmt.Errorf("QA_HASH_KEY is required in production (QA invitee tokens and email hashes)")
+	}
+	qaKeys, ephemeral := qa.NewKeys(cfg.QA.HashKey, cfg.Auth.APIKey)
+	if ephemeral {
+		log.Warn("QA_HASH_KEY and INTERNAL_SERVICE_KEY are both empty; QA invites will not survive a restart")
+	}
+	qaService := qa.NewService(entClient, qaKeys, log).
+		WithPublisher(events.NewPublisher(runtimeSQLDB, log)).
+		WithTickets(ticketing.NewClient(cfg.Services.TicketingURL, cfg.Auth.APIKey, log)).
+		WithCatalog(catalog.New(cfg.QA.CatalogEnabled, cfg.Services.SubscriptionsURL, cfg.Auth.APIKey, log)).
+		WithOTP(authotp.NewClient(cfg.Auth.ServiceURL, cfg.Auth.APIKey)).
+		WithUIBaseURL(cfg.QA.UIBaseURL).
+		WithAccessTTL(cfg.QA.AccessTTL).
+		WithDirectory(authusers.New(cfg.Auth.ServiceURL, cfg.Auth.APIKey, cacheClient, log))
+	// Signer addresses are sealed at rest for the close and decision notices.
+	if box, err := fieldcrypt.New(cfg.QA.FieldEncryptionKey); err == nil {
+		qaService.WithSealer(box)
+	} else {
+		log.Warn("FIELD_ENCRYPTION_KEY not set; QA signers will not get close and decision notices")
+	}
+	qaRoutes := router.QARoutes{
+		Tenant:  handlers.NewQAHandler(log, qaService),
+		Invitee: handlers.NewQAInviteeHandler(log, qaService, cfg.QA.CookieSecure),
+	}
+
 	// Initialize auth-service JWT validator
 	var authMiddleware *authclient.AuthMiddleware
 	authConfig := authclient.DefaultConfig(
@@ -227,7 +266,8 @@ func New(ctx context.Context) (*App, error) {
 		commentHandler, activityHandler, tenderHandler, financialsHandler,
 		authMiddleware, cfg.HTTP.AllowedOrigins, ratelimit.NewLimiter(redisClient, log, "projects"),
 		tenantExportHandler(runtimeSQLDB, cfg.Auth.APIKey),
-		crmLinksHandler(entClient, cacheClient, cfg.Auth.ServiceURL, cfg.Auth.APIKey, log))
+		crmLinksHandler(entClient, cacheClient, cfg.Auth.ServiceURL, cfg.Auth.APIKey, log),
+		qaRoutes)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
@@ -250,6 +290,7 @@ func New(ctx context.Context) (*App, error) {
 		// Project.budget follows the approved treasury project budget (treasury.budget.approved).
 		budgetEvents: financials.NewBudgetEventsConsumer(entClient, log),
 		crmContacts:  crmsync.NewContactEventsConsumer(entClient, marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey), log),
+		qaFeatures:   qa.NewFeatureEventsConsumer(qaService, log),
 	}, nil
 }
 
@@ -283,6 +324,13 @@ func (a *App) Run(ctx context.Context) error {
 		go func() {
 			if err := a.crmContacts.Start(ctx, a.events); err != nil {
 				a.log.Error("crm contact events consumer failed", zap.Error(err))
+			}
+		}()
+	}
+	if a.qaFeatures != nil && a.events != nil {
+		go func() {
+			if err := a.qaFeatures.Start(ctx, a.events); err != nil {
+				a.log.Error("qa feature change consumer failed", zap.Error(err))
 			}
 		}()
 	}

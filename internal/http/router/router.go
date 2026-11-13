@@ -32,7 +32,12 @@ func New(
 	limiter *ratelimit.Limiter,
 	tenantExport http.Handler,
 	crmLinks http.Handler,
+	qaRoutes ...QARoutes,
 ) http.Handler {
+	var qaR QARoutes
+	if len(qaRoutes) > 0 {
+		qaR = qaRoutes[0]
+	}
 	r := chi.NewRouter()
 
 	// Never chi RealIP: it trusts client-sent True-Client-IP/X-Forwarded-For.
@@ -42,7 +47,7 @@ func New(
 	r.Use(httpware.Logging(log))
 	r.Use(httpware.Recover(log))
 	r.Use(httpware.BypassForStreaming(middleware.Timeout(30 * time.Second)))
-	r.Use(httpware.CORS(httpware.StandardCORS(allowedOrigins)))
+	r.Use(httpware.CORS(httpware.StandardCORS(allowedOrigins, "X-QA-Access")))
 	// Per-IP abuse limit (projects had none); after CORS so 429s carry CORS headers.
 	if limiter != nil {
 		r.Use(limiter.Middleware(ratelimit.IPKey, 300, time.Minute))
@@ -62,6 +67,24 @@ func New(
 	}
 	r.Get("/readyz", health.Readiness)
 	r.Get("/metrics", health.Metrics)
+
+	// QA invitees: the people a session owner invited by email, who may hold no account in the
+	// tenant. Outside the tenant JWT group; each handler proves the invite itself (an access token
+	// bound to one session), and only the SSO hand-over route needs a signed-in user.
+	if qaR.Invitee != nil {
+		var requireAuth func(http.Handler) http.Handler
+		if authMiddleware != nil {
+			requireAuth = authMiddleware.RequireAuth
+		}
+		// The invitee routes are public (share code, OTP, PDF render), so they get their own
+		// tighter per-IP bucket on top of the global one.
+		r.Group(func(g chi.Router) {
+			if limiter != nil {
+				g.Use(limiter.MiddlewareWith(ratelimit.IPKey, ratelimit.Options{Name: "qa-invitee", Limit: 60, Window: time.Minute}))
+			}
+			qaR.Invitee.RegisterRoutes(g, requireAuth)
+		})
+	}
 
 	// Redirect root path to Swagger documentation
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -141,6 +164,10 @@ func New(
 			if financialsHandler != nil {
 				// Project financials, portfolio and project budgets: the budget_tracking feature.
 				financialsHandler.RegisterRoutes(tenant, requireFeature("budget_tracking"))
+			}
+			if qaR.Tenant != nil {
+				// QA and acceptance; each route is gated on a projects.qa.* permission.
+				qaR.Tenant.RegisterRoutes(tenant)
 			}
 		})
 	})

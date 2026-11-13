@@ -105,6 +105,78 @@ func (f ProjectMemberFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectMemberMutation", m)
 }
 
+// The QACriterionFunc type is an adapter to allow the use of ordinary
+// function as QACriterion mutator.
+type QACriterionFunc func(context.Context, *ent.QACriterionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f QACriterionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.QACriterionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QACriterionMutation", m)
+}
+
+// The QADefectFunc type is an adapter to allow the use of ordinary
+// function as QADefect mutator.
+type QADefectFunc func(context.Context, *ent.QADefectMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f QADefectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.QADefectMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QADefectMutation", m)
+}
+
+// The QAInviteFunc type is an adapter to allow the use of ordinary
+// function as QAInvite mutator.
+type QAInviteFunc func(context.Context, *ent.QAInviteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f QAInviteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.QAInviteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QAInviteMutation", m)
+}
+
+// The QAResultFunc type is an adapter to allow the use of ordinary
+// function as QAResult mutator.
+type QAResultFunc func(context.Context, *ent.QAResultMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f QAResultFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.QAResultMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QAResultMutation", m)
+}
+
+// The QASessionFunc type is an adapter to allow the use of ordinary
+// function as QASession mutator.
+type QASessionFunc func(context.Context, *ent.QASessionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f QASessionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.QASessionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QASessionMutation", m)
+}
+
+// The QATemplateFunc type is an adapter to allow the use of ordinary
+// function as QATemplate mutator.
+type QATemplateFunc func(context.Context, *ent.QATemplateMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f QATemplateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.QATemplateMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QATemplateMutation", m)
+}
+
 // The RoleFunc type is an adapter to allow the use of ordinary
 // function as Role mutator.
 type RoleFunc func(context.Context, *ent.RoleMutation) (ent.Value, error)

@@ -21,6 +21,7 @@ type Config struct {
 	Telemetry TelemetryConfig
 	Auth      AuthConfig
 	Services  ServicesConfig
+	QA        QAConfig
 }
 
 // ServicesConfig holds the base URLs of the services projects-api calls over S2S.
@@ -32,6 +33,32 @@ type ServicesConfig struct {
 	ERPURL string `envconfig:"ERP_SERVICE_URL" default:"http://erp-api.erp.svc.cluster.local:80"`
 	// MarketflowURL is marketflow-api, the CRM, searched for a project's client contact.
 	MarketflowURL string `envconfig:"MARKETFLOW_API_URL" default:"http://marketflow-api.marketflow.svc.cluster.local:4000"`
+	// TicketingURL is ticketing-api, where a severe QA failure opens a ticket (S2S).
+	TicketingURL string `envconfig:"TICKETING_SERVICE_URL" default:"http://ticketing-api.ticketing.svc.cluster.local:4009"`
+	// SubscriptionsURL is subscriptions-api, the owner of the feature catalogue QA criteria point at.
+	SubscriptionsURL string `envconfig:"SUBSCRIPTIONS_SERVICE_URL" default:"http://subscription-api.subscriptions.svc.cluster.local:4000"`
+}
+
+// QAConfig configures the QA and acceptance module.
+type QAConfig struct {
+	// HashKey keys the email hashes on invites and results and signs invitee access tokens. When
+	// empty a key is derived from INTERNAL_SERVICE_KEY; set it explicitly in production so that
+	// rotating the service key does not orphan every invite.
+	HashKey string `envconfig:"QA_HASH_KEY"`
+	// AccessTTL is how long an invitee's access token lasts.
+	AccessTTL time.Duration `envconfig:"QA_ACCESS_TTL" default:"8h"`
+	// CookieSecure marks the invitee access cookie Secure (and SameSite=None). Off only for local
+	// development over plain HTTP.
+	CookieSecure bool `envconfig:"QA_COOKIE_SECURE" default:"true"`
+	// CatalogEnabled turns on reading the feature catalogue from subscriptions-api. Off until the
+	// catalogue S2S read ships; criteria then keep feature codes unchecked.
+	CatalogEnabled bool `envconfig:"QA_CATALOG_ENABLED" default:"false"`
+	// UIBaseURL builds the invite link sent to testers (https://.../qa/{code}).
+	UIBaseURL string `envconfig:"QA_UI_BASE_URL" default:"https://projects.codevertexafrica.com"`
+	// FieldEncryptionKey seals signer email addresses at rest (qa_invites.email_enc), so close and
+	// decision notices can reach them. From the projects-api-secrets secret; when empty, signer
+	// addresses are not kept and those notices go without a signers list.
+	FieldEncryptionKey string `envconfig:"FIELD_ENCRYPTION_KEY"`
 }
 
 type AppConfig struct {

@@ -28,7 +28,25 @@ func TestRoutesMount(t *testing.T) {
 		handlers.NewFinancialsHandler(log, nil),
 		nil, []string{"*"}, nil, nil,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusTeapot) }),
+		QARoutes{Tenant: handlers.NewQAHandler(log, nil), Invitee: handlers.NewQAInviteeHandler(log, nil, true)},
 	)
+	// QA invitee routes sit outside the tenant group next to the /api/v1 mount; without a token
+	// they answer 401, which proves they reached their handler.
+	for _, path := range []string{"/api/v1/qa/invitee/session", "/api/v1/qa/invitee/report.pdf"} {
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("%s: want 401 from the invitee handler, got %d", path, w.Code)
+		}
+	}
+	// QA tenant routes exist and are permission gated (no claims here, so 403, never 404).
+	for _, path := range []string{"/api/v1/acme/qa/templates", "/api/v1/acme/qa/sessions", "/api/v1/acme/qa/sessions/00000000-0000-0000-0000-000000000001/report.pdf"} {
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+		if w.Code != http.StatusForbidden {
+			t.Errorf("%s: want 403 from the QA permission gate, got %d", path, w.Code)
+		}
+	}
 	// The S2S CRM link check is mounted outside the authenticated group and reaches its handler.
 	{
 		w := httptest.NewRecorder()

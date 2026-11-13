@@ -55,6 +55,13 @@ func (p *Publisher) PublishMilestoneReached(ctx context.Context, tenantID, miles
 	return p.publish(ctx, "project", "milestone.reached", milestoneID, tenantID, payload)
 }
 
+// PublishQAEvent emits project.qa.<eventType> (for example project.qa.result.failed) with the QA
+// session as the aggregate. The "project." prefix keeps QA events on the projects stream that
+// notifications-api already binds (project.>).
+func (p *Publisher) PublishQAEvent(ctx context.Context, tenantID, sessionID uuid.UUID, eventType string, payload map[string]any) error {
+	return p.publish(ctx, "project", "qa."+eventType, sessionID, tenantID, payload)
+}
+
 // PublishProjectEvent emits project.{created,updated,closed,deleted} with the project as the
 // aggregate. treasury-api closes a project's budgets and releases its open commitments on
 // closed and deleted.

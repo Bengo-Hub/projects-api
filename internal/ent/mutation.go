@@ -20,6 +20,12 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/ent/qacriterion"
+	"github.com/bengobox/projects-service/internal/ent/qadefect"
+	"github.com/bengobox/projects-service/internal/ent/qainvite"
+	"github.com/bengobox/projects-service/internal/ent/qaresult"
+	"github.com/bengobox/projects-service/internal/ent/qasession"
+	"github.com/bengobox/projects-service/internal/ent/qatemplate"
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/task"
@@ -31,6 +37,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
 	"github.com/bengobox/projects-service/internal/ent/userrole"
+	"github.com/bengobox/projects-service/internal/qamodel"
 	"github.com/google/uuid"
 )
 
@@ -51,6 +58,12 @@ const (
 	TypePermission            = "Permission"
 	TypeProject               = "Project"
 	TypeProjectMember         = "ProjectMember"
+	TypeQACriterion           = "QACriterion"
+	TypeQADefect              = "QADefect"
+	TypeQAInvite              = "QAInvite"
+	TypeQAResult              = "QAResult"
+	TypeQASession             = "QASession"
+	TypeQATemplate            = "QATemplate"
 	TypeRole                  = "Role"
 	TypeRolePermission        = "RolePermission"
 	TypeTask                  = "Task"
@@ -7610,6 +7623,7185 @@ func (m *ProjectMemberMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ProjectMember edge %s", name)
+}
+
+// QACriterionMutation represents an operation that mutates the QACriterion nodes in the graph.
+type QACriterionMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	tenant_id       *uuid.UUID
+	subject_kind    *string
+	subject_ref     *string
+	area_code       *string
+	title           *string
+	requirement_ref *string
+	preconditions   *string
+	steps           *string
+	expected_result *string
+	weight          *string
+	automated_ref   *string
+	sort_order      *int
+	addsort_order   *int
+	created_at      *time.Time
+	updated_at      *time.Time
+	clearedFields   map[string]struct{}
+	template        *uuid.UUID
+	clearedtemplate bool
+	done            bool
+	oldValue        func(context.Context) (*QACriterion, error)
+	predicates      []predicate.QACriterion
+}
+
+var _ ent.Mutation = (*QACriterionMutation)(nil)
+
+// qacriterionOption allows management of the mutation configuration using functional options.
+type qacriterionOption func(*QACriterionMutation)
+
+// newQACriterionMutation creates new mutation for the QACriterion entity.
+func newQACriterionMutation(c config, op Op, opts ...qacriterionOption) *QACriterionMutation {
+	m := &QACriterionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeQACriterion,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withQACriterionID sets the ID field of the mutation.
+func withQACriterionID(id uuid.UUID) qacriterionOption {
+	return func(m *QACriterionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *QACriterion
+		)
+		m.oldValue = func(ctx context.Context) (*QACriterion, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().QACriterion.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withQACriterion sets the old QACriterion of the mutation.
+func withQACriterion(node *QACriterion) qacriterionOption {
+	return func(m *QACriterionMutation) {
+		m.oldValue = func(context.Context) (*QACriterion, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m QACriterionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m QACriterionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of QACriterion entities.
+func (m *QACriterionMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *QACriterionMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *QACriterionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().QACriterion.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTemplateID sets the "template_id" field.
+func (m *QACriterionMutation) SetTemplateID(u uuid.UUID) {
+	m.template = &u
+}
+
+// TemplateID returns the value of the "template_id" field in the mutation.
+func (m *QACriterionMutation) TemplateID() (r uuid.UUID, exists bool) {
+	v := m.template
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTemplateID returns the old "template_id" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldTemplateID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTemplateID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTemplateID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTemplateID: %w", err)
+	}
+	return oldValue.TemplateID, nil
+}
+
+// ResetTemplateID resets all changes to the "template_id" field.
+func (m *QACriterionMutation) ResetTemplateID() {
+	m.template = nil
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *QACriterionMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *QACriterionMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldTenantID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (m *QACriterionMutation) ClearTenantID() {
+	m.tenant_id = nil
+	m.clearedFields[qacriterion.FieldTenantID] = struct{}{}
+}
+
+// TenantIDCleared returns if the "tenant_id" field was cleared in this mutation.
+func (m *QACriterionMutation) TenantIDCleared() bool {
+	_, ok := m.clearedFields[qacriterion.FieldTenantID]
+	return ok
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *QACriterionMutation) ResetTenantID() {
+	m.tenant_id = nil
+	delete(m.clearedFields, qacriterion.FieldTenantID)
+}
+
+// SetSubjectKind sets the "subject_kind" field.
+func (m *QACriterionMutation) SetSubjectKind(s string) {
+	m.subject_kind = &s
+}
+
+// SubjectKind returns the value of the "subject_kind" field in the mutation.
+func (m *QACriterionMutation) SubjectKind() (r string, exists bool) {
+	v := m.subject_kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubjectKind returns the old "subject_kind" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldSubjectKind(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubjectKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubjectKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubjectKind: %w", err)
+	}
+	return oldValue.SubjectKind, nil
+}
+
+// ResetSubjectKind resets all changes to the "subject_kind" field.
+func (m *QACriterionMutation) ResetSubjectKind() {
+	m.subject_kind = nil
+}
+
+// SetSubjectRef sets the "subject_ref" field.
+func (m *QACriterionMutation) SetSubjectRef(s string) {
+	m.subject_ref = &s
+}
+
+// SubjectRef returns the value of the "subject_ref" field in the mutation.
+func (m *QACriterionMutation) SubjectRef() (r string, exists bool) {
+	v := m.subject_ref
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubjectRef returns the old "subject_ref" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldSubjectRef(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubjectRef is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubjectRef requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubjectRef: %w", err)
+	}
+	return oldValue.SubjectRef, nil
+}
+
+// ClearSubjectRef clears the value of the "subject_ref" field.
+func (m *QACriterionMutation) ClearSubjectRef() {
+	m.subject_ref = nil
+	m.clearedFields[qacriterion.FieldSubjectRef] = struct{}{}
+}
+
+// SubjectRefCleared returns if the "subject_ref" field was cleared in this mutation.
+func (m *QACriterionMutation) SubjectRefCleared() bool {
+	_, ok := m.clearedFields[qacriterion.FieldSubjectRef]
+	return ok
+}
+
+// ResetSubjectRef resets all changes to the "subject_ref" field.
+func (m *QACriterionMutation) ResetSubjectRef() {
+	m.subject_ref = nil
+	delete(m.clearedFields, qacriterion.FieldSubjectRef)
+}
+
+// SetAreaCode sets the "area_code" field.
+func (m *QACriterionMutation) SetAreaCode(s string) {
+	m.area_code = &s
+}
+
+// AreaCode returns the value of the "area_code" field in the mutation.
+func (m *QACriterionMutation) AreaCode() (r string, exists bool) {
+	v := m.area_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAreaCode returns the old "area_code" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldAreaCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAreaCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAreaCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAreaCode: %w", err)
+	}
+	return oldValue.AreaCode, nil
+}
+
+// ClearAreaCode clears the value of the "area_code" field.
+func (m *QACriterionMutation) ClearAreaCode() {
+	m.area_code = nil
+	m.clearedFields[qacriterion.FieldAreaCode] = struct{}{}
+}
+
+// AreaCodeCleared returns if the "area_code" field was cleared in this mutation.
+func (m *QACriterionMutation) AreaCodeCleared() bool {
+	_, ok := m.clearedFields[qacriterion.FieldAreaCode]
+	return ok
+}
+
+// ResetAreaCode resets all changes to the "area_code" field.
+func (m *QACriterionMutation) ResetAreaCode() {
+	m.area_code = nil
+	delete(m.clearedFields, qacriterion.FieldAreaCode)
+}
+
+// SetTitle sets the "title" field.
+func (m *QACriterionMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *QACriterionMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *QACriterionMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetRequirementRef sets the "requirement_ref" field.
+func (m *QACriterionMutation) SetRequirementRef(s string) {
+	m.requirement_ref = &s
+}
+
+// RequirementRef returns the value of the "requirement_ref" field in the mutation.
+func (m *QACriterionMutation) RequirementRef() (r string, exists bool) {
+	v := m.requirement_ref
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequirementRef returns the old "requirement_ref" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldRequirementRef(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequirementRef is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequirementRef requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequirementRef: %w", err)
+	}
+	return oldValue.RequirementRef, nil
+}
+
+// ClearRequirementRef clears the value of the "requirement_ref" field.
+func (m *QACriterionMutation) ClearRequirementRef() {
+	m.requirement_ref = nil
+	m.clearedFields[qacriterion.FieldRequirementRef] = struct{}{}
+}
+
+// RequirementRefCleared returns if the "requirement_ref" field was cleared in this mutation.
+func (m *QACriterionMutation) RequirementRefCleared() bool {
+	_, ok := m.clearedFields[qacriterion.FieldRequirementRef]
+	return ok
+}
+
+// ResetRequirementRef resets all changes to the "requirement_ref" field.
+func (m *QACriterionMutation) ResetRequirementRef() {
+	m.requirement_ref = nil
+	delete(m.clearedFields, qacriterion.FieldRequirementRef)
+}
+
+// SetPreconditions sets the "preconditions" field.
+func (m *QACriterionMutation) SetPreconditions(s string) {
+	m.preconditions = &s
+}
+
+// Preconditions returns the value of the "preconditions" field in the mutation.
+func (m *QACriterionMutation) Preconditions() (r string, exists bool) {
+	v := m.preconditions
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPreconditions returns the old "preconditions" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldPreconditions(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPreconditions is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPreconditions requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPreconditions: %w", err)
+	}
+	return oldValue.Preconditions, nil
+}
+
+// ClearPreconditions clears the value of the "preconditions" field.
+func (m *QACriterionMutation) ClearPreconditions() {
+	m.preconditions = nil
+	m.clearedFields[qacriterion.FieldPreconditions] = struct{}{}
+}
+
+// PreconditionsCleared returns if the "preconditions" field was cleared in this mutation.
+func (m *QACriterionMutation) PreconditionsCleared() bool {
+	_, ok := m.clearedFields[qacriterion.FieldPreconditions]
+	return ok
+}
+
+// ResetPreconditions resets all changes to the "preconditions" field.
+func (m *QACriterionMutation) ResetPreconditions() {
+	m.preconditions = nil
+	delete(m.clearedFields, qacriterion.FieldPreconditions)
+}
+
+// SetSteps sets the "steps" field.
+func (m *QACriterionMutation) SetSteps(s string) {
+	m.steps = &s
+}
+
+// Steps returns the value of the "steps" field in the mutation.
+func (m *QACriterionMutation) Steps() (r string, exists bool) {
+	v := m.steps
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSteps returns the old "steps" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldSteps(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSteps is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSteps requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSteps: %w", err)
+	}
+	return oldValue.Steps, nil
+}
+
+// ClearSteps clears the value of the "steps" field.
+func (m *QACriterionMutation) ClearSteps() {
+	m.steps = nil
+	m.clearedFields[qacriterion.FieldSteps] = struct{}{}
+}
+
+// StepsCleared returns if the "steps" field was cleared in this mutation.
+func (m *QACriterionMutation) StepsCleared() bool {
+	_, ok := m.clearedFields[qacriterion.FieldSteps]
+	return ok
+}
+
+// ResetSteps resets all changes to the "steps" field.
+func (m *QACriterionMutation) ResetSteps() {
+	m.steps = nil
+	delete(m.clearedFields, qacriterion.FieldSteps)
+}
+
+// SetExpectedResult sets the "expected_result" field.
+func (m *QACriterionMutation) SetExpectedResult(s string) {
+	m.expected_result = &s
+}
+
+// ExpectedResult returns the value of the "expected_result" field in the mutation.
+func (m *QACriterionMutation) ExpectedResult() (r string, exists bool) {
+	v := m.expected_result
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpectedResult returns the old "expected_result" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldExpectedResult(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpectedResult is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpectedResult requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpectedResult: %w", err)
+	}
+	return oldValue.ExpectedResult, nil
+}
+
+// ClearExpectedResult clears the value of the "expected_result" field.
+func (m *QACriterionMutation) ClearExpectedResult() {
+	m.expected_result = nil
+	m.clearedFields[qacriterion.FieldExpectedResult] = struct{}{}
+}
+
+// ExpectedResultCleared returns if the "expected_result" field was cleared in this mutation.
+func (m *QACriterionMutation) ExpectedResultCleared() bool {
+	_, ok := m.clearedFields[qacriterion.FieldExpectedResult]
+	return ok
+}
+
+// ResetExpectedResult resets all changes to the "expected_result" field.
+func (m *QACriterionMutation) ResetExpectedResult() {
+	m.expected_result = nil
+	delete(m.clearedFields, qacriterion.FieldExpectedResult)
+}
+
+// SetWeight sets the "weight" field.
+func (m *QACriterionMutation) SetWeight(s string) {
+	m.weight = &s
+}
+
+// Weight returns the value of the "weight" field in the mutation.
+func (m *QACriterionMutation) Weight() (r string, exists bool) {
+	v := m.weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeight returns the old "weight" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldWeight(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeight: %w", err)
+	}
+	return oldValue.Weight, nil
+}
+
+// ResetWeight resets all changes to the "weight" field.
+func (m *QACriterionMutation) ResetWeight() {
+	m.weight = nil
+}
+
+// SetAutomatedRef sets the "automated_ref" field.
+func (m *QACriterionMutation) SetAutomatedRef(s string) {
+	m.automated_ref = &s
+}
+
+// AutomatedRef returns the value of the "automated_ref" field in the mutation.
+func (m *QACriterionMutation) AutomatedRef() (r string, exists bool) {
+	v := m.automated_ref
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutomatedRef returns the old "automated_ref" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldAutomatedRef(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutomatedRef is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutomatedRef requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutomatedRef: %w", err)
+	}
+	return oldValue.AutomatedRef, nil
+}
+
+// ClearAutomatedRef clears the value of the "automated_ref" field.
+func (m *QACriterionMutation) ClearAutomatedRef() {
+	m.automated_ref = nil
+	m.clearedFields[qacriterion.FieldAutomatedRef] = struct{}{}
+}
+
+// AutomatedRefCleared returns if the "automated_ref" field was cleared in this mutation.
+func (m *QACriterionMutation) AutomatedRefCleared() bool {
+	_, ok := m.clearedFields[qacriterion.FieldAutomatedRef]
+	return ok
+}
+
+// ResetAutomatedRef resets all changes to the "automated_ref" field.
+func (m *QACriterionMutation) ResetAutomatedRef() {
+	m.automated_ref = nil
+	delete(m.clearedFields, qacriterion.FieldAutomatedRef)
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (m *QACriterionMutation) SetSortOrder(i int) {
+	m.sort_order = &i
+	m.addsort_order = nil
+}
+
+// SortOrder returns the value of the "sort_order" field in the mutation.
+func (m *QACriterionMutation) SortOrder() (r int, exists bool) {
+	v := m.sort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSortOrder returns the old "sort_order" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldSortOrder(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSortOrder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSortOrder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSortOrder: %w", err)
+	}
+	return oldValue.SortOrder, nil
+}
+
+// AddSortOrder adds i to the "sort_order" field.
+func (m *QACriterionMutation) AddSortOrder(i int) {
+	if m.addsort_order != nil {
+		*m.addsort_order += i
+	} else {
+		m.addsort_order = &i
+	}
+}
+
+// AddedSortOrder returns the value that was added to the "sort_order" field in this mutation.
+func (m *QACriterionMutation) AddedSortOrder() (r int, exists bool) {
+	v := m.addsort_order
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSortOrder resets all changes to the "sort_order" field.
+func (m *QACriterionMutation) ResetSortOrder() {
+	m.sort_order = nil
+	m.addsort_order = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *QACriterionMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *QACriterionMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *QACriterionMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *QACriterionMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *QACriterionMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the QACriterion entity.
+// If the QACriterion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QACriterionMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *QACriterionMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// ClearTemplate clears the "template" edge to the QATemplate entity.
+func (m *QACriterionMutation) ClearTemplate() {
+	m.clearedtemplate = true
+	m.clearedFields[qacriterion.FieldTemplateID] = struct{}{}
+}
+
+// TemplateCleared reports if the "template" edge to the QATemplate entity was cleared.
+func (m *QACriterionMutation) TemplateCleared() bool {
+	return m.clearedtemplate
+}
+
+// TemplateIDs returns the "template" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TemplateID instead. It exists only for internal usage by the builders.
+func (m *QACriterionMutation) TemplateIDs() (ids []uuid.UUID) {
+	if id := m.template; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTemplate resets all changes to the "template" edge.
+func (m *QACriterionMutation) ResetTemplate() {
+	m.template = nil
+	m.clearedtemplate = false
+}
+
+// Where appends a list predicates to the QACriterionMutation builder.
+func (m *QACriterionMutation) Where(ps ...predicate.QACriterion) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the QACriterionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *QACriterionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.QACriterion, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *QACriterionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *QACriterionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (QACriterion).
+func (m *QACriterionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *QACriterionMutation) Fields() []string {
+	fields := make([]string, 0, 15)
+	if m.template != nil {
+		fields = append(fields, qacriterion.FieldTemplateID)
+	}
+	if m.tenant_id != nil {
+		fields = append(fields, qacriterion.FieldTenantID)
+	}
+	if m.subject_kind != nil {
+		fields = append(fields, qacriterion.FieldSubjectKind)
+	}
+	if m.subject_ref != nil {
+		fields = append(fields, qacriterion.FieldSubjectRef)
+	}
+	if m.area_code != nil {
+		fields = append(fields, qacriterion.FieldAreaCode)
+	}
+	if m.title != nil {
+		fields = append(fields, qacriterion.FieldTitle)
+	}
+	if m.requirement_ref != nil {
+		fields = append(fields, qacriterion.FieldRequirementRef)
+	}
+	if m.preconditions != nil {
+		fields = append(fields, qacriterion.FieldPreconditions)
+	}
+	if m.steps != nil {
+		fields = append(fields, qacriterion.FieldSteps)
+	}
+	if m.expected_result != nil {
+		fields = append(fields, qacriterion.FieldExpectedResult)
+	}
+	if m.weight != nil {
+		fields = append(fields, qacriterion.FieldWeight)
+	}
+	if m.automated_ref != nil {
+		fields = append(fields, qacriterion.FieldAutomatedRef)
+	}
+	if m.sort_order != nil {
+		fields = append(fields, qacriterion.FieldSortOrder)
+	}
+	if m.created_at != nil {
+		fields = append(fields, qacriterion.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, qacriterion.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *QACriterionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case qacriterion.FieldTemplateID:
+		return m.TemplateID()
+	case qacriterion.FieldTenantID:
+		return m.TenantID()
+	case qacriterion.FieldSubjectKind:
+		return m.SubjectKind()
+	case qacriterion.FieldSubjectRef:
+		return m.SubjectRef()
+	case qacriterion.FieldAreaCode:
+		return m.AreaCode()
+	case qacriterion.FieldTitle:
+		return m.Title()
+	case qacriterion.FieldRequirementRef:
+		return m.RequirementRef()
+	case qacriterion.FieldPreconditions:
+		return m.Preconditions()
+	case qacriterion.FieldSteps:
+		return m.Steps()
+	case qacriterion.FieldExpectedResult:
+		return m.ExpectedResult()
+	case qacriterion.FieldWeight:
+		return m.Weight()
+	case qacriterion.FieldAutomatedRef:
+		return m.AutomatedRef()
+	case qacriterion.FieldSortOrder:
+		return m.SortOrder()
+	case qacriterion.FieldCreatedAt:
+		return m.CreatedAt()
+	case qacriterion.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *QACriterionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case qacriterion.FieldTemplateID:
+		return m.OldTemplateID(ctx)
+	case qacriterion.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case qacriterion.FieldSubjectKind:
+		return m.OldSubjectKind(ctx)
+	case qacriterion.FieldSubjectRef:
+		return m.OldSubjectRef(ctx)
+	case qacriterion.FieldAreaCode:
+		return m.OldAreaCode(ctx)
+	case qacriterion.FieldTitle:
+		return m.OldTitle(ctx)
+	case qacriterion.FieldRequirementRef:
+		return m.OldRequirementRef(ctx)
+	case qacriterion.FieldPreconditions:
+		return m.OldPreconditions(ctx)
+	case qacriterion.FieldSteps:
+		return m.OldSteps(ctx)
+	case qacriterion.FieldExpectedResult:
+		return m.OldExpectedResult(ctx)
+	case qacriterion.FieldWeight:
+		return m.OldWeight(ctx)
+	case qacriterion.FieldAutomatedRef:
+		return m.OldAutomatedRef(ctx)
+	case qacriterion.FieldSortOrder:
+		return m.OldSortOrder(ctx)
+	case qacriterion.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case qacriterion.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown QACriterion field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QACriterionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case qacriterion.FieldTemplateID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTemplateID(v)
+		return nil
+	case qacriterion.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case qacriterion.FieldSubjectKind:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubjectKind(v)
+		return nil
+	case qacriterion.FieldSubjectRef:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubjectRef(v)
+		return nil
+	case qacriterion.FieldAreaCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAreaCode(v)
+		return nil
+	case qacriterion.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case qacriterion.FieldRequirementRef:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequirementRef(v)
+		return nil
+	case qacriterion.FieldPreconditions:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPreconditions(v)
+		return nil
+	case qacriterion.FieldSteps:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSteps(v)
+		return nil
+	case qacriterion.FieldExpectedResult:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpectedResult(v)
+		return nil
+	case qacriterion.FieldWeight:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeight(v)
+		return nil
+	case qacriterion.FieldAutomatedRef:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutomatedRef(v)
+		return nil
+	case qacriterion.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSortOrder(v)
+		return nil
+	case qacriterion.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case qacriterion.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QACriterion field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *QACriterionMutation) AddedFields() []string {
+	var fields []string
+	if m.addsort_order != nil {
+		fields = append(fields, qacriterion.FieldSortOrder)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *QACriterionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case qacriterion.FieldSortOrder:
+		return m.AddedSortOrder()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QACriterionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case qacriterion.FieldSortOrder:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSortOrder(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QACriterion numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *QACriterionMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(qacriterion.FieldTenantID) {
+		fields = append(fields, qacriterion.FieldTenantID)
+	}
+	if m.FieldCleared(qacriterion.FieldSubjectRef) {
+		fields = append(fields, qacriterion.FieldSubjectRef)
+	}
+	if m.FieldCleared(qacriterion.FieldAreaCode) {
+		fields = append(fields, qacriterion.FieldAreaCode)
+	}
+	if m.FieldCleared(qacriterion.FieldRequirementRef) {
+		fields = append(fields, qacriterion.FieldRequirementRef)
+	}
+	if m.FieldCleared(qacriterion.FieldPreconditions) {
+		fields = append(fields, qacriterion.FieldPreconditions)
+	}
+	if m.FieldCleared(qacriterion.FieldSteps) {
+		fields = append(fields, qacriterion.FieldSteps)
+	}
+	if m.FieldCleared(qacriterion.FieldExpectedResult) {
+		fields = append(fields, qacriterion.FieldExpectedResult)
+	}
+	if m.FieldCleared(qacriterion.FieldAutomatedRef) {
+		fields = append(fields, qacriterion.FieldAutomatedRef)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *QACriterionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *QACriterionMutation) ClearField(name string) error {
+	switch name {
+	case qacriterion.FieldTenantID:
+		m.ClearTenantID()
+		return nil
+	case qacriterion.FieldSubjectRef:
+		m.ClearSubjectRef()
+		return nil
+	case qacriterion.FieldAreaCode:
+		m.ClearAreaCode()
+		return nil
+	case qacriterion.FieldRequirementRef:
+		m.ClearRequirementRef()
+		return nil
+	case qacriterion.FieldPreconditions:
+		m.ClearPreconditions()
+		return nil
+	case qacriterion.FieldSteps:
+		m.ClearSteps()
+		return nil
+	case qacriterion.FieldExpectedResult:
+		m.ClearExpectedResult()
+		return nil
+	case qacriterion.FieldAutomatedRef:
+		m.ClearAutomatedRef()
+		return nil
+	}
+	return fmt.Errorf("unknown QACriterion nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *QACriterionMutation) ResetField(name string) error {
+	switch name {
+	case qacriterion.FieldTemplateID:
+		m.ResetTemplateID()
+		return nil
+	case qacriterion.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case qacriterion.FieldSubjectKind:
+		m.ResetSubjectKind()
+		return nil
+	case qacriterion.FieldSubjectRef:
+		m.ResetSubjectRef()
+		return nil
+	case qacriterion.FieldAreaCode:
+		m.ResetAreaCode()
+		return nil
+	case qacriterion.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case qacriterion.FieldRequirementRef:
+		m.ResetRequirementRef()
+		return nil
+	case qacriterion.FieldPreconditions:
+		m.ResetPreconditions()
+		return nil
+	case qacriterion.FieldSteps:
+		m.ResetSteps()
+		return nil
+	case qacriterion.FieldExpectedResult:
+		m.ResetExpectedResult()
+		return nil
+	case qacriterion.FieldWeight:
+		m.ResetWeight()
+		return nil
+	case qacriterion.FieldAutomatedRef:
+		m.ResetAutomatedRef()
+		return nil
+	case qacriterion.FieldSortOrder:
+		m.ResetSortOrder()
+		return nil
+	case qacriterion.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case qacriterion.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown QACriterion field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *QACriterionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.template != nil {
+		edges = append(edges, qacriterion.EdgeTemplate)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *QACriterionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case qacriterion.EdgeTemplate:
+		if id := m.template; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *QACriterionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *QACriterionMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *QACriterionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedtemplate {
+		edges = append(edges, qacriterion.EdgeTemplate)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *QACriterionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case qacriterion.EdgeTemplate:
+		return m.clearedtemplate
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *QACriterionMutation) ClearEdge(name string) error {
+	switch name {
+	case qacriterion.EdgeTemplate:
+		m.ClearTemplate()
+		return nil
+	}
+	return fmt.Errorf("unknown QACriterion unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *QACriterionMutation) ResetEdge(name string) error {
+	switch name {
+	case qacriterion.EdgeTemplate:
+		m.ResetTemplate()
+		return nil
+	}
+	return fmt.Errorf("unknown QACriterion edge %s", name)
+}
+
+// QADefectMutation represents an operation that mutates the QADefect nodes in the graph.
+type QADefectMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	tenant_id       *uuid.UUID
+	session_id      *uuid.UUID
+	criterion_id    *uuid.UUID
+	first_result_id *uuid.UUID
+	severity        *int
+	addseverity     *int
+	status          *string
+	ticket_id       *string
+	ticket_number   *string
+	last_error      *string
+	created_at      *time.Time
+	updated_at      *time.Time
+	clearedFields   map[string]struct{}
+	done            bool
+	oldValue        func(context.Context) (*QADefect, error)
+	predicates      []predicate.QADefect
+}
+
+var _ ent.Mutation = (*QADefectMutation)(nil)
+
+// qadefectOption allows management of the mutation configuration using functional options.
+type qadefectOption func(*QADefectMutation)
+
+// newQADefectMutation creates new mutation for the QADefect entity.
+func newQADefectMutation(c config, op Op, opts ...qadefectOption) *QADefectMutation {
+	m := &QADefectMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeQADefect,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withQADefectID sets the ID field of the mutation.
+func withQADefectID(id uuid.UUID) qadefectOption {
+	return func(m *QADefectMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *QADefect
+		)
+		m.oldValue = func(ctx context.Context) (*QADefect, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().QADefect.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withQADefect sets the old QADefect of the mutation.
+func withQADefect(node *QADefect) qadefectOption {
+	return func(m *QADefectMutation) {
+		m.oldValue = func(context.Context) (*QADefect, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m QADefectMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m QADefectMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of QADefect entities.
+func (m *QADefectMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *QADefectMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *QADefectMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().QADefect.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *QADefectMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *QADefectMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *QADefectMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetSessionID sets the "session_id" field.
+func (m *QADefectMutation) SetSessionID(u uuid.UUID) {
+	m.session_id = &u
+}
+
+// SessionID returns the value of the "session_id" field in the mutation.
+func (m *QADefectMutation) SessionID() (r uuid.UUID, exists bool) {
+	v := m.session_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSessionID returns the old "session_id" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldSessionID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSessionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSessionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSessionID: %w", err)
+	}
+	return oldValue.SessionID, nil
+}
+
+// ResetSessionID resets all changes to the "session_id" field.
+func (m *QADefectMutation) ResetSessionID() {
+	m.session_id = nil
+}
+
+// SetCriterionID sets the "criterion_id" field.
+func (m *QADefectMutation) SetCriterionID(u uuid.UUID) {
+	m.criterion_id = &u
+}
+
+// CriterionID returns the value of the "criterion_id" field in the mutation.
+func (m *QADefectMutation) CriterionID() (r uuid.UUID, exists bool) {
+	v := m.criterion_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCriterionID returns the old "criterion_id" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldCriterionID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCriterionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCriterionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCriterionID: %w", err)
+	}
+	return oldValue.CriterionID, nil
+}
+
+// ResetCriterionID resets all changes to the "criterion_id" field.
+func (m *QADefectMutation) ResetCriterionID() {
+	m.criterion_id = nil
+}
+
+// SetFirstResultID sets the "first_result_id" field.
+func (m *QADefectMutation) SetFirstResultID(u uuid.UUID) {
+	m.first_result_id = &u
+}
+
+// FirstResultID returns the value of the "first_result_id" field in the mutation.
+func (m *QADefectMutation) FirstResultID() (r uuid.UUID, exists bool) {
+	v := m.first_result_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFirstResultID returns the old "first_result_id" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldFirstResultID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFirstResultID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFirstResultID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFirstResultID: %w", err)
+	}
+	return oldValue.FirstResultID, nil
+}
+
+// ResetFirstResultID resets all changes to the "first_result_id" field.
+func (m *QADefectMutation) ResetFirstResultID() {
+	m.first_result_id = nil
+}
+
+// SetSeverity sets the "severity" field.
+func (m *QADefectMutation) SetSeverity(i int) {
+	m.severity = &i
+	m.addseverity = nil
+}
+
+// Severity returns the value of the "severity" field in the mutation.
+func (m *QADefectMutation) Severity() (r int, exists bool) {
+	v := m.severity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSeverity returns the old "severity" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldSeverity(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSeverity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSeverity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSeverity: %w", err)
+	}
+	return oldValue.Severity, nil
+}
+
+// AddSeverity adds i to the "severity" field.
+func (m *QADefectMutation) AddSeverity(i int) {
+	if m.addseverity != nil {
+		*m.addseverity += i
+	} else {
+		m.addseverity = &i
+	}
+}
+
+// AddedSeverity returns the value that was added to the "severity" field in this mutation.
+func (m *QADefectMutation) AddedSeverity() (r int, exists bool) {
+	v := m.addseverity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSeverity resets all changes to the "severity" field.
+func (m *QADefectMutation) ResetSeverity() {
+	m.severity = nil
+	m.addseverity = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *QADefectMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *QADefectMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *QADefectMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetTicketID sets the "ticket_id" field.
+func (m *QADefectMutation) SetTicketID(s string) {
+	m.ticket_id = &s
+}
+
+// TicketID returns the value of the "ticket_id" field in the mutation.
+func (m *QADefectMutation) TicketID() (r string, exists bool) {
+	v := m.ticket_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTicketID returns the old "ticket_id" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldTicketID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTicketID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTicketID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTicketID: %w", err)
+	}
+	return oldValue.TicketID, nil
+}
+
+// ClearTicketID clears the value of the "ticket_id" field.
+func (m *QADefectMutation) ClearTicketID() {
+	m.ticket_id = nil
+	m.clearedFields[qadefect.FieldTicketID] = struct{}{}
+}
+
+// TicketIDCleared returns if the "ticket_id" field was cleared in this mutation.
+func (m *QADefectMutation) TicketIDCleared() bool {
+	_, ok := m.clearedFields[qadefect.FieldTicketID]
+	return ok
+}
+
+// ResetTicketID resets all changes to the "ticket_id" field.
+func (m *QADefectMutation) ResetTicketID() {
+	m.ticket_id = nil
+	delete(m.clearedFields, qadefect.FieldTicketID)
+}
+
+// SetTicketNumber sets the "ticket_number" field.
+func (m *QADefectMutation) SetTicketNumber(s string) {
+	m.ticket_number = &s
+}
+
+// TicketNumber returns the value of the "ticket_number" field in the mutation.
+func (m *QADefectMutation) TicketNumber() (r string, exists bool) {
+	v := m.ticket_number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTicketNumber returns the old "ticket_number" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldTicketNumber(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTicketNumber is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTicketNumber requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTicketNumber: %w", err)
+	}
+	return oldValue.TicketNumber, nil
+}
+
+// ClearTicketNumber clears the value of the "ticket_number" field.
+func (m *QADefectMutation) ClearTicketNumber() {
+	m.ticket_number = nil
+	m.clearedFields[qadefect.FieldTicketNumber] = struct{}{}
+}
+
+// TicketNumberCleared returns if the "ticket_number" field was cleared in this mutation.
+func (m *QADefectMutation) TicketNumberCleared() bool {
+	_, ok := m.clearedFields[qadefect.FieldTicketNumber]
+	return ok
+}
+
+// ResetTicketNumber resets all changes to the "ticket_number" field.
+func (m *QADefectMutation) ResetTicketNumber() {
+	m.ticket_number = nil
+	delete(m.clearedFields, qadefect.FieldTicketNumber)
+}
+
+// SetLastError sets the "last_error" field.
+func (m *QADefectMutation) SetLastError(s string) {
+	m.last_error = &s
+}
+
+// LastError returns the value of the "last_error" field in the mutation.
+func (m *QADefectMutation) LastError() (r string, exists bool) {
+	v := m.last_error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastError returns the old "last_error" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldLastError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastError: %w", err)
+	}
+	return oldValue.LastError, nil
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (m *QADefectMutation) ClearLastError() {
+	m.last_error = nil
+	m.clearedFields[qadefect.FieldLastError] = struct{}{}
+}
+
+// LastErrorCleared returns if the "last_error" field was cleared in this mutation.
+func (m *QADefectMutation) LastErrorCleared() bool {
+	_, ok := m.clearedFields[qadefect.FieldLastError]
+	return ok
+}
+
+// ResetLastError resets all changes to the "last_error" field.
+func (m *QADefectMutation) ResetLastError() {
+	m.last_error = nil
+	delete(m.clearedFields, qadefect.FieldLastError)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *QADefectMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *QADefectMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *QADefectMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *QADefectMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *QADefectMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the QADefect entity.
+// If the QADefect object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QADefectMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *QADefectMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the QADefectMutation builder.
+func (m *QADefectMutation) Where(ps ...predicate.QADefect) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the QADefectMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *QADefectMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.QADefect, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *QADefectMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *QADefectMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (QADefect).
+func (m *QADefectMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *QADefectMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.tenant_id != nil {
+		fields = append(fields, qadefect.FieldTenantID)
+	}
+	if m.session_id != nil {
+		fields = append(fields, qadefect.FieldSessionID)
+	}
+	if m.criterion_id != nil {
+		fields = append(fields, qadefect.FieldCriterionID)
+	}
+	if m.first_result_id != nil {
+		fields = append(fields, qadefect.FieldFirstResultID)
+	}
+	if m.severity != nil {
+		fields = append(fields, qadefect.FieldSeverity)
+	}
+	if m.status != nil {
+		fields = append(fields, qadefect.FieldStatus)
+	}
+	if m.ticket_id != nil {
+		fields = append(fields, qadefect.FieldTicketID)
+	}
+	if m.ticket_number != nil {
+		fields = append(fields, qadefect.FieldTicketNumber)
+	}
+	if m.last_error != nil {
+		fields = append(fields, qadefect.FieldLastError)
+	}
+	if m.created_at != nil {
+		fields = append(fields, qadefect.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, qadefect.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *QADefectMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case qadefect.FieldTenantID:
+		return m.TenantID()
+	case qadefect.FieldSessionID:
+		return m.SessionID()
+	case qadefect.FieldCriterionID:
+		return m.CriterionID()
+	case qadefect.FieldFirstResultID:
+		return m.FirstResultID()
+	case qadefect.FieldSeverity:
+		return m.Severity()
+	case qadefect.FieldStatus:
+		return m.Status()
+	case qadefect.FieldTicketID:
+		return m.TicketID()
+	case qadefect.FieldTicketNumber:
+		return m.TicketNumber()
+	case qadefect.FieldLastError:
+		return m.LastError()
+	case qadefect.FieldCreatedAt:
+		return m.CreatedAt()
+	case qadefect.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *QADefectMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case qadefect.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case qadefect.FieldSessionID:
+		return m.OldSessionID(ctx)
+	case qadefect.FieldCriterionID:
+		return m.OldCriterionID(ctx)
+	case qadefect.FieldFirstResultID:
+		return m.OldFirstResultID(ctx)
+	case qadefect.FieldSeverity:
+		return m.OldSeverity(ctx)
+	case qadefect.FieldStatus:
+		return m.OldStatus(ctx)
+	case qadefect.FieldTicketID:
+		return m.OldTicketID(ctx)
+	case qadefect.FieldTicketNumber:
+		return m.OldTicketNumber(ctx)
+	case qadefect.FieldLastError:
+		return m.OldLastError(ctx)
+	case qadefect.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case qadefect.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown QADefect field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QADefectMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case qadefect.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case qadefect.FieldSessionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSessionID(v)
+		return nil
+	case qadefect.FieldCriterionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCriterionID(v)
+		return nil
+	case qadefect.FieldFirstResultID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFirstResultID(v)
+		return nil
+	case qadefect.FieldSeverity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSeverity(v)
+		return nil
+	case qadefect.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case qadefect.FieldTicketID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTicketID(v)
+		return nil
+	case qadefect.FieldTicketNumber:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTicketNumber(v)
+		return nil
+	case qadefect.FieldLastError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastError(v)
+		return nil
+	case qadefect.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case qadefect.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QADefect field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *QADefectMutation) AddedFields() []string {
+	var fields []string
+	if m.addseverity != nil {
+		fields = append(fields, qadefect.FieldSeverity)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *QADefectMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case qadefect.FieldSeverity:
+		return m.AddedSeverity()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QADefectMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case qadefect.FieldSeverity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSeverity(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QADefect numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *QADefectMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(qadefect.FieldTicketID) {
+		fields = append(fields, qadefect.FieldTicketID)
+	}
+	if m.FieldCleared(qadefect.FieldTicketNumber) {
+		fields = append(fields, qadefect.FieldTicketNumber)
+	}
+	if m.FieldCleared(qadefect.FieldLastError) {
+		fields = append(fields, qadefect.FieldLastError)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *QADefectMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *QADefectMutation) ClearField(name string) error {
+	switch name {
+	case qadefect.FieldTicketID:
+		m.ClearTicketID()
+		return nil
+	case qadefect.FieldTicketNumber:
+		m.ClearTicketNumber()
+		return nil
+	case qadefect.FieldLastError:
+		m.ClearLastError()
+		return nil
+	}
+	return fmt.Errorf("unknown QADefect nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *QADefectMutation) ResetField(name string) error {
+	switch name {
+	case qadefect.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case qadefect.FieldSessionID:
+		m.ResetSessionID()
+		return nil
+	case qadefect.FieldCriterionID:
+		m.ResetCriterionID()
+		return nil
+	case qadefect.FieldFirstResultID:
+		m.ResetFirstResultID()
+		return nil
+	case qadefect.FieldSeverity:
+		m.ResetSeverity()
+		return nil
+	case qadefect.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case qadefect.FieldTicketID:
+		m.ResetTicketID()
+		return nil
+	case qadefect.FieldTicketNumber:
+		m.ResetTicketNumber()
+		return nil
+	case qadefect.FieldLastError:
+		m.ResetLastError()
+		return nil
+	case qadefect.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case qadefect.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown QADefect field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *QADefectMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *QADefectMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *QADefectMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *QADefectMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *QADefectMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *QADefectMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *QADefectMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown QADefect unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *QADefectMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown QADefect edge %s", name)
+}
+
+// QAInviteMutation represents an operation that mutates the QAInvite nodes in the graph.
+type QAInviteMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	tenant_id     *uuid.UUID
+	session_id    *uuid.UUID
+	email_hash    *string
+	email_hint    *string
+	email_enc     *string
+	name          *string
+	role          *string
+	status        *string
+	last_seen_at  *time.Time
+	invited_by    *uuid.UUID
+	created_at    *time.Time
+	updated_at    *time.Time
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*QAInvite, error)
+	predicates    []predicate.QAInvite
+}
+
+var _ ent.Mutation = (*QAInviteMutation)(nil)
+
+// qainviteOption allows management of the mutation configuration using functional options.
+type qainviteOption func(*QAInviteMutation)
+
+// newQAInviteMutation creates new mutation for the QAInvite entity.
+func newQAInviteMutation(c config, op Op, opts ...qainviteOption) *QAInviteMutation {
+	m := &QAInviteMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeQAInvite,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withQAInviteID sets the ID field of the mutation.
+func withQAInviteID(id uuid.UUID) qainviteOption {
+	return func(m *QAInviteMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *QAInvite
+		)
+		m.oldValue = func(ctx context.Context) (*QAInvite, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().QAInvite.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withQAInvite sets the old QAInvite of the mutation.
+func withQAInvite(node *QAInvite) qainviteOption {
+	return func(m *QAInviteMutation) {
+		m.oldValue = func(context.Context) (*QAInvite, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m QAInviteMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m QAInviteMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of QAInvite entities.
+func (m *QAInviteMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *QAInviteMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *QAInviteMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().QAInvite.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *QAInviteMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *QAInviteMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *QAInviteMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetSessionID sets the "session_id" field.
+func (m *QAInviteMutation) SetSessionID(u uuid.UUID) {
+	m.session_id = &u
+}
+
+// SessionID returns the value of the "session_id" field in the mutation.
+func (m *QAInviteMutation) SessionID() (r uuid.UUID, exists bool) {
+	v := m.session_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSessionID returns the old "session_id" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldSessionID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSessionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSessionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSessionID: %w", err)
+	}
+	return oldValue.SessionID, nil
+}
+
+// ResetSessionID resets all changes to the "session_id" field.
+func (m *QAInviteMutation) ResetSessionID() {
+	m.session_id = nil
+}
+
+// SetEmailHash sets the "email_hash" field.
+func (m *QAInviteMutation) SetEmailHash(s string) {
+	m.email_hash = &s
+}
+
+// EmailHash returns the value of the "email_hash" field in the mutation.
+func (m *QAInviteMutation) EmailHash() (r string, exists bool) {
+	v := m.email_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmailHash returns the old "email_hash" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldEmailHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmailHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmailHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmailHash: %w", err)
+	}
+	return oldValue.EmailHash, nil
+}
+
+// ResetEmailHash resets all changes to the "email_hash" field.
+func (m *QAInviteMutation) ResetEmailHash() {
+	m.email_hash = nil
+}
+
+// SetEmailHint sets the "email_hint" field.
+func (m *QAInviteMutation) SetEmailHint(s string) {
+	m.email_hint = &s
+}
+
+// EmailHint returns the value of the "email_hint" field in the mutation.
+func (m *QAInviteMutation) EmailHint() (r string, exists bool) {
+	v := m.email_hint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmailHint returns the old "email_hint" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldEmailHint(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmailHint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmailHint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmailHint: %w", err)
+	}
+	return oldValue.EmailHint, nil
+}
+
+// ClearEmailHint clears the value of the "email_hint" field.
+func (m *QAInviteMutation) ClearEmailHint() {
+	m.email_hint = nil
+	m.clearedFields[qainvite.FieldEmailHint] = struct{}{}
+}
+
+// EmailHintCleared returns if the "email_hint" field was cleared in this mutation.
+func (m *QAInviteMutation) EmailHintCleared() bool {
+	_, ok := m.clearedFields[qainvite.FieldEmailHint]
+	return ok
+}
+
+// ResetEmailHint resets all changes to the "email_hint" field.
+func (m *QAInviteMutation) ResetEmailHint() {
+	m.email_hint = nil
+	delete(m.clearedFields, qainvite.FieldEmailHint)
+}
+
+// SetEmailEnc sets the "email_enc" field.
+func (m *QAInviteMutation) SetEmailEnc(s string) {
+	m.email_enc = &s
+}
+
+// EmailEnc returns the value of the "email_enc" field in the mutation.
+func (m *QAInviteMutation) EmailEnc() (r string, exists bool) {
+	v := m.email_enc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmailEnc returns the old "email_enc" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldEmailEnc(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmailEnc is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmailEnc requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmailEnc: %w", err)
+	}
+	return oldValue.EmailEnc, nil
+}
+
+// ClearEmailEnc clears the value of the "email_enc" field.
+func (m *QAInviteMutation) ClearEmailEnc() {
+	m.email_enc = nil
+	m.clearedFields[qainvite.FieldEmailEnc] = struct{}{}
+}
+
+// EmailEncCleared returns if the "email_enc" field was cleared in this mutation.
+func (m *QAInviteMutation) EmailEncCleared() bool {
+	_, ok := m.clearedFields[qainvite.FieldEmailEnc]
+	return ok
+}
+
+// ResetEmailEnc resets all changes to the "email_enc" field.
+func (m *QAInviteMutation) ResetEmailEnc() {
+	m.email_enc = nil
+	delete(m.clearedFields, qainvite.FieldEmailEnc)
+}
+
+// SetName sets the "name" field.
+func (m *QAInviteMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *QAInviteMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ClearName clears the value of the "name" field.
+func (m *QAInviteMutation) ClearName() {
+	m.name = nil
+	m.clearedFields[qainvite.FieldName] = struct{}{}
+}
+
+// NameCleared returns if the "name" field was cleared in this mutation.
+func (m *QAInviteMutation) NameCleared() bool {
+	_, ok := m.clearedFields[qainvite.FieldName]
+	return ok
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *QAInviteMutation) ResetName() {
+	m.name = nil
+	delete(m.clearedFields, qainvite.FieldName)
+}
+
+// SetRole sets the "role" field.
+func (m *QAInviteMutation) SetRole(s string) {
+	m.role = &s
+}
+
+// Role returns the value of the "role" field in the mutation.
+func (m *QAInviteMutation) Role() (r string, exists bool) {
+	v := m.role
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRole returns the old "role" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldRole(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRole is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRole requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRole: %w", err)
+	}
+	return oldValue.Role, nil
+}
+
+// ResetRole resets all changes to the "role" field.
+func (m *QAInviteMutation) ResetRole() {
+	m.role = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *QAInviteMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *QAInviteMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *QAInviteMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (m *QAInviteMutation) SetLastSeenAt(t time.Time) {
+	m.last_seen_at = &t
+}
+
+// LastSeenAt returns the value of the "last_seen_at" field in the mutation.
+func (m *QAInviteMutation) LastSeenAt() (r time.Time, exists bool) {
+	v := m.last_seen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSeenAt returns the old "last_seen_at" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldLastSeenAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSeenAt: %w", err)
+	}
+	return oldValue.LastSeenAt, nil
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (m *QAInviteMutation) ClearLastSeenAt() {
+	m.last_seen_at = nil
+	m.clearedFields[qainvite.FieldLastSeenAt] = struct{}{}
+}
+
+// LastSeenAtCleared returns if the "last_seen_at" field was cleared in this mutation.
+func (m *QAInviteMutation) LastSeenAtCleared() bool {
+	_, ok := m.clearedFields[qainvite.FieldLastSeenAt]
+	return ok
+}
+
+// ResetLastSeenAt resets all changes to the "last_seen_at" field.
+func (m *QAInviteMutation) ResetLastSeenAt() {
+	m.last_seen_at = nil
+	delete(m.clearedFields, qainvite.FieldLastSeenAt)
+}
+
+// SetInvitedBy sets the "invited_by" field.
+func (m *QAInviteMutation) SetInvitedBy(u uuid.UUID) {
+	m.invited_by = &u
+}
+
+// InvitedBy returns the value of the "invited_by" field in the mutation.
+func (m *QAInviteMutation) InvitedBy() (r uuid.UUID, exists bool) {
+	v := m.invited_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInvitedBy returns the old "invited_by" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldInvitedBy(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInvitedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInvitedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInvitedBy: %w", err)
+	}
+	return oldValue.InvitedBy, nil
+}
+
+// ClearInvitedBy clears the value of the "invited_by" field.
+func (m *QAInviteMutation) ClearInvitedBy() {
+	m.invited_by = nil
+	m.clearedFields[qainvite.FieldInvitedBy] = struct{}{}
+}
+
+// InvitedByCleared returns if the "invited_by" field was cleared in this mutation.
+func (m *QAInviteMutation) InvitedByCleared() bool {
+	_, ok := m.clearedFields[qainvite.FieldInvitedBy]
+	return ok
+}
+
+// ResetInvitedBy resets all changes to the "invited_by" field.
+func (m *QAInviteMutation) ResetInvitedBy() {
+	m.invited_by = nil
+	delete(m.clearedFields, qainvite.FieldInvitedBy)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *QAInviteMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *QAInviteMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *QAInviteMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *QAInviteMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *QAInviteMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *QAInviteMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the QAInviteMutation builder.
+func (m *QAInviteMutation) Where(ps ...predicate.QAInvite) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the QAInviteMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *QAInviteMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.QAInvite, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *QAInviteMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *QAInviteMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (QAInvite).
+func (m *QAInviteMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *QAInviteMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.tenant_id != nil {
+		fields = append(fields, qainvite.FieldTenantID)
+	}
+	if m.session_id != nil {
+		fields = append(fields, qainvite.FieldSessionID)
+	}
+	if m.email_hash != nil {
+		fields = append(fields, qainvite.FieldEmailHash)
+	}
+	if m.email_hint != nil {
+		fields = append(fields, qainvite.FieldEmailHint)
+	}
+	if m.email_enc != nil {
+		fields = append(fields, qainvite.FieldEmailEnc)
+	}
+	if m.name != nil {
+		fields = append(fields, qainvite.FieldName)
+	}
+	if m.role != nil {
+		fields = append(fields, qainvite.FieldRole)
+	}
+	if m.status != nil {
+		fields = append(fields, qainvite.FieldStatus)
+	}
+	if m.last_seen_at != nil {
+		fields = append(fields, qainvite.FieldLastSeenAt)
+	}
+	if m.invited_by != nil {
+		fields = append(fields, qainvite.FieldInvitedBy)
+	}
+	if m.created_at != nil {
+		fields = append(fields, qainvite.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, qainvite.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *QAInviteMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case qainvite.FieldTenantID:
+		return m.TenantID()
+	case qainvite.FieldSessionID:
+		return m.SessionID()
+	case qainvite.FieldEmailHash:
+		return m.EmailHash()
+	case qainvite.FieldEmailHint:
+		return m.EmailHint()
+	case qainvite.FieldEmailEnc:
+		return m.EmailEnc()
+	case qainvite.FieldName:
+		return m.Name()
+	case qainvite.FieldRole:
+		return m.Role()
+	case qainvite.FieldStatus:
+		return m.Status()
+	case qainvite.FieldLastSeenAt:
+		return m.LastSeenAt()
+	case qainvite.FieldInvitedBy:
+		return m.InvitedBy()
+	case qainvite.FieldCreatedAt:
+		return m.CreatedAt()
+	case qainvite.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *QAInviteMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case qainvite.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case qainvite.FieldSessionID:
+		return m.OldSessionID(ctx)
+	case qainvite.FieldEmailHash:
+		return m.OldEmailHash(ctx)
+	case qainvite.FieldEmailHint:
+		return m.OldEmailHint(ctx)
+	case qainvite.FieldEmailEnc:
+		return m.OldEmailEnc(ctx)
+	case qainvite.FieldName:
+		return m.OldName(ctx)
+	case qainvite.FieldRole:
+		return m.OldRole(ctx)
+	case qainvite.FieldStatus:
+		return m.OldStatus(ctx)
+	case qainvite.FieldLastSeenAt:
+		return m.OldLastSeenAt(ctx)
+	case qainvite.FieldInvitedBy:
+		return m.OldInvitedBy(ctx)
+	case qainvite.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case qainvite.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown QAInvite field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QAInviteMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case qainvite.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case qainvite.FieldSessionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSessionID(v)
+		return nil
+	case qainvite.FieldEmailHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmailHash(v)
+		return nil
+	case qainvite.FieldEmailHint:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmailHint(v)
+		return nil
+	case qainvite.FieldEmailEnc:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmailEnc(v)
+		return nil
+	case qainvite.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case qainvite.FieldRole:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRole(v)
+		return nil
+	case qainvite.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case qainvite.FieldLastSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSeenAt(v)
+		return nil
+	case qainvite.FieldInvitedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInvitedBy(v)
+		return nil
+	case qainvite.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case qainvite.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QAInvite field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *QAInviteMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *QAInviteMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QAInviteMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown QAInvite numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *QAInviteMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(qainvite.FieldEmailHint) {
+		fields = append(fields, qainvite.FieldEmailHint)
+	}
+	if m.FieldCleared(qainvite.FieldEmailEnc) {
+		fields = append(fields, qainvite.FieldEmailEnc)
+	}
+	if m.FieldCleared(qainvite.FieldName) {
+		fields = append(fields, qainvite.FieldName)
+	}
+	if m.FieldCleared(qainvite.FieldLastSeenAt) {
+		fields = append(fields, qainvite.FieldLastSeenAt)
+	}
+	if m.FieldCleared(qainvite.FieldInvitedBy) {
+		fields = append(fields, qainvite.FieldInvitedBy)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *QAInviteMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *QAInviteMutation) ClearField(name string) error {
+	switch name {
+	case qainvite.FieldEmailHint:
+		m.ClearEmailHint()
+		return nil
+	case qainvite.FieldEmailEnc:
+		m.ClearEmailEnc()
+		return nil
+	case qainvite.FieldName:
+		m.ClearName()
+		return nil
+	case qainvite.FieldLastSeenAt:
+		m.ClearLastSeenAt()
+		return nil
+	case qainvite.FieldInvitedBy:
+		m.ClearInvitedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown QAInvite nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *QAInviteMutation) ResetField(name string) error {
+	switch name {
+	case qainvite.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case qainvite.FieldSessionID:
+		m.ResetSessionID()
+		return nil
+	case qainvite.FieldEmailHash:
+		m.ResetEmailHash()
+		return nil
+	case qainvite.FieldEmailHint:
+		m.ResetEmailHint()
+		return nil
+	case qainvite.FieldEmailEnc:
+		m.ResetEmailEnc()
+		return nil
+	case qainvite.FieldName:
+		m.ResetName()
+		return nil
+	case qainvite.FieldRole:
+		m.ResetRole()
+		return nil
+	case qainvite.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case qainvite.FieldLastSeenAt:
+		m.ResetLastSeenAt()
+		return nil
+	case qainvite.FieldInvitedBy:
+		m.ResetInvitedBy()
+		return nil
+	case qainvite.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case qainvite.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown QAInvite field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *QAInviteMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *QAInviteMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *QAInviteMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *QAInviteMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *QAInviteMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *QAInviteMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *QAInviteMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown QAInvite unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *QAInviteMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown QAInvite edge %s", name)
+}
+
+// QAResultMutation represents an operation that mutates the QAResult nodes in the graph.
+type QAResultMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	tenant_id           *uuid.UUID
+	session_id          *uuid.UUID
+	criterion_id        *uuid.UUID
+	tester_key          *string
+	tester_hint         *string
+	tester_user_id      *uuid.UUID
+	invite_id           *uuid.UUID
+	result              *string
+	severity            *int
+	addseverity         *int
+	device              *string
+	notes               *string
+	evidence_keys       *[]string
+	appendevidence_keys []string
+	defect_id           *uuid.UUID
+	is_current          *bool
+	created_at          *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*QAResult, error)
+	predicates          []predicate.QAResult
+}
+
+var _ ent.Mutation = (*QAResultMutation)(nil)
+
+// qaresultOption allows management of the mutation configuration using functional options.
+type qaresultOption func(*QAResultMutation)
+
+// newQAResultMutation creates new mutation for the QAResult entity.
+func newQAResultMutation(c config, op Op, opts ...qaresultOption) *QAResultMutation {
+	m := &QAResultMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeQAResult,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withQAResultID sets the ID field of the mutation.
+func withQAResultID(id uuid.UUID) qaresultOption {
+	return func(m *QAResultMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *QAResult
+		)
+		m.oldValue = func(ctx context.Context) (*QAResult, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().QAResult.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withQAResult sets the old QAResult of the mutation.
+func withQAResult(node *QAResult) qaresultOption {
+	return func(m *QAResultMutation) {
+		m.oldValue = func(context.Context) (*QAResult, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m QAResultMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m QAResultMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of QAResult entities.
+func (m *QAResultMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *QAResultMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *QAResultMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().QAResult.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *QAResultMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *QAResultMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *QAResultMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetSessionID sets the "session_id" field.
+func (m *QAResultMutation) SetSessionID(u uuid.UUID) {
+	m.session_id = &u
+}
+
+// SessionID returns the value of the "session_id" field in the mutation.
+func (m *QAResultMutation) SessionID() (r uuid.UUID, exists bool) {
+	v := m.session_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSessionID returns the old "session_id" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldSessionID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSessionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSessionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSessionID: %w", err)
+	}
+	return oldValue.SessionID, nil
+}
+
+// ResetSessionID resets all changes to the "session_id" field.
+func (m *QAResultMutation) ResetSessionID() {
+	m.session_id = nil
+}
+
+// SetCriterionID sets the "criterion_id" field.
+func (m *QAResultMutation) SetCriterionID(u uuid.UUID) {
+	m.criterion_id = &u
+}
+
+// CriterionID returns the value of the "criterion_id" field in the mutation.
+func (m *QAResultMutation) CriterionID() (r uuid.UUID, exists bool) {
+	v := m.criterion_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCriterionID returns the old "criterion_id" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldCriterionID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCriterionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCriterionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCriterionID: %w", err)
+	}
+	return oldValue.CriterionID, nil
+}
+
+// ResetCriterionID resets all changes to the "criterion_id" field.
+func (m *QAResultMutation) ResetCriterionID() {
+	m.criterion_id = nil
+}
+
+// SetTesterKey sets the "tester_key" field.
+func (m *QAResultMutation) SetTesterKey(s string) {
+	m.tester_key = &s
+}
+
+// TesterKey returns the value of the "tester_key" field in the mutation.
+func (m *QAResultMutation) TesterKey() (r string, exists bool) {
+	v := m.tester_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTesterKey returns the old "tester_key" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldTesterKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTesterKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTesterKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTesterKey: %w", err)
+	}
+	return oldValue.TesterKey, nil
+}
+
+// ResetTesterKey resets all changes to the "tester_key" field.
+func (m *QAResultMutation) ResetTesterKey() {
+	m.tester_key = nil
+}
+
+// SetTesterHint sets the "tester_hint" field.
+func (m *QAResultMutation) SetTesterHint(s string) {
+	m.tester_hint = &s
+}
+
+// TesterHint returns the value of the "tester_hint" field in the mutation.
+func (m *QAResultMutation) TesterHint() (r string, exists bool) {
+	v := m.tester_hint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTesterHint returns the old "tester_hint" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldTesterHint(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTesterHint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTesterHint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTesterHint: %w", err)
+	}
+	return oldValue.TesterHint, nil
+}
+
+// ClearTesterHint clears the value of the "tester_hint" field.
+func (m *QAResultMutation) ClearTesterHint() {
+	m.tester_hint = nil
+	m.clearedFields[qaresult.FieldTesterHint] = struct{}{}
+}
+
+// TesterHintCleared returns if the "tester_hint" field was cleared in this mutation.
+func (m *QAResultMutation) TesterHintCleared() bool {
+	_, ok := m.clearedFields[qaresult.FieldTesterHint]
+	return ok
+}
+
+// ResetTesterHint resets all changes to the "tester_hint" field.
+func (m *QAResultMutation) ResetTesterHint() {
+	m.tester_hint = nil
+	delete(m.clearedFields, qaresult.FieldTesterHint)
+}
+
+// SetTesterUserID sets the "tester_user_id" field.
+func (m *QAResultMutation) SetTesterUserID(u uuid.UUID) {
+	m.tester_user_id = &u
+}
+
+// TesterUserID returns the value of the "tester_user_id" field in the mutation.
+func (m *QAResultMutation) TesterUserID() (r uuid.UUID, exists bool) {
+	v := m.tester_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTesterUserID returns the old "tester_user_id" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldTesterUserID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTesterUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTesterUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTesterUserID: %w", err)
+	}
+	return oldValue.TesterUserID, nil
+}
+
+// ClearTesterUserID clears the value of the "tester_user_id" field.
+func (m *QAResultMutation) ClearTesterUserID() {
+	m.tester_user_id = nil
+	m.clearedFields[qaresult.FieldTesterUserID] = struct{}{}
+}
+
+// TesterUserIDCleared returns if the "tester_user_id" field was cleared in this mutation.
+func (m *QAResultMutation) TesterUserIDCleared() bool {
+	_, ok := m.clearedFields[qaresult.FieldTesterUserID]
+	return ok
+}
+
+// ResetTesterUserID resets all changes to the "tester_user_id" field.
+func (m *QAResultMutation) ResetTesterUserID() {
+	m.tester_user_id = nil
+	delete(m.clearedFields, qaresult.FieldTesterUserID)
+}
+
+// SetInviteID sets the "invite_id" field.
+func (m *QAResultMutation) SetInviteID(u uuid.UUID) {
+	m.invite_id = &u
+}
+
+// InviteID returns the value of the "invite_id" field in the mutation.
+func (m *QAResultMutation) InviteID() (r uuid.UUID, exists bool) {
+	v := m.invite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInviteID returns the old "invite_id" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldInviteID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInviteID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInviteID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInviteID: %w", err)
+	}
+	return oldValue.InviteID, nil
+}
+
+// ClearInviteID clears the value of the "invite_id" field.
+func (m *QAResultMutation) ClearInviteID() {
+	m.invite_id = nil
+	m.clearedFields[qaresult.FieldInviteID] = struct{}{}
+}
+
+// InviteIDCleared returns if the "invite_id" field was cleared in this mutation.
+func (m *QAResultMutation) InviteIDCleared() bool {
+	_, ok := m.clearedFields[qaresult.FieldInviteID]
+	return ok
+}
+
+// ResetInviteID resets all changes to the "invite_id" field.
+func (m *QAResultMutation) ResetInviteID() {
+	m.invite_id = nil
+	delete(m.clearedFields, qaresult.FieldInviteID)
+}
+
+// SetResult sets the "result" field.
+func (m *QAResultMutation) SetResult(s string) {
+	m.result = &s
+}
+
+// Result returns the value of the "result" field in the mutation.
+func (m *QAResultMutation) Result() (r string, exists bool) {
+	v := m.result
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResult returns the old "result" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldResult(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResult is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResult requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResult: %w", err)
+	}
+	return oldValue.Result, nil
+}
+
+// ResetResult resets all changes to the "result" field.
+func (m *QAResultMutation) ResetResult() {
+	m.result = nil
+}
+
+// SetSeverity sets the "severity" field.
+func (m *QAResultMutation) SetSeverity(i int) {
+	m.severity = &i
+	m.addseverity = nil
+}
+
+// Severity returns the value of the "severity" field in the mutation.
+func (m *QAResultMutation) Severity() (r int, exists bool) {
+	v := m.severity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSeverity returns the old "severity" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldSeverity(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSeverity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSeverity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSeverity: %w", err)
+	}
+	return oldValue.Severity, nil
+}
+
+// AddSeverity adds i to the "severity" field.
+func (m *QAResultMutation) AddSeverity(i int) {
+	if m.addseverity != nil {
+		*m.addseverity += i
+	} else {
+		m.addseverity = &i
+	}
+}
+
+// AddedSeverity returns the value that was added to the "severity" field in this mutation.
+func (m *QAResultMutation) AddedSeverity() (r int, exists bool) {
+	v := m.addseverity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSeverity clears the value of the "severity" field.
+func (m *QAResultMutation) ClearSeverity() {
+	m.severity = nil
+	m.addseverity = nil
+	m.clearedFields[qaresult.FieldSeverity] = struct{}{}
+}
+
+// SeverityCleared returns if the "severity" field was cleared in this mutation.
+func (m *QAResultMutation) SeverityCleared() bool {
+	_, ok := m.clearedFields[qaresult.FieldSeverity]
+	return ok
+}
+
+// ResetSeverity resets all changes to the "severity" field.
+func (m *QAResultMutation) ResetSeverity() {
+	m.severity = nil
+	m.addseverity = nil
+	delete(m.clearedFields, qaresult.FieldSeverity)
+}
+
+// SetDevice sets the "device" field.
+func (m *QAResultMutation) SetDevice(s string) {
+	m.device = &s
+}
+
+// Device returns the value of the "device" field in the mutation.
+func (m *QAResultMutation) Device() (r string, exists bool) {
+	v := m.device
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDevice returns the old "device" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldDevice(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDevice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDevice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDevice: %w", err)
+	}
+	return oldValue.Device, nil
+}
+
+// ClearDevice clears the value of the "device" field.
+func (m *QAResultMutation) ClearDevice() {
+	m.device = nil
+	m.clearedFields[qaresult.FieldDevice] = struct{}{}
+}
+
+// DeviceCleared returns if the "device" field was cleared in this mutation.
+func (m *QAResultMutation) DeviceCleared() bool {
+	_, ok := m.clearedFields[qaresult.FieldDevice]
+	return ok
+}
+
+// ResetDevice resets all changes to the "device" field.
+func (m *QAResultMutation) ResetDevice() {
+	m.device = nil
+	delete(m.clearedFields, qaresult.FieldDevice)
+}
+
+// SetNotes sets the "notes" field.
+func (m *QAResultMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *QAResultMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (m *QAResultMutation) ClearNotes() {
+	m.notes = nil
+	m.clearedFields[qaresult.FieldNotes] = struct{}{}
+}
+
+// NotesCleared returns if the "notes" field was cleared in this mutation.
+func (m *QAResultMutation) NotesCleared() bool {
+	_, ok := m.clearedFields[qaresult.FieldNotes]
+	return ok
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *QAResultMutation) ResetNotes() {
+	m.notes = nil
+	delete(m.clearedFields, qaresult.FieldNotes)
+}
+
+// SetEvidenceKeys sets the "evidence_keys" field.
+func (m *QAResultMutation) SetEvidenceKeys(s []string) {
+	m.evidence_keys = &s
+	m.appendevidence_keys = nil
+}
+
+// EvidenceKeys returns the value of the "evidence_keys" field in the mutation.
+func (m *QAResultMutation) EvidenceKeys() (r []string, exists bool) {
+	v := m.evidence_keys
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEvidenceKeys returns the old "evidence_keys" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldEvidenceKeys(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEvidenceKeys is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEvidenceKeys requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEvidenceKeys: %w", err)
+	}
+	return oldValue.EvidenceKeys, nil
+}
+
+// AppendEvidenceKeys adds s to the "evidence_keys" field.
+func (m *QAResultMutation) AppendEvidenceKeys(s []string) {
+	m.appendevidence_keys = append(m.appendevidence_keys, s...)
+}
+
+// AppendedEvidenceKeys returns the list of values that were appended to the "evidence_keys" field in this mutation.
+func (m *QAResultMutation) AppendedEvidenceKeys() ([]string, bool) {
+	if len(m.appendevidence_keys) == 0 {
+		return nil, false
+	}
+	return m.appendevidence_keys, true
+}
+
+// ClearEvidenceKeys clears the value of the "evidence_keys" field.
+func (m *QAResultMutation) ClearEvidenceKeys() {
+	m.evidence_keys = nil
+	m.appendevidence_keys = nil
+	m.clearedFields[qaresult.FieldEvidenceKeys] = struct{}{}
+}
+
+// EvidenceKeysCleared returns if the "evidence_keys" field was cleared in this mutation.
+func (m *QAResultMutation) EvidenceKeysCleared() bool {
+	_, ok := m.clearedFields[qaresult.FieldEvidenceKeys]
+	return ok
+}
+
+// ResetEvidenceKeys resets all changes to the "evidence_keys" field.
+func (m *QAResultMutation) ResetEvidenceKeys() {
+	m.evidence_keys = nil
+	m.appendevidence_keys = nil
+	delete(m.clearedFields, qaresult.FieldEvidenceKeys)
+}
+
+// SetDefectID sets the "defect_id" field.
+func (m *QAResultMutation) SetDefectID(u uuid.UUID) {
+	m.defect_id = &u
+}
+
+// DefectID returns the value of the "defect_id" field in the mutation.
+func (m *QAResultMutation) DefectID() (r uuid.UUID, exists bool) {
+	v := m.defect_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefectID returns the old "defect_id" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldDefectID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefectID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefectID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefectID: %w", err)
+	}
+	return oldValue.DefectID, nil
+}
+
+// ClearDefectID clears the value of the "defect_id" field.
+func (m *QAResultMutation) ClearDefectID() {
+	m.defect_id = nil
+	m.clearedFields[qaresult.FieldDefectID] = struct{}{}
+}
+
+// DefectIDCleared returns if the "defect_id" field was cleared in this mutation.
+func (m *QAResultMutation) DefectIDCleared() bool {
+	_, ok := m.clearedFields[qaresult.FieldDefectID]
+	return ok
+}
+
+// ResetDefectID resets all changes to the "defect_id" field.
+func (m *QAResultMutation) ResetDefectID() {
+	m.defect_id = nil
+	delete(m.clearedFields, qaresult.FieldDefectID)
+}
+
+// SetIsCurrent sets the "is_current" field.
+func (m *QAResultMutation) SetIsCurrent(b bool) {
+	m.is_current = &b
+}
+
+// IsCurrent returns the value of the "is_current" field in the mutation.
+func (m *QAResultMutation) IsCurrent() (r bool, exists bool) {
+	v := m.is_current
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsCurrent returns the old "is_current" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldIsCurrent(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsCurrent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsCurrent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsCurrent: %w", err)
+	}
+	return oldValue.IsCurrent, nil
+}
+
+// ResetIsCurrent resets all changes to the "is_current" field.
+func (m *QAResultMutation) ResetIsCurrent() {
+	m.is_current = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *QAResultMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *QAResultMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the QAResult entity.
+// If the QAResult object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAResultMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *QAResultMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// Where appends a list predicates to the QAResultMutation builder.
+func (m *QAResultMutation) Where(ps ...predicate.QAResult) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the QAResultMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *QAResultMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.QAResult, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *QAResultMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *QAResultMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (QAResult).
+func (m *QAResultMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *QAResultMutation) Fields() []string {
+	fields := make([]string, 0, 15)
+	if m.tenant_id != nil {
+		fields = append(fields, qaresult.FieldTenantID)
+	}
+	if m.session_id != nil {
+		fields = append(fields, qaresult.FieldSessionID)
+	}
+	if m.criterion_id != nil {
+		fields = append(fields, qaresult.FieldCriterionID)
+	}
+	if m.tester_key != nil {
+		fields = append(fields, qaresult.FieldTesterKey)
+	}
+	if m.tester_hint != nil {
+		fields = append(fields, qaresult.FieldTesterHint)
+	}
+	if m.tester_user_id != nil {
+		fields = append(fields, qaresult.FieldTesterUserID)
+	}
+	if m.invite_id != nil {
+		fields = append(fields, qaresult.FieldInviteID)
+	}
+	if m.result != nil {
+		fields = append(fields, qaresult.FieldResult)
+	}
+	if m.severity != nil {
+		fields = append(fields, qaresult.FieldSeverity)
+	}
+	if m.device != nil {
+		fields = append(fields, qaresult.FieldDevice)
+	}
+	if m.notes != nil {
+		fields = append(fields, qaresult.FieldNotes)
+	}
+	if m.evidence_keys != nil {
+		fields = append(fields, qaresult.FieldEvidenceKeys)
+	}
+	if m.defect_id != nil {
+		fields = append(fields, qaresult.FieldDefectID)
+	}
+	if m.is_current != nil {
+		fields = append(fields, qaresult.FieldIsCurrent)
+	}
+	if m.created_at != nil {
+		fields = append(fields, qaresult.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *QAResultMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case qaresult.FieldTenantID:
+		return m.TenantID()
+	case qaresult.FieldSessionID:
+		return m.SessionID()
+	case qaresult.FieldCriterionID:
+		return m.CriterionID()
+	case qaresult.FieldTesterKey:
+		return m.TesterKey()
+	case qaresult.FieldTesterHint:
+		return m.TesterHint()
+	case qaresult.FieldTesterUserID:
+		return m.TesterUserID()
+	case qaresult.FieldInviteID:
+		return m.InviteID()
+	case qaresult.FieldResult:
+		return m.Result()
+	case qaresult.FieldSeverity:
+		return m.Severity()
+	case qaresult.FieldDevice:
+		return m.Device()
+	case qaresult.FieldNotes:
+		return m.Notes()
+	case qaresult.FieldEvidenceKeys:
+		return m.EvidenceKeys()
+	case qaresult.FieldDefectID:
+		return m.DefectID()
+	case qaresult.FieldIsCurrent:
+		return m.IsCurrent()
+	case qaresult.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *QAResultMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case qaresult.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case qaresult.FieldSessionID:
+		return m.OldSessionID(ctx)
+	case qaresult.FieldCriterionID:
+		return m.OldCriterionID(ctx)
+	case qaresult.FieldTesterKey:
+		return m.OldTesterKey(ctx)
+	case qaresult.FieldTesterHint:
+		return m.OldTesterHint(ctx)
+	case qaresult.FieldTesterUserID:
+		return m.OldTesterUserID(ctx)
+	case qaresult.FieldInviteID:
+		return m.OldInviteID(ctx)
+	case qaresult.FieldResult:
+		return m.OldResult(ctx)
+	case qaresult.FieldSeverity:
+		return m.OldSeverity(ctx)
+	case qaresult.FieldDevice:
+		return m.OldDevice(ctx)
+	case qaresult.FieldNotes:
+		return m.OldNotes(ctx)
+	case qaresult.FieldEvidenceKeys:
+		return m.OldEvidenceKeys(ctx)
+	case qaresult.FieldDefectID:
+		return m.OldDefectID(ctx)
+	case qaresult.FieldIsCurrent:
+		return m.OldIsCurrent(ctx)
+	case qaresult.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown QAResult field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QAResultMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case qaresult.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case qaresult.FieldSessionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSessionID(v)
+		return nil
+	case qaresult.FieldCriterionID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCriterionID(v)
+		return nil
+	case qaresult.FieldTesterKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTesterKey(v)
+		return nil
+	case qaresult.FieldTesterHint:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTesterHint(v)
+		return nil
+	case qaresult.FieldTesterUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTesterUserID(v)
+		return nil
+	case qaresult.FieldInviteID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInviteID(v)
+		return nil
+	case qaresult.FieldResult:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResult(v)
+		return nil
+	case qaresult.FieldSeverity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSeverity(v)
+		return nil
+	case qaresult.FieldDevice:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDevice(v)
+		return nil
+	case qaresult.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case qaresult.FieldEvidenceKeys:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEvidenceKeys(v)
+		return nil
+	case qaresult.FieldDefectID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefectID(v)
+		return nil
+	case qaresult.FieldIsCurrent:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsCurrent(v)
+		return nil
+	case qaresult.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QAResult field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *QAResultMutation) AddedFields() []string {
+	var fields []string
+	if m.addseverity != nil {
+		fields = append(fields, qaresult.FieldSeverity)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *QAResultMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case qaresult.FieldSeverity:
+		return m.AddedSeverity()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QAResultMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case qaresult.FieldSeverity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSeverity(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QAResult numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *QAResultMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(qaresult.FieldTesterHint) {
+		fields = append(fields, qaresult.FieldTesterHint)
+	}
+	if m.FieldCleared(qaresult.FieldTesterUserID) {
+		fields = append(fields, qaresult.FieldTesterUserID)
+	}
+	if m.FieldCleared(qaresult.FieldInviteID) {
+		fields = append(fields, qaresult.FieldInviteID)
+	}
+	if m.FieldCleared(qaresult.FieldSeverity) {
+		fields = append(fields, qaresult.FieldSeverity)
+	}
+	if m.FieldCleared(qaresult.FieldDevice) {
+		fields = append(fields, qaresult.FieldDevice)
+	}
+	if m.FieldCleared(qaresult.FieldNotes) {
+		fields = append(fields, qaresult.FieldNotes)
+	}
+	if m.FieldCleared(qaresult.FieldEvidenceKeys) {
+		fields = append(fields, qaresult.FieldEvidenceKeys)
+	}
+	if m.FieldCleared(qaresult.FieldDefectID) {
+		fields = append(fields, qaresult.FieldDefectID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *QAResultMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *QAResultMutation) ClearField(name string) error {
+	switch name {
+	case qaresult.FieldTesterHint:
+		m.ClearTesterHint()
+		return nil
+	case qaresult.FieldTesterUserID:
+		m.ClearTesterUserID()
+		return nil
+	case qaresult.FieldInviteID:
+		m.ClearInviteID()
+		return nil
+	case qaresult.FieldSeverity:
+		m.ClearSeverity()
+		return nil
+	case qaresult.FieldDevice:
+		m.ClearDevice()
+		return nil
+	case qaresult.FieldNotes:
+		m.ClearNotes()
+		return nil
+	case qaresult.FieldEvidenceKeys:
+		m.ClearEvidenceKeys()
+		return nil
+	case qaresult.FieldDefectID:
+		m.ClearDefectID()
+		return nil
+	}
+	return fmt.Errorf("unknown QAResult nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *QAResultMutation) ResetField(name string) error {
+	switch name {
+	case qaresult.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case qaresult.FieldSessionID:
+		m.ResetSessionID()
+		return nil
+	case qaresult.FieldCriterionID:
+		m.ResetCriterionID()
+		return nil
+	case qaresult.FieldTesterKey:
+		m.ResetTesterKey()
+		return nil
+	case qaresult.FieldTesterHint:
+		m.ResetTesterHint()
+		return nil
+	case qaresult.FieldTesterUserID:
+		m.ResetTesterUserID()
+		return nil
+	case qaresult.FieldInviteID:
+		m.ResetInviteID()
+		return nil
+	case qaresult.FieldResult:
+		m.ResetResult()
+		return nil
+	case qaresult.FieldSeverity:
+		m.ResetSeverity()
+		return nil
+	case qaresult.FieldDevice:
+		m.ResetDevice()
+		return nil
+	case qaresult.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case qaresult.FieldEvidenceKeys:
+		m.ResetEvidenceKeys()
+		return nil
+	case qaresult.FieldDefectID:
+		m.ResetDefectID()
+		return nil
+	case qaresult.FieldIsCurrent:
+		m.ResetIsCurrent()
+		return nil
+	case qaresult.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown QAResult field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *QAResultMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *QAResultMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *QAResultMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *QAResultMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *QAResultMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *QAResultMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *QAResultMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown QAResult unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *QAResultMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown QAResult edge %s", name)
+}
+
+// QASessionMutation represents an operation that mutates the QASession nodes in the graph.
+type QASessionMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *uuid.UUID
+	tenant_id               *uuid.UUID
+	template_id             *uuid.UUID
+	template_version        *int
+	addtemplate_version     *int
+	title                   *string
+	subject_kind            *string
+	subject_ref             *string
+	criteria_snapshot       *[]qamodel.SnapshotCriterion
+	appendcriteria_snapshot []qamodel.SnapshotCriterion
+	pass_rule               *qamodel.PassRule
+	status                  *string
+	share_code              *string
+	owner_id                *uuid.UUID
+	opened_at               *time.Time
+	closed_at               *time.Time
+	document_hash           *string
+	metadata                *map[string]interface{}
+	created_at              *time.Time
+	updated_at              *time.Time
+	clearedFields           map[string]struct{}
+	done                    bool
+	oldValue                func(context.Context) (*QASession, error)
+	predicates              []predicate.QASession
+}
+
+var _ ent.Mutation = (*QASessionMutation)(nil)
+
+// qasessionOption allows management of the mutation configuration using functional options.
+type qasessionOption func(*QASessionMutation)
+
+// newQASessionMutation creates new mutation for the QASession entity.
+func newQASessionMutation(c config, op Op, opts ...qasessionOption) *QASessionMutation {
+	m := &QASessionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeQASession,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withQASessionID sets the ID field of the mutation.
+func withQASessionID(id uuid.UUID) qasessionOption {
+	return func(m *QASessionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *QASession
+		)
+		m.oldValue = func(ctx context.Context) (*QASession, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().QASession.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withQASession sets the old QASession of the mutation.
+func withQASession(node *QASession) qasessionOption {
+	return func(m *QASessionMutation) {
+		m.oldValue = func(context.Context) (*QASession, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m QASessionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m QASessionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of QASession entities.
+func (m *QASessionMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *QASessionMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *QASessionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().QASession.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *QASessionMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *QASessionMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldTenantID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *QASessionMutation) ResetTenantID() {
+	m.tenant_id = nil
+}
+
+// SetTemplateID sets the "template_id" field.
+func (m *QASessionMutation) SetTemplateID(u uuid.UUID) {
+	m.template_id = &u
+}
+
+// TemplateID returns the value of the "template_id" field in the mutation.
+func (m *QASessionMutation) TemplateID() (r uuid.UUID, exists bool) {
+	v := m.template_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTemplateID returns the old "template_id" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldTemplateID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTemplateID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTemplateID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTemplateID: %w", err)
+	}
+	return oldValue.TemplateID, nil
+}
+
+// ClearTemplateID clears the value of the "template_id" field.
+func (m *QASessionMutation) ClearTemplateID() {
+	m.template_id = nil
+	m.clearedFields[qasession.FieldTemplateID] = struct{}{}
+}
+
+// TemplateIDCleared returns if the "template_id" field was cleared in this mutation.
+func (m *QASessionMutation) TemplateIDCleared() bool {
+	_, ok := m.clearedFields[qasession.FieldTemplateID]
+	return ok
+}
+
+// ResetTemplateID resets all changes to the "template_id" field.
+func (m *QASessionMutation) ResetTemplateID() {
+	m.template_id = nil
+	delete(m.clearedFields, qasession.FieldTemplateID)
+}
+
+// SetTemplateVersion sets the "template_version" field.
+func (m *QASessionMutation) SetTemplateVersion(i int) {
+	m.template_version = &i
+	m.addtemplate_version = nil
+}
+
+// TemplateVersion returns the value of the "template_version" field in the mutation.
+func (m *QASessionMutation) TemplateVersion() (r int, exists bool) {
+	v := m.template_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTemplateVersion returns the old "template_version" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldTemplateVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTemplateVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTemplateVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTemplateVersion: %w", err)
+	}
+	return oldValue.TemplateVersion, nil
+}
+
+// AddTemplateVersion adds i to the "template_version" field.
+func (m *QASessionMutation) AddTemplateVersion(i int) {
+	if m.addtemplate_version != nil {
+		*m.addtemplate_version += i
+	} else {
+		m.addtemplate_version = &i
+	}
+}
+
+// AddedTemplateVersion returns the value that was added to the "template_version" field in this mutation.
+func (m *QASessionMutation) AddedTemplateVersion() (r int, exists bool) {
+	v := m.addtemplate_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTemplateVersion resets all changes to the "template_version" field.
+func (m *QASessionMutation) ResetTemplateVersion() {
+	m.template_version = nil
+	m.addtemplate_version = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *QASessionMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *QASessionMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *QASessionMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetSubjectKind sets the "subject_kind" field.
+func (m *QASessionMutation) SetSubjectKind(s string) {
+	m.subject_kind = &s
+}
+
+// SubjectKind returns the value of the "subject_kind" field in the mutation.
+func (m *QASessionMutation) SubjectKind() (r string, exists bool) {
+	v := m.subject_kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubjectKind returns the old "subject_kind" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldSubjectKind(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubjectKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubjectKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubjectKind: %w", err)
+	}
+	return oldValue.SubjectKind, nil
+}
+
+// ResetSubjectKind resets all changes to the "subject_kind" field.
+func (m *QASessionMutation) ResetSubjectKind() {
+	m.subject_kind = nil
+}
+
+// SetSubjectRef sets the "subject_ref" field.
+func (m *QASessionMutation) SetSubjectRef(s string) {
+	m.subject_ref = &s
+}
+
+// SubjectRef returns the value of the "subject_ref" field in the mutation.
+func (m *QASessionMutation) SubjectRef() (r string, exists bool) {
+	v := m.subject_ref
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubjectRef returns the old "subject_ref" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldSubjectRef(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubjectRef is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubjectRef requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubjectRef: %w", err)
+	}
+	return oldValue.SubjectRef, nil
+}
+
+// ClearSubjectRef clears the value of the "subject_ref" field.
+func (m *QASessionMutation) ClearSubjectRef() {
+	m.subject_ref = nil
+	m.clearedFields[qasession.FieldSubjectRef] = struct{}{}
+}
+
+// SubjectRefCleared returns if the "subject_ref" field was cleared in this mutation.
+func (m *QASessionMutation) SubjectRefCleared() bool {
+	_, ok := m.clearedFields[qasession.FieldSubjectRef]
+	return ok
+}
+
+// ResetSubjectRef resets all changes to the "subject_ref" field.
+func (m *QASessionMutation) ResetSubjectRef() {
+	m.subject_ref = nil
+	delete(m.clearedFields, qasession.FieldSubjectRef)
+}
+
+// SetCriteriaSnapshot sets the "criteria_snapshot" field.
+func (m *QASessionMutation) SetCriteriaSnapshot(qc []qamodel.SnapshotCriterion) {
+	m.criteria_snapshot = &qc
+	m.appendcriteria_snapshot = nil
+}
+
+// CriteriaSnapshot returns the value of the "criteria_snapshot" field in the mutation.
+func (m *QASessionMutation) CriteriaSnapshot() (r []qamodel.SnapshotCriterion, exists bool) {
+	v := m.criteria_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCriteriaSnapshot returns the old "criteria_snapshot" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldCriteriaSnapshot(ctx context.Context) (v []qamodel.SnapshotCriterion, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCriteriaSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCriteriaSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCriteriaSnapshot: %w", err)
+	}
+	return oldValue.CriteriaSnapshot, nil
+}
+
+// AppendCriteriaSnapshot adds qc to the "criteria_snapshot" field.
+func (m *QASessionMutation) AppendCriteriaSnapshot(qc []qamodel.SnapshotCriterion) {
+	m.appendcriteria_snapshot = append(m.appendcriteria_snapshot, qc...)
+}
+
+// AppendedCriteriaSnapshot returns the list of values that were appended to the "criteria_snapshot" field in this mutation.
+func (m *QASessionMutation) AppendedCriteriaSnapshot() ([]qamodel.SnapshotCriterion, bool) {
+	if len(m.appendcriteria_snapshot) == 0 {
+		return nil, false
+	}
+	return m.appendcriteria_snapshot, true
+}
+
+// ClearCriteriaSnapshot clears the value of the "criteria_snapshot" field.
+func (m *QASessionMutation) ClearCriteriaSnapshot() {
+	m.criteria_snapshot = nil
+	m.appendcriteria_snapshot = nil
+	m.clearedFields[qasession.FieldCriteriaSnapshot] = struct{}{}
+}
+
+// CriteriaSnapshotCleared returns if the "criteria_snapshot" field was cleared in this mutation.
+func (m *QASessionMutation) CriteriaSnapshotCleared() bool {
+	_, ok := m.clearedFields[qasession.FieldCriteriaSnapshot]
+	return ok
+}
+
+// ResetCriteriaSnapshot resets all changes to the "criteria_snapshot" field.
+func (m *QASessionMutation) ResetCriteriaSnapshot() {
+	m.criteria_snapshot = nil
+	m.appendcriteria_snapshot = nil
+	delete(m.clearedFields, qasession.FieldCriteriaSnapshot)
+}
+
+// SetPassRule sets the "pass_rule" field.
+func (m *QASessionMutation) SetPassRule(qr qamodel.PassRule) {
+	m.pass_rule = &qr
+}
+
+// PassRule returns the value of the "pass_rule" field in the mutation.
+func (m *QASessionMutation) PassRule() (r qamodel.PassRule, exists bool) {
+	v := m.pass_rule
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPassRule returns the old "pass_rule" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldPassRule(ctx context.Context) (v qamodel.PassRule, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPassRule is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPassRule requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPassRule: %w", err)
+	}
+	return oldValue.PassRule, nil
+}
+
+// ClearPassRule clears the value of the "pass_rule" field.
+func (m *QASessionMutation) ClearPassRule() {
+	m.pass_rule = nil
+	m.clearedFields[qasession.FieldPassRule] = struct{}{}
+}
+
+// PassRuleCleared returns if the "pass_rule" field was cleared in this mutation.
+func (m *QASessionMutation) PassRuleCleared() bool {
+	_, ok := m.clearedFields[qasession.FieldPassRule]
+	return ok
+}
+
+// ResetPassRule resets all changes to the "pass_rule" field.
+func (m *QASessionMutation) ResetPassRule() {
+	m.pass_rule = nil
+	delete(m.clearedFields, qasession.FieldPassRule)
+}
+
+// SetStatus sets the "status" field.
+func (m *QASessionMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *QASessionMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *QASessionMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetShareCode sets the "share_code" field.
+func (m *QASessionMutation) SetShareCode(s string) {
+	m.share_code = &s
+}
+
+// ShareCode returns the value of the "share_code" field in the mutation.
+func (m *QASessionMutation) ShareCode() (r string, exists bool) {
+	v := m.share_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShareCode returns the old "share_code" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldShareCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShareCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShareCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShareCode: %w", err)
+	}
+	return oldValue.ShareCode, nil
+}
+
+// ResetShareCode resets all changes to the "share_code" field.
+func (m *QASessionMutation) ResetShareCode() {
+	m.share_code = nil
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (m *QASessionMutation) SetOwnerID(u uuid.UUID) {
+	m.owner_id = &u
+}
+
+// OwnerID returns the value of the "owner_id" field in the mutation.
+func (m *QASessionMutation) OwnerID() (r uuid.UUID, exists bool) {
+	v := m.owner_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOwnerID returns the old "owner_id" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldOwnerID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOwnerID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOwnerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOwnerID: %w", err)
+	}
+	return oldValue.OwnerID, nil
+}
+
+// ResetOwnerID resets all changes to the "owner_id" field.
+func (m *QASessionMutation) ResetOwnerID() {
+	m.owner_id = nil
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (m *QASessionMutation) SetOpenedAt(t time.Time) {
+	m.opened_at = &t
+}
+
+// OpenedAt returns the value of the "opened_at" field in the mutation.
+func (m *QASessionMutation) OpenedAt() (r time.Time, exists bool) {
+	v := m.opened_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOpenedAt returns the old "opened_at" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldOpenedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOpenedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOpenedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOpenedAt: %w", err)
+	}
+	return oldValue.OpenedAt, nil
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (m *QASessionMutation) ClearOpenedAt() {
+	m.opened_at = nil
+	m.clearedFields[qasession.FieldOpenedAt] = struct{}{}
+}
+
+// OpenedAtCleared returns if the "opened_at" field was cleared in this mutation.
+func (m *QASessionMutation) OpenedAtCleared() bool {
+	_, ok := m.clearedFields[qasession.FieldOpenedAt]
+	return ok
+}
+
+// ResetOpenedAt resets all changes to the "opened_at" field.
+func (m *QASessionMutation) ResetOpenedAt() {
+	m.opened_at = nil
+	delete(m.clearedFields, qasession.FieldOpenedAt)
+}
+
+// SetClosedAt sets the "closed_at" field.
+func (m *QASessionMutation) SetClosedAt(t time.Time) {
+	m.closed_at = &t
+}
+
+// ClosedAt returns the value of the "closed_at" field in the mutation.
+func (m *QASessionMutation) ClosedAt() (r time.Time, exists bool) {
+	v := m.closed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClosedAt returns the old "closed_at" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldClosedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClosedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClosedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClosedAt: %w", err)
+	}
+	return oldValue.ClosedAt, nil
+}
+
+// ClearClosedAt clears the value of the "closed_at" field.
+func (m *QASessionMutation) ClearClosedAt() {
+	m.closed_at = nil
+	m.clearedFields[qasession.FieldClosedAt] = struct{}{}
+}
+
+// ClosedAtCleared returns if the "closed_at" field was cleared in this mutation.
+func (m *QASessionMutation) ClosedAtCleared() bool {
+	_, ok := m.clearedFields[qasession.FieldClosedAt]
+	return ok
+}
+
+// ResetClosedAt resets all changes to the "closed_at" field.
+func (m *QASessionMutation) ResetClosedAt() {
+	m.closed_at = nil
+	delete(m.clearedFields, qasession.FieldClosedAt)
+}
+
+// SetDocumentHash sets the "document_hash" field.
+func (m *QASessionMutation) SetDocumentHash(s string) {
+	m.document_hash = &s
+}
+
+// DocumentHash returns the value of the "document_hash" field in the mutation.
+func (m *QASessionMutation) DocumentHash() (r string, exists bool) {
+	v := m.document_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDocumentHash returns the old "document_hash" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldDocumentHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDocumentHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDocumentHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDocumentHash: %w", err)
+	}
+	return oldValue.DocumentHash, nil
+}
+
+// ClearDocumentHash clears the value of the "document_hash" field.
+func (m *QASessionMutation) ClearDocumentHash() {
+	m.document_hash = nil
+	m.clearedFields[qasession.FieldDocumentHash] = struct{}{}
+}
+
+// DocumentHashCleared returns if the "document_hash" field was cleared in this mutation.
+func (m *QASessionMutation) DocumentHashCleared() bool {
+	_, ok := m.clearedFields[qasession.FieldDocumentHash]
+	return ok
+}
+
+// ResetDocumentHash resets all changes to the "document_hash" field.
+func (m *QASessionMutation) ResetDocumentHash() {
+	m.document_hash = nil
+	delete(m.clearedFields, qasession.FieldDocumentHash)
+}
+
+// SetMetadata sets the "metadata" field.
+func (m *QASessionMutation) SetMetadata(value map[string]interface{}) {
+	m.metadata = &value
+}
+
+// Metadata returns the value of the "metadata" field in the mutation.
+func (m *QASessionMutation) Metadata() (r map[string]interface{}, exists bool) {
+	v := m.metadata
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadata returns the old "metadata" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldMetadata(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadata is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadata requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadata: %w", err)
+	}
+	return oldValue.Metadata, nil
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (m *QASessionMutation) ClearMetadata() {
+	m.metadata = nil
+	m.clearedFields[qasession.FieldMetadata] = struct{}{}
+}
+
+// MetadataCleared returns if the "metadata" field was cleared in this mutation.
+func (m *QASessionMutation) MetadataCleared() bool {
+	_, ok := m.clearedFields[qasession.FieldMetadata]
+	return ok
+}
+
+// ResetMetadata resets all changes to the "metadata" field.
+func (m *QASessionMutation) ResetMetadata() {
+	m.metadata = nil
+	delete(m.clearedFields, qasession.FieldMetadata)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *QASessionMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *QASessionMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *QASessionMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *QASessionMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *QASessionMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the QASession entity.
+// If the QASession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QASessionMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *QASessionMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the QASessionMutation builder.
+func (m *QASessionMutation) Where(ps ...predicate.QASession) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the QASessionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *QASessionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.QASession, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *QASessionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *QASessionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (QASession).
+func (m *QASessionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *QASessionMutation) Fields() []string {
+	fields := make([]string, 0, 17)
+	if m.tenant_id != nil {
+		fields = append(fields, qasession.FieldTenantID)
+	}
+	if m.template_id != nil {
+		fields = append(fields, qasession.FieldTemplateID)
+	}
+	if m.template_version != nil {
+		fields = append(fields, qasession.FieldTemplateVersion)
+	}
+	if m.title != nil {
+		fields = append(fields, qasession.FieldTitle)
+	}
+	if m.subject_kind != nil {
+		fields = append(fields, qasession.FieldSubjectKind)
+	}
+	if m.subject_ref != nil {
+		fields = append(fields, qasession.FieldSubjectRef)
+	}
+	if m.criteria_snapshot != nil {
+		fields = append(fields, qasession.FieldCriteriaSnapshot)
+	}
+	if m.pass_rule != nil {
+		fields = append(fields, qasession.FieldPassRule)
+	}
+	if m.status != nil {
+		fields = append(fields, qasession.FieldStatus)
+	}
+	if m.share_code != nil {
+		fields = append(fields, qasession.FieldShareCode)
+	}
+	if m.owner_id != nil {
+		fields = append(fields, qasession.FieldOwnerID)
+	}
+	if m.opened_at != nil {
+		fields = append(fields, qasession.FieldOpenedAt)
+	}
+	if m.closed_at != nil {
+		fields = append(fields, qasession.FieldClosedAt)
+	}
+	if m.document_hash != nil {
+		fields = append(fields, qasession.FieldDocumentHash)
+	}
+	if m.metadata != nil {
+		fields = append(fields, qasession.FieldMetadata)
+	}
+	if m.created_at != nil {
+		fields = append(fields, qasession.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, qasession.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *QASessionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case qasession.FieldTenantID:
+		return m.TenantID()
+	case qasession.FieldTemplateID:
+		return m.TemplateID()
+	case qasession.FieldTemplateVersion:
+		return m.TemplateVersion()
+	case qasession.FieldTitle:
+		return m.Title()
+	case qasession.FieldSubjectKind:
+		return m.SubjectKind()
+	case qasession.FieldSubjectRef:
+		return m.SubjectRef()
+	case qasession.FieldCriteriaSnapshot:
+		return m.CriteriaSnapshot()
+	case qasession.FieldPassRule:
+		return m.PassRule()
+	case qasession.FieldStatus:
+		return m.Status()
+	case qasession.FieldShareCode:
+		return m.ShareCode()
+	case qasession.FieldOwnerID:
+		return m.OwnerID()
+	case qasession.FieldOpenedAt:
+		return m.OpenedAt()
+	case qasession.FieldClosedAt:
+		return m.ClosedAt()
+	case qasession.FieldDocumentHash:
+		return m.DocumentHash()
+	case qasession.FieldMetadata:
+		return m.Metadata()
+	case qasession.FieldCreatedAt:
+		return m.CreatedAt()
+	case qasession.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *QASessionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case qasession.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case qasession.FieldTemplateID:
+		return m.OldTemplateID(ctx)
+	case qasession.FieldTemplateVersion:
+		return m.OldTemplateVersion(ctx)
+	case qasession.FieldTitle:
+		return m.OldTitle(ctx)
+	case qasession.FieldSubjectKind:
+		return m.OldSubjectKind(ctx)
+	case qasession.FieldSubjectRef:
+		return m.OldSubjectRef(ctx)
+	case qasession.FieldCriteriaSnapshot:
+		return m.OldCriteriaSnapshot(ctx)
+	case qasession.FieldPassRule:
+		return m.OldPassRule(ctx)
+	case qasession.FieldStatus:
+		return m.OldStatus(ctx)
+	case qasession.FieldShareCode:
+		return m.OldShareCode(ctx)
+	case qasession.FieldOwnerID:
+		return m.OldOwnerID(ctx)
+	case qasession.FieldOpenedAt:
+		return m.OldOpenedAt(ctx)
+	case qasession.FieldClosedAt:
+		return m.OldClosedAt(ctx)
+	case qasession.FieldDocumentHash:
+		return m.OldDocumentHash(ctx)
+	case qasession.FieldMetadata:
+		return m.OldMetadata(ctx)
+	case qasession.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case qasession.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown QASession field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QASessionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case qasession.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case qasession.FieldTemplateID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTemplateID(v)
+		return nil
+	case qasession.FieldTemplateVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTemplateVersion(v)
+		return nil
+	case qasession.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case qasession.FieldSubjectKind:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubjectKind(v)
+		return nil
+	case qasession.FieldSubjectRef:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubjectRef(v)
+		return nil
+	case qasession.FieldCriteriaSnapshot:
+		v, ok := value.([]qamodel.SnapshotCriterion)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCriteriaSnapshot(v)
+		return nil
+	case qasession.FieldPassRule:
+		v, ok := value.(qamodel.PassRule)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPassRule(v)
+		return nil
+	case qasession.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case qasession.FieldShareCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShareCode(v)
+		return nil
+	case qasession.FieldOwnerID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOwnerID(v)
+		return nil
+	case qasession.FieldOpenedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOpenedAt(v)
+		return nil
+	case qasession.FieldClosedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClosedAt(v)
+		return nil
+	case qasession.FieldDocumentHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDocumentHash(v)
+		return nil
+	case qasession.FieldMetadata:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadata(v)
+		return nil
+	case qasession.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case qasession.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QASession field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *QASessionMutation) AddedFields() []string {
+	var fields []string
+	if m.addtemplate_version != nil {
+		fields = append(fields, qasession.FieldTemplateVersion)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *QASessionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case qasession.FieldTemplateVersion:
+		return m.AddedTemplateVersion()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QASessionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case qasession.FieldTemplateVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTemplateVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QASession numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *QASessionMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(qasession.FieldTemplateID) {
+		fields = append(fields, qasession.FieldTemplateID)
+	}
+	if m.FieldCleared(qasession.FieldSubjectRef) {
+		fields = append(fields, qasession.FieldSubjectRef)
+	}
+	if m.FieldCleared(qasession.FieldCriteriaSnapshot) {
+		fields = append(fields, qasession.FieldCriteriaSnapshot)
+	}
+	if m.FieldCleared(qasession.FieldPassRule) {
+		fields = append(fields, qasession.FieldPassRule)
+	}
+	if m.FieldCleared(qasession.FieldOpenedAt) {
+		fields = append(fields, qasession.FieldOpenedAt)
+	}
+	if m.FieldCleared(qasession.FieldClosedAt) {
+		fields = append(fields, qasession.FieldClosedAt)
+	}
+	if m.FieldCleared(qasession.FieldDocumentHash) {
+		fields = append(fields, qasession.FieldDocumentHash)
+	}
+	if m.FieldCleared(qasession.FieldMetadata) {
+		fields = append(fields, qasession.FieldMetadata)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *QASessionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *QASessionMutation) ClearField(name string) error {
+	switch name {
+	case qasession.FieldTemplateID:
+		m.ClearTemplateID()
+		return nil
+	case qasession.FieldSubjectRef:
+		m.ClearSubjectRef()
+		return nil
+	case qasession.FieldCriteriaSnapshot:
+		m.ClearCriteriaSnapshot()
+		return nil
+	case qasession.FieldPassRule:
+		m.ClearPassRule()
+		return nil
+	case qasession.FieldOpenedAt:
+		m.ClearOpenedAt()
+		return nil
+	case qasession.FieldClosedAt:
+		m.ClearClosedAt()
+		return nil
+	case qasession.FieldDocumentHash:
+		m.ClearDocumentHash()
+		return nil
+	case qasession.FieldMetadata:
+		m.ClearMetadata()
+		return nil
+	}
+	return fmt.Errorf("unknown QASession nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *QASessionMutation) ResetField(name string) error {
+	switch name {
+	case qasession.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case qasession.FieldTemplateID:
+		m.ResetTemplateID()
+		return nil
+	case qasession.FieldTemplateVersion:
+		m.ResetTemplateVersion()
+		return nil
+	case qasession.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case qasession.FieldSubjectKind:
+		m.ResetSubjectKind()
+		return nil
+	case qasession.FieldSubjectRef:
+		m.ResetSubjectRef()
+		return nil
+	case qasession.FieldCriteriaSnapshot:
+		m.ResetCriteriaSnapshot()
+		return nil
+	case qasession.FieldPassRule:
+		m.ResetPassRule()
+		return nil
+	case qasession.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case qasession.FieldShareCode:
+		m.ResetShareCode()
+		return nil
+	case qasession.FieldOwnerID:
+		m.ResetOwnerID()
+		return nil
+	case qasession.FieldOpenedAt:
+		m.ResetOpenedAt()
+		return nil
+	case qasession.FieldClosedAt:
+		m.ResetClosedAt()
+		return nil
+	case qasession.FieldDocumentHash:
+		m.ResetDocumentHash()
+		return nil
+	case qasession.FieldMetadata:
+		m.ResetMetadata()
+		return nil
+	case qasession.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case qasession.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown QASession field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *QASessionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *QASessionMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *QASessionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *QASessionMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *QASessionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *QASessionMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *QASessionMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown QASession unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *QASessionMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown QASession edge %s", name)
+}
+
+// QATemplateMutation represents an operation that mutates the QATemplate nodes in the graph.
+type QATemplateMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	tenant_id       *uuid.UUID
+	name            *string
+	kind            *string
+	service_tag     *string
+	version         *int
+	addversion      *int
+	status          *string
+	needs_review    *bool
+	pass_rule       *qamodel.PassRule
+	metadata        *map[string]interface{}
+	created_by      *uuid.UUID
+	created_at      *time.Time
+	updated_at      *time.Time
+	clearedFields   map[string]struct{}
+	criteria        map[uuid.UUID]struct{}
+	removedcriteria map[uuid.UUID]struct{}
+	clearedcriteria bool
+	done            bool
+	oldValue        func(context.Context) (*QATemplate, error)
+	predicates      []predicate.QATemplate
+}
+
+var _ ent.Mutation = (*QATemplateMutation)(nil)
+
+// qatemplateOption allows management of the mutation configuration using functional options.
+type qatemplateOption func(*QATemplateMutation)
+
+// newQATemplateMutation creates new mutation for the QATemplate entity.
+func newQATemplateMutation(c config, op Op, opts ...qatemplateOption) *QATemplateMutation {
+	m := &QATemplateMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeQATemplate,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withQATemplateID sets the ID field of the mutation.
+func withQATemplateID(id uuid.UUID) qatemplateOption {
+	return func(m *QATemplateMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *QATemplate
+		)
+		m.oldValue = func(ctx context.Context) (*QATemplate, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().QATemplate.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withQATemplate sets the old QATemplate of the mutation.
+func withQATemplate(node *QATemplate) qatemplateOption {
+	return func(m *QATemplateMutation) {
+		m.oldValue = func(context.Context) (*QATemplate, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m QATemplateMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m QATemplateMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of QATemplate entities.
+func (m *QATemplateMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *QATemplateMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *QATemplateMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().QATemplate.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (m *QATemplateMutation) SetTenantID(u uuid.UUID) {
+	m.tenant_id = &u
+}
+
+// TenantID returns the value of the "tenant_id" field in the mutation.
+func (m *QATemplateMutation) TenantID() (r uuid.UUID, exists bool) {
+	v := m.tenant_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantID returns the old "tenant_id" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldTenantID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantID: %w", err)
+	}
+	return oldValue.TenantID, nil
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (m *QATemplateMutation) ClearTenantID() {
+	m.tenant_id = nil
+	m.clearedFields[qatemplate.FieldTenantID] = struct{}{}
+}
+
+// TenantIDCleared returns if the "tenant_id" field was cleared in this mutation.
+func (m *QATemplateMutation) TenantIDCleared() bool {
+	_, ok := m.clearedFields[qatemplate.FieldTenantID]
+	return ok
+}
+
+// ResetTenantID resets all changes to the "tenant_id" field.
+func (m *QATemplateMutation) ResetTenantID() {
+	m.tenant_id = nil
+	delete(m.clearedFields, qatemplate.FieldTenantID)
+}
+
+// SetName sets the "name" field.
+func (m *QATemplateMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *QATemplateMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *QATemplateMutation) ResetName() {
+	m.name = nil
+}
+
+// SetKind sets the "kind" field.
+func (m *QATemplateMutation) SetKind(s string) {
+	m.kind = &s
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *QATemplateMutation) Kind() (r string, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldKind(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *QATemplateMutation) ResetKind() {
+	m.kind = nil
+}
+
+// SetServiceTag sets the "service_tag" field.
+func (m *QATemplateMutation) SetServiceTag(s string) {
+	m.service_tag = &s
+}
+
+// ServiceTag returns the value of the "service_tag" field in the mutation.
+func (m *QATemplateMutation) ServiceTag() (r string, exists bool) {
+	v := m.service_tag
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldServiceTag returns the old "service_tag" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldServiceTag(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldServiceTag is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldServiceTag requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldServiceTag: %w", err)
+	}
+	return oldValue.ServiceTag, nil
+}
+
+// ClearServiceTag clears the value of the "service_tag" field.
+func (m *QATemplateMutation) ClearServiceTag() {
+	m.service_tag = nil
+	m.clearedFields[qatemplate.FieldServiceTag] = struct{}{}
+}
+
+// ServiceTagCleared returns if the "service_tag" field was cleared in this mutation.
+func (m *QATemplateMutation) ServiceTagCleared() bool {
+	_, ok := m.clearedFields[qatemplate.FieldServiceTag]
+	return ok
+}
+
+// ResetServiceTag resets all changes to the "service_tag" field.
+func (m *QATemplateMutation) ResetServiceTag() {
+	m.service_tag = nil
+	delete(m.clearedFields, qatemplate.FieldServiceTag)
+}
+
+// SetVersion sets the "version" field.
+func (m *QATemplateMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *QATemplateMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *QATemplateMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *QATemplateMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *QATemplateMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *QATemplateMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *QATemplateMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *QATemplateMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetNeedsReview sets the "needs_review" field.
+func (m *QATemplateMutation) SetNeedsReview(b bool) {
+	m.needs_review = &b
+}
+
+// NeedsReview returns the value of the "needs_review" field in the mutation.
+func (m *QATemplateMutation) NeedsReview() (r bool, exists bool) {
+	v := m.needs_review
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNeedsReview returns the old "needs_review" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldNeedsReview(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNeedsReview is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNeedsReview requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNeedsReview: %w", err)
+	}
+	return oldValue.NeedsReview, nil
+}
+
+// ResetNeedsReview resets all changes to the "needs_review" field.
+func (m *QATemplateMutation) ResetNeedsReview() {
+	m.needs_review = nil
+}
+
+// SetPassRule sets the "pass_rule" field.
+func (m *QATemplateMutation) SetPassRule(qr qamodel.PassRule) {
+	m.pass_rule = &qr
+}
+
+// PassRule returns the value of the "pass_rule" field in the mutation.
+func (m *QATemplateMutation) PassRule() (r qamodel.PassRule, exists bool) {
+	v := m.pass_rule
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPassRule returns the old "pass_rule" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldPassRule(ctx context.Context) (v qamodel.PassRule, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPassRule is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPassRule requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPassRule: %w", err)
+	}
+	return oldValue.PassRule, nil
+}
+
+// ClearPassRule clears the value of the "pass_rule" field.
+func (m *QATemplateMutation) ClearPassRule() {
+	m.pass_rule = nil
+	m.clearedFields[qatemplate.FieldPassRule] = struct{}{}
+}
+
+// PassRuleCleared returns if the "pass_rule" field was cleared in this mutation.
+func (m *QATemplateMutation) PassRuleCleared() bool {
+	_, ok := m.clearedFields[qatemplate.FieldPassRule]
+	return ok
+}
+
+// ResetPassRule resets all changes to the "pass_rule" field.
+func (m *QATemplateMutation) ResetPassRule() {
+	m.pass_rule = nil
+	delete(m.clearedFields, qatemplate.FieldPassRule)
+}
+
+// SetMetadata sets the "metadata" field.
+func (m *QATemplateMutation) SetMetadata(value map[string]interface{}) {
+	m.metadata = &value
+}
+
+// Metadata returns the value of the "metadata" field in the mutation.
+func (m *QATemplateMutation) Metadata() (r map[string]interface{}, exists bool) {
+	v := m.metadata
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadata returns the old "metadata" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldMetadata(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadata is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadata requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadata: %w", err)
+	}
+	return oldValue.Metadata, nil
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (m *QATemplateMutation) ClearMetadata() {
+	m.metadata = nil
+	m.clearedFields[qatemplate.FieldMetadata] = struct{}{}
+}
+
+// MetadataCleared returns if the "metadata" field was cleared in this mutation.
+func (m *QATemplateMutation) MetadataCleared() bool {
+	_, ok := m.clearedFields[qatemplate.FieldMetadata]
+	return ok
+}
+
+// ResetMetadata resets all changes to the "metadata" field.
+func (m *QATemplateMutation) ResetMetadata() {
+	m.metadata = nil
+	delete(m.clearedFields, qatemplate.FieldMetadata)
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *QATemplateMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *QATemplateMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldCreatedBy(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *QATemplateMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.clearedFields[qatemplate.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *QATemplateMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[qatemplate.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *QATemplateMutation) ResetCreatedBy() {
+	m.created_by = nil
+	delete(m.clearedFields, qatemplate.FieldCreatedBy)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *QATemplateMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *QATemplateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *QATemplateMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *QATemplateMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *QATemplateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the QATemplate entity.
+// If the QATemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QATemplateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *QATemplateMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// AddCriteriumIDs adds the "criteria" edge to the QACriterion entity by ids.
+func (m *QATemplateMutation) AddCriteriumIDs(ids ...uuid.UUID) {
+	if m.criteria == nil {
+		m.criteria = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.criteria[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCriteria clears the "criteria" edge to the QACriterion entity.
+func (m *QATemplateMutation) ClearCriteria() {
+	m.clearedcriteria = true
+}
+
+// CriteriaCleared reports if the "criteria" edge to the QACriterion entity was cleared.
+func (m *QATemplateMutation) CriteriaCleared() bool {
+	return m.clearedcriteria
+}
+
+// RemoveCriteriumIDs removes the "criteria" edge to the QACriterion entity by IDs.
+func (m *QATemplateMutation) RemoveCriteriumIDs(ids ...uuid.UUID) {
+	if m.removedcriteria == nil {
+		m.removedcriteria = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.criteria, ids[i])
+		m.removedcriteria[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCriteria returns the removed IDs of the "criteria" edge to the QACriterion entity.
+func (m *QATemplateMutation) RemovedCriteriaIDs() (ids []uuid.UUID) {
+	for id := range m.removedcriteria {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CriteriaIDs returns the "criteria" edge IDs in the mutation.
+func (m *QATemplateMutation) CriteriaIDs() (ids []uuid.UUID) {
+	for id := range m.criteria {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCriteria resets all changes to the "criteria" edge.
+func (m *QATemplateMutation) ResetCriteria() {
+	m.criteria = nil
+	m.clearedcriteria = false
+	m.removedcriteria = nil
+}
+
+// Where appends a list predicates to the QATemplateMutation builder.
+func (m *QATemplateMutation) Where(ps ...predicate.QATemplate) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the QATemplateMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *QATemplateMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.QATemplate, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *QATemplateMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *QATemplateMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (QATemplate).
+func (m *QATemplateMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *QATemplateMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.tenant_id != nil {
+		fields = append(fields, qatemplate.FieldTenantID)
+	}
+	if m.name != nil {
+		fields = append(fields, qatemplate.FieldName)
+	}
+	if m.kind != nil {
+		fields = append(fields, qatemplate.FieldKind)
+	}
+	if m.service_tag != nil {
+		fields = append(fields, qatemplate.FieldServiceTag)
+	}
+	if m.version != nil {
+		fields = append(fields, qatemplate.FieldVersion)
+	}
+	if m.status != nil {
+		fields = append(fields, qatemplate.FieldStatus)
+	}
+	if m.needs_review != nil {
+		fields = append(fields, qatemplate.FieldNeedsReview)
+	}
+	if m.pass_rule != nil {
+		fields = append(fields, qatemplate.FieldPassRule)
+	}
+	if m.metadata != nil {
+		fields = append(fields, qatemplate.FieldMetadata)
+	}
+	if m.created_by != nil {
+		fields = append(fields, qatemplate.FieldCreatedBy)
+	}
+	if m.created_at != nil {
+		fields = append(fields, qatemplate.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, qatemplate.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *QATemplateMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case qatemplate.FieldTenantID:
+		return m.TenantID()
+	case qatemplate.FieldName:
+		return m.Name()
+	case qatemplate.FieldKind:
+		return m.Kind()
+	case qatemplate.FieldServiceTag:
+		return m.ServiceTag()
+	case qatemplate.FieldVersion:
+		return m.Version()
+	case qatemplate.FieldStatus:
+		return m.Status()
+	case qatemplate.FieldNeedsReview:
+		return m.NeedsReview()
+	case qatemplate.FieldPassRule:
+		return m.PassRule()
+	case qatemplate.FieldMetadata:
+		return m.Metadata()
+	case qatemplate.FieldCreatedBy:
+		return m.CreatedBy()
+	case qatemplate.FieldCreatedAt:
+		return m.CreatedAt()
+	case qatemplate.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *QATemplateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case qatemplate.FieldTenantID:
+		return m.OldTenantID(ctx)
+	case qatemplate.FieldName:
+		return m.OldName(ctx)
+	case qatemplate.FieldKind:
+		return m.OldKind(ctx)
+	case qatemplate.FieldServiceTag:
+		return m.OldServiceTag(ctx)
+	case qatemplate.FieldVersion:
+		return m.OldVersion(ctx)
+	case qatemplate.FieldStatus:
+		return m.OldStatus(ctx)
+	case qatemplate.FieldNeedsReview:
+		return m.OldNeedsReview(ctx)
+	case qatemplate.FieldPassRule:
+		return m.OldPassRule(ctx)
+	case qatemplate.FieldMetadata:
+		return m.OldMetadata(ctx)
+	case qatemplate.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case qatemplate.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case qatemplate.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown QATemplate field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QATemplateMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case qatemplate.FieldTenantID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantID(v)
+		return nil
+	case qatemplate.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case qatemplate.FieldKind:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
+		return nil
+	case qatemplate.FieldServiceTag:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetServiceTag(v)
+		return nil
+	case qatemplate.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
+	case qatemplate.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case qatemplate.FieldNeedsReview:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNeedsReview(v)
+		return nil
+	case qatemplate.FieldPassRule:
+		v, ok := value.(qamodel.PassRule)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPassRule(v)
+		return nil
+	case qatemplate.FieldMetadata:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadata(v)
+		return nil
+	case qatemplate.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case qatemplate.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case qatemplate.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QATemplate field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *QATemplateMutation) AddedFields() []string {
+	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, qatemplate.FieldVersion)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *QATemplateMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case qatemplate.FieldVersion:
+		return m.AddedVersion()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *QATemplateMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case qatemplate.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown QATemplate numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *QATemplateMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(qatemplate.FieldTenantID) {
+		fields = append(fields, qatemplate.FieldTenantID)
+	}
+	if m.FieldCleared(qatemplate.FieldServiceTag) {
+		fields = append(fields, qatemplate.FieldServiceTag)
+	}
+	if m.FieldCleared(qatemplate.FieldPassRule) {
+		fields = append(fields, qatemplate.FieldPassRule)
+	}
+	if m.FieldCleared(qatemplate.FieldMetadata) {
+		fields = append(fields, qatemplate.FieldMetadata)
+	}
+	if m.FieldCleared(qatemplate.FieldCreatedBy) {
+		fields = append(fields, qatemplate.FieldCreatedBy)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *QATemplateMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *QATemplateMutation) ClearField(name string) error {
+	switch name {
+	case qatemplate.FieldTenantID:
+		m.ClearTenantID()
+		return nil
+	case qatemplate.FieldServiceTag:
+		m.ClearServiceTag()
+		return nil
+	case qatemplate.FieldPassRule:
+		m.ClearPassRule()
+		return nil
+	case qatemplate.FieldMetadata:
+		m.ClearMetadata()
+		return nil
+	case qatemplate.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown QATemplate nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *QATemplateMutation) ResetField(name string) error {
+	switch name {
+	case qatemplate.FieldTenantID:
+		m.ResetTenantID()
+		return nil
+	case qatemplate.FieldName:
+		m.ResetName()
+		return nil
+	case qatemplate.FieldKind:
+		m.ResetKind()
+		return nil
+	case qatemplate.FieldServiceTag:
+		m.ResetServiceTag()
+		return nil
+	case qatemplate.FieldVersion:
+		m.ResetVersion()
+		return nil
+	case qatemplate.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case qatemplate.FieldNeedsReview:
+		m.ResetNeedsReview()
+		return nil
+	case qatemplate.FieldPassRule:
+		m.ResetPassRule()
+		return nil
+	case qatemplate.FieldMetadata:
+		m.ResetMetadata()
+		return nil
+	case qatemplate.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case qatemplate.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case qatemplate.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown QATemplate field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *QATemplateMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.criteria != nil {
+		edges = append(edges, qatemplate.EdgeCriteria)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *QATemplateMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case qatemplate.EdgeCriteria:
+		ids := make([]ent.Value, 0, len(m.criteria))
+		for id := range m.criteria {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *QATemplateMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedcriteria != nil {
+		edges = append(edges, qatemplate.EdgeCriteria)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *QATemplateMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case qatemplate.EdgeCriteria:
+		ids := make([]ent.Value, 0, len(m.removedcriteria))
+		for id := range m.removedcriteria {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *QATemplateMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedcriteria {
+		edges = append(edges, qatemplate.EdgeCriteria)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *QATemplateMutation) EdgeCleared(name string) bool {
+	switch name {
+	case qatemplate.EdgeCriteria:
+		return m.clearedcriteria
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *QATemplateMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown QATemplate unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *QATemplateMutation) ResetEdge(name string) error {
+	switch name {
+	case qatemplate.EdgeCriteria:
+		m.ResetCriteria()
+		return nil
+	}
+	return fmt.Errorf("unknown QATemplate edge %s", name)
 }
 
 // RoleMutation represents an operation that mutates the Role nodes in the graph.

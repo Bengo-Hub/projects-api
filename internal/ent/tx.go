@@ -28,6 +28,18 @@ type Tx struct {
 	Project *ProjectClient
 	// ProjectMember is the client for interacting with the ProjectMember builders.
 	ProjectMember *ProjectMemberClient
+	// QACriterion is the client for interacting with the QACriterion builders.
+	QACriterion *QACriterionClient
+	// QADefect is the client for interacting with the QADefect builders.
+	QADefect *QADefectClient
+	// QAInvite is the client for interacting with the QAInvite builders.
+	QAInvite *QAInviteClient
+	// QAResult is the client for interacting with the QAResult builders.
+	QAResult *QAResultClient
+	// QASession is the client for interacting with the QASession builders.
+	QASession *QASessionClient
+	// QATemplate is the client for interacting with the QATemplate builders.
+	QATemplate *QATemplateClient
 	// Role is the client for interacting with the Role builders.
 	Role *RoleClient
 	// RolePermission is the client for interacting with the RolePermission builders.
@@ -189,6 +201,12 @@ func (tx *Tx) init() {
 	tx.Permission = NewPermissionClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
 	tx.ProjectMember = NewProjectMemberClient(tx.config)
+	tx.QACriterion = NewQACriterionClient(tx.config)
+	tx.QADefect = NewQADefectClient(tx.config)
+	tx.QAInvite = NewQAInviteClient(tx.config)
+	tx.QAResult = NewQAResultClient(tx.config)
+	tx.QASession = NewQASessionClient(tx.config)
+	tx.QATemplate = NewQATemplateClient(tx.config)
 	tx.Role = NewRoleClient(tx.config)
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)

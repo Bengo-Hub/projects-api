@@ -20,6 +20,12 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/permission"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/ent/qacriterion"
+	"github.com/bengobox/projects-service/internal/ent/qadefect"
+	"github.com/bengobox/projects-service/internal/ent/qainvite"
+	"github.com/bengobox/projects-service/internal/ent/qaresult"
+	"github.com/bengobox/projects-service/internal/ent/qasession"
+	"github.com/bengobox/projects-service/internal/ent/qatemplate"
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/task"
@@ -99,6 +105,12 @@ func checkColumn(table, column string) error {
 			permission.Table:            permission.ValidColumn,
 			project.Table:               project.ValidColumn,
 			projectmember.Table:         projectmember.ValidColumn,
+			qacriterion.Table:           qacriterion.ValidColumn,
+			qadefect.Table:              qadefect.ValidColumn,
+			qainvite.Table:              qainvite.ValidColumn,
+			qaresult.Table:              qaresult.ValidColumn,
+			qasession.Table:             qasession.ValidColumn,
+			qatemplate.Table:            qatemplate.ValidColumn,
 			role.Table:                  role.ValidColumn,
 			rolepermission.Table:        rolepermission.ValidColumn,
 			task.Table:                  task.ValidColumn,

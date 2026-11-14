@@ -123,10 +123,58 @@ template with a criterion on that feature as `needs_review`.
 | Variable | Default | Use |
 |---|---|---|
 | `QA_HASH_KEY` | derived from `INTERNAL_SERVICE_KEY` | Keys the email hashes and signs access tokens; set it from a secret |
-| `FIELD_ENCRYPTION_KEY` | empty | Seals signer addresses at rest (AES-256-GCM); without it signers stay hash-only and get no close or decision notice |
+| `FIELD_ENCRYPTION_KEY` | empty | Root key for field encryption (AES-256-GCM): it seals the data keys in `field_keys`, and the values themselves until the first rotation. Without it signers stay hash-only and get no close or decision notice. Never change it by hand once data keys exist: they would no longer open |
 | `QA_ACCESS_TTL` | `8h` | Invitee access lifetime |
 | `QA_COOKIE_SECURE` | `true` | Secure, SameSite=None cookie; off only on plain HTTP locally |
 | `QA_CATALOG_ENABLED` | `false` | Read the feature catalogue from subscriptions-api |
 | `QA_UI_BASE_URL` | `https://projects.codevertexafrica.com` | Invite and session links |
 | `TICKETING_SERVICE_URL` | in-cluster ticketing-api | Defect tickets |
 | `SUBSCRIPTIONS_SERVICE_URL` | in-cluster subscriptions-api | Feature catalogue |
+
+## Platform: field keys
+
+These routes back the Security keys page in projects-ui. They sit under `/api/v1/platform`, outside
+any tenant, and only the platform owner (`is_platform_owner` in the token) gets through; a tenant
+admin or superuser gets 403 `platform_owner_required`.
+
+| Method and path | Body | Answer |
+|---|---|---|
+| `GET /api/v1/platform/field-keys` | none | 200, the key health card |
+| `POST /api/v1/platform/field-keys/backup` | `{"otp_token"}` | 200, a JSON file download (`Content-Disposition: attachment`, `Cache-Control: no-store`) |
+| `POST /api/v1/platform/field-keys/rotate` | `{"otp_token"}` | 202, the health card with the rotation started |
+
+Backup and rotation need a fresh email code. I reuse auth-api's signed-in code flow: the page asks
+auth-api to email the owner a code (`POST /api/v1/auth/otp/send`), trades the code for an
+`otp_token` (`POST /api/v1/auth/otp/verify`, valid 10 minutes), and sends that token here. I check
+it with auth-api's S2S `GET /api/v1/s2s/otp/validate` (the `authotp` client QA invitees already
+use), which deletes it on first read, and the address it proves must be the owner's own. So each
+code allows one backup or one rotation. Backup and rotation are POST so the token never sits in a
+URL or an access log.
+
+Errors carry a `code`: `otp_required` (400), `otp_invalid` (403), `otp_unavailable` (503),
+`rotation_running` (409, the last rotation is still re-sealing), `not_configured` (409, no
+`FIELD_ENCRYPTION_KEY`).
+
+The health card:
+
+```json
+{
+  "configured": true,
+  "root_fingerprint": "1a2b3c4d",
+  "current_key_id": "k9f8e7d6c5b",
+  "current_fingerprint": "5e6f7a8b",
+  "sealed_values": 12, "on_current": 9, "on_older": 3, "on_root": 1,
+  "keys": [{"id": "k9f8e7d6c5b", "fingerprint": "5e6f7a8b", "status": "current", "created_at": "...", "values": 9}],
+  "last_backup_at": "...", "last_backup_by": "owner@example.com",
+  "last_rotated_at": "...",
+  "rotation": {"state": "resealing", "key_id": "k9f8e7d6c5b", "started_at": "...", "resealed": 9, "failed": 0, "remaining": 3}
+}
+```
+
+A fingerprint is the first 8 hex characters of the SHA-256 of the key. `rotation.state` is `idle`
+(never rotated, values under the root), `resealing` or `done`.
+
+The backup file holds the current and previous data keys in the clear (base64 of the 32 bytes),
+each with its id, status and fingerprint, plus the root fingerprint, the sealed value format and
+restore notes. It does not hold `FIELD_ENCRYPTION_KEY`. Every download writes a `field_key_audits`
+row (who, when, key and root fingerprints) before the file leaves, and nothing in it is logged.

@@ -29,7 +29,21 @@ func TestRoutesMount(t *testing.T) {
 		nil, []string{"*"}, nil, nil,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusTeapot) }),
 		QARoutes{Tenant: handlers.NewQAHandler(log, nil), Invitee: handlers.NewQAInviteeHandler(log, nil, true)},
+		PlatformRoutes{FieldKeys: handlers.NewFieldKeyHandler(nil, log)},
 	)
+	// The platform field key routes sit on a static segment that must win over /{tenantID}; with no
+	// claims the platform owner gate answers 403 (a 404 would mean the tenant group swallowed them).
+	for _, c := range []struct{ method, path string }{
+		{http.MethodGet, "/api/v1/platform/field-keys"},
+		{http.MethodPost, "/api/v1/platform/field-keys/backup"},
+		{http.MethodPost, "/api/v1/platform/field-keys/rotate"},
+	} {
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, httptest.NewRequest(c.method, c.path, nil))
+		if w.Code != http.StatusForbidden {
+			t.Errorf("%s %s: want 403 from the platform owner gate, got %d", c.method, c.path, w.Code)
+		}
+	}
 	// QA invitee routes sit outside the tenant group next to the /api/v1 mount; without a token
 	// they answer 401, which proves they reached their handler.
 	for _, path := range []string{"/api/v1/qa/invitee/session", "/api/v1/qa/invitee/report.pdf"} {

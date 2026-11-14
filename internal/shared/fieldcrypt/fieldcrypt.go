@@ -3,8 +3,10 @@
 // (internal/shared/secure), which is internal to those services and so cannot be imported. The
 // construction is the same, base64(nonce|ciphertext) with the key derived by SHA-256 from the
 // secret, under its own derivation label, so one secret reused by mistake across services never
-// opens another service's values. Key rings (FIELD_ENCRYPTION_KEYS) are not ported yet. It belongs
-// in a shared module once a third service needs it.
+// opens another service's values. The Box here is the root: FIELD_ENCRYPTION_KEY itself. Rotation
+// works through data keys the app keeps in the database, sealed under the root (keyring.go), not
+// through an env key list like hadia's FIELD_ENCRYPTION_KEYS, because the app cannot change its own
+// env. It belongs in a shared module once a third service needs it.
 package fieldcrypt
 
 import (
@@ -28,7 +30,12 @@ const boundPrefix = "v2:"
 // Box seals and opens values under one key.
 type Box struct {
 	aead cipher.AEAD
+	fp   string // Fingerprint of the secret's raw bytes
 }
+
+// Fingerprint names the root key without revealing it: the first 8 hex characters of the SHA-256
+// of the secret's raw bytes.
+func (b *Box) Fingerprint() string { return b.fp }
 
 // New derives the AES-256 key from secret: base64 of at least 32 random bytes, or a plain string
 // of at least 32 bytes.
@@ -52,7 +59,7 @@ func New(secret string) (*Box, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Box{aead: aead}, nil
+	return &Box{aead: aead, fp: Fingerprint(raw)}, nil
 }
 
 // Encrypt seals plain with a fresh random nonce; empty input stays empty.

@@ -21,6 +21,13 @@ import (
 // when Postgres is unreachable.
 func Client(t *testing.T) *ent.Client {
 	t.Helper()
+	client, _ := ClientDB(t)
+	return client
+}
+
+// ClientDB is Client plus the *sql.DB under it, for code that runs raw SQL next to ent.
+func ClientDB(t *testing.T) (*ent.Client, *sql.DB) {
+	t.Helper()
 	url := os.Getenv("PROJECTS_TEST_DATABASE_URL")
 	if url == "" {
 		url = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
@@ -47,5 +54,5 @@ func Client(t *testing.T) *ent.Client {
 	if err := client.Schema.Create(context.Background()); err != nil {
 		t.Fatalf("schema: %v", err)
 	}
-	return client
+	return client, db
 }

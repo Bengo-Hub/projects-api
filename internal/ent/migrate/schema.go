@@ -142,6 +142,62 @@ var (
 			},
 		},
 	}
+	// FieldKeysColumns holds the columns for the "field_keys" table.
+	FieldKeysColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 16},
+		{Name: "key_enc", Type: field.TypeString, Nullable: true, Size: 512},
+		{Name: "fingerprint", Type: field.TypeString, Size: 16},
+		{Name: "root_fingerprint", Type: field.TypeString, Size: 16},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"current", "previous", "retired"}, Default: "current"},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "reseal_heartbeat_at", Type: field.TypeTime, Nullable: true},
+		{Name: "reseal_done_at", Type: field.TypeTime, Nullable: true},
+		{Name: "resealed", Type: field.TypeInt, Default: 0},
+		{Name: "reseal_failed", Type: field.TypeInt, Default: 0},
+		{Name: "retired_at", Type: field.TypeTime, Nullable: true},
+	}
+	// FieldKeysTable holds the schema information for the "field_keys" table.
+	FieldKeysTable = &schema.Table{
+		Name:       "field_keys",
+		Columns:    FieldKeysColumns,
+		PrimaryKey: []*schema.Column{FieldKeysColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "fieldkey_one_current",
+				Unique:  true,
+				Columns: []*schema.Column{FieldKeysColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "status = 'current'",
+				},
+			},
+		},
+	}
+	// FieldKeyAuditsColumns holds the columns for the "field_key_audits" table.
+	FieldKeyAuditsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "action", Type: field.TypeString, Size: 32},
+		{Name: "actor_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "actor_email", Type: field.TypeString, Nullable: true, Size: 254},
+		{Name: "key_id", Type: field.TypeString, Nullable: true, Size: 16},
+		{Name: "fingerprint", Type: field.TypeString, Nullable: true, Size: 16},
+		{Name: "root_fingerprint", Type: field.TypeString, Nullable: true, Size: 16},
+		{Name: "detail", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// FieldKeyAuditsTable holds the schema information for the "field_key_audits" table.
+	FieldKeyAuditsTable = &schema.Table{
+		Name:       "field_key_audits",
+		Columns:    FieldKeyAuditsColumns,
+		PrimaryKey: []*schema.Column{FieldKeyAuditsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "fieldkeyaudit_action_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{FieldKeyAuditsColumns[1], FieldKeyAuditsColumns[8]},
+			},
+		},
+	}
 	// MilestonesColumns holds the columns for the "milestones" table.
 	MilestonesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -868,6 +924,8 @@ var (
 		ActivitiesTable,
 		AttachmentsTable,
 		CommentsTable,
+		FieldKeysTable,
+		FieldKeyAuditsTable,
 		MilestonesTable,
 		OutboxEventsTable,
 		PermissionsTable,
@@ -900,6 +958,12 @@ func init() {
 	AttachmentsTable.ForeignKeys[1].RefTable = TasksTable
 	CommentsTable.ForeignKeys[0].RefTable = ProjectsTable
 	CommentsTable.ForeignKeys[1].RefTable = TasksTable
+	FieldKeysTable.Annotation = &entsql.Annotation{
+		Table: "field_keys",
+	}
+	FieldKeyAuditsTable.Annotation = &entsql.Annotation{
+		Table: "field_key_audits",
+	}
 	MilestonesTable.ForeignKeys[0].RefTable = ProjectsTable
 	ProjectMembersTable.ForeignKeys[0].RefTable = ProjectsTable
 	QaCriteriaTable.ForeignKeys[0].RefTable = QaTemplatesTable

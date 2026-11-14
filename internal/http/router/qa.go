@@ -9,3 +9,9 @@ type QARoutes struct {
 	// Invitee serves /api/v1/qa/access/... and /api/v1/qa/invitee/... for invited emails.
 	Invitee *handlers.QAInviteeHandler
 }
+
+// PlatformRoutes carries the platform owner handlers under /api/v1/platform. Nil leaves them out.
+type PlatformRoutes struct {
+	// FieldKeys serves the "Security keys" page: field key health, backup and rotation.
+	FieldKeys *handlers.FieldKeyHandler
+}

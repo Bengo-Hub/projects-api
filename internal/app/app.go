@@ -34,6 +34,7 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/crmsync"
+	"github.com/bengobox/projects-service/internal/services/fieldkeys"
 	"github.com/bengobox/projects-service/internal/services/financials"
 	"github.com/bengobox/projects-service/internal/services/members"
 	"github.com/bengobox/projects-service/internal/services/milestones"
@@ -67,6 +68,8 @@ type App struct {
 	crmContacts *crmsync.ContactEventsConsumer
 	// qaFeatures flags QA templates for review when a catalogue feature they check changes.
 	qaFeatures *qa.FeatureEventsConsumer
+	// fieldKeys reloads the field key ring and continues a rotation the platform owner started.
+	fieldKeys *fieldkeys.Service
 }
 
 // tenantExportHandler serves auth-api's SSO tenant backups (httpware/tenantexport). Nil without an
@@ -203,8 +206,13 @@ func New(ctx context.Context) (*App, error) {
 		WithDirectory(authusers.New(cfg.Auth.ServiceURL, cfg.Auth.APIKey, cacheClient, log))
 	// Signer addresses are sealed at rest for the close and decision notices.
 	// A weak key is refused in production; elsewhere it only costs the notices.
+	// FIELD_ENCRYPTION_KEY is the root: it seals the data keys in field_keys, which seal the values
+	// once the platform owner has rotated (Security keys page). Never rotated, the root seals them.
+	var fieldRoot *fieldcrypt.Box
+	var fieldRing *fieldcrypt.Ring
 	if box, err := fieldcrypt.New(cfg.QA.FieldEncryptionKey); err == nil {
-		qaService.WithSealer(box)
+		fieldRoot, fieldRing = box, fieldcrypt.NewRing(box)
+		qaService.WithSealer(fieldRing)
 	} else if errors.Is(err, fieldcrypt.ErrWeakKey) {
 		if strings.EqualFold(cfg.App.Env, "production") {
 			return nil, fmt.Errorf("FIELD_ENCRYPTION_KEY: %w", err)
@@ -212,6 +220,12 @@ func New(ctx context.Context) (*App, error) {
 		log.Warn("FIELD_ENCRYPTION_KEY is too weak; QA signers will not get close and decision notices", zap.Error(err))
 	} else {
 		log.Warn("FIELD_ENCRYPTION_KEY not set; QA signers will not get close and decision notices")
+	}
+	fieldKeys := fieldkeys.New(entClient, runtimeSQLDB, fieldRoot, fieldRing,
+		authotp.NewClient(cfg.Auth.ServiceURL, cfg.Auth.APIKey), log)
+	if err := fieldKeys.Load(ctx); err != nil {
+		// Values under a data key stay closed until a reload works; the ring retries on demand.
+		log.Error("field encryption data keys not loaded", zap.Error(err))
 	}
 	qaRoutes := router.QARoutes{
 		Tenant:  handlers.NewQAHandler(log, qaService),
@@ -273,7 +287,8 @@ func New(ctx context.Context) (*App, error) {
 		authMiddleware, cfg.HTTP.AllowedOrigins, ratelimit.NewLimiter(redisClient, log, "projects"),
 		tenantExportHandler(runtimeSQLDB, cfg.Auth.APIKey),
 		crmLinksHandler(entClient, cacheClient, cfg.Auth.ServiceURL, cfg.Auth.APIKey, log),
-		qaRoutes)
+		qaRoutes,
+		router.PlatformRoutes{FieldKeys: handlers.NewFieldKeyHandler(fieldKeys, log)})
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),
@@ -297,6 +312,7 @@ func New(ctx context.Context) (*App, error) {
 		budgetEvents: financials.NewBudgetEventsConsumer(entClient, log),
 		crmContacts:  crmsync.NewContactEventsConsumer(entClient, marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey), log),
 		qaFeatures:   qa.NewFeatureEventsConsumer(qaService, log),
+		fieldKeys:    fieldKeys,
 	}, nil
 }
 
@@ -339,6 +355,11 @@ func (a *App) Run(ctx context.Context) error {
 				a.log.Error("qa feature change consumer failed", zap.Error(err))
 			}
 		}()
+	}
+
+	// Reloads the ring and continues an unfinished re-seal; never starts a rotation by itself.
+	if a.fieldKeys != nil {
+		go a.fieldKeys.Run(ctx)
 	}
 
 	errCh := make(chan error, 1)

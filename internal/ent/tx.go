@@ -18,6 +18,10 @@ type Tx struct {
 	Attachment *AttachmentClient
 	// Comment is the client for interacting with the Comment builders.
 	Comment *CommentClient
+	// FieldKey is the client for interacting with the FieldKey builders.
+	FieldKey *FieldKeyClient
+	// FieldKeyAudit is the client for interacting with the FieldKeyAudit builders.
+	FieldKeyAudit *FieldKeyAuditClient
 	// Milestone is the client for interacting with the Milestone builders.
 	Milestone *MilestoneClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
@@ -196,6 +200,8 @@ func (tx *Tx) init() {
 	tx.Activity = NewActivityClient(tx.config)
 	tx.Attachment = NewAttachmentClient(tx.config)
 	tx.Comment = NewCommentClient(tx.config)
+	tx.FieldKey = NewFieldKeyClient(tx.config)
+	tx.FieldKeyAudit = NewFieldKeyAuditClient(tx.config)
 	tx.Milestone = NewMilestoneClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
 	tx.Permission = NewPermissionClient(tx.config)

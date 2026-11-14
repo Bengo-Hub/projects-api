@@ -32,12 +32,9 @@ func New(
 	limiter *ratelimit.Limiter,
 	tenantExport http.Handler,
 	crmLinks http.Handler,
-	qaRoutes ...QARoutes,
+	qaR QARoutes,
+	platformR PlatformRoutes,
 ) http.Handler {
-	var qaR QARoutes
-	if len(qaRoutes) > 0 {
-		qaR = qaRoutes[0]
-	}
 	r := chi.NewRouter()
 
 	// Never chi RealIP: it trusts client-sent True-Client-IP/X-Forwarded-For.
@@ -148,6 +145,14 @@ func New(
 					}
 					next.ServeHTTP(w, r)
 				})
+			})
+		}
+
+		// Platform owner pages (not tenant scoped). A static segment, so chi matches it before
+		// /{tenantID}; each handler checks IsPlatformOwner itself.
+		if platformR.FieldKeys != nil {
+			api.Route("/platform", func(p chi.Router) {
+				platformR.FieldKeys.RegisterPlatformRoutes(p)
 			})
 		}
 

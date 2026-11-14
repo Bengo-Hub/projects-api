@@ -15,6 +15,12 @@ type Attachment func(*sql.Selector)
 // Comment is the predicate function for comment builders.
 type Comment func(*sql.Selector)
 
+// FieldKey is the predicate function for fieldkey builders.
+type FieldKey func(*sql.Selector)
+
+// FieldKeyAudit is the predicate function for fieldkeyaudit builders.
+type FieldKeyAudit func(*sql.Selector)
+
 // Milestone is the predicate function for milestone builders.
 type Milestone func(*sql.Selector)
 

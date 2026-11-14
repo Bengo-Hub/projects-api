@@ -45,6 +45,30 @@ func (f CommentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CommentMutation", m)
 }
 
+// The FieldKeyFunc type is an adapter to allow the use of ordinary
+// function as FieldKey mutator.
+type FieldKeyFunc func(context.Context, *ent.FieldKeyMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FieldKeyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FieldKeyMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FieldKeyMutation", m)
+}
+
+// The FieldKeyAuditFunc type is an adapter to allow the use of ordinary
+// function as FieldKeyAudit mutator.
+type FieldKeyAuditFunc func(context.Context, *ent.FieldKeyAuditMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FieldKeyAuditFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FieldKeyAuditMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FieldKeyAuditMutation", m)
+}
+
 // The MilestoneFunc type is an adapter to allow the use of ordinary
 // function as Milestone mutator.
 type MilestoneFunc func(context.Context, *ent.MilestoneMutation) (ent.Value, error)

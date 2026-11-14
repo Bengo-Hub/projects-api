@@ -19,6 +19,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
 	"github.com/bengobox/projects-service/internal/ent/comment"
+	"github.com/bengobox/projects-service/internal/ent/fieldkey"
+	"github.com/bengobox/projects-service/internal/ent/fieldkeyaudit"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
@@ -54,6 +56,10 @@ type Client struct {
 	Attachment *AttachmentClient
 	// Comment is the client for interacting with the Comment builders.
 	Comment *CommentClient
+	// FieldKey is the client for interacting with the FieldKey builders.
+	FieldKey *FieldKeyClient
+	// FieldKeyAudit is the client for interacting with the FieldKeyAudit builders.
+	FieldKeyAudit *FieldKeyAuditClient
 	// Milestone is the client for interacting with the Milestone builders.
 	Milestone *MilestoneClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
@@ -112,6 +118,8 @@ func (c *Client) init() {
 	c.Activity = NewActivityClient(c.config)
 	c.Attachment = NewAttachmentClient(c.config)
 	c.Comment = NewCommentClient(c.config)
+	c.FieldKey = NewFieldKeyClient(c.config)
+	c.FieldKeyAudit = NewFieldKeyAuditClient(c.config)
 	c.Milestone = NewMilestoneClient(c.config)
 	c.OutboxEvent = NewOutboxEventClient(c.config)
 	c.Permission = NewPermissionClient(c.config)
@@ -229,6 +237,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Activity:              NewActivityClient(cfg),
 		Attachment:            NewAttachmentClient(cfg),
 		Comment:               NewCommentClient(cfg),
+		FieldKey:              NewFieldKeyClient(cfg),
+		FieldKeyAudit:         NewFieldKeyAuditClient(cfg),
 		Milestone:             NewMilestoneClient(cfg),
 		OutboxEvent:           NewOutboxEventClient(cfg),
 		Permission:            NewPermissionClient(cfg),
@@ -273,6 +283,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Activity:              NewActivityClient(cfg),
 		Attachment:            NewAttachmentClient(cfg),
 		Comment:               NewCommentClient(cfg),
+		FieldKey:              NewFieldKeyClient(cfg),
+		FieldKeyAudit:         NewFieldKeyAuditClient(cfg),
 		Milestone:             NewMilestoneClient(cfg),
 		OutboxEvent:           NewOutboxEventClient(cfg),
 		Permission:            NewPermissionClient(cfg),
@@ -324,11 +336,12 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Activity, c.Attachment, c.Comment, c.Milestone, c.OutboxEvent, c.Permission,
-		c.Project, c.ProjectMember, c.QACriterion, c.QADefect, c.QAInvite, c.QAResult,
-		c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task, c.TaskDependency,
-		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
-		c.TenderEvaluation, c.TenderMeeting, c.UserRole,
+		c.Activity, c.Attachment, c.Comment, c.FieldKey, c.FieldKeyAudit, c.Milestone,
+		c.OutboxEvent, c.Permission, c.Project, c.ProjectMember, c.QACriterion,
+		c.QADefect, c.QAInvite, c.QAResult, c.QASession, c.QATemplate, c.Role,
+		c.RolePermission, c.Task, c.TaskDependency, c.Tender, c.TenderCommittee,
+		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
+		c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -338,11 +351,12 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Activity, c.Attachment, c.Comment, c.Milestone, c.OutboxEvent, c.Permission,
-		c.Project, c.ProjectMember, c.QACriterion, c.QADefect, c.QAInvite, c.QAResult,
-		c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task, c.TaskDependency,
-		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
-		c.TenderEvaluation, c.TenderMeeting, c.UserRole,
+		c.Activity, c.Attachment, c.Comment, c.FieldKey, c.FieldKeyAudit, c.Milestone,
+		c.OutboxEvent, c.Permission, c.Project, c.ProjectMember, c.QACriterion,
+		c.QADefect, c.QAInvite, c.QAResult, c.QASession, c.QATemplate, c.Role,
+		c.RolePermission, c.Task, c.TaskDependency, c.Tender, c.TenderCommittee,
+		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
+		c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -357,6 +371,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Attachment.mutate(ctx, m)
 	case *CommentMutation:
 		return c.Comment.mutate(ctx, m)
+	case *FieldKeyMutation:
+		return c.FieldKey.mutate(ctx, m)
+	case *FieldKeyAuditMutation:
+		return c.FieldKeyAudit.mutate(ctx, m)
 	case *MilestoneMutation:
 		return c.Milestone.mutate(ctx, m)
 	case *OutboxEventMutation:
@@ -898,6 +916,272 @@ func (c *CommentClient) mutate(ctx context.Context, m *CommentMutation) (Value, 
 		return (&CommentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Comment mutation op: %q", m.Op())
+	}
+}
+
+// FieldKeyClient is a client for the FieldKey schema.
+type FieldKeyClient struct {
+	config
+}
+
+// NewFieldKeyClient returns a client for the FieldKey from the given config.
+func NewFieldKeyClient(c config) *FieldKeyClient {
+	return &FieldKeyClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `fieldkey.Hooks(f(g(h())))`.
+func (c *FieldKeyClient) Use(hooks ...Hook) {
+	c.hooks.FieldKey = append(c.hooks.FieldKey, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `fieldkey.Intercept(f(g(h())))`.
+func (c *FieldKeyClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FieldKey = append(c.inters.FieldKey, interceptors...)
+}
+
+// Create returns a builder for creating a FieldKey entity.
+func (c *FieldKeyClient) Create() *FieldKeyCreate {
+	mutation := newFieldKeyMutation(c.config, OpCreate)
+	return &FieldKeyCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FieldKey entities.
+func (c *FieldKeyClient) CreateBulk(builders ...*FieldKeyCreate) *FieldKeyCreateBulk {
+	return &FieldKeyCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FieldKeyClient) MapCreateBulk(slice any, setFunc func(*FieldKeyCreate, int)) *FieldKeyCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FieldKeyCreateBulk{err: fmt.Errorf("calling to FieldKeyClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FieldKeyCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FieldKeyCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FieldKey.
+func (c *FieldKeyClient) Update() *FieldKeyUpdate {
+	mutation := newFieldKeyMutation(c.config, OpUpdate)
+	return &FieldKeyUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FieldKeyClient) UpdateOne(fk *FieldKey) *FieldKeyUpdateOne {
+	mutation := newFieldKeyMutation(c.config, OpUpdateOne, withFieldKey(fk))
+	return &FieldKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FieldKeyClient) UpdateOneID(id string) *FieldKeyUpdateOne {
+	mutation := newFieldKeyMutation(c.config, OpUpdateOne, withFieldKeyID(id))
+	return &FieldKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FieldKey.
+func (c *FieldKeyClient) Delete() *FieldKeyDelete {
+	mutation := newFieldKeyMutation(c.config, OpDelete)
+	return &FieldKeyDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FieldKeyClient) DeleteOne(fk *FieldKey) *FieldKeyDeleteOne {
+	return c.DeleteOneID(fk.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FieldKeyClient) DeleteOneID(id string) *FieldKeyDeleteOne {
+	builder := c.Delete().Where(fieldkey.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FieldKeyDeleteOne{builder}
+}
+
+// Query returns a query builder for FieldKey.
+func (c *FieldKeyClient) Query() *FieldKeyQuery {
+	return &FieldKeyQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFieldKey},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FieldKey entity by its id.
+func (c *FieldKeyClient) Get(ctx context.Context, id string) (*FieldKey, error) {
+	return c.Query().Where(fieldkey.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FieldKeyClient) GetX(ctx context.Context, id string) *FieldKey {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *FieldKeyClient) Hooks() []Hook {
+	return c.hooks.FieldKey
+}
+
+// Interceptors returns the client interceptors.
+func (c *FieldKeyClient) Interceptors() []Interceptor {
+	return c.inters.FieldKey
+}
+
+func (c *FieldKeyClient) mutate(ctx context.Context, m *FieldKeyMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FieldKeyCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FieldKeyUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FieldKeyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FieldKeyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FieldKey mutation op: %q", m.Op())
+	}
+}
+
+// FieldKeyAuditClient is a client for the FieldKeyAudit schema.
+type FieldKeyAuditClient struct {
+	config
+}
+
+// NewFieldKeyAuditClient returns a client for the FieldKeyAudit from the given config.
+func NewFieldKeyAuditClient(c config) *FieldKeyAuditClient {
+	return &FieldKeyAuditClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `fieldkeyaudit.Hooks(f(g(h())))`.
+func (c *FieldKeyAuditClient) Use(hooks ...Hook) {
+	c.hooks.FieldKeyAudit = append(c.hooks.FieldKeyAudit, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `fieldkeyaudit.Intercept(f(g(h())))`.
+func (c *FieldKeyAuditClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FieldKeyAudit = append(c.inters.FieldKeyAudit, interceptors...)
+}
+
+// Create returns a builder for creating a FieldKeyAudit entity.
+func (c *FieldKeyAuditClient) Create() *FieldKeyAuditCreate {
+	mutation := newFieldKeyAuditMutation(c.config, OpCreate)
+	return &FieldKeyAuditCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FieldKeyAudit entities.
+func (c *FieldKeyAuditClient) CreateBulk(builders ...*FieldKeyAuditCreate) *FieldKeyAuditCreateBulk {
+	return &FieldKeyAuditCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FieldKeyAuditClient) MapCreateBulk(slice any, setFunc func(*FieldKeyAuditCreate, int)) *FieldKeyAuditCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FieldKeyAuditCreateBulk{err: fmt.Errorf("calling to FieldKeyAuditClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FieldKeyAuditCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FieldKeyAuditCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FieldKeyAudit.
+func (c *FieldKeyAuditClient) Update() *FieldKeyAuditUpdate {
+	mutation := newFieldKeyAuditMutation(c.config, OpUpdate)
+	return &FieldKeyAuditUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FieldKeyAuditClient) UpdateOne(fka *FieldKeyAudit) *FieldKeyAuditUpdateOne {
+	mutation := newFieldKeyAuditMutation(c.config, OpUpdateOne, withFieldKeyAudit(fka))
+	return &FieldKeyAuditUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FieldKeyAuditClient) UpdateOneID(id uuid.UUID) *FieldKeyAuditUpdateOne {
+	mutation := newFieldKeyAuditMutation(c.config, OpUpdateOne, withFieldKeyAuditID(id))
+	return &FieldKeyAuditUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FieldKeyAudit.
+func (c *FieldKeyAuditClient) Delete() *FieldKeyAuditDelete {
+	mutation := newFieldKeyAuditMutation(c.config, OpDelete)
+	return &FieldKeyAuditDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FieldKeyAuditClient) DeleteOne(fka *FieldKeyAudit) *FieldKeyAuditDeleteOne {
+	return c.DeleteOneID(fka.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FieldKeyAuditClient) DeleteOneID(id uuid.UUID) *FieldKeyAuditDeleteOne {
+	builder := c.Delete().Where(fieldkeyaudit.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FieldKeyAuditDeleteOne{builder}
+}
+
+// Query returns a query builder for FieldKeyAudit.
+func (c *FieldKeyAuditClient) Query() *FieldKeyAuditQuery {
+	return &FieldKeyAuditQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFieldKeyAudit},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FieldKeyAudit entity by its id.
+func (c *FieldKeyAuditClient) Get(ctx context.Context, id uuid.UUID) (*FieldKeyAudit, error) {
+	return c.Query().Where(fieldkeyaudit.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FieldKeyAuditClient) GetX(ctx context.Context, id uuid.UUID) *FieldKeyAudit {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *FieldKeyAuditClient) Hooks() []Hook {
+	return c.hooks.FieldKeyAudit
+}
+
+// Interceptors returns the client interceptors.
+func (c *FieldKeyAuditClient) Interceptors() []Interceptor {
+	return c.inters.FieldKeyAudit
+}
+
+func (c *FieldKeyAuditClient) mutate(ctx context.Context, m *FieldKeyAuditMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FieldKeyAuditCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FieldKeyAuditUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FieldKeyAuditUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FieldKeyAuditDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FieldKeyAudit mutation op: %q", m.Op())
 	}
 }
 
@@ -4342,16 +4626,16 @@ func (c *UserRoleClient) mutate(ctx context.Context, m *UserRoleMutation) (Value
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Activity, Attachment, Comment, Milestone, OutboxEvent, Permission, Project,
-		ProjectMember, QACriterion, QADefect, QAInvite, QAResult, QASession,
-		QATemplate, Role, RolePermission, Task, TaskDependency, Tender,
+		Activity, Attachment, Comment, FieldKey, FieldKeyAudit, Milestone, OutboxEvent,
+		Permission, Project, ProjectMember, QACriterion, QADefect, QAInvite, QAResult,
+		QASession, QATemplate, Role, RolePermission, Task, TaskDependency, Tender,
 		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
 		TenderMeeting, UserRole []ent.Hook
 	}
 	inters struct {
-		Activity, Attachment, Comment, Milestone, OutboxEvent, Permission, Project,
-		ProjectMember, QACriterion, QADefect, QAInvite, QAResult, QASession,
-		QATemplate, Role, RolePermission, Task, TaskDependency, Tender,
+		Activity, Attachment, Comment, FieldKey, FieldKeyAudit, Milestone, OutboxEvent,
+		Permission, Project, ProjectMember, QACriterion, QADefect, QAInvite, QAResult,
+		QASession, QATemplate, Role, RolePermission, Task, TaskDependency, Tender,
 		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
 		TenderMeeting, UserRole []ent.Interceptor
 	}

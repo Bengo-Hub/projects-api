@@ -14,6 +14,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
 	"github.com/bengobox/projects-service/internal/ent/comment"
+	"github.com/bengobox/projects-service/internal/ent/fieldkey"
+	"github.com/bengobox/projects-service/internal/ent/fieldkeyaudit"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
@@ -53,6 +55,8 @@ const (
 	TypeActivity              = "Activity"
 	TypeAttachment            = "Attachment"
 	TypeComment               = "Comment"
+	TypeFieldKey              = "FieldKey"
+	TypeFieldKeyAudit         = "FieldKeyAudit"
 	TypeMilestone             = "Milestone"
 	TypeOutboxEvent           = "OutboxEvent"
 	TypePermission            = "Permission"
@@ -2794,6 +2798,1872 @@ func (m *CommentMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Comment edge %s", name)
+}
+
+// FieldKeyMutation represents an operation that mutates the FieldKey nodes in the graph.
+type FieldKeyMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *string
+	key_enc             *string
+	fingerprint         *string
+	root_fingerprint    *string
+	status              *fieldkey.Status
+	created_by          *uuid.UUID
+	created_at          *time.Time
+	reseal_heartbeat_at *time.Time
+	reseal_done_at      *time.Time
+	resealed            *int
+	addresealed         *int
+	reseal_failed       *int
+	addreseal_failed    *int
+	retired_at          *time.Time
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*FieldKey, error)
+	predicates          []predicate.FieldKey
+}
+
+var _ ent.Mutation = (*FieldKeyMutation)(nil)
+
+// fieldkeyOption allows management of the mutation configuration using functional options.
+type fieldkeyOption func(*FieldKeyMutation)
+
+// newFieldKeyMutation creates new mutation for the FieldKey entity.
+func newFieldKeyMutation(c config, op Op, opts ...fieldkeyOption) *FieldKeyMutation {
+	m := &FieldKeyMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFieldKey,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFieldKeyID sets the ID field of the mutation.
+func withFieldKeyID(id string) fieldkeyOption {
+	return func(m *FieldKeyMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FieldKey
+		)
+		m.oldValue = func(ctx context.Context) (*FieldKey, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FieldKey.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFieldKey sets the old FieldKey of the mutation.
+func withFieldKey(node *FieldKey) fieldkeyOption {
+	return func(m *FieldKeyMutation) {
+		m.oldValue = func(context.Context) (*FieldKey, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FieldKeyMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FieldKeyMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of FieldKey entities.
+func (m *FieldKeyMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FieldKeyMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FieldKeyMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FieldKey.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetKeyEnc sets the "key_enc" field.
+func (m *FieldKeyMutation) SetKeyEnc(s string) {
+	m.key_enc = &s
+}
+
+// KeyEnc returns the value of the "key_enc" field in the mutation.
+func (m *FieldKeyMutation) KeyEnc() (r string, exists bool) {
+	v := m.key_enc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKeyEnc returns the old "key_enc" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldKeyEnc(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKeyEnc is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKeyEnc requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKeyEnc: %w", err)
+	}
+	return oldValue.KeyEnc, nil
+}
+
+// ClearKeyEnc clears the value of the "key_enc" field.
+func (m *FieldKeyMutation) ClearKeyEnc() {
+	m.key_enc = nil
+	m.clearedFields[fieldkey.FieldKeyEnc] = struct{}{}
+}
+
+// KeyEncCleared returns if the "key_enc" field was cleared in this mutation.
+func (m *FieldKeyMutation) KeyEncCleared() bool {
+	_, ok := m.clearedFields[fieldkey.FieldKeyEnc]
+	return ok
+}
+
+// ResetKeyEnc resets all changes to the "key_enc" field.
+func (m *FieldKeyMutation) ResetKeyEnc() {
+	m.key_enc = nil
+	delete(m.clearedFields, fieldkey.FieldKeyEnc)
+}
+
+// SetFingerprint sets the "fingerprint" field.
+func (m *FieldKeyMutation) SetFingerprint(s string) {
+	m.fingerprint = &s
+}
+
+// Fingerprint returns the value of the "fingerprint" field in the mutation.
+func (m *FieldKeyMutation) Fingerprint() (r string, exists bool) {
+	v := m.fingerprint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFingerprint returns the old "fingerprint" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldFingerprint(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFingerprint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFingerprint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFingerprint: %w", err)
+	}
+	return oldValue.Fingerprint, nil
+}
+
+// ResetFingerprint resets all changes to the "fingerprint" field.
+func (m *FieldKeyMutation) ResetFingerprint() {
+	m.fingerprint = nil
+}
+
+// SetRootFingerprint sets the "root_fingerprint" field.
+func (m *FieldKeyMutation) SetRootFingerprint(s string) {
+	m.root_fingerprint = &s
+}
+
+// RootFingerprint returns the value of the "root_fingerprint" field in the mutation.
+func (m *FieldKeyMutation) RootFingerprint() (r string, exists bool) {
+	v := m.root_fingerprint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRootFingerprint returns the old "root_fingerprint" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldRootFingerprint(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRootFingerprint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRootFingerprint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRootFingerprint: %w", err)
+	}
+	return oldValue.RootFingerprint, nil
+}
+
+// ResetRootFingerprint resets all changes to the "root_fingerprint" field.
+func (m *FieldKeyMutation) ResetRootFingerprint() {
+	m.root_fingerprint = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *FieldKeyMutation) SetStatus(f fieldkey.Status) {
+	m.status = &f
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *FieldKeyMutation) Status() (r fieldkey.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldStatus(ctx context.Context) (v fieldkey.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *FieldKeyMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *FieldKeyMutation) SetCreatedBy(u uuid.UUID) {
+	m.created_by = &u
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *FieldKeyMutation) CreatedBy() (r uuid.UUID, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldCreatedBy(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (m *FieldKeyMutation) ClearCreatedBy() {
+	m.created_by = nil
+	m.clearedFields[fieldkey.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "created_by" field was cleared in this mutation.
+func (m *FieldKeyMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[fieldkey.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *FieldKeyMutation) ResetCreatedBy() {
+	m.created_by = nil
+	delete(m.clearedFields, fieldkey.FieldCreatedBy)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *FieldKeyMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *FieldKeyMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *FieldKeyMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetResealHeartbeatAt sets the "reseal_heartbeat_at" field.
+func (m *FieldKeyMutation) SetResealHeartbeatAt(t time.Time) {
+	m.reseal_heartbeat_at = &t
+}
+
+// ResealHeartbeatAt returns the value of the "reseal_heartbeat_at" field in the mutation.
+func (m *FieldKeyMutation) ResealHeartbeatAt() (r time.Time, exists bool) {
+	v := m.reseal_heartbeat_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResealHeartbeatAt returns the old "reseal_heartbeat_at" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldResealHeartbeatAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResealHeartbeatAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResealHeartbeatAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResealHeartbeatAt: %w", err)
+	}
+	return oldValue.ResealHeartbeatAt, nil
+}
+
+// ClearResealHeartbeatAt clears the value of the "reseal_heartbeat_at" field.
+func (m *FieldKeyMutation) ClearResealHeartbeatAt() {
+	m.reseal_heartbeat_at = nil
+	m.clearedFields[fieldkey.FieldResealHeartbeatAt] = struct{}{}
+}
+
+// ResealHeartbeatAtCleared returns if the "reseal_heartbeat_at" field was cleared in this mutation.
+func (m *FieldKeyMutation) ResealHeartbeatAtCleared() bool {
+	_, ok := m.clearedFields[fieldkey.FieldResealHeartbeatAt]
+	return ok
+}
+
+// ResetResealHeartbeatAt resets all changes to the "reseal_heartbeat_at" field.
+func (m *FieldKeyMutation) ResetResealHeartbeatAt() {
+	m.reseal_heartbeat_at = nil
+	delete(m.clearedFields, fieldkey.FieldResealHeartbeatAt)
+}
+
+// SetResealDoneAt sets the "reseal_done_at" field.
+func (m *FieldKeyMutation) SetResealDoneAt(t time.Time) {
+	m.reseal_done_at = &t
+}
+
+// ResealDoneAt returns the value of the "reseal_done_at" field in the mutation.
+func (m *FieldKeyMutation) ResealDoneAt() (r time.Time, exists bool) {
+	v := m.reseal_done_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResealDoneAt returns the old "reseal_done_at" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldResealDoneAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResealDoneAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResealDoneAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResealDoneAt: %w", err)
+	}
+	return oldValue.ResealDoneAt, nil
+}
+
+// ClearResealDoneAt clears the value of the "reseal_done_at" field.
+func (m *FieldKeyMutation) ClearResealDoneAt() {
+	m.reseal_done_at = nil
+	m.clearedFields[fieldkey.FieldResealDoneAt] = struct{}{}
+}
+
+// ResealDoneAtCleared returns if the "reseal_done_at" field was cleared in this mutation.
+func (m *FieldKeyMutation) ResealDoneAtCleared() bool {
+	_, ok := m.clearedFields[fieldkey.FieldResealDoneAt]
+	return ok
+}
+
+// ResetResealDoneAt resets all changes to the "reseal_done_at" field.
+func (m *FieldKeyMutation) ResetResealDoneAt() {
+	m.reseal_done_at = nil
+	delete(m.clearedFields, fieldkey.FieldResealDoneAt)
+}
+
+// SetResealed sets the "resealed" field.
+func (m *FieldKeyMutation) SetResealed(i int) {
+	m.resealed = &i
+	m.addresealed = nil
+}
+
+// Resealed returns the value of the "resealed" field in the mutation.
+func (m *FieldKeyMutation) Resealed() (r int, exists bool) {
+	v := m.resealed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResealed returns the old "resealed" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldResealed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResealed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResealed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResealed: %w", err)
+	}
+	return oldValue.Resealed, nil
+}
+
+// AddResealed adds i to the "resealed" field.
+func (m *FieldKeyMutation) AddResealed(i int) {
+	if m.addresealed != nil {
+		*m.addresealed += i
+	} else {
+		m.addresealed = &i
+	}
+}
+
+// AddedResealed returns the value that was added to the "resealed" field in this mutation.
+func (m *FieldKeyMutation) AddedResealed() (r int, exists bool) {
+	v := m.addresealed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetResealed resets all changes to the "resealed" field.
+func (m *FieldKeyMutation) ResetResealed() {
+	m.resealed = nil
+	m.addresealed = nil
+}
+
+// SetResealFailed sets the "reseal_failed" field.
+func (m *FieldKeyMutation) SetResealFailed(i int) {
+	m.reseal_failed = &i
+	m.addreseal_failed = nil
+}
+
+// ResealFailed returns the value of the "reseal_failed" field in the mutation.
+func (m *FieldKeyMutation) ResealFailed() (r int, exists bool) {
+	v := m.reseal_failed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResealFailed returns the old "reseal_failed" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldResealFailed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResealFailed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResealFailed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResealFailed: %w", err)
+	}
+	return oldValue.ResealFailed, nil
+}
+
+// AddResealFailed adds i to the "reseal_failed" field.
+func (m *FieldKeyMutation) AddResealFailed(i int) {
+	if m.addreseal_failed != nil {
+		*m.addreseal_failed += i
+	} else {
+		m.addreseal_failed = &i
+	}
+}
+
+// AddedResealFailed returns the value that was added to the "reseal_failed" field in this mutation.
+func (m *FieldKeyMutation) AddedResealFailed() (r int, exists bool) {
+	v := m.addreseal_failed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetResealFailed resets all changes to the "reseal_failed" field.
+func (m *FieldKeyMutation) ResetResealFailed() {
+	m.reseal_failed = nil
+	m.addreseal_failed = nil
+}
+
+// SetRetiredAt sets the "retired_at" field.
+func (m *FieldKeyMutation) SetRetiredAt(t time.Time) {
+	m.retired_at = &t
+}
+
+// RetiredAt returns the value of the "retired_at" field in the mutation.
+func (m *FieldKeyMutation) RetiredAt() (r time.Time, exists bool) {
+	v := m.retired_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRetiredAt returns the old "retired_at" field's value of the FieldKey entity.
+// If the FieldKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyMutation) OldRetiredAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRetiredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRetiredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRetiredAt: %w", err)
+	}
+	return oldValue.RetiredAt, nil
+}
+
+// ClearRetiredAt clears the value of the "retired_at" field.
+func (m *FieldKeyMutation) ClearRetiredAt() {
+	m.retired_at = nil
+	m.clearedFields[fieldkey.FieldRetiredAt] = struct{}{}
+}
+
+// RetiredAtCleared returns if the "retired_at" field was cleared in this mutation.
+func (m *FieldKeyMutation) RetiredAtCleared() bool {
+	_, ok := m.clearedFields[fieldkey.FieldRetiredAt]
+	return ok
+}
+
+// ResetRetiredAt resets all changes to the "retired_at" field.
+func (m *FieldKeyMutation) ResetRetiredAt() {
+	m.retired_at = nil
+	delete(m.clearedFields, fieldkey.FieldRetiredAt)
+}
+
+// Where appends a list predicates to the FieldKeyMutation builder.
+func (m *FieldKeyMutation) Where(ps ...predicate.FieldKey) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FieldKeyMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FieldKeyMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FieldKey, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FieldKeyMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FieldKeyMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FieldKey).
+func (m *FieldKeyMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FieldKeyMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.key_enc != nil {
+		fields = append(fields, fieldkey.FieldKeyEnc)
+	}
+	if m.fingerprint != nil {
+		fields = append(fields, fieldkey.FieldFingerprint)
+	}
+	if m.root_fingerprint != nil {
+		fields = append(fields, fieldkey.FieldRootFingerprint)
+	}
+	if m.status != nil {
+		fields = append(fields, fieldkey.FieldStatus)
+	}
+	if m.created_by != nil {
+		fields = append(fields, fieldkey.FieldCreatedBy)
+	}
+	if m.created_at != nil {
+		fields = append(fields, fieldkey.FieldCreatedAt)
+	}
+	if m.reseal_heartbeat_at != nil {
+		fields = append(fields, fieldkey.FieldResealHeartbeatAt)
+	}
+	if m.reseal_done_at != nil {
+		fields = append(fields, fieldkey.FieldResealDoneAt)
+	}
+	if m.resealed != nil {
+		fields = append(fields, fieldkey.FieldResealed)
+	}
+	if m.reseal_failed != nil {
+		fields = append(fields, fieldkey.FieldResealFailed)
+	}
+	if m.retired_at != nil {
+		fields = append(fields, fieldkey.FieldRetiredAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FieldKeyMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case fieldkey.FieldKeyEnc:
+		return m.KeyEnc()
+	case fieldkey.FieldFingerprint:
+		return m.Fingerprint()
+	case fieldkey.FieldRootFingerprint:
+		return m.RootFingerprint()
+	case fieldkey.FieldStatus:
+		return m.Status()
+	case fieldkey.FieldCreatedBy:
+		return m.CreatedBy()
+	case fieldkey.FieldCreatedAt:
+		return m.CreatedAt()
+	case fieldkey.FieldResealHeartbeatAt:
+		return m.ResealHeartbeatAt()
+	case fieldkey.FieldResealDoneAt:
+		return m.ResealDoneAt()
+	case fieldkey.FieldResealed:
+		return m.Resealed()
+	case fieldkey.FieldResealFailed:
+		return m.ResealFailed()
+	case fieldkey.FieldRetiredAt:
+		return m.RetiredAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FieldKeyMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case fieldkey.FieldKeyEnc:
+		return m.OldKeyEnc(ctx)
+	case fieldkey.FieldFingerprint:
+		return m.OldFingerprint(ctx)
+	case fieldkey.FieldRootFingerprint:
+		return m.OldRootFingerprint(ctx)
+	case fieldkey.FieldStatus:
+		return m.OldStatus(ctx)
+	case fieldkey.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case fieldkey.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case fieldkey.FieldResealHeartbeatAt:
+		return m.OldResealHeartbeatAt(ctx)
+	case fieldkey.FieldResealDoneAt:
+		return m.OldResealDoneAt(ctx)
+	case fieldkey.FieldResealed:
+		return m.OldResealed(ctx)
+	case fieldkey.FieldResealFailed:
+		return m.OldResealFailed(ctx)
+	case fieldkey.FieldRetiredAt:
+		return m.OldRetiredAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown FieldKey field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FieldKeyMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case fieldkey.FieldKeyEnc:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKeyEnc(v)
+		return nil
+	case fieldkey.FieldFingerprint:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFingerprint(v)
+		return nil
+	case fieldkey.FieldRootFingerprint:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRootFingerprint(v)
+		return nil
+	case fieldkey.FieldStatus:
+		v, ok := value.(fieldkey.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case fieldkey.FieldCreatedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case fieldkey.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case fieldkey.FieldResealHeartbeatAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResealHeartbeatAt(v)
+		return nil
+	case fieldkey.FieldResealDoneAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResealDoneAt(v)
+		return nil
+	case fieldkey.FieldResealed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResealed(v)
+		return nil
+	case fieldkey.FieldResealFailed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResealFailed(v)
+		return nil
+	case fieldkey.FieldRetiredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRetiredAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FieldKey field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FieldKeyMutation) AddedFields() []string {
+	var fields []string
+	if m.addresealed != nil {
+		fields = append(fields, fieldkey.FieldResealed)
+	}
+	if m.addreseal_failed != nil {
+		fields = append(fields, fieldkey.FieldResealFailed)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FieldKeyMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case fieldkey.FieldResealed:
+		return m.AddedResealed()
+	case fieldkey.FieldResealFailed:
+		return m.AddedResealFailed()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FieldKeyMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case fieldkey.FieldResealed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddResealed(v)
+		return nil
+	case fieldkey.FieldResealFailed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddResealFailed(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FieldKey numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FieldKeyMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(fieldkey.FieldKeyEnc) {
+		fields = append(fields, fieldkey.FieldKeyEnc)
+	}
+	if m.FieldCleared(fieldkey.FieldCreatedBy) {
+		fields = append(fields, fieldkey.FieldCreatedBy)
+	}
+	if m.FieldCleared(fieldkey.FieldResealHeartbeatAt) {
+		fields = append(fields, fieldkey.FieldResealHeartbeatAt)
+	}
+	if m.FieldCleared(fieldkey.FieldResealDoneAt) {
+		fields = append(fields, fieldkey.FieldResealDoneAt)
+	}
+	if m.FieldCleared(fieldkey.FieldRetiredAt) {
+		fields = append(fields, fieldkey.FieldRetiredAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FieldKeyMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FieldKeyMutation) ClearField(name string) error {
+	switch name {
+	case fieldkey.FieldKeyEnc:
+		m.ClearKeyEnc()
+		return nil
+	case fieldkey.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case fieldkey.FieldResealHeartbeatAt:
+		m.ClearResealHeartbeatAt()
+		return nil
+	case fieldkey.FieldResealDoneAt:
+		m.ClearResealDoneAt()
+		return nil
+	case fieldkey.FieldRetiredAt:
+		m.ClearRetiredAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FieldKey nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FieldKeyMutation) ResetField(name string) error {
+	switch name {
+	case fieldkey.FieldKeyEnc:
+		m.ResetKeyEnc()
+		return nil
+	case fieldkey.FieldFingerprint:
+		m.ResetFingerprint()
+		return nil
+	case fieldkey.FieldRootFingerprint:
+		m.ResetRootFingerprint()
+		return nil
+	case fieldkey.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case fieldkey.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case fieldkey.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case fieldkey.FieldResealHeartbeatAt:
+		m.ResetResealHeartbeatAt()
+		return nil
+	case fieldkey.FieldResealDoneAt:
+		m.ResetResealDoneAt()
+		return nil
+	case fieldkey.FieldResealed:
+		m.ResetResealed()
+		return nil
+	case fieldkey.FieldResealFailed:
+		m.ResetResealFailed()
+		return nil
+	case fieldkey.FieldRetiredAt:
+		m.ResetRetiredAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FieldKey field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FieldKeyMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FieldKeyMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FieldKeyMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FieldKeyMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FieldKeyMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FieldKeyMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FieldKeyMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown FieldKey unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FieldKeyMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown FieldKey edge %s", name)
+}
+
+// FieldKeyAuditMutation represents an operation that mutates the FieldKeyAudit nodes in the graph.
+type FieldKeyAuditMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	action           *string
+	actor_id         *uuid.UUID
+	actor_email      *string
+	key_id           *string
+	fingerprint      *string
+	root_fingerprint *string
+	detail           *string
+	created_at       *time.Time
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*FieldKeyAudit, error)
+	predicates       []predicate.FieldKeyAudit
+}
+
+var _ ent.Mutation = (*FieldKeyAuditMutation)(nil)
+
+// fieldkeyauditOption allows management of the mutation configuration using functional options.
+type fieldkeyauditOption func(*FieldKeyAuditMutation)
+
+// newFieldKeyAuditMutation creates new mutation for the FieldKeyAudit entity.
+func newFieldKeyAuditMutation(c config, op Op, opts ...fieldkeyauditOption) *FieldKeyAuditMutation {
+	m := &FieldKeyAuditMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFieldKeyAudit,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withFieldKeyAuditID sets the ID field of the mutation.
+func withFieldKeyAuditID(id uuid.UUID) fieldkeyauditOption {
+	return func(m *FieldKeyAuditMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *FieldKeyAudit
+		)
+		m.oldValue = func(ctx context.Context) (*FieldKeyAudit, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().FieldKeyAudit.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withFieldKeyAudit sets the old FieldKeyAudit of the mutation.
+func withFieldKeyAudit(node *FieldKeyAudit) fieldkeyauditOption {
+	return func(m *FieldKeyAuditMutation) {
+		m.oldValue = func(context.Context) (*FieldKeyAudit, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FieldKeyAuditMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FieldKeyAuditMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of FieldKeyAudit entities.
+func (m *FieldKeyAuditMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *FieldKeyAuditMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *FieldKeyAuditMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().FieldKeyAudit.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetAction sets the "action" field.
+func (m *FieldKeyAuditMutation) SetAction(s string) {
+	m.action = &s
+}
+
+// Action returns the value of the "action" field in the mutation.
+func (m *FieldKeyAuditMutation) Action() (r string, exists bool) {
+	v := m.action
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAction returns the old "action" field's value of the FieldKeyAudit entity.
+// If the FieldKeyAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyAuditMutation) OldAction(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAction is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAction requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAction: %w", err)
+	}
+	return oldValue.Action, nil
+}
+
+// ResetAction resets all changes to the "action" field.
+func (m *FieldKeyAuditMutation) ResetAction() {
+	m.action = nil
+}
+
+// SetActorID sets the "actor_id" field.
+func (m *FieldKeyAuditMutation) SetActorID(u uuid.UUID) {
+	m.actor_id = &u
+}
+
+// ActorID returns the value of the "actor_id" field in the mutation.
+func (m *FieldKeyAuditMutation) ActorID() (r uuid.UUID, exists bool) {
+	v := m.actor_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActorID returns the old "actor_id" field's value of the FieldKeyAudit entity.
+// If the FieldKeyAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyAuditMutation) OldActorID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActorID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActorID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActorID: %w", err)
+	}
+	return oldValue.ActorID, nil
+}
+
+// ClearActorID clears the value of the "actor_id" field.
+func (m *FieldKeyAuditMutation) ClearActorID() {
+	m.actor_id = nil
+	m.clearedFields[fieldkeyaudit.FieldActorID] = struct{}{}
+}
+
+// ActorIDCleared returns if the "actor_id" field was cleared in this mutation.
+func (m *FieldKeyAuditMutation) ActorIDCleared() bool {
+	_, ok := m.clearedFields[fieldkeyaudit.FieldActorID]
+	return ok
+}
+
+// ResetActorID resets all changes to the "actor_id" field.
+func (m *FieldKeyAuditMutation) ResetActorID() {
+	m.actor_id = nil
+	delete(m.clearedFields, fieldkeyaudit.FieldActorID)
+}
+
+// SetActorEmail sets the "actor_email" field.
+func (m *FieldKeyAuditMutation) SetActorEmail(s string) {
+	m.actor_email = &s
+}
+
+// ActorEmail returns the value of the "actor_email" field in the mutation.
+func (m *FieldKeyAuditMutation) ActorEmail() (r string, exists bool) {
+	v := m.actor_email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActorEmail returns the old "actor_email" field's value of the FieldKeyAudit entity.
+// If the FieldKeyAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyAuditMutation) OldActorEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActorEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActorEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActorEmail: %w", err)
+	}
+	return oldValue.ActorEmail, nil
+}
+
+// ClearActorEmail clears the value of the "actor_email" field.
+func (m *FieldKeyAuditMutation) ClearActorEmail() {
+	m.actor_email = nil
+	m.clearedFields[fieldkeyaudit.FieldActorEmail] = struct{}{}
+}
+
+// ActorEmailCleared returns if the "actor_email" field was cleared in this mutation.
+func (m *FieldKeyAuditMutation) ActorEmailCleared() bool {
+	_, ok := m.clearedFields[fieldkeyaudit.FieldActorEmail]
+	return ok
+}
+
+// ResetActorEmail resets all changes to the "actor_email" field.
+func (m *FieldKeyAuditMutation) ResetActorEmail() {
+	m.actor_email = nil
+	delete(m.clearedFields, fieldkeyaudit.FieldActorEmail)
+}
+
+// SetKeyID sets the "key_id" field.
+func (m *FieldKeyAuditMutation) SetKeyID(s string) {
+	m.key_id = &s
+}
+
+// KeyID returns the value of the "key_id" field in the mutation.
+func (m *FieldKeyAuditMutation) KeyID() (r string, exists bool) {
+	v := m.key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKeyID returns the old "key_id" field's value of the FieldKeyAudit entity.
+// If the FieldKeyAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyAuditMutation) OldKeyID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKeyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKeyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKeyID: %w", err)
+	}
+	return oldValue.KeyID, nil
+}
+
+// ClearKeyID clears the value of the "key_id" field.
+func (m *FieldKeyAuditMutation) ClearKeyID() {
+	m.key_id = nil
+	m.clearedFields[fieldkeyaudit.FieldKeyID] = struct{}{}
+}
+
+// KeyIDCleared returns if the "key_id" field was cleared in this mutation.
+func (m *FieldKeyAuditMutation) KeyIDCleared() bool {
+	_, ok := m.clearedFields[fieldkeyaudit.FieldKeyID]
+	return ok
+}
+
+// ResetKeyID resets all changes to the "key_id" field.
+func (m *FieldKeyAuditMutation) ResetKeyID() {
+	m.key_id = nil
+	delete(m.clearedFields, fieldkeyaudit.FieldKeyID)
+}
+
+// SetFingerprint sets the "fingerprint" field.
+func (m *FieldKeyAuditMutation) SetFingerprint(s string) {
+	m.fingerprint = &s
+}
+
+// Fingerprint returns the value of the "fingerprint" field in the mutation.
+func (m *FieldKeyAuditMutation) Fingerprint() (r string, exists bool) {
+	v := m.fingerprint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFingerprint returns the old "fingerprint" field's value of the FieldKeyAudit entity.
+// If the FieldKeyAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyAuditMutation) OldFingerprint(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFingerprint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFingerprint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFingerprint: %w", err)
+	}
+	return oldValue.Fingerprint, nil
+}
+
+// ClearFingerprint clears the value of the "fingerprint" field.
+func (m *FieldKeyAuditMutation) ClearFingerprint() {
+	m.fingerprint = nil
+	m.clearedFields[fieldkeyaudit.FieldFingerprint] = struct{}{}
+}
+
+// FingerprintCleared returns if the "fingerprint" field was cleared in this mutation.
+func (m *FieldKeyAuditMutation) FingerprintCleared() bool {
+	_, ok := m.clearedFields[fieldkeyaudit.FieldFingerprint]
+	return ok
+}
+
+// ResetFingerprint resets all changes to the "fingerprint" field.
+func (m *FieldKeyAuditMutation) ResetFingerprint() {
+	m.fingerprint = nil
+	delete(m.clearedFields, fieldkeyaudit.FieldFingerprint)
+}
+
+// SetRootFingerprint sets the "root_fingerprint" field.
+func (m *FieldKeyAuditMutation) SetRootFingerprint(s string) {
+	m.root_fingerprint = &s
+}
+
+// RootFingerprint returns the value of the "root_fingerprint" field in the mutation.
+func (m *FieldKeyAuditMutation) RootFingerprint() (r string, exists bool) {
+	v := m.root_fingerprint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRootFingerprint returns the old "root_fingerprint" field's value of the FieldKeyAudit entity.
+// If the FieldKeyAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyAuditMutation) OldRootFingerprint(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRootFingerprint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRootFingerprint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRootFingerprint: %w", err)
+	}
+	return oldValue.RootFingerprint, nil
+}
+
+// ClearRootFingerprint clears the value of the "root_fingerprint" field.
+func (m *FieldKeyAuditMutation) ClearRootFingerprint() {
+	m.root_fingerprint = nil
+	m.clearedFields[fieldkeyaudit.FieldRootFingerprint] = struct{}{}
+}
+
+// RootFingerprintCleared returns if the "root_fingerprint" field was cleared in this mutation.
+func (m *FieldKeyAuditMutation) RootFingerprintCleared() bool {
+	_, ok := m.clearedFields[fieldkeyaudit.FieldRootFingerprint]
+	return ok
+}
+
+// ResetRootFingerprint resets all changes to the "root_fingerprint" field.
+func (m *FieldKeyAuditMutation) ResetRootFingerprint() {
+	m.root_fingerprint = nil
+	delete(m.clearedFields, fieldkeyaudit.FieldRootFingerprint)
+}
+
+// SetDetail sets the "detail" field.
+func (m *FieldKeyAuditMutation) SetDetail(s string) {
+	m.detail = &s
+}
+
+// Detail returns the value of the "detail" field in the mutation.
+func (m *FieldKeyAuditMutation) Detail() (r string, exists bool) {
+	v := m.detail
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDetail returns the old "detail" field's value of the FieldKeyAudit entity.
+// If the FieldKeyAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyAuditMutation) OldDetail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDetail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDetail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDetail: %w", err)
+	}
+	return oldValue.Detail, nil
+}
+
+// ClearDetail clears the value of the "detail" field.
+func (m *FieldKeyAuditMutation) ClearDetail() {
+	m.detail = nil
+	m.clearedFields[fieldkeyaudit.FieldDetail] = struct{}{}
+}
+
+// DetailCleared returns if the "detail" field was cleared in this mutation.
+func (m *FieldKeyAuditMutation) DetailCleared() bool {
+	_, ok := m.clearedFields[fieldkeyaudit.FieldDetail]
+	return ok
+}
+
+// ResetDetail resets all changes to the "detail" field.
+func (m *FieldKeyAuditMutation) ResetDetail() {
+	m.detail = nil
+	delete(m.clearedFields, fieldkeyaudit.FieldDetail)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *FieldKeyAuditMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *FieldKeyAuditMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the FieldKeyAudit entity.
+// If the FieldKeyAudit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FieldKeyAuditMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *FieldKeyAuditMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// Where appends a list predicates to the FieldKeyAuditMutation builder.
+func (m *FieldKeyAuditMutation) Where(ps ...predicate.FieldKeyAudit) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FieldKeyAuditMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FieldKeyAuditMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.FieldKeyAudit, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FieldKeyAuditMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FieldKeyAuditMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (FieldKeyAudit).
+func (m *FieldKeyAuditMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FieldKeyAuditMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.action != nil {
+		fields = append(fields, fieldkeyaudit.FieldAction)
+	}
+	if m.actor_id != nil {
+		fields = append(fields, fieldkeyaudit.FieldActorID)
+	}
+	if m.actor_email != nil {
+		fields = append(fields, fieldkeyaudit.FieldActorEmail)
+	}
+	if m.key_id != nil {
+		fields = append(fields, fieldkeyaudit.FieldKeyID)
+	}
+	if m.fingerprint != nil {
+		fields = append(fields, fieldkeyaudit.FieldFingerprint)
+	}
+	if m.root_fingerprint != nil {
+		fields = append(fields, fieldkeyaudit.FieldRootFingerprint)
+	}
+	if m.detail != nil {
+		fields = append(fields, fieldkeyaudit.FieldDetail)
+	}
+	if m.created_at != nil {
+		fields = append(fields, fieldkeyaudit.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FieldKeyAuditMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case fieldkeyaudit.FieldAction:
+		return m.Action()
+	case fieldkeyaudit.FieldActorID:
+		return m.ActorID()
+	case fieldkeyaudit.FieldActorEmail:
+		return m.ActorEmail()
+	case fieldkeyaudit.FieldKeyID:
+		return m.KeyID()
+	case fieldkeyaudit.FieldFingerprint:
+		return m.Fingerprint()
+	case fieldkeyaudit.FieldRootFingerprint:
+		return m.RootFingerprint()
+	case fieldkeyaudit.FieldDetail:
+		return m.Detail()
+	case fieldkeyaudit.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FieldKeyAuditMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case fieldkeyaudit.FieldAction:
+		return m.OldAction(ctx)
+	case fieldkeyaudit.FieldActorID:
+		return m.OldActorID(ctx)
+	case fieldkeyaudit.FieldActorEmail:
+		return m.OldActorEmail(ctx)
+	case fieldkeyaudit.FieldKeyID:
+		return m.OldKeyID(ctx)
+	case fieldkeyaudit.FieldFingerprint:
+		return m.OldFingerprint(ctx)
+	case fieldkeyaudit.FieldRootFingerprint:
+		return m.OldRootFingerprint(ctx)
+	case fieldkeyaudit.FieldDetail:
+		return m.OldDetail(ctx)
+	case fieldkeyaudit.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown FieldKeyAudit field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FieldKeyAuditMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case fieldkeyaudit.FieldAction:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAction(v)
+		return nil
+	case fieldkeyaudit.FieldActorID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActorID(v)
+		return nil
+	case fieldkeyaudit.FieldActorEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActorEmail(v)
+		return nil
+	case fieldkeyaudit.FieldKeyID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKeyID(v)
+		return nil
+	case fieldkeyaudit.FieldFingerprint:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFingerprint(v)
+		return nil
+	case fieldkeyaudit.FieldRootFingerprint:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRootFingerprint(v)
+		return nil
+	case fieldkeyaudit.FieldDetail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDetail(v)
+		return nil
+	case fieldkeyaudit.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown FieldKeyAudit field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FieldKeyAuditMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FieldKeyAuditMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FieldKeyAuditMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown FieldKeyAudit numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FieldKeyAuditMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(fieldkeyaudit.FieldActorID) {
+		fields = append(fields, fieldkeyaudit.FieldActorID)
+	}
+	if m.FieldCleared(fieldkeyaudit.FieldActorEmail) {
+		fields = append(fields, fieldkeyaudit.FieldActorEmail)
+	}
+	if m.FieldCleared(fieldkeyaudit.FieldKeyID) {
+		fields = append(fields, fieldkeyaudit.FieldKeyID)
+	}
+	if m.FieldCleared(fieldkeyaudit.FieldFingerprint) {
+		fields = append(fields, fieldkeyaudit.FieldFingerprint)
+	}
+	if m.FieldCleared(fieldkeyaudit.FieldRootFingerprint) {
+		fields = append(fields, fieldkeyaudit.FieldRootFingerprint)
+	}
+	if m.FieldCleared(fieldkeyaudit.FieldDetail) {
+		fields = append(fields, fieldkeyaudit.FieldDetail)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FieldKeyAuditMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FieldKeyAuditMutation) ClearField(name string) error {
+	switch name {
+	case fieldkeyaudit.FieldActorID:
+		m.ClearActorID()
+		return nil
+	case fieldkeyaudit.FieldActorEmail:
+		m.ClearActorEmail()
+		return nil
+	case fieldkeyaudit.FieldKeyID:
+		m.ClearKeyID()
+		return nil
+	case fieldkeyaudit.FieldFingerprint:
+		m.ClearFingerprint()
+		return nil
+	case fieldkeyaudit.FieldRootFingerprint:
+		m.ClearRootFingerprint()
+		return nil
+	case fieldkeyaudit.FieldDetail:
+		m.ClearDetail()
+		return nil
+	}
+	return fmt.Errorf("unknown FieldKeyAudit nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FieldKeyAuditMutation) ResetField(name string) error {
+	switch name {
+	case fieldkeyaudit.FieldAction:
+		m.ResetAction()
+		return nil
+	case fieldkeyaudit.FieldActorID:
+		m.ResetActorID()
+		return nil
+	case fieldkeyaudit.FieldActorEmail:
+		m.ResetActorEmail()
+		return nil
+	case fieldkeyaudit.FieldKeyID:
+		m.ResetKeyID()
+		return nil
+	case fieldkeyaudit.FieldFingerprint:
+		m.ResetFingerprint()
+		return nil
+	case fieldkeyaudit.FieldRootFingerprint:
+		m.ResetRootFingerprint()
+		return nil
+	case fieldkeyaudit.FieldDetail:
+		m.ResetDetail()
+		return nil
+	case fieldkeyaudit.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown FieldKeyAudit field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FieldKeyAuditMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FieldKeyAuditMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FieldKeyAuditMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FieldKeyAuditMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FieldKeyAuditMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FieldKeyAuditMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FieldKeyAuditMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown FieldKeyAudit unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FieldKeyAuditMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown FieldKeyAudit edge %s", name)
 }
 
 // MilestoneMutation represents an operation that mutates the Milestone nodes in the graph.

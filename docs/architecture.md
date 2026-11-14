@@ -65,3 +65,70 @@
 - Evidence uploads through `httpware/objectstore` once scanning lands, into `qa_results.evidence_keys`;
   the stored PDF and a public verify-by-code route.
 - notifications-api routing and templates for the `project.qa.*` events; projects-ui screens.
+
+## Field encryption keys
+
+### Design
+
+I use envelope encryption. `FIELD_ENCRYPTION_KEY` (the `projects-api-secrets` secret) is the root
+and the app never writes it anywhere. Data keys are 32 random bytes the app makes on a rotation and
+stores in `field_keys`, sealed under the root and bound to their key id. Values sealed under a data
+key read `v3:<key id>:base64(nonce|ciphertext)`, AES-256-GCM with the raw data key and the row id
+as additional data. Values from before the first rotation (`v2:` bound, or unprefixed legacy) are
+under the root and keep opening; the first rotation moves them.
+
+I looked at the two patterns already in the fleet. treasury-api and notifications-api keep their
+credential key in a `service_configs` row and let the platform owner replace it, with only a masked
+status and a fingerprint shown. hadia-api and maskani-api keep a key ring in env
+(`FIELD_ENCRYPTION_KEYS`) with a re-seal job. projects-api cannot change its own env, so I kept
+hadia's ring idea (key id in the value, old keys kept for decrypt until a re-seal empties them,
+compare and set writes) and moved the ring into the database under the env root, which is closer to
+treasury's model but never stores a key in the clear. The fingerprint is treasury's: the first 8
+hex characters of the SHA-256. Neither service has a backup download or a step-up code, so those
+are new here.
+
+### Code
+
+- `internal/shared/fieldcrypt`: `Box` is the root; `keyring.go` has data key sealing, the `Ring`
+  (seals with the current key, opens any loaded key or the root, `Reseal`) and `Fingerprint`.
+- `internal/services/fieldkeys`: health, backup, rotation, the re-seal pass and `Run`.
+- `internal/http/handlers/field_keys.go`: the platform owner routes.
+
+### Tables
+
+| Table | Holds |
+|---|---|
+| `field_keys` | One row per data key: id, `key_enc` (sealed under the root, cleared on retirement), fingerprint, the root fingerprint it was sealed under, status `current`, `previous` or `retired` (one current, by a partial unique index), and the re-seal progress of the rotation that made it current (heartbeat, done time, moved and failed counts) |
+| `field_key_audits` | Backup downloads, rotations and retirements: action, actor id and email, key id, key and root fingerprints, time |
+
+### Rotation
+
+1. The owner rotates with a fresh code. In one transaction the current key turns `previous` and a
+   new key becomes `current`. New values go under it at once on that replica.
+2. Every replica reloads the ring every 30 seconds (and at once when it meets a key id it does not
+   know), so within a minute everyone seals under the new key while still opening the old one.
+3. The re-seal pass moves every value in 200 row batches. It needs no stored cursor: a moved value
+   drops out of the next scan, so a pass cut short by a restart is simply continued. A row is only
+   written if it still holds the value that was read. One replica runs it, holding a heartbeat on
+   the current key; another replica takes over when the heartbeat is two minutes stale.
+4. When nothing is left on an older key, nothing failed, and the new key has been current for five
+   minutes (so no replica still seals under the old one), the previous keys are retired: status
+   `retired`, material cleared, one audit row each. The rotation then shows `done`.
+
+A value that will not open is logged by row id and counted; it holds the old key back until I deal
+with it. Nothing rotates on deploy: `Run` only reloads the ring and continues a rotation the owner
+started. Every new sealed column must be added to `targets` in `fieldkeys.go`, or a retirement
+would strand its values.
+
+### Backup and recovery
+
+The backup is the current and previous data keys in the clear, plus the root fingerprint, the value
+format and restore notes. I left the root out on purpose: it already has its own home and backup in
+the cluster secrets, and a file holding both would be the whole system in one place. With the file
+alone I can open every value sealed under its keys even if `field_keys` or the root is lost. Values
+still under the root, and the sealed rows in `field_keys`, need the root. Take a backup after every
+rotation finishes, because a retired key is gone for good.
+
+Changing `FIELD_ENCRYPTION_KEY` by hand after the first rotation stops the data keys from opening
+(start-up logs which key and which root fingerprints differ). The way back is the old root, or
+re-inserting the keys from a backup sealed under the new root.

@@ -8,6 +8,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
 	"github.com/bengobox/projects-service/internal/ent/comment"
+	"github.com/bengobox/projects-service/internal/ent/fieldkey"
+	"github.com/bengobox/projects-service/internal/ent/fieldkeyaudit"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
@@ -90,6 +92,84 @@ func init() {
 	commentDescID := commentFields[0].Descriptor()
 	// comment.DefaultID holds the default value on creation for the id field.
 	comment.DefaultID = commentDescID.Default.(func() uuid.UUID)
+	fieldkeyFields := schema.FieldKey{}.Fields()
+	_ = fieldkeyFields
+	// fieldkeyDescKeyEnc is the schema descriptor for key_enc field.
+	fieldkeyDescKeyEnc := fieldkeyFields[1].Descriptor()
+	// fieldkey.KeyEncValidator is a validator for the "key_enc" field. It is called by the builders before save.
+	fieldkey.KeyEncValidator = fieldkeyDescKeyEnc.Validators[0].(func(string) error)
+	// fieldkeyDescFingerprint is the schema descriptor for fingerprint field.
+	fieldkeyDescFingerprint := fieldkeyFields[2].Descriptor()
+	// fieldkey.FingerprintValidator is a validator for the "fingerprint" field. It is called by the builders before save.
+	fieldkey.FingerprintValidator = fieldkeyDescFingerprint.Validators[0].(func(string) error)
+	// fieldkeyDescRootFingerprint is the schema descriptor for root_fingerprint field.
+	fieldkeyDescRootFingerprint := fieldkeyFields[3].Descriptor()
+	// fieldkey.RootFingerprintValidator is a validator for the "root_fingerprint" field. It is called by the builders before save.
+	fieldkey.RootFingerprintValidator = fieldkeyDescRootFingerprint.Validators[0].(func(string) error)
+	// fieldkeyDescCreatedAt is the schema descriptor for created_at field.
+	fieldkeyDescCreatedAt := fieldkeyFields[6].Descriptor()
+	// fieldkey.DefaultCreatedAt holds the default value on creation for the created_at field.
+	fieldkey.DefaultCreatedAt = fieldkeyDescCreatedAt.Default.(func() time.Time)
+	// fieldkeyDescResealed is the schema descriptor for resealed field.
+	fieldkeyDescResealed := fieldkeyFields[9].Descriptor()
+	// fieldkey.DefaultResealed holds the default value on creation for the resealed field.
+	fieldkey.DefaultResealed = fieldkeyDescResealed.Default.(int)
+	// fieldkeyDescResealFailed is the schema descriptor for reseal_failed field.
+	fieldkeyDescResealFailed := fieldkeyFields[10].Descriptor()
+	// fieldkey.DefaultResealFailed holds the default value on creation for the reseal_failed field.
+	fieldkey.DefaultResealFailed = fieldkeyDescResealFailed.Default.(int)
+	// fieldkeyDescID is the schema descriptor for id field.
+	fieldkeyDescID := fieldkeyFields[0].Descriptor()
+	// fieldkey.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	fieldkey.IDValidator = func() func(string) error {
+		validators := fieldkeyDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	fieldkeyauditFields := schema.FieldKeyAudit{}.Fields()
+	_ = fieldkeyauditFields
+	// fieldkeyauditDescAction is the schema descriptor for action field.
+	fieldkeyauditDescAction := fieldkeyauditFields[1].Descriptor()
+	// fieldkeyaudit.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	fieldkeyaudit.ActionValidator = fieldkeyauditDescAction.Validators[0].(func(string) error)
+	// fieldkeyauditDescActorEmail is the schema descriptor for actor_email field.
+	fieldkeyauditDescActorEmail := fieldkeyauditFields[3].Descriptor()
+	// fieldkeyaudit.ActorEmailValidator is a validator for the "actor_email" field. It is called by the builders before save.
+	fieldkeyaudit.ActorEmailValidator = fieldkeyauditDescActorEmail.Validators[0].(func(string) error)
+	// fieldkeyauditDescKeyID is the schema descriptor for key_id field.
+	fieldkeyauditDescKeyID := fieldkeyauditFields[4].Descriptor()
+	// fieldkeyaudit.KeyIDValidator is a validator for the "key_id" field. It is called by the builders before save.
+	fieldkeyaudit.KeyIDValidator = fieldkeyauditDescKeyID.Validators[0].(func(string) error)
+	// fieldkeyauditDescFingerprint is the schema descriptor for fingerprint field.
+	fieldkeyauditDescFingerprint := fieldkeyauditFields[5].Descriptor()
+	// fieldkeyaudit.FingerprintValidator is a validator for the "fingerprint" field. It is called by the builders before save.
+	fieldkeyaudit.FingerprintValidator = fieldkeyauditDescFingerprint.Validators[0].(func(string) error)
+	// fieldkeyauditDescRootFingerprint is the schema descriptor for root_fingerprint field.
+	fieldkeyauditDescRootFingerprint := fieldkeyauditFields[6].Descriptor()
+	// fieldkeyaudit.RootFingerprintValidator is a validator for the "root_fingerprint" field. It is called by the builders before save.
+	fieldkeyaudit.RootFingerprintValidator = fieldkeyauditDescRootFingerprint.Validators[0].(func(string) error)
+	// fieldkeyauditDescDetail is the schema descriptor for detail field.
+	fieldkeyauditDescDetail := fieldkeyauditFields[7].Descriptor()
+	// fieldkeyaudit.DetailValidator is a validator for the "detail" field. It is called by the builders before save.
+	fieldkeyaudit.DetailValidator = fieldkeyauditDescDetail.Validators[0].(func(string) error)
+	// fieldkeyauditDescCreatedAt is the schema descriptor for created_at field.
+	fieldkeyauditDescCreatedAt := fieldkeyauditFields[8].Descriptor()
+	// fieldkeyaudit.DefaultCreatedAt holds the default value on creation for the created_at field.
+	fieldkeyaudit.DefaultCreatedAt = fieldkeyauditDescCreatedAt.Default.(func() time.Time)
+	// fieldkeyauditDescID is the schema descriptor for id field.
+	fieldkeyauditDescID := fieldkeyauditFields[0].Descriptor()
+	// fieldkeyaudit.DefaultID holds the default value on creation for the id field.
+	fieldkeyaudit.DefaultID = fieldkeyauditDescID.Default.(func() uuid.UUID)
 	milestoneFields := schema.Milestone{}.Fields()
 	_ = milestoneFields
 	// milestoneDescName is the schema descriptor for name field.

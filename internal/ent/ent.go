@@ -15,6 +15,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
 	"github.com/bengobox/projects-service/internal/ent/comment"
+	"github.com/bengobox/projects-service/internal/ent/fieldkey"
+	"github.com/bengobox/projects-service/internal/ent/fieldkeyaudit"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
@@ -100,6 +102,8 @@ func checkColumn(table, column string) error {
 			activity.Table:              activity.ValidColumn,
 			attachment.Table:            attachment.ValidColumn,
 			comment.Table:               comment.ValidColumn,
+			fieldkey.Table:              fieldkey.ValidColumn,
+			fieldkeyaudit.Table:         fieldkeyaudit.ValidColumn,
 			milestone.Table:             milestone.ValidColumn,
 			outboxevent.Table:           outboxevent.ValidColumn,
 			permission.Table:            permission.ValidColumn,

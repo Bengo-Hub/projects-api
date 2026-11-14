@@ -78,11 +78,13 @@ func (s *Service) Invite(ctx context.Context, actor Actor, sessionID uuid.UUID, 
 		inv, err := s.client.QAInvite.Query().Where(qainvite.SessionID(sessionID), qainvite.EmailHash(p.hash)).Only(ctx)
 		switch {
 		case ent.IsNotFound(err):
+			// The id is chosen here so the sealed address can be bound to this invite.
+			newID := uuid.New()
 			var sealed string
-			if sealed, err = s.sealSigner(p.role, p.email); err != nil {
+			if sealed, err = s.sealSigner(p.role, p.email, newID); err != nil {
 				return nil, err
 			}
-			c := s.client.QAInvite.Create().
+			c := s.client.QAInvite.Create().SetID(newID).
 				SetTenantID(actor.TenantID).SetSessionID(sessionID).SetEmailHash(p.hash).
 				SetEmailHint(maskEmail(p.email)).SetName(p.name).SetRole(p.role)
 			if sealed != "" {
@@ -138,7 +140,7 @@ func (s *Service) inviterName(ctx context.Context, a Actor, sess *ent.QASession)
 
 // sealSigner encrypts a signer's address for the close and decision notices. Testers and observers
 // stay hash-only, and without a sealer signers do too (logged, so the gap is visible).
-func (s *Service) sealSigner(role, email string) (string, error) {
+func (s *Service) sealSigner(role, email string, inviteID uuid.UUID) (string, error) {
 	if role != qamodel.RoleSigner {
 		return "", nil
 	}
@@ -146,7 +148,7 @@ func (s *Service) sealSigner(role, email string) (string, error) {
 		s.log.Warn("FIELD_ENCRYPTION_KEY not set; signer address not kept, close and decision notices will not reach this signer")
 		return "", nil
 	}
-	enc, err := s.sealer.Encrypt(email)
+	enc, err := s.sealer.EncryptFor(email, inviteID.String())
 	if err != nil {
 		return "", fmt.Errorf("seal signer email: %w", err)
 	}
@@ -163,7 +165,7 @@ func (s *Service) updateInvite(ctx context.Context, inv *ent.QAInvite, name, rol
 	if inv.Status == qamodel.InviteRevoked {
 		u = u.SetStatus(qamodel.InviteInvited)
 	}
-	sealed, err := s.sealSigner(role, email)
+	sealed, err := s.sealSigner(role, email, inv.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +201,7 @@ func (s *Service) signersFor(ctx context.Context, sessionID uuid.UUID) []Signer 
 		if inv.EmailEnc == "" {
 			continue
 		}
-		email, err := s.sealer.Decrypt(inv.EmailEnc)
+		email, err := s.sealer.DecryptFor(inv.EmailEnc, inv.ID.String())
 		if err != nil {
 			s.log.Warn("signer address not opened", zap.String("invite", inv.ID.String()), zap.Error(err))
 			continue

@@ -123,6 +123,20 @@ func (qic *QAInviteCreate) SetNillableLastSeenAt(t *time.Time) *QAInviteCreate {
 	return qic
 }
 
+// SetAccessNotBefore sets the "access_not_before" field.
+func (qic *QAInviteCreate) SetAccessNotBefore(t time.Time) *QAInviteCreate {
+	qic.mutation.SetAccessNotBefore(t)
+	return qic
+}
+
+// SetNillableAccessNotBefore sets the "access_not_before" field if the given value is not nil.
+func (qic *QAInviteCreate) SetNillableAccessNotBefore(t *time.Time) *QAInviteCreate {
+	if t != nil {
+		qic.SetAccessNotBefore(*t)
+	}
+	return qic
+}
+
 // SetInvitedBy sets the "invited_by" field.
 func (qic *QAInviteCreate) SetInvitedBy(u uuid.UUID) *QAInviteCreate {
 	qic.mutation.SetInvitedBy(u)
@@ -349,6 +363,10 @@ func (qic *QAInviteCreate) createSpec() (*QAInvite, *sqlgraph.CreateSpec) {
 	if value, ok := qic.mutation.LastSeenAt(); ok {
 		_spec.SetField(qainvite.FieldLastSeenAt, field.TypeTime, value)
 		_node.LastSeenAt = &value
+	}
+	if value, ok := qic.mutation.AccessNotBefore(); ok {
+		_spec.SetField(qainvite.FieldAccessNotBefore, field.TypeTime, value)
+		_node.AccessNotBefore = &value
 	}
 	if value, ok := qic.mutation.InvitedBy(); ok {
 		_spec.SetField(qainvite.FieldInvitedBy, field.TypeUUID, value)

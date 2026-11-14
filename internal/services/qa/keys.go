@@ -90,6 +90,9 @@ type AccessClaims struct {
 	SessionID uuid.UUID `json:"s"`
 	InviteID  uuid.UUID `json:"i"`
 	Expires   int64     `json:"e"`
+	// Issued is when the token was signed (unix seconds); a token issued before the invite's
+	// access_not_before (set on logout) is refused.
+	Issued int64 `json:"n,omitempty"`
 }
 
 var errBadToken = errors.New("qa: bad access token")

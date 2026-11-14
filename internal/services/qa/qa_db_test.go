@@ -9,6 +9,7 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -97,7 +98,7 @@ func TestQAFlow(t *testing.T) {
 	ctx := context.Background()
 	keys, _ := NewKeys("test-key", "")
 	pub, tickets := &fakePublisher{}, &fakeTickets{}
-	box, err := fieldcrypt.New("test-field-key")
+	box, err := fieldcrypt.New("test-field-key-that-is-at-least-32-bytes")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +189,7 @@ func TestQAFlow(t *testing.T) {
 		if inv.EmailEnc == "" || inv.EmailEnc == "signer@example.com" {
 			t.Fatalf("signer address not sealed: %q", inv.EmailEnc)
 		}
-		if got, err := box.Decrypt(inv.EmailEnc); err != nil || got != "signer@example.com" {
+		if got, err := box.DecryptFor(inv.EmailEnc, inv.ID.String()); err != nil || got != "signer@example.com" {
 			t.Fatalf("signer address does not open: %q %v", got, err)
 		}
 	}
@@ -280,6 +281,37 @@ func TestQAFlow(t *testing.T) {
 	if err != nil || d.Status != qamodel.DefectTicketed || len(tickets.calls) != 2 {
 		t.Fatalf("raise by hand: %+v %v", d, err)
 	}
+
+	// Logging out kills every token signed for that invite before the logout, and only that
+	// invite's tokens.
+	g1b, err := svc.GrantByEmail(ctx, sess.ShareCode, "tester.one@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.Logout(ctx, g1.Token); err != nil {
+		t.Fatal(err)
+	}
+	for _, tok := range []string{g1.Token, g1b.Token} {
+		if _, err := svc.ResolveAccess(ctx, tok); !errors.Is(err, ErrAccessDenied) {
+			t.Fatalf("token still works after logout: %v", err)
+		}
+	}
+	if _, err := svc.ResolveAccess(ctx, g2.Token); err != nil {
+		t.Fatalf("logout of one invite ended another's access: %v", err)
+	}
+	if err := svc.Logout(ctx, "not-a-token"); err != nil {
+		t.Fatalf("logout with a bad token: %v", err)
+	}
+	// A fresh sign-in after the logout works again.
+	svc.now = func() time.Time { return time.Now().Add(2 * time.Second) }
+	g1c, err := svc.GrantByEmail(ctx, sess.ShareCode, "tester.one@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.ResolveAccess(ctx, g1c.Token); err != nil {
+		t.Fatalf("sign-in after logout refused: %v", err)
+	}
+	svc.now = time.Now
 
 	// Revoking an invite ends its access at once.
 	if err := svc.RevokeInvite(ctx, tenant, sess.ID, inv2.Invite.ID); err != nil {

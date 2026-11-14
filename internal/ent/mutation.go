@@ -9929,25 +9929,26 @@ func (m *QADefectMutation) ResetEdge(name string) error {
 // QAInviteMutation represents an operation that mutates the QAInvite nodes in the graph.
 type QAInviteMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	tenant_id     *uuid.UUID
-	session_id    *uuid.UUID
-	email_hash    *string
-	email_hint    *string
-	email_enc     *string
-	name          *string
-	role          *string
-	status        *string
-	last_seen_at  *time.Time
-	invited_by    *uuid.UUID
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*QAInvite, error)
-	predicates    []predicate.QAInvite
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	tenant_id         *uuid.UUID
+	session_id        *uuid.UUID
+	email_hash        *string
+	email_hint        *string
+	email_enc         *string
+	name              *string
+	role              *string
+	status            *string
+	last_seen_at      *time.Time
+	access_not_before *time.Time
+	invited_by        *uuid.UUID
+	created_at        *time.Time
+	updated_at        *time.Time
+	clearedFields     map[string]struct{}
+	done              bool
+	oldValue          func(context.Context) (*QAInvite, error)
+	predicates        []predicate.QAInvite
 }
 
 var _ ent.Mutation = (*QAInviteMutation)(nil)
@@ -10430,6 +10431,55 @@ func (m *QAInviteMutation) ResetLastSeenAt() {
 	delete(m.clearedFields, qainvite.FieldLastSeenAt)
 }
 
+// SetAccessNotBefore sets the "access_not_before" field.
+func (m *QAInviteMutation) SetAccessNotBefore(t time.Time) {
+	m.access_not_before = &t
+}
+
+// AccessNotBefore returns the value of the "access_not_before" field in the mutation.
+func (m *QAInviteMutation) AccessNotBefore() (r time.Time, exists bool) {
+	v := m.access_not_before
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessNotBefore returns the old "access_not_before" field's value of the QAInvite entity.
+// If the QAInvite object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QAInviteMutation) OldAccessNotBefore(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccessNotBefore is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccessNotBefore requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessNotBefore: %w", err)
+	}
+	return oldValue.AccessNotBefore, nil
+}
+
+// ClearAccessNotBefore clears the value of the "access_not_before" field.
+func (m *QAInviteMutation) ClearAccessNotBefore() {
+	m.access_not_before = nil
+	m.clearedFields[qainvite.FieldAccessNotBefore] = struct{}{}
+}
+
+// AccessNotBeforeCleared returns if the "access_not_before" field was cleared in this mutation.
+func (m *QAInviteMutation) AccessNotBeforeCleared() bool {
+	_, ok := m.clearedFields[qainvite.FieldAccessNotBefore]
+	return ok
+}
+
+// ResetAccessNotBefore resets all changes to the "access_not_before" field.
+func (m *QAInviteMutation) ResetAccessNotBefore() {
+	m.access_not_before = nil
+	delete(m.clearedFields, qainvite.FieldAccessNotBefore)
+}
+
 // SetInvitedBy sets the "invited_by" field.
 func (m *QAInviteMutation) SetInvitedBy(u uuid.UUID) {
 	m.invited_by = &u
@@ -10585,7 +10635,7 @@ func (m *QAInviteMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *QAInviteMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.tenant_id != nil {
 		fields = append(fields, qainvite.FieldTenantID)
 	}
@@ -10612,6 +10662,9 @@ func (m *QAInviteMutation) Fields() []string {
 	}
 	if m.last_seen_at != nil {
 		fields = append(fields, qainvite.FieldLastSeenAt)
+	}
+	if m.access_not_before != nil {
+		fields = append(fields, qainvite.FieldAccessNotBefore)
 	}
 	if m.invited_by != nil {
 		fields = append(fields, qainvite.FieldInvitedBy)
@@ -10648,6 +10701,8 @@ func (m *QAInviteMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case qainvite.FieldLastSeenAt:
 		return m.LastSeenAt()
+	case qainvite.FieldAccessNotBefore:
+		return m.AccessNotBefore()
 	case qainvite.FieldInvitedBy:
 		return m.InvitedBy()
 	case qainvite.FieldCreatedAt:
@@ -10681,6 +10736,8 @@ func (m *QAInviteMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldStatus(ctx)
 	case qainvite.FieldLastSeenAt:
 		return m.OldLastSeenAt(ctx)
+	case qainvite.FieldAccessNotBefore:
+		return m.OldAccessNotBefore(ctx)
 	case qainvite.FieldInvitedBy:
 		return m.OldInvitedBy(ctx)
 	case qainvite.FieldCreatedAt:
@@ -10759,6 +10816,13 @@ func (m *QAInviteMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastSeenAt(v)
 		return nil
+	case qainvite.FieldAccessNotBefore:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessNotBefore(v)
+		return nil
 	case qainvite.FieldInvitedBy:
 		v, ok := value.(uuid.UUID)
 		if !ok {
@@ -10822,6 +10886,9 @@ func (m *QAInviteMutation) ClearedFields() []string {
 	if m.FieldCleared(qainvite.FieldLastSeenAt) {
 		fields = append(fields, qainvite.FieldLastSeenAt)
 	}
+	if m.FieldCleared(qainvite.FieldAccessNotBefore) {
+		fields = append(fields, qainvite.FieldAccessNotBefore)
+	}
 	if m.FieldCleared(qainvite.FieldInvitedBy) {
 		fields = append(fields, qainvite.FieldInvitedBy)
 	}
@@ -10850,6 +10917,9 @@ func (m *QAInviteMutation) ClearField(name string) error {
 		return nil
 	case qainvite.FieldLastSeenAt:
 		m.ClearLastSeenAt()
+		return nil
+	case qainvite.FieldAccessNotBefore:
+		m.ClearAccessNotBefore()
 		return nil
 	case qainvite.FieldInvitedBy:
 		m.ClearInvitedBy()
@@ -10888,6 +10958,9 @@ func (m *QAInviteMutation) ResetField(name string) error {
 		return nil
 	case qainvite.FieldLastSeenAt:
 		m.ResetLastSeenAt()
+		return nil
+	case qainvite.FieldAccessNotBefore:
+		m.ResetAccessNotBefore()
 		return nil
 	case qainvite.FieldInvitedBy:
 		m.ResetInvitedBy()

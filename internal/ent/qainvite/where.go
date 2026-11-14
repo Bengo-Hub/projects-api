@@ -100,6 +100,11 @@ func LastSeenAt(v time.Time) predicate.QAInvite {
 	return predicate.QAInvite(sql.FieldEQ(FieldLastSeenAt, v))
 }
 
+// AccessNotBefore applies equality check predicate on the "access_not_before" field. It's identical to AccessNotBeforeEQ.
+func AccessNotBefore(v time.Time) predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldEQ(FieldAccessNotBefore, v))
+}
+
 // InvitedBy applies equality check predicate on the "invited_by" field. It's identical to InvitedByEQ.
 func InvitedBy(v uuid.UUID) predicate.QAInvite {
 	return predicate.QAInvite(sql.FieldEQ(FieldInvitedBy, v))
@@ -663,6 +668,56 @@ func LastSeenAtIsNil() predicate.QAInvite {
 // LastSeenAtNotNil applies the NotNil predicate on the "last_seen_at" field.
 func LastSeenAtNotNil() predicate.QAInvite {
 	return predicate.QAInvite(sql.FieldNotNull(FieldLastSeenAt))
+}
+
+// AccessNotBeforeEQ applies the EQ predicate on the "access_not_before" field.
+func AccessNotBeforeEQ(v time.Time) predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldEQ(FieldAccessNotBefore, v))
+}
+
+// AccessNotBeforeNEQ applies the NEQ predicate on the "access_not_before" field.
+func AccessNotBeforeNEQ(v time.Time) predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldNEQ(FieldAccessNotBefore, v))
+}
+
+// AccessNotBeforeIn applies the In predicate on the "access_not_before" field.
+func AccessNotBeforeIn(vs ...time.Time) predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldIn(FieldAccessNotBefore, vs...))
+}
+
+// AccessNotBeforeNotIn applies the NotIn predicate on the "access_not_before" field.
+func AccessNotBeforeNotIn(vs ...time.Time) predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldNotIn(FieldAccessNotBefore, vs...))
+}
+
+// AccessNotBeforeGT applies the GT predicate on the "access_not_before" field.
+func AccessNotBeforeGT(v time.Time) predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldGT(FieldAccessNotBefore, v))
+}
+
+// AccessNotBeforeGTE applies the GTE predicate on the "access_not_before" field.
+func AccessNotBeforeGTE(v time.Time) predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldGTE(FieldAccessNotBefore, v))
+}
+
+// AccessNotBeforeLT applies the LT predicate on the "access_not_before" field.
+func AccessNotBeforeLT(v time.Time) predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldLT(FieldAccessNotBefore, v))
+}
+
+// AccessNotBeforeLTE applies the LTE predicate on the "access_not_before" field.
+func AccessNotBeforeLTE(v time.Time) predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldLTE(FieldAccessNotBefore, v))
+}
+
+// AccessNotBeforeIsNil applies the IsNil predicate on the "access_not_before" field.
+func AccessNotBeforeIsNil() predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldIsNull(FieldAccessNotBefore))
+}
+
+// AccessNotBeforeNotNil applies the NotNil predicate on the "access_not_before" field.
+func AccessNotBeforeNotNil() predicate.QAInvite {
+	return predicate.QAInvite(sql.FieldNotNull(FieldAccessNotBefore))
 }
 
 // InvitedByEQ applies the EQ predicate on the "invited_by" field.

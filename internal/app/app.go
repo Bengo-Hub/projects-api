@@ -202,8 +202,14 @@ func New(ctx context.Context) (*App, error) {
 		WithAccessTTL(cfg.QA.AccessTTL).
 		WithDirectory(authusers.New(cfg.Auth.ServiceURL, cfg.Auth.APIKey, cacheClient, log))
 	// Signer addresses are sealed at rest for the close and decision notices.
+	// A weak key is refused in production; elsewhere it only costs the notices.
 	if box, err := fieldcrypt.New(cfg.QA.FieldEncryptionKey); err == nil {
 		qaService.WithSealer(box)
+	} else if errors.Is(err, fieldcrypt.ErrWeakKey) {
+		if strings.EqualFold(cfg.App.Env, "production") {
+			return nil, fmt.Errorf("FIELD_ENCRYPTION_KEY: %w", err)
+		}
+		log.Warn("FIELD_ENCRYPTION_KEY is too weak; QA signers will not get close and decision notices", zap.Error(err))
 	} else {
 		log.Warn("FIELD_ENCRYPTION_KEY not set; QA signers will not get close and decision notices")
 	}

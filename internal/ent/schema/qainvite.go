@@ -39,6 +39,9 @@ func (QAInvite) Fields() []ent.Field {
 		field.String("role").Default(qamodel.RoleTester),
 		field.String("status").Default(qamodel.InviteInvited),
 		field.Time("last_seen_at").Optional().Nillable(),
+		// access_not_before revokes every access token issued before it: logout sets it, so a
+		// copied token stops working at once instead of at its expiry.
+		field.Time("access_not_before").Optional().Nillable(),
 		field.UUID("invited_by", uuid.UUID{}).Optional().Nillable(),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),

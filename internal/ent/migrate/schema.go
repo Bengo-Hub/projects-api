@@ -370,6 +370,7 @@ var (
 		{Name: "role", Type: field.TypeString, Default: "tester"},
 		{Name: "status", Type: field.TypeString, Default: "invited"},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
+		{Name: "access_not_before", Type: field.TypeTime, Nullable: true},
 		{Name: "invited_by", Type: field.TypeUUID, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},

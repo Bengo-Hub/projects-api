@@ -32,6 +32,8 @@ const (
 	FieldStatus = "status"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
+	// FieldAccessNotBefore holds the string denoting the access_not_before field in the database.
+	FieldAccessNotBefore = "access_not_before"
 	// FieldInvitedBy holds the string denoting the invited_by field in the database.
 	FieldInvitedBy = "invited_by"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -54,6 +56,7 @@ var Columns = []string{
 	FieldRole,
 	FieldStatus,
 	FieldLastSeenAt,
+	FieldAccessNotBefore,
 	FieldInvitedBy,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -143,6 +146,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByLastSeenAt orders the results by the last_seen_at field.
 func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
+}
+
+// ByAccessNotBefore orders the results by the access_not_before field.
+func ByAccessNotBefore(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccessNotBefore, opts...).ToFunc()
 }
 
 // ByInvitedBy orders the results by the invited_by field.

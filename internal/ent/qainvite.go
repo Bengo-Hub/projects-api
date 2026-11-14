@@ -36,6 +36,8 @@ type QAInvite struct {
 	Status string `json:"status,omitempty"`
 	// LastSeenAt holds the value of the "last_seen_at" field.
 	LastSeenAt *time.Time `json:"last_seen_at,omitempty"`
+	// AccessNotBefore holds the value of the "access_not_before" field.
+	AccessNotBefore *time.Time `json:"access_not_before,omitempty"`
 	// InvitedBy holds the value of the "invited_by" field.
 	InvitedBy *uuid.UUID `json:"invited_by,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -54,7 +56,7 @@ func (*QAInvite) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case qainvite.FieldEmailHash, qainvite.FieldEmailHint, qainvite.FieldEmailEnc, qainvite.FieldName, qainvite.FieldRole, qainvite.FieldStatus:
 			values[i] = new(sql.NullString)
-		case qainvite.FieldLastSeenAt, qainvite.FieldCreatedAt, qainvite.FieldUpdatedAt:
+		case qainvite.FieldLastSeenAt, qainvite.FieldAccessNotBefore, qainvite.FieldCreatedAt, qainvite.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case qainvite.FieldID, qainvite.FieldTenantID, qainvite.FieldSessionID:
 			values[i] = new(uuid.UUID)
@@ -133,6 +135,13 @@ func (qi *QAInvite) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				qi.LastSeenAt = new(time.Time)
 				*qi.LastSeenAt = value.Time
+			}
+		case qainvite.FieldAccessNotBefore:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field access_not_before", values[i])
+			} else if value.Valid {
+				qi.AccessNotBefore = new(time.Time)
+				*qi.AccessNotBefore = value.Time
 			}
 		case qainvite.FieldInvitedBy:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -214,6 +223,11 @@ func (qi *QAInvite) String() string {
 	builder.WriteString(", ")
 	if v := qi.LastSeenAt; v != nil {
 		builder.WriteString("last_seen_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := qi.AccessNotBefore; v != nil {
+		builder.WriteString("access_not_before=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

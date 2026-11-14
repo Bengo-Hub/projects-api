@@ -99,11 +99,26 @@ func (s *Service) GrantByEmail(ctx context.Context, code, email string) (*Access
 	}
 	exp := now.Add(s.accessTTL)
 	return &AccessGrant{
-		Token:     s.keys.SignAccess(AccessClaims{SessionID: sess.ID, InviteID: inv.ID, Expires: exp.Unix()}),
+		Token:     s.keys.SignAccess(AccessClaims{SessionID: sess.ID, InviteID: inv.ID, Expires: exp.Unix(), Issued: now.Unix()}),
 		ExpiresAt: exp,
 		SessionID: sess.ID,
 		Role:      inv.Role,
 	}, nil
+}
+
+// Logout ends an invitee's access: every token signed for the invite before now stops working, so
+// a copied token cannot outlive the logout. An invalid or expired token is a no-op.
+func (s *Service) Logout(ctx context.Context, token string) error {
+	c, err := s.keys.VerifyAccess(token, s.now())
+	if err != nil {
+		return nil
+	}
+	// One second ahead, so the token being logged out (signed in this same second at the latest)
+	// is covered by the strict "issued before" check in ResolveAccess.
+	notBefore := s.now().Add(time.Second)
+	return s.client.QAInvite.Update().
+		Where(qainvite.ID(c.InviteID), qainvite.SessionID(c.SessionID)).
+		SetAccessNotBefore(notBefore).Exec(ctx)
 }
 
 // ResolveAccess checks an invitee token and that its invite is still live.
@@ -121,6 +136,10 @@ func (s *Service) ResolveAccess(ctx context.Context, token string) (*Invitee, er
 	}
 	if err != nil {
 		return nil, err
+	}
+	// Logged out: every token signed before the logout is dead, even before it expires.
+	if inv.AccessNotBefore != nil && c.Issued < inv.AccessNotBefore.Unix() {
+		return nil, ErrAccessDenied
 	}
 	sess, err := s.client.QASession.Get(ctx, c.SessionID)
 	if ent.IsNotFound(err) {

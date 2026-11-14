@@ -335,11 +335,11 @@ func init() {
 	// qainvite.DefaultStatus holds the default value on creation for the status field.
 	qainvite.DefaultStatus = qainviteDescStatus.Default.(string)
 	// qainviteDescCreatedAt is the schema descriptor for created_at field.
-	qainviteDescCreatedAt := qainviteFields[11].Descriptor()
+	qainviteDescCreatedAt := qainviteFields[12].Descriptor()
 	// qainvite.DefaultCreatedAt holds the default value on creation for the created_at field.
 	qainvite.DefaultCreatedAt = qainviteDescCreatedAt.Default.(func() time.Time)
 	// qainviteDescUpdatedAt is the schema descriptor for updated_at field.
-	qainviteDescUpdatedAt := qainviteFields[12].Descriptor()
+	qainviteDescUpdatedAt := qainviteFields[13].Descriptor()
 	// qainvite.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	qainvite.DefaultUpdatedAt = qainviteDescUpdatedAt.Default.(func() time.Time)
 	// qainvite.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

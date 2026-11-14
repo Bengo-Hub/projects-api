@@ -59,8 +59,10 @@ type OTPValidator interface {
 
 // Sealer encrypts a field at rest (internal/shared/fieldcrypt).
 type Sealer interface {
-	Encrypt(plain string) (string, error)
-	Decrypt(enc string) (string, error)
+	// EncryptFor seals a value bound to its record (the invite id), so it does not open on any
+	// other row; DecryptFor opens it (and older unbound values).
+	EncryptFor(plain, record string) (string, error)
+	DecryptFor(enc, record string) (string, error)
 }
 
 // Directory reads display names from auth-api (internal/platform/authusers): a member's name, and

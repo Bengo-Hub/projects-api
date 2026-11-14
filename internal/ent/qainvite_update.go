@@ -137,6 +137,26 @@ func (qiu *QAInviteUpdate) ClearLastSeenAt() *QAInviteUpdate {
 	return qiu
 }
 
+// SetAccessNotBefore sets the "access_not_before" field.
+func (qiu *QAInviteUpdate) SetAccessNotBefore(t time.Time) *QAInviteUpdate {
+	qiu.mutation.SetAccessNotBefore(t)
+	return qiu
+}
+
+// SetNillableAccessNotBefore sets the "access_not_before" field if the given value is not nil.
+func (qiu *QAInviteUpdate) SetNillableAccessNotBefore(t *time.Time) *QAInviteUpdate {
+	if t != nil {
+		qiu.SetAccessNotBefore(*t)
+	}
+	return qiu
+}
+
+// ClearAccessNotBefore clears the value of the "access_not_before" field.
+func (qiu *QAInviteUpdate) ClearAccessNotBefore() *QAInviteUpdate {
+	qiu.mutation.ClearAccessNotBefore()
+	return qiu
+}
+
 // SetInvitedBy sets the "invited_by" field.
 func (qiu *QAInviteUpdate) SetInvitedBy(u uuid.UUID) *QAInviteUpdate {
 	qiu.mutation.SetInvitedBy(u)
@@ -265,6 +285,12 @@ func (qiu *QAInviteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if qiu.mutation.LastSeenAtCleared() {
 		_spec.ClearField(qainvite.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := qiu.mutation.AccessNotBefore(); ok {
+		_spec.SetField(qainvite.FieldAccessNotBefore, field.TypeTime, value)
+	}
+	if qiu.mutation.AccessNotBeforeCleared() {
+		_spec.ClearField(qainvite.FieldAccessNotBefore, field.TypeTime)
 	}
 	if value, ok := qiu.mutation.InvitedBy(); ok {
 		_spec.SetField(qainvite.FieldInvitedBy, field.TypeUUID, value)
@@ -400,6 +426,26 @@ func (qiuo *QAInviteUpdateOne) SetNillableLastSeenAt(t *time.Time) *QAInviteUpda
 // ClearLastSeenAt clears the value of the "last_seen_at" field.
 func (qiuo *QAInviteUpdateOne) ClearLastSeenAt() *QAInviteUpdateOne {
 	qiuo.mutation.ClearLastSeenAt()
+	return qiuo
+}
+
+// SetAccessNotBefore sets the "access_not_before" field.
+func (qiuo *QAInviteUpdateOne) SetAccessNotBefore(t time.Time) *QAInviteUpdateOne {
+	qiuo.mutation.SetAccessNotBefore(t)
+	return qiuo
+}
+
+// SetNillableAccessNotBefore sets the "access_not_before" field if the given value is not nil.
+func (qiuo *QAInviteUpdateOne) SetNillableAccessNotBefore(t *time.Time) *QAInviteUpdateOne {
+	if t != nil {
+		qiuo.SetAccessNotBefore(*t)
+	}
+	return qiuo
+}
+
+// ClearAccessNotBefore clears the value of the "access_not_before" field.
+func (qiuo *QAInviteUpdateOne) ClearAccessNotBefore() *QAInviteUpdateOne {
+	qiuo.mutation.ClearAccessNotBefore()
 	return qiuo
 }
 
@@ -561,6 +607,12 @@ func (qiuo *QAInviteUpdateOne) sqlSave(ctx context.Context) (_node *QAInvite, er
 	}
 	if qiuo.mutation.LastSeenAtCleared() {
 		_spec.ClearField(qainvite.FieldLastSeenAt, field.TypeTime)
+	}
+	if value, ok := qiuo.mutation.AccessNotBefore(); ok {
+		_spec.SetField(qainvite.FieldAccessNotBefore, field.TypeTime, value)
+	}
+	if qiuo.mutation.AccessNotBeforeCleared() {
+		_spec.ClearField(qainvite.FieldAccessNotBefore, field.TypeTime)
 	}
 	if value, ok := qiuo.mutation.InvitedBy(); ok {
 		_spec.SetField(qainvite.FieldInvitedBy, field.TypeUUID, value)

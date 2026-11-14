@@ -103,6 +103,17 @@ func (s *Service) RecordResult(ctx context.Context, sess *ent.QASession, tester 
 		rollback(tx)
 		return nil, conflict("results can only be recorded while the session is open")
 	}
+	// Each change keeps the previous verdict as history; bound it so one tester cannot grow the
+	// table without limit.
+	if n, err := tx.QAResult.Query().
+		Where(qaresult.SessionID(sess.ID), qaresult.CriterionID(crit.ID), qaresult.TesterKey(tester.Key)).
+		Count(ctx); err != nil {
+		rollback(tx)
+		return nil, err
+	} else if n >= maxResultChanges {
+		rollback(tx)
+		return nil, conflict(fmt.Sprintf("this criterion's verdict has been changed %d times; ask the session owner to review it", maxResultChanges))
+	}
 	if _, err := tx.QAResult.Update().
 		Where(qaresult.SessionID(sess.ID), qaresult.CriterionID(crit.ID), qaresult.TesterKey(tester.Key), qaresult.IsCurrent(true)).
 		SetIsCurrent(false).Save(ctx); err != nil {
@@ -152,8 +163,18 @@ func (s *Service) ListResults(ctx context.Context, tenantID, sessionID uuid.UUID
 	if !history {
 		q = q.Where(qaresult.IsCurrent(true))
 	}
-	return q.Order(ent.Asc(qaresult.FieldCreatedAt)).All(ctx)
+	// Bounded by the criteria, the invites (200 a session) and maxResultChanges; the limit is a
+	// backstop so one response can never grow without end.
+	return q.Order(ent.Asc(qaresult.FieldCreatedAt)).Limit(maxResultsListed).All(ctx)
 }
+
+const (
+	// maxResultChanges is how many verdicts one tester may record on one criterion (the current one
+	// and its history).
+	maxResultChanges = 50
+	// maxResultsListed caps one ListResults response.
+	maxResultsListed = 10000
+)
 
 // TesterResults is one tester's current verdicts on a session (the invitee form).
 func (s *Service) TesterResults(ctx context.Context, sessionID uuid.UUID, testerKey string) ([]*ent.QAResult, error) {

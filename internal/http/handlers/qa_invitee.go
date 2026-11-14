@@ -203,6 +203,18 @@ func (h *QAInviteeHandler) Report(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *QAInviteeHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	tok := strings.TrimSpace(r.Header.Get(qaAccessHeader))
+	if tok == "" {
+		if c, err := r.Cookie(qaAccessCookie); err == nil {
+			tok = c.Value
+		}
+	}
+	if tok != "" {
+		// Revoke the invite's tokens, not only this browser's cookie.
+		if err := h.svc.Logout(r.Context(), tok); err != nil {
+			h.log.Warn("qa logout: revoke failed", zap.Error(err))
+		}
+	}
 	h.setCookie(w, "", time.Unix(0, 0))
 	w.WriteHeader(http.StatusNoContent)
 }

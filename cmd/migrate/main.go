@@ -92,6 +92,9 @@ func run(ctx context.Context, db *sql.DB, client *ent.Client) error {
 	if err := migrate.BackfillTenderSequences(ctx, db); err != nil {
 		return err
 	}
+	if err := migrate.MoveTaskAssignees(ctx, db); err != nil {
+		return err
+	}
 	if err := rbac.NewService(client, nil, zap.NewNop()).Seed(ctx); err != nil {
 		return fmt.Errorf("seed rbac: %w", err)
 	}

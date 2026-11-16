@@ -17,6 +17,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/ent/taskassignee"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
 	"github.com/google/uuid"
 )
@@ -121,26 +122,6 @@ func (tu *TaskUpdate) SetNillablePriority(s *string) *TaskUpdate {
 	if s != nil {
 		tu.SetPriority(*s)
 	}
-	return tu
-}
-
-// SetAssigneeID sets the "assignee_id" field.
-func (tu *TaskUpdate) SetAssigneeID(u uuid.UUID) *TaskUpdate {
-	tu.mutation.SetAssigneeID(u)
-	return tu
-}
-
-// SetNillableAssigneeID sets the "assignee_id" field if the given value is not nil.
-func (tu *TaskUpdate) SetNillableAssigneeID(u *uuid.UUID) *TaskUpdate {
-	if u != nil {
-		tu.SetAssigneeID(*u)
-	}
-	return tu
-}
-
-// ClearAssigneeID clears the value of the "assignee_id" field.
-func (tu *TaskUpdate) ClearAssigneeID() *TaskUpdate {
-	tu.mutation.ClearAssigneeID()
 	return tu
 }
 
@@ -375,6 +356,21 @@ func (tu *TaskUpdate) AddAttachments(a ...*Attachment) *TaskUpdate {
 	return tu.AddAttachmentIDs(ids...)
 }
 
+// AddAssigneeIDs adds the "assignees" edge to the TaskAssignee entity by IDs.
+func (tu *TaskUpdate) AddAssigneeIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.AddAssigneeIDs(ids...)
+	return tu
+}
+
+// AddAssignees adds the "assignees" edges to the TaskAssignee entity.
+func (tu *TaskUpdate) AddAssignees(t ...*TaskAssignee) *TaskUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.AddAssigneeIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tu *TaskUpdate) Mutation() *TaskMutation {
 	return tu.mutation
@@ -470,6 +466,27 @@ func (tu *TaskUpdate) RemoveAttachments(a ...*Attachment) *TaskUpdate {
 	return tu.RemoveAttachmentIDs(ids...)
 }
 
+// ClearAssignees clears all "assignees" edges to the TaskAssignee entity.
+func (tu *TaskUpdate) ClearAssignees() *TaskUpdate {
+	tu.mutation.ClearAssignees()
+	return tu
+}
+
+// RemoveAssigneeIDs removes the "assignees" edge to TaskAssignee entities by IDs.
+func (tu *TaskUpdate) RemoveAssigneeIDs(ids ...uuid.UUID) *TaskUpdate {
+	tu.mutation.RemoveAssigneeIDs(ids...)
+	return tu
+}
+
+// RemoveAssignees removes "assignees" edges to TaskAssignee entities.
+func (tu *TaskUpdate) RemoveAssignees(t ...*TaskAssignee) *TaskUpdate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tu.RemoveAssigneeIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (tu *TaskUpdate) Save(ctx context.Context) (int, error) {
 	tu.defaults()
@@ -548,12 +565,6 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.Priority(); ok {
 		_spec.SetField(task.FieldPriority, field.TypeString, value)
-	}
-	if value, ok := tu.mutation.AssigneeID(); ok {
-		_spec.SetField(task.FieldAssigneeID, field.TypeUUID, value)
-	}
-	if tu.mutation.AssigneeIDCleared() {
-		_spec.ClearField(task.FieldAssigneeID, field.TypeUUID)
 	}
 	if value, ok := tu.mutation.DueDate(); ok {
 		_spec.SetField(task.FieldDueDate, field.TypeTime, value)
@@ -818,6 +829,51 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.AssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.AssigneesTable,
+			Columns: []string{task.AssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedAssigneesIDs(); len(nodes) > 0 && !tu.mutation.AssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.AssigneesTable,
+			Columns: []string{task.AssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.AssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.AssigneesTable,
+			Columns: []string{task.AssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{task.Label}
@@ -925,26 +981,6 @@ func (tuo *TaskUpdateOne) SetNillablePriority(s *string) *TaskUpdateOne {
 	if s != nil {
 		tuo.SetPriority(*s)
 	}
-	return tuo
-}
-
-// SetAssigneeID sets the "assignee_id" field.
-func (tuo *TaskUpdateOne) SetAssigneeID(u uuid.UUID) *TaskUpdateOne {
-	tuo.mutation.SetAssigneeID(u)
-	return tuo
-}
-
-// SetNillableAssigneeID sets the "assignee_id" field if the given value is not nil.
-func (tuo *TaskUpdateOne) SetNillableAssigneeID(u *uuid.UUID) *TaskUpdateOne {
-	if u != nil {
-		tuo.SetAssigneeID(*u)
-	}
-	return tuo
-}
-
-// ClearAssigneeID clears the value of the "assignee_id" field.
-func (tuo *TaskUpdateOne) ClearAssigneeID() *TaskUpdateOne {
-	tuo.mutation.ClearAssigneeID()
 	return tuo
 }
 
@@ -1179,6 +1215,21 @@ func (tuo *TaskUpdateOne) AddAttachments(a ...*Attachment) *TaskUpdateOne {
 	return tuo.AddAttachmentIDs(ids...)
 }
 
+// AddAssigneeIDs adds the "assignees" edge to the TaskAssignee entity by IDs.
+func (tuo *TaskUpdateOne) AddAssigneeIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.AddAssigneeIDs(ids...)
+	return tuo
+}
+
+// AddAssignees adds the "assignees" edges to the TaskAssignee entity.
+func (tuo *TaskUpdateOne) AddAssignees(t ...*TaskAssignee) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.AddAssigneeIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tuo *TaskUpdateOne) Mutation() *TaskMutation {
 	return tuo.mutation
@@ -1272,6 +1323,27 @@ func (tuo *TaskUpdateOne) RemoveAttachments(a ...*Attachment) *TaskUpdateOne {
 		ids[i] = a[i].ID
 	}
 	return tuo.RemoveAttachmentIDs(ids...)
+}
+
+// ClearAssignees clears all "assignees" edges to the TaskAssignee entity.
+func (tuo *TaskUpdateOne) ClearAssignees() *TaskUpdateOne {
+	tuo.mutation.ClearAssignees()
+	return tuo
+}
+
+// RemoveAssigneeIDs removes the "assignees" edge to TaskAssignee entities by IDs.
+func (tuo *TaskUpdateOne) RemoveAssigneeIDs(ids ...uuid.UUID) *TaskUpdateOne {
+	tuo.mutation.RemoveAssigneeIDs(ids...)
+	return tuo
+}
+
+// RemoveAssignees removes "assignees" edges to TaskAssignee entities.
+func (tuo *TaskUpdateOne) RemoveAssignees(t ...*TaskAssignee) *TaskUpdateOne {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tuo.RemoveAssigneeIDs(ids...)
 }
 
 // Where appends a list predicates to the TaskUpdate builder.
@@ -1382,12 +1454,6 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 	}
 	if value, ok := tuo.mutation.Priority(); ok {
 		_spec.SetField(task.FieldPriority, field.TypeString, value)
-	}
-	if value, ok := tuo.mutation.AssigneeID(); ok {
-		_spec.SetField(task.FieldAssigneeID, field.TypeUUID, value)
-	}
-	if tuo.mutation.AssigneeIDCleared() {
-		_spec.ClearField(task.FieldAssigneeID, field.TypeUUID)
 	}
 	if value, ok := tuo.mutation.DueDate(); ok {
 		_spec.SetField(task.FieldDueDate, field.TypeTime, value)
@@ -1645,6 +1711,51 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(attachment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.AssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.AssigneesTable,
+			Columns: []string{task.AssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedAssigneesIDs(); len(nodes) > 0 && !tuo.mutation.AssigneesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.AssigneesTable,
+			Columns: []string{task.AssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.AssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.AssigneesTable,
+			Columns: []string{task.AssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

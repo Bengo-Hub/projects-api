@@ -12,18 +12,21 @@ import (
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/ent"
 	entcomment "github.com/bengobox/projects-service/internal/ent/comment"
-	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	enttask "github.com/bengobox/projects-service/internal/ent/task"
+	entassignee "github.com/bengobox/projects-service/internal/ent/taskassignee"
 	enttaskdep "github.com/bengobox/projects-service/internal/ent/taskdependency"
+	"github.com/bengobox/projects-service/internal/platform/realtime"
 	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/notify"
 	"github.com/bengobox/projects-service/internal/services/txn"
 )
 
-// Service handles task CRUD and dependency operations.
+// Service handles task CRUD, assignees, board statuses, scheduling and dependency operations.
 type Service struct {
 	client *ent.Client
 	cache  *sharedcache.Aside
 	log    *zap.Logger
+	live   realtime.Publisher
 }
 
 // NewService creates a new tasks service.
@@ -31,13 +34,35 @@ func NewService(client *ent.Client, cache *sharedcache.Aside, log *zap.Logger) *
 	return &Service{client: client, cache: cache, log: log.Named("tasks.svc")}
 }
 
-// CreateTaskInput holds the data needed to create a task.
+// WithRealtime sets where change hints go after each commit (the project SSE streams).
+func (s *Service) WithRealtime(p realtime.Publisher) *Service {
+	s.live = p
+	return s
+}
+
+// emit sends a change hint for a task after its transaction committed.
+func (s *Service) emit(ctx context.Context, tenantID uuid.UUID, typ string, t *ent.Task) {
+	realtime.Emit(s.live, tenantID, realtime.Event{
+		Type: typ, ProjectID: t.ProjectID.String(), TaskID: t.ID.String(), Status: t.Status,
+		ActorID: actorString(ctx),
+	})
+}
+
+func actorString(ctx context.Context) string {
+	if id := activity.ActorFrom(ctx); id != uuid.Nil {
+		return id.String()
+	}
+	return ""
+}
+
+// CreateTaskInput holds the data needed to create a task. AssigneeIDs lists the assignees, the
+// first being the primary.
 type CreateTaskInput struct {
 	Title          string         `json:"title"`
 	Description    string         `json:"description"`
 	Status         string         `json:"status"`
 	Priority       string         `json:"priority"`
-	AssigneeID     *uuid.UUID     `json:"assignee_id"`
+	AssigneeIDs    []uuid.UUID    `json:"assignee_ids"`
 	DueDate        *Date          `json:"due_date"`
 	StartDate      *Date          `json:"start_date"`
 	EstimatedHours *float64       `json:"estimated_hours"`
@@ -47,13 +72,14 @@ type CreateTaskInput struct {
 	Metadata       map[string]any `json:"metadata"`
 }
 
-// UpdateTaskInput holds the data needed to update a task.
+// UpdateTaskInput holds the data needed to update a task. AssigneeIDs, when present, replaces the
+// assignees (first is primary; an empty list unassigns everyone).
 type UpdateTaskInput struct {
 	Title          *string        `json:"title"`
 	Description    *string        `json:"description"`
 	Status         *string        `json:"status"`
 	Priority       *string        `json:"priority"`
-	AssigneeID     *uuid.UUID     `json:"assignee_id"`
+	AssigneeIDs    *[]uuid.UUID   `json:"assignee_ids"`
 	DueDate        *Date          `json:"due_date"`
 	StartDate      *Date          `json:"start_date"`
 	EstimatedHours *float64       `json:"estimated_hours"`
@@ -64,13 +90,16 @@ type UpdateTaskInput struct {
 }
 
 // ListTasksFilter holds filter options for listing tasks. Limit and Offset come from the shared
-// pagination parser.
+// pagination parser. Assignee matches any assignee, primary or not. DueFrom and DueTo bound the due
+// date (both inclusive) for the calendar.
 type ListTasksFilter struct {
-	Status     string
-	Priority   string
-	AssigneeID *uuid.UUID
-	Limit      int
-	Offset     int
+	Status   string
+	Priority string
+	Assignee *uuid.UUID
+	DueFrom  *time.Time
+	DueTo    *time.Time
+	Limit    int
+	Offset   int
 }
 
 // AddDependencyInput holds data to add a task dependency.
@@ -79,7 +108,8 @@ type AddDependencyInput struct {
 	DependencyType  string    `json:"dependency_type"`
 }
 
-// ListTasks returns one page of the project's tasks with the total.
+// ListTasks returns one page of the project's tasks with the total, each with its assignees. A
+// status filter gives one board column; each column pages on its own.
 func (s *Service) ListTasks(ctx context.Context, tenantID, projectID uuid.UUID, filter ListTasksFilter) ([]*ent.Task, int, error) {
 	if filter.Limit <= 0 {
 		filter.Limit = 20
@@ -91,34 +121,40 @@ func (s *Service) ListTasks(ctx context.Context, tenantID, projectID uuid.UUID, 
 	if filter.Priority != "" {
 		q = q.Where(enttask.Priority(filter.Priority))
 	}
-	if filter.AssigneeID != nil {
-		q = q.Where(enttask.AssigneeID(*filter.AssigneeID))
+	if filter.Assignee != nil {
+		q = q.Where(assignedTo(tenantID, *filter.Assignee))
 	}
+	q = q.Where(dueRange(filter.DueFrom, filter.DueTo)...)
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count tasks: %w", err)
 	}
-	items, err := q.Order(ent.Asc(enttask.FieldCreatedAt), ent.Asc(enttask.FieldID)).
-		Offset(filter.Offset).Limit(filter.Limit).All(ctx)
+	if filter.DueFrom != nil || filter.DueTo != nil {
+		q = q.Order(enttask.ByDueDate(), enttask.ByID())
+	} else {
+		q = q.Order(enttask.ByCreatedAt(), enttask.ByID())
+	}
+	items, err := q.WithAssignees(assigneeOrder).Offset(filter.Offset).Limit(filter.Limit).All(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list tasks: %w", err)
 	}
 	return items, total, nil
 }
 
-// TaskDetail is a task with its dependencies (under edges), its latest comments oldest first and
-// the task's comment count. Older comments come from the paged task comments route.
+// TaskDetail is a task with its dependencies and assignees (under edges), its latest comments
+// oldest first and the task's comment count. Older comments come from the paged task comments route.
 type TaskDetail struct {
 	*ent.Task
 	Comments      []*ent.Comment `json:"comments"`
 	CommentsTotal int            `json:"comments_total"`
 }
 
-// GetTask fetches a single task with its dependencies and its latest 50 comments.
+// GetTask fetches a single task with its dependencies, assignees and its latest 50 comments.
 func (s *Service) GetTask(ctx context.Context, tenantID, projectID, taskID uuid.UUID) (*TaskDetail, error) {
 	t, err := s.client.Task.Query().
 		Where(enttask.ID(taskID), enttask.TenantID(tenantID), enttask.ProjectID(projectID)).
 		WithDependencies().
+		WithAssignees(assigneeOrder).
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -139,13 +175,20 @@ func (s *Service) GetTask(ctx context.Context, tenantID, projectID, taskID uuid.
 	return &TaskDetail{Task: t, Comments: latest, CommentsTotal: total}, nil
 }
 
-// IsAssignee reports whether the user is the task's assignee (for the *_own permissions).
-func (s *Service) IsAssignee(ctx context.Context, tenantID, projectID, taskID, userID uuid.UUID) (bool, error) {
-	return s.client.Task.Query().Where(enttask.ID(taskID), enttask.TenantID(tenantID), enttask.ProjectID(projectID),
-		enttask.AssigneeID(userID)).Exist(ctx)
+// notice builds the common part of a person-addressed event for a task.
+func notice(ctx context.Context, tx *ent.Tx, p *ent.Project, t *ent.Task) (notify.Notice, error) {
+	actor, err := notify.Actor(ctx, tx, p.TenantID, activity.ActorFrom(ctx))
+	if err != nil {
+		return notify.Notice{}, err
+	}
+	return notify.Notice{
+		TenantID: p.TenantID, ProjectID: p.ID, ProjectName: p.Name, TaskID: t.ID, TaskTitle: t.Title,
+		Actor: actor, ActionPath: notify.ActionPath(ctx, p.ID, t.ID),
+	}, nil
 }
 
-// CreateTask creates a new task, validating the project belongs to the tenant first.
+// CreateTask creates a new task in the project: the status must be one of the project's, every
+// assignee a project member. New assignees other than the author get project.task.assigned.
 func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID, input CreateTaskInput) (*ent.Task, error) {
 	if input.Title == "" {
 		return nil, ErrValidation("title is required")
@@ -158,14 +201,21 @@ func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID,
 	if priority == "" {
 		priority = "medium"
 	}
+	if input.StartDate != nil && input.DueDate != nil && !input.StartDate.IsZero() && !input.DueDate.IsZero() &&
+		input.DueDate.Before(input.StartDate.Time) {
+		return nil, ErrValidation("due date cannot be before the start date")
+	}
 	var task *ent.Task
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
-		exists, err := tx.Project.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).Exist(ctx)
+		p, err := projectForTask(ctx, tx, tenantID, projectID)
 		if err != nil {
-			return fmt.Errorf("validate project: %w", err)
+			return err
 		}
-		if !exists {
-			return ErrNotFound
+		if input.Status == "" && !hasStatus(statusesOf(p.Metadata), status) {
+			status = statusesOf(p.Metadata)[0].Key
+		}
+		if err := checkStatus(p, status); err != nil {
+			return err
 		}
 		if input.ParentID != nil {
 			ok, err := tx.Task.Query().Where(enttask.ID(*input.ParentID), enttask.TenantID(tenantID), enttask.ProjectID(projectID)).Exist(ctx)
@@ -183,13 +233,10 @@ func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID,
 			SetDescription(input.Description).
 			SetStatus(status).
 			SetPriority(priority)
-		if input.AssigneeID != nil {
-			c = c.SetAssigneeID(*input.AssigneeID)
-		}
-		if input.DueDate != nil {
+		if input.DueDate != nil && !input.DueDate.IsZero() {
 			c = c.SetDueDate(input.DueDate.Time)
 		}
-		if input.StartDate != nil {
+		if input.StartDate != nil && !input.StartDate.IsZero() {
 			c = c.SetStartDate(input.StartDate.Time)
 		}
 		if input.EstimatedHours != nil {
@@ -198,7 +245,7 @@ func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID,
 		if input.ProgressPct != nil {
 			c = c.SetProgressPct(clampPct(*input.ProgressPct))
 		}
-		if status == "done" {
+		if status == StatusDone {
 			c = c.SetProgressPct(100).SetCompletedAt(time.Now())
 		}
 		if input.ParentID != nil {
@@ -208,14 +255,26 @@ func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID,
 			c = c.SetWbsCode(input.WbsCode)
 		}
 		if input.Metadata != nil {
-			c = c.SetMetadata(input.Metadata)
+			c = c.SetMetadata(clientMetadata(nil, input.Metadata))
 		}
 		if task, err = c.Save(ctx); err != nil {
 			return fmt.Errorf("create task: %w", err)
 		}
 		changes := map[string]any{"title": task.Title, "status": task.Status}
-		if input.AssigneeID != nil {
-			changes["assignee_id"] = input.AssigneeID.String()
+		if len(input.AssigneeIDs) > 0 {
+			rows, added, err := setAssignees(ctx, tx, tenantID, projectID, task.ID, input.AssigneeIDs)
+			if err != nil {
+				return err
+			}
+			task.Edges.Assignees = rows
+			changes["assignee_ids"] = idStrings(assigneeIDs(rows))
+			n, err := notice(ctx, tx, p, task)
+			if err != nil {
+				return err
+			}
+			if err := notify.Write(ctx, tx, notify.EventTaskAssigned, n, added); err != nil {
+				return err
+			}
 		}
 		return activity.Record(ctx, tx, activity.Entry{
 			TenantID: tenantID, ProjectID: activity.Ref(projectID), TaskID: activity.Ref(task.ID),
@@ -225,15 +284,60 @@ func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID,
 	if err != nil {
 		return nil, err
 	}
+	if task.Edges.Assignees == nil {
+		task.Edges.Assignees = []*ent.TaskAssignee{}
+	}
+	s.emit(ctx, tenantID, realtime.TaskCreated, task)
 	return task, nil
 }
 
-// UpdateTask updates an existing task.
+// applyStatus moves t to status on u, keeping completion in step: entering done completes the task
+// (progress 100, completed_at), leaving it reopens it (completed_at cleared). It records the change
+// in changes and writes project.task.status_changed to the task's assignees.
+func applyStatus(ctx context.Context, tx *ent.Tx, p *ent.Project, t *ent.Task, u *ent.TaskUpdateOne, status string, changes map[string]any) error {
+	if err := checkStatus(p, status); err != nil {
+		return err
+	}
+	if status == t.Status {
+		return nil
+	}
+	u.SetStatus(status)
+	changes["status"] = map[string]any{"from": t.Status, "to": status}
+	switch {
+	case status == StatusDone:
+		u.SetCompletedAt(time.Now()).SetProgressPct(100)
+	case t.Status == StatusDone:
+		u.ClearCompletedAt()
+	}
+	assignees, err := tx.TaskAssignee.Query().Where(entassignee.TenantID(t.TenantID), entassignee.TaskID(t.ID)).All(ctx)
+	if err != nil {
+		return fmt.Errorf("load assignees: %w", err)
+	}
+	n, err := notice(ctx, tx, p, t)
+	if err != nil {
+		return err
+	}
+	n.Extra = map[string]any{"from_status": t.Status, "to_status": status, "to_status_label": statusLabel(p, status)}
+	return notify.Write(ctx, tx, notify.EventTaskStatusChanged, n, assigneeIDs(assignees))
+}
+
+func statusLabel(p *ent.Project, key string) string {
+	for _, st := range statusesOf(p.Metadata) {
+		if st.Key == key {
+			return st.Label
+		}
+	}
+	return key
+}
+
+// UpdateTask updates an existing task. A status must be one of the project's statuses; assignees
+// must be project members, and people newly assigned get project.task.assigned.
 func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uuid.UUID, input UpdateTaskInput) (*ent.Task, error) {
 	if input.ParentID != nil && *input.ParentID == taskID {
 		return nil, ErrValidation("a task cannot be its own parent")
 	}
 	var updated *ent.Task
+	statusChanged := false
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
 		t, err := tx.Task.Query().
 			Where(enttask.ID(taskID), enttask.TenantID(tenantID), enttask.ProjectID(projectID)).Only(ctx)
@@ -242,6 +346,10 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 				return ErrNotFound
 			}
 			return fmt.Errorf("fetch task: %w", err)
+		}
+		p, err := projectForTask(ctx, tx, tenantID, projectID)
+		if err != nil {
+			return err
 		}
 		changes := map[string]any{}
 		u := t.Update()
@@ -254,27 +362,32 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 			changes["description"] = "changed"
 		}
 		if input.Status != nil {
-			u = u.SetStatus(*input.Status)
-			changes["status"] = map[string]any{"from": t.Status, "to": *input.Status}
-			if *input.Status == "done" {
-				u = u.SetCompletedAt(time.Now()).SetProgressPct(100)
+			if err := applyStatus(ctx, tx, p, t, u, *input.Status, changes); err != nil {
+				return err
 			}
+			statusChanged = *input.Status != t.Status
 		}
 		if input.Priority != nil {
 			u = u.SetPriority(*input.Priority)
 			changes["priority"] = *input.Priority
 		}
-		if input.AssigneeID != nil {
-			u = u.SetAssigneeID(*input.AssigneeID)
-			changes["assignee_id"] = input.AssigneeID.String()
-		}
 		if input.DueDate != nil {
-			u = u.SetDueDate(input.DueDate.Time)
-			changes["due_date"] = input.DueDate.Format(time.DateOnly)
+			if input.DueDate.IsZero() {
+				u = u.ClearDueDate()
+				changes["due_date"] = nil
+			} else {
+				u = u.SetDueDate(input.DueDate.Time)
+				changes["due_date"] = input.DueDate.Format(time.DateOnly)
+			}
 		}
 		if input.StartDate != nil {
-			u = u.SetStartDate(input.StartDate.Time)
-			changes["start_date"] = input.StartDate.Format(time.DateOnly)
+			if input.StartDate.IsZero() {
+				u = u.ClearStartDate()
+				changes["start_date"] = nil
+			} else {
+				u = u.SetStartDate(input.StartDate.Time)
+				changes["start_date"] = input.StartDate.Format(time.DateOnly)
+			}
 		}
 		if input.EstimatedHours != nil {
 			u = u.SetEstimatedHours(*input.EstimatedHours)
@@ -293,11 +406,29 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 			changes["wbs_code"] = *input.WbsCode
 		}
 		if input.Metadata != nil {
-			u = u.SetMetadata(input.Metadata)
+			u = u.SetMetadata(clientMetadata(t.Metadata, input.Metadata))
 			changes["metadata"] = "changed"
 		}
 		if updated, err = u.Save(ctx); err != nil {
 			return fmt.Errorf("update task: %w", err)
+		}
+		if input.AssigneeIDs != nil {
+			rows, added, err := setAssignees(ctx, tx, tenantID, projectID, taskID, *input.AssigneeIDs)
+			if err != nil {
+				return err
+			}
+			updated.Edges.Assignees = rows
+			changes["assignee_ids"] = idStrings(assigneeIDs(rows))
+			n, err := notice(ctx, tx, p, updated)
+			if err != nil {
+				return err
+			}
+			if err := notify.Write(ctx, tx, notify.EventTaskAssigned, n, added); err != nil {
+				return err
+			}
+		} else if updated.Edges.Assignees, err = tx.TaskAssignee.Query().
+			Where(entassignee.TenantID(tenantID), entassignee.TaskID(taskID)).Order(assigneeOrderBy()...).All(ctx); err != nil {
+			return fmt.Errorf("load assignees: %w", err)
 		}
 		return activity.Record(ctx, tx, activity.Entry{
 			TenantID: tenantID, ProjectID: activity.Ref(projectID), TaskID: activity.Ref(taskID),
@@ -307,12 +438,18 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 	if err != nil {
 		return nil, err
 	}
+	if statusChanged {
+		s.emit(ctx, tenantID, realtime.TaskMoved, updated)
+	} else {
+		s.emit(ctx, tenantID, realtime.TaskUpdated, updated)
+	}
 	return updated, nil
 }
 
-// DeleteTask deletes a task by ID.
+// DeleteTask deletes a task by ID with its dependencies and assignees.
 func (s *Service) DeleteTask(ctx context.Context, tenantID, projectID, taskID uuid.UUID) error {
-	return txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+	var deleted *ent.Task
+	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
 		t, err := tx.Task.Query().
 			Where(enttask.ID(taskID), enttask.TenantID(tenantID), enttask.ProjectID(projectID)).Only(ctx)
 		if ent.IsNotFound(err) {
@@ -325,14 +462,23 @@ func (s *Service) DeleteTask(ctx context.Context, tenantID, projectID, taskID uu
 			Where(enttaskdep.Or(enttaskdep.TaskID(taskID), enttaskdep.DependsOnTaskID(taskID))).Exec(ctx); err != nil {
 			return fmt.Errorf("delete task dependencies: %w", err)
 		}
+		if _, err := tx.TaskAssignee.Delete().Where(entassignee.TenantID(tenantID), entassignee.TaskID(taskID)).Exec(ctx); err != nil {
+			return fmt.Errorf("delete task assignees: %w", err)
+		}
 		if err := tx.Task.DeleteOne(t).Exec(ctx); err != nil {
 			return fmt.Errorf("delete task: %w", err)
 		}
+		deleted = t
 		return activity.Record(ctx, tx, activity.Entry{
 			TenantID: tenantID, ProjectID: activity.Ref(projectID), EntityType: "task", EntityID: taskID,
 			Action: activity.ActionDeleted, Changes: map[string]any{"title": t.Title},
 		})
 	})
+	if err != nil {
+		return err
+	}
+	s.emit(ctx, tenantID, realtime.TaskDeleted, deleted)
+	return nil
 }
 
 // AddDependency records that taskID (in the project) depends on dependsOnID (any task of the
@@ -344,7 +490,7 @@ func (s *Service) AddDependency(ctx context.Context, tenantID, projectID, taskID
 	if taskID == dependsOnID {
 		return ErrCircularDependency
 	}
-	return txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
 		inProject, err := tx.Task.Query().Where(enttask.ID(taskID), enttask.TenantID(tenantID), enttask.ProjectID(projectID)).Exist(ctx)
 		if err != nil {
 			return fmt.Errorf("check task: %w", err)
@@ -375,6 +521,10 @@ func (s *Service) AddDependency(ctx context.Context, tenantID, projectID, taskID
 			Changes: map[string]any{"dependency_added": dependsOnID.String(), "dependency_type": depType},
 		})
 	})
+	if err == nil {
+		realtime.Emit(s.live, tenantID, realtime.Event{Type: realtime.TaskUpdated, ProjectID: projectID.String(), TaskID: taskID.String(), ActorID: actorString(ctx)})
+	}
+	return err
 }
 
 // reachesQuery walks the dependency graph from one task only (never the whole tenant), as one
@@ -413,7 +563,7 @@ func reachesInDB(ctx context.Context, tx *ent.Tx, tenantID, start, target uuid.U
 
 // RemoveDependency removes a dependency of a task in the project.
 func (s *Service) RemoveDependency(ctx context.Context, tenantID, projectID, taskID, dependsOnID uuid.UUID) error {
-	return txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
 		n, err := tx.TaskDependency.Delete().
 			Where(enttaskdep.TaskID(taskID), enttaskdep.DependsOnTaskID(dependsOnID),
 				enttaskdep.HasTaskWith(enttask.TenantID(tenantID), enttask.ProjectID(projectID))).Exec(ctx)
@@ -428,32 +578,10 @@ func (s *Service) RemoveDependency(ctx context.Context, tenantID, projectID, tas
 			EntityID: taskID, Action: activity.ActionUpdated, Changes: map[string]any{"dependency_removed": dependsOnID.String()},
 		})
 	})
-}
-
-// GanttData is the project's plan for the Gantt chart. Truncated is set when the project has more
-// than ganttLimit tasks and only the first ganttLimit (oldest first) are returned.
-type GanttData struct {
-	Tasks     []*ent.Task `json:"data"`
-	Truncated bool        `json:"truncated"`
-	Limit     int         `json:"limit"`
-}
-
-// GetGanttData returns tasks with their dependencies for Gantt chart rendering, capped.
-func (s *Service) GetGanttData(ctx context.Context, tenantID, projectID uuid.UUID) (GanttData, error) {
-	tasks, err := s.client.Task.Query().
-		Where(enttask.TenantID(tenantID), enttask.ProjectID(projectID)).
-		WithDependencies().
-		Order(ent.Asc(enttask.FieldCreatedAt), ent.Asc(enttask.FieldID)).
-		Limit(ganttLimit + 1).
-		All(ctx)
-	if err != nil {
-		return GanttData{}, fmt.Errorf("get gantt data: %w", err)
+	if err == nil {
+		realtime.Emit(s.live, tenantID, realtime.Event{Type: realtime.TaskUpdated, ProjectID: projectID.String(), TaskID: taskID.String(), ActorID: actorString(ctx)})
 	}
-	out := GanttData{Tasks: tasks, Limit: ganttLimit}
-	if len(tasks) > ganttLimit {
-		out.Tasks, out.Truncated = tasks[:ganttLimit], true
-	}
-	return out, nil
+	return err
 }
 
 // clampPct keeps a progress percentage within 0-100.

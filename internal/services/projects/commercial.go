@@ -25,15 +25,21 @@ const (
 	MetaCostCenterName = "cost_center_name"
 )
 
+// metaStatuses is the board's status columns (tasks.MetaStatuses). Only the statuses route,
+// which validates them, writes it, so a project create or update drops it from its metadata.
+const metaStatuses = "statuses"
+
 var billingTypes = map[string]bool{"fixed": true, "time_and_materials": true, "non_billable": true}
 
 // normalizeCommercial validates the commercial keys of a metadata map in place: billing type
 // from the allowed set, a non-negative contract value stored as a number, and UUID ids. An empty
-// id also clears its display name. Other keys pass through untouched.
+// id also clears its display name. The board statuses key is dropped. Other keys pass through
+// untouched.
 func normalizeCommercial(meta map[string]any) error {
 	if meta == nil {
 		return nil
 	}
+	delete(meta, metaStatuses)
 	if v, ok := meta[MetaBillingType]; ok && v != nil {
 		s, _ := v.(string)
 		if s == "" {

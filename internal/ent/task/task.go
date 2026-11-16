@@ -27,8 +27,6 @@ const (
 	FieldStatus = "status"
 	// FieldPriority holds the string denoting the priority field in the database.
 	FieldPriority = "priority"
-	// FieldAssigneeID holds the string denoting the assignee_id field in the database.
-	FieldAssigneeID = "assignee_id"
 	// FieldDueDate holds the string denoting the due_date field in the database.
 	FieldDueDate = "due_date"
 	// FieldStartDate holds the string denoting the start_date field in the database.
@@ -59,6 +57,8 @@ const (
 	EdgeActivities = "activities"
 	// EdgeAttachments holds the string denoting the attachments edge name in mutations.
 	EdgeAttachments = "attachments"
+	// EdgeAssignees holds the string denoting the assignees edge name in mutations.
+	EdgeAssignees = "assignees"
 	// Table holds the table name of the task in the database.
 	Table = "tasks"
 	// ProjectTable is the table that holds the project relation/edge.
@@ -96,6 +96,13 @@ const (
 	AttachmentsInverseTable = "attachments"
 	// AttachmentsColumn is the table column denoting the attachments relation/edge.
 	AttachmentsColumn = "task_id"
+	// AssigneesTable is the table that holds the assignees relation/edge.
+	AssigneesTable = "task_assignees"
+	// AssigneesInverseTable is the table name for the TaskAssignee entity.
+	// It exists in this package in order to avoid circular dependency with the "taskassignee" package.
+	AssigneesInverseTable = "task_assignees"
+	// AssigneesColumn is the table column denoting the assignees relation/edge.
+	AssigneesColumn = "task_id"
 )
 
 // Columns holds all SQL columns for task fields.
@@ -107,7 +114,6 @@ var Columns = []string{
 	FieldDescription,
 	FieldStatus,
 	FieldPriority,
-	FieldAssigneeID,
 	FieldDueDate,
 	FieldStartDate,
 	FieldEstimatedHours,
@@ -185,11 +191,6 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByPriority orders the results by the priority field.
 func ByPriority(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPriority, opts...).ToFunc()
-}
-
-// ByAssigneeID orders the results by the assignee_id field.
-func ByAssigneeID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAssigneeID, opts...).ToFunc()
 }
 
 // ByDueDate orders the results by the due_date field.
@@ -299,6 +300,20 @@ func ByAttachments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newAttachmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByAssigneesCount orders the results by assignees count.
+func ByAssigneesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAssigneesStep(), opts...)
+	}
+}
+
+// ByAssignees orders the results by assignees terms.
+func ByAssignees(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAssigneesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newProjectStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -332,5 +347,12 @@ func newAttachmentsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AttachmentsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AttachmentsTable, AttachmentsColumn),
+	)
+}
+func newAssigneesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AssigneesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AssigneesTable, AssigneesColumn),
 	)
 }

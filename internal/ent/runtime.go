@@ -26,6 +26,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/schema"
 	"github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/ent/taskassignee"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
 	"github.com/bengobox/projects-service/internal/ent/tender"
 	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
@@ -672,15 +673,15 @@ func init() {
 	// task.DefaultPriority holds the default value on creation for the priority field.
 	task.DefaultPriority = taskDescPriority.Default.(string)
 	// taskDescProgressPct is the schema descriptor for progress_pct field.
-	taskDescProgressPct := taskFields[11].Descriptor()
+	taskDescProgressPct := taskFields[10].Descriptor()
 	// task.DefaultProgressPct holds the default value on creation for the progress_pct field.
 	task.DefaultProgressPct = taskDescProgressPct.Default.(int)
 	// taskDescCreatedAt is the schema descriptor for created_at field.
-	taskDescCreatedAt := taskFields[13].Descriptor()
+	taskDescCreatedAt := taskFields[12].Descriptor()
 	// task.DefaultCreatedAt holds the default value on creation for the created_at field.
 	task.DefaultCreatedAt = taskDescCreatedAt.Default.(func() time.Time)
 	// taskDescUpdatedAt is the schema descriptor for updated_at field.
-	taskDescUpdatedAt := taskFields[14].Descriptor()
+	taskDescUpdatedAt := taskFields[13].Descriptor()
 	// task.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	task.DefaultUpdatedAt = taskDescUpdatedAt.Default.(func() time.Time)
 	// task.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -689,6 +690,20 @@ func init() {
 	taskDescID := taskFields[0].Descriptor()
 	// task.DefaultID holds the default value on creation for the id field.
 	task.DefaultID = taskDescID.Default.(func() uuid.UUID)
+	taskassigneeFields := schema.TaskAssignee{}.Fields()
+	_ = taskassigneeFields
+	// taskassigneeDescIsPrimary is the schema descriptor for is_primary field.
+	taskassigneeDescIsPrimary := taskassigneeFields[4].Descriptor()
+	// taskassignee.DefaultIsPrimary holds the default value on creation for the is_primary field.
+	taskassignee.DefaultIsPrimary = taskassigneeDescIsPrimary.Default.(bool)
+	// taskassigneeDescCreatedAt is the schema descriptor for created_at field.
+	taskassigneeDescCreatedAt := taskassigneeFields[5].Descriptor()
+	// taskassignee.DefaultCreatedAt holds the default value on creation for the created_at field.
+	taskassignee.DefaultCreatedAt = taskassigneeDescCreatedAt.Default.(func() time.Time)
+	// taskassigneeDescID is the schema descriptor for id field.
+	taskassigneeDescID := taskassigneeFields[0].Descriptor()
+	// taskassignee.DefaultID holds the default value on creation for the id field.
+	taskassignee.DefaultID = taskassigneeDescID.Default.(func() uuid.UUID)
 	taskdependencyFields := schema.TaskDependency{}.Fields()
 	_ = taskdependencyFields
 	// taskdependencyDescDependencyType is the schema descriptor for dependency_type field.

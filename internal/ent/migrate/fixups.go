@@ -53,6 +53,44 @@ func DropLegacyIndexes(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
+// MoveTaskAssignees copies every tasks.assignee_id into task_assignees as the task's primary
+// assignee, then drops the column, so who a task is assigned to has one source. Run it after
+// Schema.Create: that creates task_assignees and, without WithDropColumn, leaves assignee_id in
+// place for this step to read. One transaction; once the column is gone this does nothing.
+func MoveTaskAssignees(ctx context.Context, db *sql.DB) error {
+	var present bool
+	if err := db.QueryRowContext(ctx, `SELECT EXISTS (
+		SELECT 1 FROM information_schema.columns
+		WHERE table_schema = current_schema() AND table_name = 'tasks' AND column_name = 'assignee_id')`).Scan(&present); err != nil {
+		return fmt.Errorf("inspect tasks.assignee_id: %w", err)
+	}
+	if !present {
+		return nil
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin assignee move: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO task_assignees (id, tenant_id, task_id, user_id, is_primary, created_at)
+		SELECT gen_random_uuid(), t.tenant_id, t.id, t.assignee_id, true, now()
+		FROM tasks t
+		WHERE t.assignee_id IS NOT NULL
+		  AND NOT EXISTS (SELECT 1 FROM task_assignees a WHERE a.task_id = t.id AND a.is_primary)
+		ON CONFLICT (task_id, user_id) DO UPDATE SET is_primary = true`); err != nil {
+		return fmt.Errorf("copy task assignees: %w", err)
+	}
+	// Dropping the column also drops its (tenant_id, assignee_id) index.
+	if _, err := tx.ExecContext(ctx, `ALTER TABLE tasks DROP COLUMN IF EXISTS assignee_id`); err != nil {
+		return fmt.Errorf("drop tasks.assignee_id: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit assignee move: %w", err)
+	}
+	return nil
+}
+
 // BackfillTenderSequences starts each tenant's tender counter at the highest number it already
 // used (the digits after the last dash of TND-{year}-{seq}), so the counter never hands out a
 // number a tender holds. A tenant that already has a counter row keeps it. Run it after

@@ -18,6 +18,7 @@ import (
 	eventslib "github.com/Bengo-Hub/shared-events"
 
 	sharedcache "github.com/Bengo-Hub/cache"
+	"github.com/Bengo-Hub/httpware/objectstore"
 	"github.com/Bengo-Hub/httpware/tenantexport"
 	"github.com/bengobox/projects-service/internal/config"
 	"github.com/bengobox/projects-service/internal/ent"
@@ -31,9 +32,11 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/erp"
 	"github.com/bengobox/projects-service/internal/platform/events"
 	"github.com/bengobox/projects-service/internal/platform/marketflow"
+	"github.com/bengobox/projects-service/internal/platform/realtime"
 	"github.com/bengobox/projects-service/internal/platform/ticketing"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/attachments"
 	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/crmsync"
 	"github.com/bengobox/projects-service/internal/services/fieldkeys"
@@ -165,12 +168,31 @@ func New(ctx context.Context) (*App, error) {
 
 	// Initialize all services. Every mutation writes its activity entry and its outbox event
 	// (project.*, project.milestone.reached) in the same transaction as the change.
+	// Live project updates (SSE): change hints relayed to every pod by the shared Broadcaster.
+	liveHub := realtime.NewHub(log, natsConn)
 	projectService := projectssvc.NewService(entClient, cacheClient, log)
-	taskService := tasks.NewService(entClient, cacheClient, log)
+	taskService := tasks.NewService(entClient, cacheClient, log).WithRealtime(liveHub)
 	milestoneService := milestones.NewService(entClient, cacheClient, log)
 	memberService := members.NewService(entClient, cacheClient, log)
 	memberService.OnChange(memberships.Forget)
-	commentService := comments.NewService(entClient, cacheClient, log)
+	commentService := comments.NewService(entClient, cacheClient, log).WithRealtime(liveHub)
+	// Attachments go straight from the browser to the shared object storage (OBJECT_STORAGE_*).
+	// The attachments media type takes this service's limits, which VerifyUpload then enforces.
+	objectstore.Register(objectstore.MediaType{
+		Name: objectstore.TypeAttachments, MaxBytes: cfg.Attachments.MaxBytes,
+		Allowed: cfg.Attachments.AllowedTypes, Scan: objectstore.ScanFailClosed,
+	})
+	var attachmentStore attachments.Store
+	if store, err := objectstore.New("projects", objectstore.FromEnv()); err != nil {
+		log.Warn("object storage not configured; attachments are unavailable", zap.Error(err))
+	} else if store.Remote() {
+		attachmentStore = store
+	} else {
+		log.Warn("object storage endpoint not set; attachment uploads are unavailable")
+	}
+	attachmentService := attachments.NewService(entClient, attachmentStore, attachments.Limits{
+		MaxBytes: cfg.Attachments.MaxBytes, AllowedTypes: cfg.Attachments.AllowedTypes, UploadTTL: cfg.Attachments.UploadTTL,
+	}, log).WithRealtime(liveHub)
 	tenderService := tenders.NewService(entClient, cacheClient, log)
 	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
 	authEventsConsumer := usersync.NewAuthEventsConsumer(entClient, log)
@@ -288,7 +310,9 @@ func New(ctx context.Context) (*App, error) {
 		Handlers: router.Handlers{
 			Health: healthHandler, RBAC: rbacHandler, Projects: projectHandler, Tasks: taskHandler,
 			Milestones: milestoneHandler, Members: memberHandler, Comments: commentHandler,
-			Activity: activityHandler, Tenders: tenderHandler, Financials: financialsHandler,
+			Attachments: handlers.NewAttachmentHandler(log, attachmentService),
+			Stream:      handlers.NewStreamHandler(log, liveHub),
+			Activity:    activityHandler, Tenders: tenderHandler, Financials: financialsHandler,
 		},
 		Authenticate:   authMiddleware.RequireAuth,
 		AllowedOrigins: cfg.HTTP.AllowedOrigins,

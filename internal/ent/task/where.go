@@ -86,11 +86,6 @@ func Priority(v string) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldPriority, v))
 }
 
-// AssigneeID applies equality check predicate on the "assignee_id" field. It's identical to AssigneeIDEQ.
-func AssigneeID(v uuid.UUID) predicate.Task {
-	return predicate.Task(sql.FieldEQ(FieldAssigneeID, v))
-}
-
 // DueDate applies equality check predicate on the "due_date" field. It's identical to DueDateEQ.
 func DueDate(v time.Time) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldDueDate, v))
@@ -464,56 +459,6 @@ func PriorityEqualFold(v string) predicate.Task {
 // PriorityContainsFold applies the ContainsFold predicate on the "priority" field.
 func PriorityContainsFold(v string) predicate.Task {
 	return predicate.Task(sql.FieldContainsFold(FieldPriority, v))
-}
-
-// AssigneeIDEQ applies the EQ predicate on the "assignee_id" field.
-func AssigneeIDEQ(v uuid.UUID) predicate.Task {
-	return predicate.Task(sql.FieldEQ(FieldAssigneeID, v))
-}
-
-// AssigneeIDNEQ applies the NEQ predicate on the "assignee_id" field.
-func AssigneeIDNEQ(v uuid.UUID) predicate.Task {
-	return predicate.Task(sql.FieldNEQ(FieldAssigneeID, v))
-}
-
-// AssigneeIDIn applies the In predicate on the "assignee_id" field.
-func AssigneeIDIn(vs ...uuid.UUID) predicate.Task {
-	return predicate.Task(sql.FieldIn(FieldAssigneeID, vs...))
-}
-
-// AssigneeIDNotIn applies the NotIn predicate on the "assignee_id" field.
-func AssigneeIDNotIn(vs ...uuid.UUID) predicate.Task {
-	return predicate.Task(sql.FieldNotIn(FieldAssigneeID, vs...))
-}
-
-// AssigneeIDGT applies the GT predicate on the "assignee_id" field.
-func AssigneeIDGT(v uuid.UUID) predicate.Task {
-	return predicate.Task(sql.FieldGT(FieldAssigneeID, v))
-}
-
-// AssigneeIDGTE applies the GTE predicate on the "assignee_id" field.
-func AssigneeIDGTE(v uuid.UUID) predicate.Task {
-	return predicate.Task(sql.FieldGTE(FieldAssigneeID, v))
-}
-
-// AssigneeIDLT applies the LT predicate on the "assignee_id" field.
-func AssigneeIDLT(v uuid.UUID) predicate.Task {
-	return predicate.Task(sql.FieldLT(FieldAssigneeID, v))
-}
-
-// AssigneeIDLTE applies the LTE predicate on the "assignee_id" field.
-func AssigneeIDLTE(v uuid.UUID) predicate.Task {
-	return predicate.Task(sql.FieldLTE(FieldAssigneeID, v))
-}
-
-// AssigneeIDIsNil applies the IsNil predicate on the "assignee_id" field.
-func AssigneeIDIsNil() predicate.Task {
-	return predicate.Task(sql.FieldIsNull(FieldAssigneeID))
-}
-
-// AssigneeIDNotNil applies the NotNil predicate on the "assignee_id" field.
-func AssigneeIDNotNil() predicate.Task {
-	return predicate.Task(sql.FieldNotNull(FieldAssigneeID))
 }
 
 // DueDateEQ applies the EQ predicate on the "due_date" field.
@@ -1078,6 +1023,29 @@ func HasAttachments() predicate.Task {
 func HasAttachmentsWith(preds ...predicate.Attachment) predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {
 		step := newAttachmentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAssignees applies the HasEdge predicate on the "assignees" edge.
+func HasAssignees() predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AssigneesTable, AssigneesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAssigneesWith applies the HasEdge predicate on the "assignees" edge with a given conditions (other predicates).
+func HasAssigneesWith(preds ...predicate.TaskAssignee) predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := newAssigneesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

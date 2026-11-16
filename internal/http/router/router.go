@@ -19,16 +19,18 @@ import (
 
 // Handlers are the route groups of the tenant API.
 type Handlers struct {
-	Health     *handlers.HealthHandler
-	RBAC       *handlers.RBACHandler
-	Projects   *handlers.ProjectHandler
-	Tasks      *handlers.TaskHandler
-	Milestones *handlers.MilestoneHandler
-	Members    *handlers.MemberHandler
-	Comments   *handlers.CommentHandler
-	Activity   *handlers.ActivityHandler
-	Tenders    *handlers.TenderHandler
-	Financials *handlers.FinancialsHandler
+	Health      *handlers.HealthHandler
+	RBAC        *handlers.RBACHandler
+	Projects    *handlers.ProjectHandler
+	Tasks       *handlers.TaskHandler
+	Milestones  *handlers.MilestoneHandler
+	Members     *handlers.MemberHandler
+	Comments    *handlers.CommentHandler
+	Attachments *handlers.AttachmentHandler
+	Stream      *handlers.StreamHandler
+	Activity    *handlers.ActivityHandler
+	Tenders     *handlers.TenderHandler
+	Financials  *handlers.FinancialsHandler
 }
 
 // Deps is everything the router needs.
@@ -144,12 +146,22 @@ func New(d Deps) http.Handler {
 			tenant.Use(authz.Resolve(d.Access, d.Members, log))
 			tenant.Use(outletContext)
 			h := d.Handlers
+			// Plan features (reads included): task_tracking for tasks, the board, My Work, the
+			// calendar and the live stream; gantt_chart for the Gantt chart on top of it;
+			// team_collaboration for comments, mentions and attachments.
+			tracking, collaboration := requireFeature("task_tracking"), requireFeature("team_collaboration")
 			h.RBAC.RegisterRoutes(tenant)
 			h.Projects.RegisterRoutes(tenant)
-			h.Tasks.RegisterRoutes(tenant)
+			h.Tasks.RegisterRoutes(tenant, tracking, requireFeature("gantt_chart"))
 			h.Milestones.RegisterRoutes(tenant)
 			h.Members.RegisterRoutes(tenant)
-			h.Comments.RegisterRoutes(tenant)
+			h.Comments.RegisterRoutes(tenant, collaboration)
+			if h.Attachments != nil {
+				h.Attachments.RegisterRoutes(tenant, collaboration)
+			}
+			if h.Stream != nil {
+				h.Stream.RegisterRoutes(tenant, tracking)
+			}
 			h.Activity.RegisterRoutes(tenant)
 			h.Tenders.RegisterRoutes(tenant)
 			if h.Financials != nil {

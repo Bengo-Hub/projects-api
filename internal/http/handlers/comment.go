@@ -26,19 +26,22 @@ func NewCommentHandler(log *zap.Logger, svc *comments.Service) *CommentHandler {
 	return &CommentHandler{log: log.Named("comment.handler"), svc: svc}
 }
 
-// RegisterRoutes registers comment routes.
-// Flat patterns on purpose: a Route("/projects/{projectID}") subrouter also claims the bare
-// /projects/{projectID} path, and chi prefers it over the /projects mount, so getting a project,
-// its summary and /projects/metrics all answered 404.
-func (h *CommentHandler) RegisterRoutes(r chi.Router) {
+// RegisterRoutes registers comment routes, all behind collaboration (the team_collaboration plan
+// feature). Flat patterns on purpose: a Route("/projects/{projectID}") subrouter also claims the
+// bare /projects/{projectID} path, and chi prefers it over the /projects mount, so getting a
+// project, its summary and /projects/metrics all answered 404.
+func (h *CommentHandler) RegisterRoutes(r chi.Router, collaboration func(http.Handler) http.Handler) {
 	view := authz.Require(rbac.PermCommentsView)
 	add := authz.Require(rbac.PermCommentsAdd)
-	r.With(view).Get("/projects/{projectID}/comments", h.ListByProject)
-	r.With(add).Post("/projects/{projectID}/comments", h.CreateProjectComment)
-	r.With(view).Get("/projects/{projectID}/tasks/{taskID}/comments", h.ListByTask)
-	r.With(add).Post("/projects/{projectID}/tasks/{taskID}/comments", h.CreateTaskComment)
-	r.With(authz.Require(rbac.PermCommentsManage, rbac.PermCommentsChangeOwn)).Put("/projects/{projectID}/comments/{commentID}", h.Update)
-	r.With(authz.Require(rbac.PermCommentsManage, rbac.PermCommentsDeleteOwn)).Delete("/projects/{projectID}/comments/{commentID}", h.Delete)
+	r.Group(func(g chi.Router) {
+		g.Use(collaboration)
+		g.With(view).Get("/projects/{projectID}/comments", h.ListByProject)
+		g.With(add).Post("/projects/{projectID}/comments", h.CreateProjectComment)
+		g.With(view).Get("/projects/{projectID}/tasks/{taskID}/comments", h.ListByTask)
+		g.With(add).Post("/projects/{projectID}/tasks/{taskID}/comments", h.CreateTaskComment)
+		g.With(authz.Require(rbac.PermCommentsManage, rbac.PermCommentsChangeOwn)).Put("/projects/{projectID}/comments/{commentID}", h.Update)
+		g.With(authz.Require(rbac.PermCommentsManage, rbac.PermCommentsDeleteOwn)).Delete("/projects/{projectID}/comments/{commentID}", h.Delete)
+	})
 }
 
 func (h *CommentHandler) writeErr(w http.ResponseWriter, err error, msg string) {
@@ -79,7 +82,7 @@ func (h *CommentHandler) CreateProjectComment(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	c, err := h.svc.CreateProjectComment(r.Context(), tenantID, projectID, input)
+	c, err := h.svc.CreateProjectComment(noticeCtx(r), tenantID, projectID, input)
 	if err != nil {
 		h.writeErr(w, err, "create project comment failed")
 		return
@@ -119,7 +122,7 @@ func (h *CommentHandler) CreateTaskComment(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	c, err := h.svc.CreateTaskComment(r.Context(), tenantID, projectID, taskID, input)
+	c, err := h.svc.CreateTaskComment(noticeCtx(r), tenantID, projectID, taskID, input)
 	if err != nil {
 		h.writeErr(w, err, "create task comment failed")
 		return
@@ -159,7 +162,7 @@ func (h *CommentHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	c, err := h.svc.UpdateComment(r.Context(), tenantID, projectID, id, input, ownerOnly(r))
+	c, err := h.svc.UpdateComment(noticeCtx(r), tenantID, projectID, id, input, ownerOnly(r))
 	if err != nil {
 		h.writeErr(w, err, "update comment failed")
 		return

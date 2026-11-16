@@ -37,6 +37,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/ent/taskassignee"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
 	"github.com/bengobox/projects-service/internal/ent/tender"
 	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
@@ -96,6 +97,8 @@ type Client struct {
 	RolePermission *RolePermissionClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
+	// TaskAssignee is the client for interacting with the TaskAssignee builders.
+	TaskAssignee *TaskAssigneeClient
 	// TaskDependency is the client for interacting with the TaskDependency builders.
 	TaskDependency *TaskDependencyClient
 	// Tender is the client for interacting with the Tender builders.
@@ -144,6 +147,7 @@ func (c *Client) init() {
 	c.Role = NewRoleClient(c.config)
 	c.RolePermission = NewRolePermissionClient(c.config)
 	c.Task = NewTaskClient(c.config)
+	c.TaskAssignee = NewTaskAssigneeClient(c.config)
 	c.TaskDependency = NewTaskDependencyClient(c.config)
 	c.Tender = NewTenderClient(c.config)
 	c.TenderCommittee = NewTenderCommitteeClient(c.config)
@@ -265,6 +269,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Role:                  NewRoleClient(cfg),
 		RolePermission:        NewRolePermissionClient(cfg),
 		Task:                  NewTaskClient(cfg),
+		TaskAssignee:          NewTaskAssigneeClient(cfg),
 		TaskDependency:        NewTaskDependencyClient(cfg),
 		Tender:                NewTenderClient(cfg),
 		TenderCommittee:       NewTenderCommitteeClient(cfg),
@@ -313,6 +318,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Role:                  NewRoleClient(cfg),
 		RolePermission:        NewRolePermissionClient(cfg),
 		Task:                  NewTaskClient(cfg),
+		TaskAssignee:          NewTaskAssigneeClient(cfg),
 		TaskDependency:        NewTaskDependencyClient(cfg),
 		Tender:                NewTenderClient(cfg),
 		TenderCommittee:       NewTenderCommitteeClient(cfg),
@@ -354,8 +360,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.FieldKeyAudit, c.Milestone, c.OutboxEvent, c.Permission, c.Project,
 		c.ProjectMember, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
 		c.QAResult, c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task,
-		c.TaskDependency, c.Tender, c.TenderCommittee, c.TenderCommitteeMember,
-		c.TenderDocument, c.TenderEvaluation, c.TenderMeeting, c.UserRoleAssignment,
+		c.TaskAssignee, c.TaskDependency, c.Tender, c.TenderCommittee,
+		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
+		c.UserRoleAssignment,
 	} {
 		n.Use(hooks...)
 	}
@@ -369,8 +376,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.FieldKeyAudit, c.Milestone, c.OutboxEvent, c.Permission, c.Project,
 		c.ProjectMember, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
 		c.QAResult, c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task,
-		c.TaskDependency, c.Tender, c.TenderCommittee, c.TenderCommitteeMember,
-		c.TenderDocument, c.TenderEvaluation, c.TenderMeeting, c.UserRoleAssignment,
+		c.TaskAssignee, c.TaskDependency, c.Tender, c.TenderCommittee,
+		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
+		c.UserRoleAssignment,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -421,6 +429,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RolePermission.mutate(ctx, m)
 	case *TaskMutation:
 		return c.Task.mutate(ctx, m)
+	case *TaskAssigneeMutation:
+		return c.TaskAssignee.mutate(ctx, m)
 	case *TaskDependencyMutation:
 		return c.TaskDependency.mutate(ctx, m)
 	case *TenderMutation:
@@ -3674,6 +3684,22 @@ func (c *TaskClient) QueryAttachments(t *Task) *AttachmentQuery {
 	return query
 }
 
+// QueryAssignees queries the assignees edge of a Task.
+func (c *TaskClient) QueryAssignees(t *Task) *TaskAssigneeQuery {
+	query := (&TaskAssigneeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(taskassignee.Table, taskassignee.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.AssigneesTable, task.AssigneesColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TaskClient) Hooks() []Hook {
 	return c.hooks.Task
@@ -3696,6 +3722,155 @@ func (c *TaskClient) mutate(ctx context.Context, m *TaskMutation) (Value, error)
 		return (&TaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Task mutation op: %q", m.Op())
+	}
+}
+
+// TaskAssigneeClient is a client for the TaskAssignee schema.
+type TaskAssigneeClient struct {
+	config
+}
+
+// NewTaskAssigneeClient returns a client for the TaskAssignee from the given config.
+func NewTaskAssigneeClient(c config) *TaskAssigneeClient {
+	return &TaskAssigneeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `taskassignee.Hooks(f(g(h())))`.
+func (c *TaskAssigneeClient) Use(hooks ...Hook) {
+	c.hooks.TaskAssignee = append(c.hooks.TaskAssignee, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `taskassignee.Intercept(f(g(h())))`.
+func (c *TaskAssigneeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TaskAssignee = append(c.inters.TaskAssignee, interceptors...)
+}
+
+// Create returns a builder for creating a TaskAssignee entity.
+func (c *TaskAssigneeClient) Create() *TaskAssigneeCreate {
+	mutation := newTaskAssigneeMutation(c.config, OpCreate)
+	return &TaskAssigneeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TaskAssignee entities.
+func (c *TaskAssigneeClient) CreateBulk(builders ...*TaskAssigneeCreate) *TaskAssigneeCreateBulk {
+	return &TaskAssigneeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TaskAssigneeClient) MapCreateBulk(slice any, setFunc func(*TaskAssigneeCreate, int)) *TaskAssigneeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TaskAssigneeCreateBulk{err: fmt.Errorf("calling to TaskAssigneeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TaskAssigneeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TaskAssigneeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TaskAssignee.
+func (c *TaskAssigneeClient) Update() *TaskAssigneeUpdate {
+	mutation := newTaskAssigneeMutation(c.config, OpUpdate)
+	return &TaskAssigneeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TaskAssigneeClient) UpdateOne(ta *TaskAssignee) *TaskAssigneeUpdateOne {
+	mutation := newTaskAssigneeMutation(c.config, OpUpdateOne, withTaskAssignee(ta))
+	return &TaskAssigneeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TaskAssigneeClient) UpdateOneID(id uuid.UUID) *TaskAssigneeUpdateOne {
+	mutation := newTaskAssigneeMutation(c.config, OpUpdateOne, withTaskAssigneeID(id))
+	return &TaskAssigneeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TaskAssignee.
+func (c *TaskAssigneeClient) Delete() *TaskAssigneeDelete {
+	mutation := newTaskAssigneeMutation(c.config, OpDelete)
+	return &TaskAssigneeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TaskAssigneeClient) DeleteOne(ta *TaskAssignee) *TaskAssigneeDeleteOne {
+	return c.DeleteOneID(ta.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TaskAssigneeClient) DeleteOneID(id uuid.UUID) *TaskAssigneeDeleteOne {
+	builder := c.Delete().Where(taskassignee.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TaskAssigneeDeleteOne{builder}
+}
+
+// Query returns a query builder for TaskAssignee.
+func (c *TaskAssigneeClient) Query() *TaskAssigneeQuery {
+	return &TaskAssigneeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTaskAssignee},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TaskAssignee entity by its id.
+func (c *TaskAssigneeClient) Get(ctx context.Context, id uuid.UUID) (*TaskAssignee, error) {
+	return c.Query().Where(taskassignee.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TaskAssigneeClient) GetX(ctx context.Context, id uuid.UUID) *TaskAssignee {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTask queries the task edge of a TaskAssignee.
+func (c *TaskAssigneeClient) QueryTask(ta *TaskAssignee) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ta.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(taskassignee.Table, taskassignee.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, taskassignee.TaskTable, taskassignee.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(ta.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TaskAssigneeClient) Hooks() []Hook {
+	return c.hooks.TaskAssignee
+}
+
+// Interceptors returns the client interceptors.
+func (c *TaskAssigneeClient) Interceptors() []Interceptor {
+	return c.inters.TaskAssignee
+}
+
+func (c *TaskAssigneeClient) mutate(ctx context.Context, m *TaskAssigneeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TaskAssigneeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TaskAssigneeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TaskAssigneeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TaskAssigneeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TaskAssignee mutation op: %q", m.Op())
 	}
 }
 
@@ -4977,7 +5152,7 @@ type (
 		Activity, Attachment, Comment, DocumentSequence, FieldKey, FieldKeyAudit,
 		Milestone, OutboxEvent, Permission, Project, ProjectMember, ProjectsUser,
 		QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate, Role,
-		RolePermission, Task, TaskDependency, Tender, TenderCommittee,
+		RolePermission, Task, TaskAssignee, TaskDependency, Tender, TenderCommittee,
 		TenderCommitteeMember, TenderDocument, TenderEvaluation, TenderMeeting,
 		UserRoleAssignment []ent.Hook
 	}
@@ -4985,7 +5160,7 @@ type (
 		Activity, Attachment, Comment, DocumentSequence, FieldKey, FieldKeyAudit,
 		Milestone, OutboxEvent, Permission, Project, ProjectMember, ProjectsUser,
 		QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate, Role,
-		RolePermission, Task, TaskDependency, Tender, TenderCommittee,
+		RolePermission, Task, TaskAssignee, TaskDependency, Tender, TenderCommittee,
 		TenderCommitteeMember, TenderDocument, TenderEvaluation, TenderMeeting,
 		UserRoleAssignment []ent.Interceptor
 	}

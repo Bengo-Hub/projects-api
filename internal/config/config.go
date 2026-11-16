@@ -13,15 +13,29 @@ const namespace = ""
 
 // Config aggregates runtime configuration for the projects service.
 type Config struct {
-	App       AppConfig
-	HTTP      HTTPConfig
-	Postgres  PostgresConfig
-	Redis     RedisConfig
-	Events    EventsConfig
-	Telemetry TelemetryConfig
-	Auth      AuthConfig
-	Services  ServicesConfig
-	QA        QAConfig
+	App         AppConfig
+	HTTP        HTTPConfig
+	Postgres    PostgresConfig
+	Redis       RedisConfig
+	Events      EventsConfig
+	Telemetry   TelemetryConfig
+	Auth        AuthConfig
+	Services    ServicesConfig
+	QA          QAConfig
+	Attachments AttachmentsConfig
+}
+
+// AttachmentsConfig holds the server-side rules for task and project attachments. The storage
+// itself (bucket, endpoint, keys) is the shared OBJECT_STORAGE_* configuration read by
+// httpware/objectstore, from the projects-api secrets; nothing secret is set here.
+type AttachmentsConfig struct {
+	// MaxBytes caps one file (default 25 MB).
+	MaxBytes int64 `envconfig:"ATTACHMENTS_MAX_BYTES" default:"26214400"`
+	// AllowedTypes are the accepted content types, checked against the type sniffed from the
+	// stored bytes: PDF, plain text and CSV, JPEG, PNG, WebP, Word and Excel.
+	AllowedTypes []string `envconfig:"ATTACHMENTS_ALLOWED_TYPES" default:"application/pdf,text/plain,image/jpeg,image/png,image/webp,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"`
+	// UploadTTL is how long a presigned upload link stays valid.
+	UploadTTL time.Duration `envconfig:"ATTACHMENTS_UPLOAD_TTL" default:"15m"`
 }
 
 // ServicesConfig holds the base URLs of the services projects-api calls over S2S.

@@ -17,6 +17,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/comment"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/ent/taskassignee"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
 	"github.com/google/uuid"
 )
@@ -85,20 +86,6 @@ func (tc *TaskCreate) SetPriority(s string) *TaskCreate {
 func (tc *TaskCreate) SetNillablePriority(s *string) *TaskCreate {
 	if s != nil {
 		tc.SetPriority(*s)
-	}
-	return tc
-}
-
-// SetAssigneeID sets the "assignee_id" field.
-func (tc *TaskCreate) SetAssigneeID(u uuid.UUID) *TaskCreate {
-	tc.mutation.SetAssigneeID(u)
-	return tc
-}
-
-// SetNillableAssigneeID sets the "assignee_id" field if the given value is not nil.
-func (tc *TaskCreate) SetNillableAssigneeID(u *uuid.UUID) *TaskCreate {
-	if u != nil {
-		tc.SetAssigneeID(*u)
 	}
 	return tc
 }
@@ -314,6 +301,21 @@ func (tc *TaskCreate) AddAttachments(a ...*Attachment) *TaskCreate {
 	return tc.AddAttachmentIDs(ids...)
 }
 
+// AddAssigneeIDs adds the "assignees" edge to the TaskAssignee entity by IDs.
+func (tc *TaskCreate) AddAssigneeIDs(ids ...uuid.UUID) *TaskCreate {
+	tc.mutation.AddAssigneeIDs(ids...)
+	return tc
+}
+
+// AddAssignees adds the "assignees" edges to the TaskAssignee entity.
+func (tc *TaskCreate) AddAssignees(t ...*TaskAssignee) *TaskCreate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return tc.AddAssigneeIDs(ids...)
+}
+
 // Mutation returns the TaskMutation object of the builder.
 func (tc *TaskCreate) Mutation() *TaskMutation {
 	return tc.mutation
@@ -465,10 +467,6 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 		_spec.SetField(task.FieldPriority, field.TypeString, value)
 		_node.Priority = value
 	}
-	if value, ok := tc.mutation.AssigneeID(); ok {
-		_spec.SetField(task.FieldAssigneeID, field.TypeUUID, value)
-		_node.AssigneeID = value
-	}
 	if value, ok := tc.mutation.DueDate(); ok {
 		_spec.SetField(task.FieldDueDate, field.TypeTime, value)
 		_node.DueDate = value
@@ -583,6 +581,22 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(attachment.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.AssigneesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.AssigneesTable,
+			Columns: []string{task.AssigneesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(taskassignee.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -717,24 +731,6 @@ func (u *TaskUpsert) SetPriority(v string) *TaskUpsert {
 // UpdatePriority sets the "priority" field to the value that was provided on create.
 func (u *TaskUpsert) UpdatePriority() *TaskUpsert {
 	u.SetExcluded(task.FieldPriority)
-	return u
-}
-
-// SetAssigneeID sets the "assignee_id" field.
-func (u *TaskUpsert) SetAssigneeID(v uuid.UUID) *TaskUpsert {
-	u.Set(task.FieldAssigneeID, v)
-	return u
-}
-
-// UpdateAssigneeID sets the "assignee_id" field to the value that was provided on create.
-func (u *TaskUpsert) UpdateAssigneeID() *TaskUpsert {
-	u.SetExcluded(task.FieldAssigneeID)
-	return u
-}
-
-// ClearAssigneeID clears the value of the "assignee_id" field.
-func (u *TaskUpsert) ClearAssigneeID() *TaskUpsert {
-	u.SetNull(task.FieldAssigneeID)
 	return u
 }
 
@@ -1039,27 +1035,6 @@ func (u *TaskUpsertOne) SetPriority(v string) *TaskUpsertOne {
 func (u *TaskUpsertOne) UpdatePriority() *TaskUpsertOne {
 	return u.Update(func(s *TaskUpsert) {
 		s.UpdatePriority()
-	})
-}
-
-// SetAssigneeID sets the "assignee_id" field.
-func (u *TaskUpsertOne) SetAssigneeID(v uuid.UUID) *TaskUpsertOne {
-	return u.Update(func(s *TaskUpsert) {
-		s.SetAssigneeID(v)
-	})
-}
-
-// UpdateAssigneeID sets the "assignee_id" field to the value that was provided on create.
-func (u *TaskUpsertOne) UpdateAssigneeID() *TaskUpsertOne {
-	return u.Update(func(s *TaskUpsert) {
-		s.UpdateAssigneeID()
-	})
-}
-
-// ClearAssigneeID clears the value of the "assignee_id" field.
-func (u *TaskUpsertOne) ClearAssigneeID() *TaskUpsertOne {
-	return u.Update(func(s *TaskUpsert) {
-		s.ClearAssigneeID()
 	})
 }
 
@@ -1558,27 +1533,6 @@ func (u *TaskUpsertBulk) SetPriority(v string) *TaskUpsertBulk {
 func (u *TaskUpsertBulk) UpdatePriority() *TaskUpsertBulk {
 	return u.Update(func(s *TaskUpsert) {
 		s.UpdatePriority()
-	})
-}
-
-// SetAssigneeID sets the "assignee_id" field.
-func (u *TaskUpsertBulk) SetAssigneeID(v uuid.UUID) *TaskUpsertBulk {
-	return u.Update(func(s *TaskUpsert) {
-		s.SetAssigneeID(v)
-	})
-}
-
-// UpdateAssigneeID sets the "assignee_id" field to the value that was provided on create.
-func (u *TaskUpsertBulk) UpdateAssigneeID() *TaskUpsertBulk {
-	return u.Update(func(s *TaskUpsert) {
-		s.UpdateAssigneeID()
-	})
-}
-
-// ClearAssigneeID clears the value of the "assignee_id" field.
-func (u *TaskUpsertBulk) ClearAssigneeID() *TaskUpsertBulk {
-	return u.Update(func(s *TaskUpsert) {
-		s.ClearAssigneeID()
 	})
 }
 

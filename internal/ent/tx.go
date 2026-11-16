@@ -56,6 +56,8 @@ type Tx struct {
 	RolePermission *RolePermissionClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
+	// TaskAssignee is the client for interacting with the TaskAssignee builders.
+	TaskAssignee *TaskAssigneeClient
 	// TaskDependency is the client for interacting with the TaskDependency builders.
 	TaskDependency *TaskDependencyClient
 	// Tender is the client for interacting with the Tender builders.
@@ -224,6 +226,7 @@ func (tx *Tx) init() {
 	tx.Role = NewRoleClient(tx.config)
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
+	tx.TaskAssignee = NewTaskAssigneeClient(tx.config)
 	tx.TaskDependency = NewTaskDependencyClient(tx.config)
 	tx.Tender = NewTenderClient(tx.config)
 	tx.TenderCommittee = NewTenderCommitteeClient(tx.config)

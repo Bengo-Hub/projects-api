@@ -17,6 +17,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/ent/taskassignee"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
 	"github.com/google/uuid"
 )
@@ -33,6 +34,7 @@ type TaskQuery struct {
 	withComments     *CommentQuery
 	withActivities   *ActivityQuery
 	withAttachments  *AttachmentQuery
+	withAssignees    *TaskAssigneeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -172,6 +174,28 @@ func (tq *TaskQuery) QueryAttachments() *AttachmentQuery {
 			sqlgraph.From(task.Table, task.FieldID, selector),
 			sqlgraph.To(attachment.Table, attachment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.AttachmentsTable, task.AttachmentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAssignees chains the current query on the "assignees" edge.
+func (tq *TaskQuery) QueryAssignees() *TaskAssigneeQuery {
+	query := (&TaskAssigneeClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(taskassignee.Table, taskassignee.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.AssigneesTable, task.AssigneesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -376,6 +400,7 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		withComments:     tq.withComments.Clone(),
 		withActivities:   tq.withActivities.Clone(),
 		withAttachments:  tq.withAttachments.Clone(),
+		withAssignees:    tq.withAssignees.Clone(),
 		// clone intermediate query.
 		sql:  tq.sql.Clone(),
 		path: tq.path,
@@ -434,6 +459,17 @@ func (tq *TaskQuery) WithAttachments(opts ...func(*AttachmentQuery)) *TaskQuery 
 		opt(query)
 	}
 	tq.withAttachments = query
+	return tq
+}
+
+// WithAssignees tells the query-builder to eager-load the nodes that are connected to
+// the "assignees" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithAssignees(opts ...func(*TaskAssigneeQuery)) *TaskQuery {
+	query := (&TaskAssigneeClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withAssignees = query
 	return tq
 }
 
@@ -515,12 +551,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 	var (
 		nodes       = []*Task{}
 		_spec       = tq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			tq.withProject != nil,
 			tq.withDependencies != nil,
 			tq.withComments != nil,
 			tq.withActivities != nil,
 			tq.withAttachments != nil,
+			tq.withAssignees != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -572,6 +609,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		if err := tq.loadAttachments(ctx, query, nodes,
 			func(n *Task) { n.Edges.Attachments = []*Attachment{} },
 			func(n *Task, e *Attachment) { n.Edges.Attachments = append(n.Edges.Attachments, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tq.withAssignees; query != nil {
+		if err := tq.loadAssignees(ctx, query, nodes,
+			func(n *Task) { n.Edges.Assignees = []*TaskAssignee{} },
+			func(n *Task, e *TaskAssignee) { n.Edges.Assignees = append(n.Edges.Assignees, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -712,6 +756,36 @@ func (tq *TaskQuery) loadAttachments(ctx context.Context, query *AttachmentQuery
 	}
 	query.Where(predicate.Attachment(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(task.AttachmentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.TaskID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "task_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (tq *TaskQuery) loadAssignees(ctx context.Context, query *TaskAssigneeQuery, nodes []*Task, init func(*Task), assign func(*Task, *TaskAssignee)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Task)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(taskassignee.FieldTaskID)
+	}
+	query.Where(predicate.TaskAssignee(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(task.AssigneesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

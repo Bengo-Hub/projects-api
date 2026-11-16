@@ -73,4 +73,5 @@ Project finance (gated on `budget_tracking`, T3):
 
 - Tests: 23 `_test.go` files exist (handlers, router, financials, projects, QA, tasks, fieldcrypt, platform clients); the old "no tests" note was wrong. Still open: coverage on new code and DB-backed integration tests. Source: sprint-1 Testing, sprint-11.
 - Swagger or OpenAPI docs (was wrongly ticked in sprint-1). Source: sprint-1.
+- On 2026-11-16 GitHub reported 1 moderate Dependabot alert on the default branch (alert 24). It goes in the sprint 11 security pass with a dependency audit.
 - Files over 400 lines to split: `services/tenders/service.go`, `handlers/qa.go`, `handlers/tender.go`. Source: sprint-11.

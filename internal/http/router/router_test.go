@@ -69,16 +69,18 @@ func testRouter(t *testing.T, r *fakeRBAC, members fakeMembers) http.Handler {
 	return New(Deps{
 		Log: log,
 		Handlers: Handlers{
-			Health:     handlers.NewHealthHandler(log, nil, nil, nil),
-			RBAC:       handlers.NewRBACHandler(log, nil, nil),
-			Projects:   handlers.NewProjectHandler(log, nil),
-			Tasks:      handlers.NewTaskHandler(log, nil),
-			Milestones: handlers.NewMilestoneHandler(log, nil),
-			Members:    handlers.NewMemberHandler(log, nil),
-			Comments:   handlers.NewCommentHandler(log, nil),
-			Activity:   handlers.NewActivityHandler(log, nil),
-			Tenders:    handlers.NewTenderHandler(log, nil),
-			Financials: handlers.NewFinancialsHandler(log, nil),
+			Health:      handlers.NewHealthHandler(log, nil, nil, nil),
+			RBAC:        handlers.NewRBACHandler(log, nil, nil),
+			Projects:    handlers.NewProjectHandler(log, nil),
+			Tasks:       handlers.NewTaskHandler(log, nil),
+			Milestones:  handlers.NewMilestoneHandler(log, nil),
+			Members:     handlers.NewMemberHandler(log, nil),
+			Comments:    handlers.NewCommentHandler(log, nil),
+			Attachments: handlers.NewAttachmentHandler(log, nil),
+			Stream:      handlers.NewStreamHandler(log, nil),
+			Activity:    handlers.NewActivityHandler(log, nil),
+			Tenders:     handlers.NewTenderHandler(log, nil),
+			Financials:  handlers.NewFinancialsHandler(log, nil),
 		},
 		Authenticate: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -101,7 +103,7 @@ func testRouter(t *testing.T, r *fakeRBAC, members fakeMembers) http.Handler {
 
 func userClaims(roles ...string) *authclient.Claims {
 	c := &authclient.Claims{TenantID: testTenant, TenantSlug: "acme", Email: "u@acme.test", Roles: roles,
-		SubscriptionStatus: "ACTIVE", SubscriptionFeatures: []string{"project_management", "budget_tracking"},
+		SubscriptionStatus: "ACTIVE", SubscriptionFeatures: []string{"project_management", "budget_tracking", "task_tracking", "team_collaboration", "gantt_chart"},
 		ActiveServiceTags: []string{"projects"}}
 	c.Subject = testUser
 	return c

@@ -45,9 +45,9 @@ mutations, just-in-time user provisioning, then the route's permission check.
 - **5xx bodies:** always `internal server error`; the detail goes to the log only.
 - **Lists:** tasks, tenders and comments take `limit` (default 20, max 500) with `page` or
   `offset`, and answer `{data, total, limit, page, hasMore}`. There is no `page_size`.
-- **Gantt:** answers `{data, truncated, limit: 2000}`.
-- **GetTask:** returns the task with `edges.dependencies`, its latest 50 `comments` (oldest first)
-  and `comments_total`.
+- **Gantt:** answers `{data, truncated, limit: 2000, critical_days}`, each task with `critical`.
+- **GetTask:** returns the task with `edges.dependencies`, `edges.assignees`, its latest 50
+  `comments` (oldest first) and `comments_total`.
 
 ### Data and events
 
@@ -58,6 +58,77 @@ mutations, just-in-time user provisioning, then the route's permission check.
   update and delete on projects, tasks, milestones, members, comments and tenders also writes an
   `activities` row in that transaction (`services/activity`).
 - **`project.milestone.reached`:** fires only when a milestone moves to completed.
+
+## Work management (sprint 12, 2026-11-16)
+
+Plan features gate reads too: `task_tracking` for every task route, the board, My Work, the
+calendar and the stream; `gantt_chart` on top of it for the Gantt chart; `team_collaboration` for
+comments, mentions and attachments. A missing feature answers 403 `feature_not_available` with
+`required_feature` and `upgrade: true`. Every project route goes through membership scoping (404).
+
+### Tasks, assignees and the board
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{id}/tasks` | `tasks.view` or `view_own` | `?status=` one board column (each pages on its own), `?assignee=me\|<user id>` (any assignee), `?due_from=&due_to=` (inclusive, calendar), `?priority`, `limit`, `page` |
+| POST | `/projects/{id}/tasks` | `tasks.add` | `assignee_ids: []` (first is primary, members only); `status` must be a project status |
+| PUT | `/projects/{id}/tasks/{taskID}` | `tasks.change` or `change_own` | `assignee_ids` replaces the assignees (`[]` clears); `""` dates clear |
+| PATCH | `/projects/{id}/tasks/{taskID}/status` | `tasks.change` or `change_own` | `{status}`. Optional `Idempotency-Key` header (at most 128 characters): a key already applied to this task in 24 h changes nothing and answers the task with `Idempotent-Replayed: true` |
+| PATCH | `/projects/{id}/tasks/{taskID}/dates` | `tasks.change` or `change_own` | `{start_date?, due_date?}`. Breaking a finish-to-start dependency (FS or the old `blocks`; a same-day hand-over is fine) answers 409 `{code: "schedule_conflict", blocking_task_ids}` |
+| GET | `/projects/{id}/statuses` | `tasks.view` or `view_own` | `{data: [{key, label, category: todo\|in_progress\|done, order}]}`; default To do, In progress, In review, Done |
+| PUT | `/projects/{id}/statuses` | `projects.projects.change` | `{statuses: [...]}`. Keys snake case, `done` required (done category), at most 20; a status tasks still hold cannot be removed. Kept in project metadata `statuses`; the project update drops that key |
+| GET | `/projects/{id}/board-counts` | `tasks.view` or `view_own` | `{data: [{status, count}]}`, one GROUP BY: configured columns first, then stray statuses |
+| GET | `/projects/{id}/gantt` | `tasks.view` + `gantt_chart` | `{data: [task + critical], truncated, limit: 2000, critical_days}`. Critical path over finish-to-start links, durations from start and due dates |
+| GET | `/my-work` | `tasks.view` or `view_own` | Open tasks assigned to me across the projects I can see. `?bucket=overdue\|today\|week\|later`, `?tz=` (IANA, default UTC), `?due_from&due_to`, `limit`, `page`. Soonest due first; `edges.project {id, name}` |
+| GET | `/my-work/counts` | `tasks.view` or `view_own` | `{data: {overdue, today, week, later}}` in one query |
+
+- **Assignees** live only in `task_assignees`; a task returns them as `edges.assignees`
+  (`{user_id, is_primary}`, primary first). There is no `assignee_id` any more.
+- **Buckets:** overdue before today, today, week the next six days, later after that or undated.
+  `done` tasks are left out.
+- **Completion:** moving to `done` sets progress 100 and `completed_at`; leaving `done` clears
+  `completed_at`.
+- **Server-owned metadata:** `tasks.metadata.status_mutations` (idempotency keys) and
+  `comments.metadata.mentions` are never taken from a client.
+
+### Comments, mentions and attachments
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| POST/PUT | comment routes as before | as before | Body is rich text, sanitised to the editor's tags. A Tiptap mention `<span data-type="mention" data-id="<auth user id>">` of a project member notifies them; the author and non-members never. An edit notifies only people it newly mentions |
+| POST | `/projects/{id}/attachments/uploads` | `comments.add` | `{file_name, content_type, size, task_id?}` gives `{key, upload: {url, method: PUT, headers, expires_at}, max_bytes, allowed_types}`. PUT the file to `upload.url` with exactly `upload.headers` |
+| POST | `/projects/{id}/attachments` | `comments.add` | `{key, file_name, task_id?}` after the PUT. The stored bytes are checked (size, sniffed type); a bad file is deleted, 400. Confirming twice returns the same row |
+| GET | `/projects/{id}/attachments` | `comments.view` | Newest first, `?task_id`, paged; each with a signed `url` (15 minutes) |
+| GET | `/projects/{id}/tasks/{taskID}/attachments` | `comments.view` | The task's files |
+| DELETE | `/projects/{id}/attachments/{attachmentID}` | `comments.manage` or `delete_own` (uploader) | Removes the row, then the stored file |
+
+- Keys: `projects/{tenant}/attachments/{project}/{task id or "project"}/{uuid}.{ext}`, private bucket.
+- Limits: `ATTACHMENTS_MAX_BYTES` (default 25 MB), `ATTACHMENTS_ALLOWED_TYPES` (PDF, text and
+  CSV, JPEG, PNG, WebP, Word, Excel), `ATTACHMENTS_UPLOAD_TTL` (15m). Storage is the shared
+  `OBJECT_STORAGE_*`; without it the upload routes answer 503 `uploads_unavailable`.
+
+### Live updates
+
+`GET /projects/{id}/stream` (`tasks.view` + `task_tracking`) is SSE. Read it with fetch and an
+`Authorization` header, plus `Accept: text/event-stream` (which skips the 30 s request timeout and
+the rate limiter). It sends `event: connected`, then `task.created`, `task.updated`,
+`task.deleted`, `task.moved`, `comment.created` and `attachment.added` with data
+`{type, project_id, task_id?, id?, status?, actor_id?}`, and a heartbeat comment every 15 s. Events
+are hints sent after the commit through the shared Broadcaster (`_rt.projects.work.*`, every pod);
+refetch through the routes above, and refetch everything after a reconnect.
+
+### Events (outbox, `project.>`)
+
+One event per recipient, never to the actor. Payload: `project_id, project_name, task_id,
+task_title, actor_id, actor_name, recipient_user_id, recipient_email, recipient_name,
+comment_excerpt, action_path` (`/{org}/projects/{id}/tasks?task={id}`). Recipient email and name
+come from `projects_users` and may be empty for someone who never signed in to projects.
+
+- **`project.task.assigned`:** people newly added to a task (create or update).
+- **`project.task.mentioned`:** each member mentioned in a comment; plus `comment_id` and the
+  comment as plain text (200 characters). `task_id` is empty for a project comment.
+- **`project.task.status_changed`:** to the task's assignees; plus `from_status`, `to_status`,
+  `to_status_label`.
 
 ## QA and acceptance
 

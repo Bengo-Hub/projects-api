@@ -704,7 +704,6 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeString, Default: "todo"},
 		{Name: "priority", Type: field.TypeString, Default: "medium"},
-		{Name: "assignee_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "due_date", Type: field.TypeTime, Nullable: true},
 		{Name: "start_date", Type: field.TypeTime, Nullable: true},
 		{Name: "estimated_hours", Type: field.TypeFloat64, Nullable: true},
@@ -725,7 +724,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tasks_projects_tasks",
-				Columns:    []*schema.Column{TasksColumns[17]},
+				Columns:    []*schema.Column{TasksColumns[16]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -734,32 +733,67 @@ var (
 			{
 				Name:    "task_tenant_id_project_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{TasksColumns[1], TasksColumns[17], TasksColumns[4]},
+				Columns: []*schema.Column{TasksColumns[1], TasksColumns[16], TasksColumns[4]},
+			},
+			{
+				Name:    "task_tenant_id_project_id_due_date",
+				Unique:  false,
+				Columns: []*schema.Column{TasksColumns[1], TasksColumns[16], TasksColumns[6]},
 			},
 			{
 				Name:    "task_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{TasksColumns[1], TasksColumns[12]},
+				Columns: []*schema.Column{TasksColumns[1], TasksColumns[11]},
 			},
 			{
 				Name:    "task_tenant_id_completed_at",
 				Unique:  false,
-				Columns: []*schema.Column{TasksColumns[1], TasksColumns[11]},
+				Columns: []*schema.Column{TasksColumns[1], TasksColumns[10]},
 			},
 			{
 				Name:    "task_tenant_id_due_date",
-				Unique:  false,
-				Columns: []*schema.Column{TasksColumns[1], TasksColumns[7]},
-			},
-			{
-				Name:    "task_tenant_id_assignee_id",
 				Unique:  false,
 				Columns: []*schema.Column{TasksColumns[1], TasksColumns[6]},
 			},
 			{
 				Name:    "task_tenant_id_parent_id",
 				Unique:  false,
-				Columns: []*schema.Column{TasksColumns[1], TasksColumns[15]},
+				Columns: []*schema.Column{TasksColumns[1], TasksColumns[14]},
+			},
+		},
+	}
+	// TaskAssigneesColumns holds the columns for the "task_assignees" table.
+	TaskAssigneesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "is_primary", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "task_id", Type: field.TypeUUID},
+	}
+	// TaskAssigneesTable holds the schema information for the "task_assignees" table.
+	TaskAssigneesTable = &schema.Table{
+		Name:       "task_assignees",
+		Columns:    TaskAssigneesColumns,
+		PrimaryKey: []*schema.Column{TaskAssigneesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "task_assignees_tasks_assignees",
+				Columns:    []*schema.Column{TaskAssigneesColumns[5]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "taskassignee_task_id_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{TaskAssigneesColumns[5], TaskAssigneesColumns[2]},
+			},
+			{
+				Name:    "taskassignee_tenant_id_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{TaskAssigneesColumns[1], TaskAssigneesColumns[2]},
 			},
 		},
 	}
@@ -1064,6 +1098,7 @@ var (
 		RolesTable,
 		RolePermissionsTable,
 		TasksTable,
+		TaskAssigneesTable,
 		TaskDependenciesTable,
 		TendersTable,
 		TenderCommitteesTable,
@@ -1112,6 +1147,7 @@ func init() {
 	RolePermissionsTable.ForeignKeys[0].RefTable = RolesTable
 	RolePermissionsTable.ForeignKeys[1].RefTable = PermissionsTable
 	TasksTable.ForeignKeys[0].RefTable = ProjectsTable
+	TaskAssigneesTable.ForeignKeys[0].RefTable = TasksTable
 	TaskDependenciesTable.ForeignKeys[0].RefTable = TasksTable
 	TenderCommitteesTable.ForeignKeys[0].RefTable = TendersTable
 	TenderCommitteeMembersTable.ForeignKeys[0].RefTable = TenderCommitteesTable

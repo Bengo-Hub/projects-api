@@ -69,6 +69,9 @@ type RolePermission func(*sql.Selector)
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)
 
+// TaskAssignee is the predicate function for taskassignee builders.
+type TaskAssignee func(*sql.Selector)
+
 // TaskDependency is the predicate function for taskdependency builders.
 type TaskDependency func(*sql.Selector)
 

@@ -31,8 +31,7 @@ func (Task) Fields() []ent.Field {
 			Default("todo"),
 		field.String("priority").
 			Default("medium"),
-		field.UUID("assignee_id", uuid.UUID{}).
-			Optional(),
+		// Who a task is assigned to lives only in task_assignees (the assignees edge).
 		field.Time("due_date").
 			Optional(),
 		// start_date, estimated_hours and progress_pct drive earned value: a task's planned value
@@ -65,16 +64,16 @@ func (Task) Fields() []ent.Field {
 	}
 }
 
-// Indexes of the Task: project task lists and status counts, and the tenant-wide monthly
-// trend windows over created_at, completed_at and due_date, "my tasks" by assignee and the subtask
-// tree by parent.
+// Indexes of the Task: project task lists, board columns and status counts, the project
+// calendar by due date, the tenant-wide monthly trend windows over created_at, completed_at and
+// due_date, and the subtask tree by parent. "My tasks" reads task_assignees.
 func (Task) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "project_id", "status"),
+		index.Fields("tenant_id", "project_id", "due_date"),
 		index.Fields("tenant_id", "created_at"),
 		index.Fields("tenant_id", "completed_at"),
 		index.Fields("tenant_id", "due_date"),
-		index.Fields("tenant_id", "assignee_id"),
 		index.Fields("tenant_id", "parent_id"),
 	}
 }
@@ -91,6 +90,6 @@ func (Task) Edges() []ent.Edge {
 		edge.To("comments", Comment.Type),
 		edge.To("activities", Activity.Type),
 		edge.To("attachments", Attachment.Type),
+		edge.To("assignees", TaskAssignee.Type),
 	}
 }
-

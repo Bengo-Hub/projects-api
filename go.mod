@@ -10,7 +10,7 @@ require (
 	ariga.io/atlas v0.19.1-0.20240203083654-5948b60a8e43
 	entgo.io/ent v0.13.1
 	github.com/Bengo-Hub/cache v0.5.10
-	github.com/Bengo-Hub/httpware v0.20.0
+	github.com/Bengo-Hub/httpware v0.21.0
 	github.com/Bengo-Hub/pagination v0.5.0
 	github.com/Bengo-Hub/reports v0.2.0
 	github.com/Bengo-Hub/shared-auth-client v0.0.0-00010101000000-000000000000
@@ -22,12 +22,10 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/nats-io/nats.go v1.52.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/v9 v9.17.2
 	go.uber.org/zap v1.27.1
-	golang.org/x/net v0.62.0
 )
 
 require (
@@ -69,6 +67,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -100,6 +99,7 @@ require (
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/image v0.44.0 // indirect
 	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect

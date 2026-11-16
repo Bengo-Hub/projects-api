@@ -35,7 +35,7 @@ func TestTaskCommentMentions(t *testing.T) {
 
 	body := `<p>` + mention(ana, "Ana") + ` ` + mention(ana, "Ana") + ` ` + mention(author, "Me") + ` ` +
 		mention(stranger, "X") + ` please check<script>alert(1)</script></p>`
-	c, err := svc.CreateTaskComment(ctx, tenant, p.ID, task.ID, CreateCommentInput{UserID: author, Content: body})
+	c, _, err := svc.CreateTaskComment(ctx, tenant, p.ID, task.ID, CreateCommentInput{UserID: author, Content: body})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestTaskCommentMentions(t *testing.T) {
 	if len(events) != 2 || bens != 1 {
 		t.Errorf("after the edit: %v, want one more event, for ben", events)
 	}
-	if _, err := svc.CreateTaskComment(ctx, tenant, p.ID, task.ID, CreateCommentInput{UserID: author, Content: "<p></p>"}); err == nil {
+	if _, _, err := svc.CreateTaskComment(ctx, tenant, p.ID, task.ID, CreateCommentInput{UserID: author, Content: "<p></p>"}); err == nil {
 		t.Error("an empty body must be refused")
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -59,17 +60,23 @@ func userParam(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
 	return id, true
 }
 
+// List returns one page of the project's members with each one's name and email (?q= searches
+// both; ?limit, ?page or ?offset). Anyone who may view members gets the names, so pickers,
+// avatars and comment authors never need the role screens.
 func (h *MemberHandler) List(w http.ResponseWriter, r *http.Request) {
 	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	items, err := h.svc.ListMembers(r.Context(), tenantID, projectID)
+	p := pagination.Parse(r)
+	items, total, err := h.svc.ListMembers(r.Context(), tenantID, projectID, members.ListMembersFilter{
+		Search: pagination.SearchTerm(r), Limit: p.Limit, Offset: p.Offset,
+	})
 	if err != nil {
 		serverError(w, h.log, "list members failed", err)
 		return
 	}
-	respondJSON(w, http.StatusOK, map[string]any{"data": items})
+	respondJSON(w, http.StatusOK, pagination.NewResponse(items, total, p))
 }
 
 func (h *MemberHandler) Add(w http.ResponseWriter, r *http.Request) {

@@ -45,6 +45,7 @@ func (h *TaskHandler) RegisterRoutes(r chi.Router, tracking, gantt func(http.Han
 				t.With(view).Get("/", h.Get)
 				t.With(change).Put("/", h.Update)
 				t.With(change).Patch("/status", h.ChangeStatus)
+				t.With(change).Patch("/checklist", h.Checklist)
 				t.With(change).Patch("/dates", h.Reschedule)
 				t.With(authz.Require(rbac.PermTasksDelete)).Delete("/", h.Delete)
 				t.With(authz.Require(rbac.PermTasksChange)).Post("/dependencies", h.AddDependency)
@@ -146,7 +147,7 @@ func dueBounds(w http.ResponseWriter, r *http.Request) (*time.Time, *time.Time, 
 
 // List returns one page of a project's tasks (?limit, ?page or ?offset; ?status for one board
 // column, ?priority, ?assignee=me|<user id> over every assignee, ?due_from and ?due_to for the
-// calendar). A caller limited to their own tasks sees only those assigned to them.
+// calendar, ?parent_id for a task's subtasks). A caller limited to their own tasks sees only those assigned to them.
 func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
@@ -178,6 +179,14 @@ func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		filter.Assignee = &id
+	}
+	if v := strings.TrimSpace(q.Get("parent_id")); v != "" {
+		id, err := uuid.Parse(v)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid parent_id")
+			return
+		}
+		filter.Parent = &id
 	}
 	if own := ownOnly(r, rbac.PermTasksView); own != nil {
 		filter.Assignee = own
@@ -246,6 +255,8 @@ func (h *TaskHandler) writeErr(w http.ResponseWriter, err error, notFound, msg s
 	switch {
 	case errors.Is(err, tasks.ErrNotFound):
 		respondError(w, http.StatusNotFound, notFound)
+	case errors.Is(err, tasks.ErrChecklistItemNotFound):
+		respondJSON(w, http.StatusNotFound, map[string]any{"error": err.Error(), "code": "checklist_item_not_found"})
 	case errors.Is(err, tasks.ErrCircularDependency):
 		respondError(w, http.StatusConflict, err.Error())
 	case errors.As(err, &conflict):
@@ -327,6 +338,34 @@ func (h *TaskHandler) ChangeStatus(w http.ResponseWriter, r *http.Request) {
 	t, replayed, err := h.svc.ChangeStatus(noticeCtx(r), tenantID, projectID, taskID, body.Status, r.Header.Get("Idempotency-Key"))
 	if err != nil {
 		h.writeErr(w, err, "task not found", "change task status failed")
+		return
+	}
+	if replayed {
+		w.Header().Set("Idempotent-Replayed", "true")
+	}
+	respondJSON(w, http.StatusOK, t)
+}
+
+// Checklist applies one checklist operation: {op: add|toggle|rename|remove|reorder, item_id,
+// text?, done?, position?}, under the task row lock. An Idempotency-Key repeat changes nothing and
+// answers the task with Idempotent-Replayed: true.
+func (h *TaskHandler) Checklist(w http.ResponseWriter, r *http.Request) {
+	tenantID, projectID, ok := projectScope(w, r)
+	if !ok {
+		return
+	}
+	taskID, ok := taskParam(w, r)
+	if !ok || !h.ensureOwn(w, r, rbac.PermTasksChange, tenantID, projectID, taskID) {
+		return
+	}
+	var op tasks.ChecklistOp
+	if err := json.NewDecoder(r.Body).Decode(&op); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	t, replayed, err := h.svc.ApplyChecklist(noticeCtx(r), tenantID, projectID, taskID, op, r.Header.Get("Idempotency-Key"))
+	if err != nil {
+		h.writeErr(w, err, "task not found", "checklist change failed")
 		return
 	}
 	if replayed {

@@ -13,7 +13,7 @@ This document provides a comprehensive matrix of all services and platforms that
 | Service | Location | Status | Integration Type | Data Flow | Key Use Cases |
 |---------|----------|--------|------------------|-----------|---------------|
 | **Auth Service** | `auth-service/` | ✅ Production | REST API + Events | Bi-directional | • JWT validation (JWKS)<br>• User synchronization<br>• Tenant management<br>• SSO authentication |
-| **HRM (ERP)** | `erp/erp-api/` | ✅ Production | REST API + Events | Projects → HRM (read)<br>HRM → Projects (events) | • Employee directory<br>• Organizational structure<br>• Leave calendar<br>• Skill matrix<br>• Performance linking |
+| **HRM (ERP)** | `erp/erp-api/` | ✅ Production; timesheets integrated (project hours 2026-09-28, time logging 2026-11-16) | REST API (S2S) | Projects reads project hours; logs, reads and submits the signed-in user's timesheet time | • Utilisation and earned value from timesheet hours<br>• Task timer and week grid on ERP timesheets<br>• Weekly submit (approval in ERP) |
 | **Treasury** | `treasury-api/` | Not integrated yet (verified 2026-09-27); in progress under plan budgets-planning-projects-bi-2026-09-27 | REST API (S2S) | Projects reads budgets and financials from treasury | • Budget approval<br>• Voucher processing<br>• Payment tracking<br>• Expense recording<br>• Cost center allocation |
 | **Finance (ERP)** | `erp/erp-api/` | Not applicable: ERP is HR and payroll only, finance lives in treasury-api (verified 2026-09-27) | REST API | Projects → Finance (read) | • Invoice management<br>• Cost center lookup<br>• Financial reporting<br>• Budget integration |
 | **CRM (ERP)** | `erp/erp-api/` | ✅ Production | REST API + Events | Bi-directional | • Client information<br>• Opportunity tracking<br>• Contact management<br>• Client portal<br>• Feedback collection |
@@ -22,6 +22,24 @@ This document provides a comprehensive matrix of all services and platforms that
 | **Inventory** | `inventory-service/` | ⚙️ Development | REST API + Events | Projects → Inventory | • Material requisition<br>• Equipment allocation<br>• Stock tracking<br>• Equipment reservation |
 | **IoT** | `iot-service/` | ⚙️ Development | Events (NATS) | IoT → Projects | • Site monitoring<br>• Equipment telemetry<br>• Environmental monitoring<br>• Security & access control |
 | **POS** | `pos-service/` | 📋 Planned | REST API | Projects → POS (optional) | • Project-specific POS transactions<br>• Client payments |
+
+### S2S calls to erp-api (updated 2026-11-16)
+
+Client: `internal/platform/erp` (shared-service-client, `X-API-Key: INTERNAL_SERVICE_KEY`,
+`X-Tenant-ID`). ERP owns timesheets and hours; projects-api stores none. A service key passes
+erp-api's own plan gate, so projects-api checks the user's token first: `time_tracking` and ERP's
+`attendance` feature on every time route.
+
+| Call | Used by | Notes |
+|---|---|---|
+| `GET /api/v1/hrm/attendance/timesheets/project-hours?project_ids=` | financials (EVM, utilisation) | approved and submitted hours per project |
+| `GET /api/v1/hrm/attendance/timesheets/for-user?auth_user_id=&from=&to=` | `GET /time/week` | the user's timesheets and entries for the week |
+| `POST /api/v1/hrm/attendance/timesheets/for-user/entries` | `PUT /time/entries` (mode set), timer stop and timer switch (mode add, one call per local date) | opens the Monday to Sunday timesheet when none covers the date; carries `task_id` and `billable`. POST so the shared client never retries an add |
+| `POST /api/v1/hrm/attendance/timesheets/for-user/submit` | `POST /time/week/submit` | ERP's submit transition; approve and reject stay in erp-ui |
+
+ERP answers 404 `no_employee_record` for a user without an employee (projects-api answers 409
+with the same code), 409 `timesheet_locked` and `nothing_to_submit`. erp-api's ingress
+NetworkPolicy already admits the projects namespace.
 
 ---
 

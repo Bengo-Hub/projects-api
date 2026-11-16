@@ -15,6 +15,31 @@
 - [ ] US-12.1 drawer, checklist UI, and every UI story: projects-ui.
 - [ ] notifications-api consumer and templates (below).
 
+## Gaps closed (2026-11-17, API)
+The first UI pass showed five places where the API made the screens work around it. I closed them:
+- [x] **Names for everyone.** `GET /projects/{id}/members` now pages (`limit`, `page`), searches
+  name or email with `?q=`, and returns each member's `name` and `email` from `projects_users`
+  in one batched read. Comments carry `author_name` and the activity feeds `actor_name` the same
+  way. Pickers, avatars and comment authors no longer need `rbac.manage`. I extended the members
+  route instead of adding a separate people route; the UI needs nothing lighter.
+- [x] **Subtasks.** `GET /tasks?parent_id=` on the existing `(tenant_id, parent_id)` index, so the
+  drawer stops reading 500 tasks to find a few children.
+- [x] **Comment replays.** `POST` comments take an `Idempotency-Key`, kept in the comment's own
+  metadata (the table has a metadata column, so no new column), unique per tenant and author for
+  24 hours, with an advisory lock so racing replays post once.
+- [x] **Checklist operations.** `PATCH /tasks/{id}/checklist` applies one add, toggle, rename,
+  remove or reorder under the task row lock, idempotent with a key. The checklist became
+  server-owned metadata, and the task PUT now locks the row as well, so a whole-metadata write
+  can never undo a tick.
+- Schema: one new index, `comments (tenant_id, user_id, created_at)`, for the replay lookup. It
+  needs `go generate` and a migration from the main session.
+- Tests: `members/service_db_test.go` (names, tenant isolation, search with literal wildcards,
+  paging), `comments/idempotency_db_test.go` (replay, four racing replays, key reuse, per-author
+  keys, planted keys dropped, author names), `tasks/checklist_test.go` (every operation),
+  `tasks/checklist_db_test.go` (ten concurrent ticks all kept, replay, PUT keeps the checklist,
+  actor names, subtasks), router gates for the checklist route, members for a viewer and a bad
+  `parent_id`.
+
 **Sprint goal**: the everyday work screens people compare us with (Zoho, Asana, ClickUp), done well on a phone.
 
 ## Why
@@ -39,7 +64,10 @@ Reviewers mark Zoho down on its mobile app (54% negative on Capterra), Asana for
 ## Data
 - New table `task_assignees(tenant_id, task_id, user_id, is_primary)`, unique per task and user, indexed by `(tenant_id, user_id)`.
 - Attachments reuse the existing `attachment` table.
-- Statuses and the checklist live in metadata, with no new columns.
+- Statuses and the checklist live in metadata, with no new columns. The checklist changes only
+  through item operations under the task row lock.
+- Comment idempotency keys live in comment metadata; the replay lookup uses a new
+  `comments (tenant_id, user_id, created_at)` index.
 
 ## Events
 - `project.task.assigned`, `project.task.mentioned` and `project.task.status_changed` on the `project` stream, consumed by notifications-api.

@@ -17,6 +17,7 @@ import (
 	enttaskdep "github.com/bengobox/projects-service/internal/ent/taskdependency"
 	"github.com/bengobox/projects-service/internal/platform/realtime"
 	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/notify"
 	"github.com/bengobox/projects-service/internal/services/txn"
 )
@@ -96,10 +97,12 @@ type ListTasksFilter struct {
 	Status   string
 	Priority string
 	Assignee *uuid.UUID
-	DueFrom  *time.Time
-	DueTo    *time.Time
-	Limit    int
-	Offset   int
+	// Parent lists one task's subtasks (served by the (tenant_id, parent_id) index).
+	Parent  *uuid.UUID
+	DueFrom *time.Time
+	DueTo   *time.Time
+	Limit   int
+	Offset  int
 }
 
 // AddDependencyInput holds data to add a task dependency.
@@ -124,6 +127,9 @@ func (s *Service) ListTasks(ctx context.Context, tenantID, projectID uuid.UUID, 
 	if filter.Assignee != nil {
 		q = q.Where(assignedTo(tenantID, *filter.Assignee))
 	}
+	if filter.Parent != nil {
+		q = q.Where(enttask.ParentID(*filter.Parent))
+	}
 	q = q.Where(dueRange(filter.DueFrom, filter.DueTo)...)
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
@@ -145,8 +151,8 @@ func (s *Service) ListTasks(ctx context.Context, tenantID, projectID uuid.UUID, 
 // oldest first and the task's comment count. Older comments come from the paged task comments route.
 type TaskDetail struct {
 	*ent.Task
-	Comments      []*ent.Comment `json:"comments"`
-	CommentsTotal int            `json:"comments_total"`
+	Comments      []comments.Authored `json:"comments"`
+	CommentsTotal int                 `json:"comments_total"`
 }
 
 // GetTask fetches a single task with its dependencies, assignees and its latest 50 comments.
@@ -172,7 +178,11 @@ func (s *Service) GetTask(ctx context.Context, tenantID, projectID, taskID uuid.
 		return nil, fmt.Errorf("task comments: %w", err)
 	}
 	slices.Reverse(latest)
-	return &TaskDetail{Task: t, Comments: latest, CommentsTotal: total}, nil
+	withNames, err := comments.WithAuthors(ctx, s.client, tenantID, latest)
+	if err != nil {
+		return nil, err
+	}
+	return &TaskDetail{Task: t, Comments: withNames, CommentsTotal: total}, nil
 }
 
 // notice builds the common part of a person-addressed event for a task.
@@ -339,12 +349,13 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 	var updated *ent.Task
 	statusChanged := false
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
-		t, err := tx.Task.Query().
-			Where(enttask.ID(taskID), enttask.TenantID(tenantID), enttask.ProjectID(projectID)).Only(ctx)
+		// The row lock keeps this read-modify-write of metadata from undoing a checklist tick, a
+		// status idempotency key or a timer written meanwhile.
+		if err := lockTask(ctx, tx, tenantID, projectID, taskID); err != nil {
+			return err
+		}
+		t, err := tx.Task.Query().Where(enttask.ID(taskID)).Only(ctx)
 		if err != nil {
-			if ent.IsNotFound(err) {
-				return ErrNotFound
-			}
 			return fmt.Errorf("fetch task: %w", err)
 		}
 		p, err := projectForTask(ctx, tx, tenantID, projectID)

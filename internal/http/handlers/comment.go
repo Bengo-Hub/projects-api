@@ -51,6 +51,8 @@ func (h *CommentHandler) writeErr(w http.ResponseWriter, err error, msg string) 
 		respondError(w, http.StatusNotFound, "not found")
 	case errors.Is(err, comments.ErrNotOwner):
 		authz.Forbidden(w, rbac.PermCommentsManage)
+	case errors.Is(err, comments.ErrKeyReused):
+		respondJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "code": "idempotency_key_reused"})
 	case errors.As(err, &verr):
 		respondError(w, http.StatusBadRequest, verr.Error())
 	default:
@@ -82,9 +84,20 @@ func (h *CommentHandler) CreateProjectComment(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	c, err := h.svc.CreateProjectComment(noticeCtx(r), tenantID, projectID, input)
+	c, replayed, err := h.svc.CreateProjectComment(noticeCtx(r), tenantID, projectID, input)
 	if err != nil {
 		h.writeErr(w, err, "create project comment failed")
+		return
+	}
+	respondCreated(w, c, replayed)
+}
+
+// respondCreated answers a new comment 201, and an Idempotency-Key repeat 200 with the comment
+// the first request made and Idempotent-Replayed: true.
+func respondCreated(w http.ResponseWriter, c *comments.Authored, replayed bool) {
+	if replayed {
+		w.Header().Set("Idempotent-Replayed", "true")
+		respondJSON(w, http.StatusOK, c)
 		return
 	}
 	respondJSON(w, http.StatusCreated, c)
@@ -122,12 +135,12 @@ func (h *CommentHandler) CreateTaskComment(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	c, err := h.svc.CreateTaskComment(noticeCtx(r), tenantID, projectID, taskID, input)
+	c, replayed, err := h.svc.CreateTaskComment(noticeCtx(r), tenantID, projectID, taskID, input)
 	if err != nil {
 		h.writeErr(w, err, "create task comment failed")
 		return
 	}
-	respondJSON(w, http.StatusCreated, c)
+	respondCreated(w, c, replayed)
 }
 
 // ownerOnly limits a comment change to the caller's own comment unless they moderate comments.
@@ -186,7 +199,8 @@ func (h *CommentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// decodeComment reads the body; the author is always the signed-in caller.
+// decodeComment reads the body and the optional Idempotency-Key header; the author is always the
+// signed-in caller.
 func decodeComment(w http.ResponseWriter, r *http.Request) (comments.CreateCommentInput, bool) {
 	var input comments.CreateCommentInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -194,5 +208,6 @@ func decodeComment(w http.ResponseWriter, r *http.Request) (comments.CreateComme
 		return input, false
 	}
 	input.UserID = actorID(r)
+	input.IdempotencyKey = r.Header.Get("Idempotency-Key")
 	return input, true
 }

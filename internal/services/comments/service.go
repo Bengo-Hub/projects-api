@@ -4,11 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	sharedcache "github.com/Bengo-Hub/cache"
+	"github.com/Bengo-Hub/httpware/richtext"
 	"github.com/bengobox/projects-service/internal/ent"
 	entcomment "github.com/bengobox/projects-service/internal/ent/comment"
 	"github.com/bengobox/projects-service/internal/ent/predicate"
@@ -17,8 +22,8 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/realtime"
 	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/notify"
+	"github.com/bengobox/projects-service/internal/services/people"
 	"github.com/bengobox/projects-service/internal/services/txn"
-	"github.com/bengobox/projects-service/internal/shared/richtext"
 )
 
 // ErrNotFound is returned when a comment (or its project or task) is not found.
@@ -61,6 +66,8 @@ type CreateCommentInput struct {
 	UserID   uuid.UUID      `json:"-"`
 	Content  string         `json:"content"`
 	Metadata map[string]any `json:"metadata"`
+	// IdempotencyKey is the optional Idempotency-Key header (see priorComment).
+	IdempotencyKey string `json:"-"`
 }
 
 // UpdateCommentInput holds data for updating a comment.
@@ -73,7 +80,40 @@ func inProject(projectID uuid.UUID) predicate.Comment {
 	return entcomment.Or(entcomment.ProjectID(projectID), entcomment.HasTaskWith(enttask.ProjectID(projectID)))
 }
 
-func page(ctx context.Context, q *ent.CommentQuery, limit, offset int) ([]*ent.Comment, int, error) {
+// Authored is a comment with its author's name from projects_users ("" for someone who has not
+// signed in to projects; the UI shows a fallback).
+type Authored struct {
+	*ent.Comment
+	AuthorName string `json:"author_name"`
+}
+
+// WithAuthors adds the author names to a page of comments in one batched query.
+func WithAuthors(ctx context.Context, client *ent.Client, tenantID uuid.UUID, list []*ent.Comment) ([]Authored, error) {
+	ids := make([]uuid.UUID, len(list))
+	for i, c := range list {
+		ids[i] = c.UserID
+	}
+	known, err := people.Lookup(ctx, client.ProjectsUser, tenantID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Authored, len(list))
+	for i, c := range list {
+		out[i] = Authored{Comment: c, AuthorName: known[c.UserID].Label()}
+	}
+	return out, nil
+}
+
+// authored adds the author's name to one comment.
+func (s *Service) authored(ctx context.Context, c *ent.Comment) (*Authored, error) {
+	list, err := WithAuthors(ctx, s.client, c.TenantID, []*ent.Comment{c})
+	if err != nil {
+		return nil, err
+	}
+	return &list[0], nil
+}
+
+func (s *Service) page(ctx context.Context, tenantID uuid.UUID, q *ent.CommentQuery, limit, offset int) ([]Authored, int, error) {
 	if limit <= 0 || limit > subListLimit {
 		limit = subListLimit
 	}
@@ -82,12 +122,16 @@ func page(ctx context.Context, q *ent.CommentQuery, limit, offset int) ([]*ent.C
 		return nil, 0, err
 	}
 	items, err := q.Order(ent.Asc(entcomment.FieldCreatedAt), ent.Asc(entcomment.FieldID)).Offset(offset).Limit(limit).All(ctx)
-	return items, total, err
+	if err != nil {
+		return nil, 0, err
+	}
+	out, err := WithAuthors(ctx, s.client, tenantID, items)
+	return out, total, err
 }
 
 // ListCommentsByProject returns one page of a project's own comments, oldest first, with the total.
-func (s *Service) ListCommentsByProject(ctx context.Context, tenantID, projectID uuid.UUID, limit, offset int) ([]*ent.Comment, int, error) {
-	items, total, err := page(ctx, s.client.Comment.Query().
+func (s *Service) ListCommentsByProject(ctx context.Context, tenantID, projectID uuid.UUID, limit, offset int) ([]Authored, int, error) {
+	items, total, err := s.page(ctx, tenantID, s.client.Comment.Query().
 		Where(entcomment.TenantID(tenantID), entcomment.ProjectID(projectID)), limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list comments by project: %w", err)
@@ -97,8 +141,8 @@ func (s *Service) ListCommentsByProject(ctx context.Context, tenantID, projectID
 
 // ListCommentsByTask returns one page of a task's comments, oldest first, with the total. The task
 // must belong to the project.
-func (s *Service) ListCommentsByTask(ctx context.Context, tenantID, projectID, taskID uuid.UUID, limit, offset int) ([]*ent.Comment, int, error) {
-	items, total, err := page(ctx, s.client.Comment.Query().
+func (s *Service) ListCommentsByTask(ctx context.Context, tenantID, projectID, taskID uuid.UUID, limit, offset int) ([]Authored, int, error) {
+	items, total, err := s.page(ctx, tenantID, s.client.Comment.Query().
 		Where(entcomment.TenantID(tenantID), entcomment.TaskID(taskID), entcomment.HasTaskWith(enttask.ProjectID(projectID))), limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list comments by task: %w", err)
@@ -136,7 +180,7 @@ func clientMetadata(in map[string]any) map[string]any {
 	}
 	out := make(map[string]any, len(in))
 	for k, v := range in {
-		if k != metaMentions {
+		if k != metaMentions && k != metaIdempotencyKey {
 			out[k] = v
 		}
 	}
@@ -235,66 +279,81 @@ func (s *Service) emitCreated(ctx context.Context, c *ent.Comment, projectID uui
 }
 
 // CreateProjectComment creates a comment on a project of the tenant. Mentioned project members
-// get project.task.mentioned (without a task).
-func (s *Service) CreateProjectComment(ctx context.Context, tenantID, projectID uuid.UUID, input CreateCommentInput) (*ent.Comment, error) {
-	content, err := clean(input.Content)
-	if err != nil {
-		return nil, err
-	}
-	var out *ent.Comment
-	err = txn.Run(ctx, s.client, func(tx *ent.Tx) error {
-		ok, err := tx.Project.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).Exist(ctx)
-		if err != nil {
-			return fmt.Errorf("validate project: %w", err)
-		}
-		if !ok {
-			return ErrNotFound
-		}
-		ids, err := mentioned(ctx, tx, tenantID, projectID, input.UserID, content)
-		if err != nil {
-			return err
-		}
-		c := tx.Comment.Create().SetTenantID(tenantID).SetProjectID(projectID).SetUserID(input.UserID).SetContent(content).
-			SetMetadata(withMentions(clientMetadata(input.Metadata), ids))
-		if out, err = c.Save(ctx); err != nil {
-			return fmt.Errorf("create project comment: %w", err)
-		}
-		if err := notifyMentions(ctx, tx, tenantID, projectID, nil, out, ids); err != nil {
-			return err
-		}
-		return record(ctx, tx, out, projectID, activity.ActionCreated, len(ids))
-	})
-	if err != nil {
-		return nil, err
-	}
-	s.emitCreated(ctx, out, projectID)
-	return out, nil
+// get project.task.mentioned (without a task). replayed reports an Idempotency-Key repeat that
+// answered the earlier comment and changed nothing.
+func (s *Service) CreateProjectComment(ctx context.Context, tenantID, projectID uuid.UUID, input CreateCommentInput) (*Authored, bool, error) {
+	return s.create(ctx, tenantID, projectID, uuid.Nil, input)
 }
 
 // CreateTaskComment creates a comment on a task of the project. Mentioned project members get
-// project.task.mentioned, one event each, never the author.
-func (s *Service) CreateTaskComment(ctx context.Context, tenantID, projectID, taskID uuid.UUID, input CreateCommentInput) (*ent.Comment, error) {
+// project.task.mentioned, one event each, never the author. replayed as for CreateProjectComment.
+func (s *Service) CreateTaskComment(ctx context.Context, tenantID, projectID, taskID uuid.UUID, input CreateCommentInput) (*Authored, bool, error) {
+	if taskID == uuid.Nil {
+		return nil, false, ErrNotFound
+	}
+	return s.create(ctx, tenantID, projectID, taskID, input)
+}
+
+// create writes a comment on the project (taskID uuid.Nil) or on one of its tasks.
+func (s *Service) create(ctx context.Context, tenantID, projectID, taskID uuid.UUID, input CreateCommentInput) (*Authored, bool, error) {
 	content, err := clean(input.Content)
 	if err != nil {
-		return nil, err
+		return nil, false, err
+	}
+	key, err := idempotencyKey(input.IdempotencyKey)
+	if err != nil {
+		return nil, false, err
 	}
 	var out *ent.Comment
+	replayed := false
 	err = txn.Run(ctx, s.client, func(tx *ent.Tx) error {
-		task, err := tx.Task.Query().Where(enttask.ID(taskID), enttask.TenantID(tenantID), enttask.ProjectID(projectID)).Only(ctx)
-		if ent.IsNotFound(err) {
-			return ErrNotFound
+		var task *ent.Task
+		if taskID == uuid.Nil {
+			ok, err := tx.Project.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).Exist(ctx)
+			if err != nil {
+				return fmt.Errorf("validate project: %w", err)
+			}
+			if !ok {
+				return ErrNotFound
+			}
+		} else {
+			task, err = tx.Task.Query().Where(enttask.ID(taskID), enttask.TenantID(tenantID), enttask.ProjectID(projectID)).Only(ctx)
+			if ent.IsNotFound(err) {
+				return ErrNotFound
+			}
+			if err != nil {
+				return fmt.Errorf("validate task: %w", err)
+			}
 		}
-		if err != nil {
-			return fmt.Errorf("validate task: %w", err)
+		if key != "" {
+			prior, err := priorComment(ctx, tx, tenantID, input.UserID, key)
+			if err != nil {
+				return err
+			}
+			if prior != nil {
+				if prior.TaskID != taskID || (taskID == uuid.Nil && prior.ProjectID != projectID) {
+					return ErrKeyReused
+				}
+				out, replayed = prior, true
+				return nil
+			}
 		}
 		ids, err := mentioned(ctx, tx, tenantID, projectID, input.UserID, content)
 		if err != nil {
 			return err
 		}
-		c := tx.Comment.Create().SetTenantID(tenantID).SetTaskID(taskID).SetUserID(input.UserID).SetContent(content).
-			SetMetadata(withMentions(clientMetadata(input.Metadata), ids))
+		meta := withMentions(clientMetadata(input.Metadata), ids)
+		if key != "" {
+			meta[metaIdempotencyKey] = key
+		}
+		c := tx.Comment.Create().SetTenantID(tenantID).SetUserID(input.UserID).SetContent(content).SetMetadata(meta)
+		if task != nil {
+			c.SetTaskID(taskID)
+		} else {
+			c.SetProjectID(projectID)
+		}
 		if out, err = c.Save(ctx); err != nil {
-			return fmt.Errorf("create task comment: %w", err)
+			return fmt.Errorf("create comment: %w", err)
 		}
 		if err := notifyMentions(ctx, tx, tenantID, projectID, task, out, ids); err != nil {
 			return err
@@ -302,10 +361,64 @@ func (s *Service) CreateTaskComment(ctx context.Context, tenantID, projectID, ta
 		return record(ctx, tx, out, projectID, activity.ActionCreated, len(ids))
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	s.emitCreated(ctx, out, projectID)
-	return out, nil
+	if !replayed {
+		s.emitCreated(ctx, out, projectID)
+	}
+	a, err := s.authored(ctx, out)
+	if err != nil {
+		return nil, false, err
+	}
+	return a, replayed, nil
+}
+
+// Idempotent comment creation: an offline client replays its queued comment with the same
+// Idempotency-Key. The key is stored in the comment's metadata (idempotency_key, server-owned)
+// and is unique per tenant and author: a repeat within idempotencyWindow answers the comment the
+// first request made, with no second row, notice, activity entry or hint. A transaction-scoped
+// advisory lock on (tenant, author, key) makes two replays racing on different pods apply once.
+const (
+	metaIdempotencyKey = "idempotency_key"
+	idempotencyWindow  = 24 * time.Hour
+	maxKeyLength       = 128
+)
+
+// ErrKeyReused is a key the author already used for a comment somewhere else (another task or
+// project) within the window, answered 409.
+var ErrKeyReused = errors.New("this Idempotency-Key was already used for another comment")
+
+// idempotencyKey trims and bounds an Idempotency-Key header ("" when none).
+func idempotencyKey(raw string) (string, error) {
+	key := strings.TrimSpace(raw)
+	if len(key) > maxKeyLength {
+		return "", ValidationError(fmt.Sprintf("Idempotency-Key is at most %d characters", maxKeyLength))
+	}
+	return key, nil
+}
+
+// priorComment locks (tenant, author, key) for the rest of the transaction and returns the
+// comment the author made with key within the window, nil when there is none. The read is served
+// by the (tenant_id, user_id, created_at) index and filters the author's last day on the key.
+func priorComment(ctx context.Context, tx *ent.Tx, tenantID, author uuid.UUID, key string) (*ent.Comment, error) {
+	if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`,
+		"comment:"+tenantID.String()+":"+author.String()+":"+key); err != nil {
+		return nil, fmt.Errorf("lock idempotency key: %w", err)
+	}
+	c, err := tx.Comment.Query().Where(
+		entcomment.TenantID(tenantID), entcomment.UserID(author),
+		entcomment.CreatedAtGTE(time.Now().Add(-idempotencyWindow)),
+		predicate.Comment(func(s *sql.Selector) {
+			s.Where(sqljson.ValueEQ(s.C(entcomment.FieldMetadata), key, sqljson.Path(metaIdempotencyKey)))
+		}),
+	).Order(ent.Asc(entcomment.FieldCreatedAt)).First(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find replayed comment: %w", err)
+	}
+	return c, nil
 }
 
 // loadForChange loads a comment of the project; ownerOnly (when set) must be its author.
@@ -326,7 +439,7 @@ func loadForChange(ctx context.Context, tx *ent.Tx, tenantID, projectID, id uuid
 // UpdateComment updates the content of a comment of the project. ownerOnly limits the change to
 // the caller's own comment (callers with comments.manage pass nil). Only people the edit newly
 // mentions are notified.
-func (s *Service) UpdateComment(ctx context.Context, tenantID, projectID, id uuid.UUID, input UpdateCommentInput, ownerOnly *uuid.UUID) (*ent.Comment, error) {
+func (s *Service) UpdateComment(ctx context.Context, tenantID, projectID, id uuid.UUID, input UpdateCommentInput, ownerOnly *uuid.UUID) (*Authored, error) {
 	content, err := clean(input.Content)
 	if err != nil {
 		return nil, err
@@ -368,7 +481,7 @@ func (s *Service) UpdateComment(ctx context.Context, tenantID, projectID, id uui
 	if err != nil {
 		return nil, err
 	}
-	return updated, nil
+	return s.authored(ctx, updated)
 }
 
 // DeleteComment deletes a comment of the project; ownerOnly as for UpdateComment.

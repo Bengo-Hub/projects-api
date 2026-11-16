@@ -2,6 +2,7 @@ package projects
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -16,9 +17,12 @@ import (
 //	crm_contact_name  the client's display name, kept so lists need no CRM call
 //	cost_center_id    treasury cost centre the project's spend belongs to
 //	cost_center_name  its display name
+//	hourly_rate       price of a billable hour in the project's currency (decimal string, two
+//	                  places at most, above zero); time_and_materials projects bill logged hours
 const (
 	MetaBillingType    = "billing_type"
 	MetaContractValue  = "contract_value"
+	MetaHourlyRate     = "hourly_rate"
 	MetaCRMContactID   = "crm_contact_id"
 	MetaCRMContactName = "crm_contact_name"
 	MetaCostCenterID   = "cost_center_id"
@@ -30,6 +34,48 @@ const (
 const metaStatuses = "statuses"
 
 var billingTypes = map[string]bool{"fixed": true, "time_and_materials": true, "non_billable": true}
+
+// BillingTimeAndMaterials is the billing type whose logged hours are billable.
+const BillingTimeAndMaterials = "time_and_materials"
+
+// BillsHours reports whether time logged on a project with this metadata is billable by default:
+// only time and materials work is billed by the hour.
+func BillsHours(meta map[string]any) bool {
+	s, _ := meta[MetaBillingType].(string)
+	return s == BillingTimeAndMaterials
+}
+
+// hourlyRatePattern is a positive decimal with at most two places, the precision treasury invoices.
+var hourlyRatePattern = regexp.MustCompile(`^\d{1,12}(\.\d{1,2})?$`)
+
+// normalizeHourlyRate validates hourly_rate in place: a number or decimal string above zero with
+// at most two places, stored as a string so no float rounding reaches an invoice. Empty clears it.
+func normalizeHourlyRate(meta map[string]any) error {
+	v, ok := meta[MetaHourlyRate]
+	if !ok || v == nil {
+		return nil
+	}
+	var s string
+	switch n := v.(type) {
+	case string:
+		s = strings.TrimSpace(n)
+	case float64:
+		s = strconv.FormatFloat(n, 'f', -1, 64)
+	case int:
+		s = strconv.Itoa(n)
+	default:
+		return ErrValidation("hourly_rate must be a decimal string such as \"2500.00\"")
+	}
+	if s == "" {
+		meta[MetaHourlyRate] = nil
+		return nil
+	}
+	if !hourlyRatePattern.MatchString(s) || strings.Trim(s, "0.") == "" {
+		return ErrValidation("hourly_rate must be above zero with at most two decimal places")
+	}
+	meta[MetaHourlyRate] = s
+	return nil
+}
 
 // normalizeCommercial validates the commercial keys of a metadata map in place: billing type
 // from the allowed set, a non-negative contract value stored as a number, and UUID ids. An empty
@@ -54,6 +100,9 @@ func normalizeCommercial(meta map[string]any) error {
 			return ErrValidation("contract_value must be a number of zero or more")
 		}
 		meta[MetaContractValue] = n
+	}
+	if err := normalizeHourlyRate(meta); err != nil {
+		return err
 	}
 	for idKey, nameKey := range map[string]string{MetaCRMContactID: MetaCRMContactName, MetaCostCenterID: MetaCostCenterName} {
 		v, ok := meta[idKey]

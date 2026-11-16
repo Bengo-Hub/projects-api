@@ -1,5 +1,6 @@
 // Package erp is projects-api's S2S client for erp-api (X-API-Key INTERNAL_SERVICE_KEY with
-// X-Tenant-ID). It reads the timesheet hours logged per project for utilisation.
+// X-Tenant-ID). It reads the timesheet hours logged per project for utilisation, and reads, logs
+// and submits the signed-in user's own timesheet time (timesheets.go).
 package erp
 
 import (

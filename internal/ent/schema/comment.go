@@ -40,11 +40,13 @@ func (Comment) Fields() []ent.Field {
 	}
 }
 
-// Indexes of the Comment: threads are read per project or per task in posting order.
+// Indexes of the Comment: threads are read per project or per task in posting order; an
+// Idempotency-Key replay looks through the author's comments of the last day.
 func (Comment) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "project_id", "created_at"),
 		index.Fields("tenant_id", "task_id", "created_at"),
+		index.Fields("tenant_id", "user_id", "created_at"),
 	}
 }
 

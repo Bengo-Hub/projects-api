@@ -140,6 +140,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{CommentsColumns[1], CommentsColumns[8], CommentsColumns[4]},
 			},
+			{
+				Name:    "comment_tenant_id_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CommentsColumns[1], CommentsColumns[2], CommentsColumns[4]},
+			},
 		},
 	}
 	// DocumentSequencesColumns holds the columns for the "document_sequences" table.

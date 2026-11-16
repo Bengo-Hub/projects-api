@@ -48,6 +48,7 @@ import (
 	"github.com/bengobox/projects-service/internal/services/qa"
 	"github.com/bengobox/projects-service/internal/services/tasks"
 	"github.com/bengobox/projects-service/internal/services/tenders"
+	"github.com/bengobox/projects-service/internal/services/timetracking"
 	"github.com/bengobox/projects-service/internal/services/usersync"
 	"github.com/bengobox/projects-service/internal/shared/fieldcrypt"
 	"github.com/bengobox/projects-service/internal/shared/logger"
@@ -211,6 +212,8 @@ func New(ctx context.Context) (*App, error) {
 	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey)
 	erpClient := erp.NewClient(cfg.Services.ERPURL, cfg.Auth.APIKey)
 	financialsHandler := handlers.NewFinancialsHandler(log, financials.NewService(entClient, treasuryClient, log).WithERP(erpClient))
+	// Time tracking logs the signed-in user's hours on their ERP timesheet (ERP owns them).
+	timeHandler := handlers.NewTimeHandler(log, timetracking.NewService(entClient, erpClient, log))
 	// Project form pickers: the client from the CRM (marketflow), the cost centre from treasury.
 	projectHandler.WithLookups(marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey), treasuryClient)
 
@@ -313,6 +316,7 @@ func New(ctx context.Context) (*App, error) {
 			Attachments: handlers.NewAttachmentHandler(log, attachmentService),
 			Stream:      handlers.NewStreamHandler(log, liveHub),
 			Activity:    activityHandler, Tenders: tenderHandler, Financials: financialsHandler,
+			Time:        timeHandler,
 		},
 		Authenticate:   authMiddleware.RequireAuth,
 		AllowedOrigins: cfg.HTTP.AllowedOrigins,

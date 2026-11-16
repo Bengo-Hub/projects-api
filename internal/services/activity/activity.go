@@ -10,6 +10,7 @@ import (
 
 	"github.com/bengobox/projects-service/internal/ent"
 	entactivity "github.com/bengobox/projects-service/internal/ent/activity"
+	"github.com/bengobox/projects-service/internal/services/people"
 )
 
 // Actions recorded in the feed.
@@ -88,17 +89,49 @@ type Service struct {
 // NewService creates the feed reader.
 func NewService(client *ent.Client) *Service { return &Service{client: client} }
 
+// FeedItem is a feed row with the actor's name from projects_users ("" for a service call or
+// someone who has not signed in to projects).
+type FeedItem struct {
+	*ent.Activity
+	ActorName string `json:"actor_name"`
+}
+
 // ListByProject returns the project's latest entries, newest first (at most 100).
-func (s *Service) ListByProject(ctx context.Context, tenantID, projectID uuid.UUID) ([]*ent.Activity, error) {
-	return s.client.Activity.Query().
+func (s *Service) ListByProject(ctx context.Context, tenantID, projectID uuid.UUID) ([]FeedItem, error) {
+	rows, err := s.client.Activity.Query().
 		Where(entactivity.TenantID(tenantID), entactivity.ProjectID(projectID)).
 		Order(ent.Desc(entactivity.FieldOccurredAt)).Limit(feedLimit).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.withActors(ctx, tenantID, rows)
 }
 
 // ListByTask returns the task's latest entries, newest first (at most 100). The task must belong
 // to the project.
-func (s *Service) ListByTask(ctx context.Context, tenantID, projectID, taskID uuid.UUID) ([]*ent.Activity, error) {
-	return s.client.Activity.Query().
+func (s *Service) ListByTask(ctx context.Context, tenantID, projectID, taskID uuid.UUID) ([]FeedItem, error) {
+	rows, err := s.client.Activity.Query().
 		Where(entactivity.TenantID(tenantID), entactivity.TaskID(taskID), entactivity.ProjectID(projectID)).
 		Order(ent.Desc(entactivity.FieldOccurredAt)).Limit(feedLimit).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.withActors(ctx, tenantID, rows)
+}
+
+// withActors adds the actor names to a feed page in one batched query.
+func (s *Service) withActors(ctx context.Context, tenantID uuid.UUID, rows []*ent.Activity) ([]FeedItem, error) {
+	ids := make([]uuid.UUID, len(rows))
+	for i, a := range rows {
+		ids[i] = a.UserID
+	}
+	known, err := people.Lookup(ctx, s.client.ProjectsUser, tenantID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]FeedItem, len(rows))
+	for i, a := range rows {
+		out[i] = FeedItem{Activity: a, ActorName: known[a.UserID].Label()}
+	}
+	return out, nil
 }

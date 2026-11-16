@@ -17,6 +17,7 @@ var sprint12Routes = []struct {
 }{
 	{http.MethodPatch, "/api/v1/acme/projects/not-a-uuid/tasks/" + someID + "/status", "task_tracking"},
 	{http.MethodPatch, "/api/v1/acme/projects/not-a-uuid/tasks/" + someID + "/dates", "task_tracking"},
+	{http.MethodPatch, "/api/v1/acme/projects/not-a-uuid/tasks/" + someID + "/checklist", "task_tracking"},
 	{http.MethodGet, "/api/v1/acme/projects/not-a-uuid/statuses", "task_tracking"},
 	{http.MethodPut, "/api/v1/acme/projects/not-a-uuid/statuses", "task_tracking"},
 	{http.MethodGet, "/api/v1/acme/projects/not-a-uuid/board-counts", "task_tracking"},
@@ -113,7 +114,7 @@ func TestWorkManagementMembershipScoping(t *testing.T) {
 			t.Errorf("%s for a non-member: %d, want 404", path, w.Code)
 		}
 	}
-	for _, path := range []string{"/tasks/" + someID + "/status", "/tasks/" + someID + "/dates"} {
+	for _, path := range []string{"/tasks/" + someID + "/status", "/tasks/" + someID + "/dates", "/tasks/" + someID + "/checklist"} {
 		if w := call(h, staff, http.MethodPatch, "/api/v1/acme/projects/"+other+path); w.Code != http.StatusNotFound {
 			t.Errorf("PATCH %s on another project: %d, want 404", path, w.Code)
 		}
@@ -121,5 +122,18 @@ func TestWorkManagementMembershipScoping(t *testing.T) {
 	// Board statuses are managed with projects.projects.change, which a member lacks.
 	if w := call(h, staff, http.MethodPut, "/api/v1/acme/projects/"+someID+"/statuses"); w.Code != http.StatusForbidden {
 		t.Errorf("a member changing statuses: %d, want 403", w.Code)
+	}
+	// The member list (with names) is open to anyone who may view members, not only rbac.manage,
+	// and stays scoped to the caller's projects.
+	viewer := userClaims("customer")
+	if w := call(h, viewer, http.MethodGet, "/api/v1/acme/projects/not-a-uuid/members?q=ana"); w.Code != http.StatusBadRequest {
+		t.Errorf("a viewer searching members: %d, want 400 from the project id (past the gate)", w.Code)
+	}
+	if w := call(h, viewer, http.MethodGet, "/api/v1/acme/projects/"+other+"/members"); w.Code != http.StatusNotFound {
+		t.Errorf("members of another project: %d, want 404", w.Code)
+	}
+	// ?parent_id must be a task id; the handler refuses anything else before reading.
+	if w := call(h, staff, http.MethodGet, "/api/v1/acme/projects/"+someID+"/tasks?parent_id=nope"); w.Code != http.StatusBadRequest {
+		t.Errorf("a malformed parent_id: %d, want 400", w.Code)
 	}
 }

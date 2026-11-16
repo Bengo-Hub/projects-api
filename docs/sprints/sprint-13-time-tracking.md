@@ -1,6 +1,6 @@
 # Sprint 13: Time tracking
 
-**Status**: Planned (2026-11-16). Works on every Projects plan. Replaces the time part of sprint 5.
+**Status**: API built (2026-11-16), waiting for build, tests, the erp-api deploy and the UI. Works on every Projects plan that has `time_tracking`. Replaces the time part of sprint 5.
 
 **Sprint goal**: log time where the work happens, without a second timesheet system.
 
@@ -22,3 +22,15 @@ ERP owns timesheets. Its attendance module has a weekly timesheet per employee (
 - A contract test against ERP's request and response shapes.
 - A timer stop that crosses midnight splits into two dates.
 - A user with no ERP employee record gets a clear message, never a silent failure.
+
+## Progress
+
+### 2026-11-16: API side (projects-api and erp-api), not yet built, tested or deployed
+- **erp-api.** ERP had per-employee timesheets but entries were unique per date, so a second project on the same day overwrote the first, and no route let a service act for one employee. Added:
+  - `TimesheetEntry.task_id` (optional) and `billable` (default false); entries are now unique per (date, project, task). `cmd/migrate` drops the old per-date unique index before the online migration. ERP's own entry upsert takes `task_id` and `billable` too.
+  - `GET /hrm/attendance/timesheets/for-user`, `POST .../for-user/entries` (mode set or add) and `POST .../for-user/submit`, keyed by the auth user id through the ESS employee resolver. S2S with X-API-Key and X-Tenant-ID, or the employee's own sign-in (checked for the `attendance` feature). 404 `no_employee_record`, 409 `timesheet_locked` and `nothing_to_submit`.
+  - Handler tests: caller rules and feature lock, and an end to end flow against Postgres (set, add, a second project the same day, the 24 hour cap, submit, lock, and the submitted hours in `project-hours`).
+- **projects-api.** `internal/services/timetracking` and `handlers/time.go`: week, entries, submit, timer start, stop, discard and the running timer (see `docs/api.md`, Time). Gated on `time_tracking` and ERP's `attendance` on the user's token, with `projects.time.*`. Billable defaults from `billing_type` (`time_and_materials` bills hours); the rate is project `metadata.hourly_rate`, validated with the other commercial terms. Running timers sit in `tasks.metadata.timers`, server owned.
+- **Plans.** ERP gates timesheets on `attendance`. Every plan that grants `time_tracking` also grants it: standalone ERP tiers 2 to 4 (`erpFeatures`), and PowerSuite tier 3 (`psSuiteProjectsBlock` and `psSuiteERPBlock` both open at tier 3).
+- **US-13.4.** EVM and utilisation already read `project-hours`; the new entries carry `project_id`, so they count once submitted or approved. No change there.
+- **Open.** US-13.5 (offline queue) is UI work: the stop route takes the browser's own start and stop for it. Deploy erp-api first. Sprint 15 invoicing reads the billable entries.

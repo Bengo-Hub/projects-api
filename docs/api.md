@@ -43,11 +43,11 @@ mutations, just-in-time user provisioning, then the route's permission check.
   - Subscription: `{"code": "subscription_inactive" | "feature_not_available", "upgrade": true}`.
   - Tenant mismatch: `{"code": "tenant_forbidden"}`.
 - **5xx bodies:** always `internal server error`; the detail goes to the log only.
-- **Lists:** tasks, tenders and comments take `limit` (default 20, max 500) with `page` or
+- **Lists:** tasks, tenders, comments and project members take `limit` (default 20, max 500) with `page` or
   `offset`, and answer `{data, total, limit, page, hasMore}`. There is no `page_size`.
 - **Gantt:** answers `{data, truncated, limit: 2000, critical_days}`, each task with `critical`.
 - **GetTask:** returns the task with `edges.dependencies`, `edges.assignees`, its latest 50
-  `comments` (oldest first) and `comments_total`.
+  `comments` (oldest first, each with `author_name`) and `comments_total`.
 
 ### Data and events
 
@@ -70,10 +70,11 @@ comments, mentions and attachments. A missing feature answers 403 `feature_not_a
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/projects/{id}/tasks` | `tasks.view` or `view_own` | `?status=` one board column (each pages on its own), `?assignee=me\|<user id>` (any assignee), `?due_from=&due_to=` (inclusive, calendar), `?priority`, `limit`, `page` |
+| GET | `/projects/{id}/tasks` | `tasks.view` or `view_own` | `?status=` one board column (each pages on its own), `?assignee=me\|<user id>` (any assignee), `?due_from=&due_to=` (inclusive, calendar), `?parent_id=<task id>` (a task's subtasks, served by the `(tenant_id, parent_id)` index; anything but a uuid is 400), `?priority`, `limit`, `page` |
 | POST | `/projects/{id}/tasks` | `tasks.add` | `assignee_ids: []` (first is primary, members only); `status` must be a project status |
 | PUT | `/projects/{id}/tasks/{taskID}` | `tasks.change` or `change_own` | `assignee_ids` replaces the assignees (`[]` clears); `""` dates clear |
 | PATCH | `/projects/{id}/tasks/{taskID}/status` | `tasks.change` or `change_own` | `{status}`. Optional `Idempotency-Key` header (at most 128 characters): a key already applied to this task in 24 h changes nothing and answers the task with `Idempotent-Replayed: true` |
+| PATCH | `/projects/{id}/tasks/{taskID}/checklist` | `tasks.change` or `change_own` | One operation: `{op: add\|toggle\|rename\|remove\|reorder, item_id, text?, done?, position?}`, applied under the task row lock (`SELECT ... FOR UPDATE`), so two people ticking at once both keep their tick. add takes `text` (at most 500 characters), an optional client `item_id` (letters, digits, `-`, `_`, at most 64; an id already there is a no-op) and `position` (0-based, default last); toggle takes `done` (absent flips); rename takes `text`; remove of a missing item is a no-op; reorder takes `position`. At most 200 items. An item another edit removed answers 404 `checklist_item_not_found`. `Idempotency-Key` works as on the status route. Answers the task |
 | PATCH | `/projects/{id}/tasks/{taskID}/dates` | `tasks.change` or `change_own` | `{start_date?, due_date?}`. Breaking a finish-to-start dependency (FS or the old `blocks`; a same-day hand-over is fine) answers 409 `{code: "schedule_conflict", blocking_task_ids}` |
 | GET | `/projects/{id}/statuses` | `tasks.view` or `view_own` | `{data: [{key, label, category: todo\|in_progress\|done, order}]}`; default To do, In progress, In review, Done |
 | PUT | `/projects/{id}/statuses` | `projects.projects.change` | `{statuses: [...]}`. Keys snake case, `done` required (done category), at most 20; a status tasks still hold cannot be removed. Kept in project metadata `statuses`; the project update drops that key |
@@ -88,14 +89,34 @@ comments, mentions and attachments. A missing feature answers 403 `feature_not_a
   `done` tasks are left out.
 - **Completion:** moving to `done` sets progress 100 and `completed_at`; leaving `done` clears
   `completed_at`.
-- **Server-owned metadata:** `tasks.metadata.status_mutations` (idempotency keys) and
-  `comments.metadata.mentions` are never taken from a client.
+- **Server-owned metadata:** `tasks.metadata.status_mutations` and `checklist_mutations`
+  (idempotency keys), `tasks.metadata.checklist` (`[{id, text, done}]`, changed only through the
+  checklist route), `tasks.metadata.timers` (running timers, see Time),
+  `comments.metadata.mentions` and `comments.metadata.idempotency_key` are never taken from a
+  client. A task PUT locks the task row too, so its metadata write never undoes a tick, a key or a
+  timer written meanwhile.
+
+### Members and names
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{id}/members` | `members.view` | `{data, total, limit, page, hasMore}`, longest standing first, each member with `name` and `email` from `projects_users` (the copy of the SSO identity made on first sign-in; both empty until then). `?q=` searches name or email (case-insensitive substring, wildcards literal), `limit` (default 20, max 500), `page` |
+
+- Names come from one batched `projects_users` read per page (the `(tenant_id,
+  auth_service_user_id)` unique index), never one query per row. The search is an `EXISTS` probe
+  of that index per member of the project, whose rows come from the `(tenant_id, project_id,
+  user_id)` index, so it never scans the tenant's users.
+- The same batched read names comment authors (`author_name` on every comment: lists, the task
+  detail's latest 50, create and edit answers) and activity actors (`actor_name` on the project
+  and task feeds). Empty means the person has not signed in to projects (or a service call); the
+  UI shows a fallback. Nobody needs `rbac.manage` to see a teammate's name any more.
 
 ### Comments, mentions and attachments
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| POST/PUT | comment routes as before | as before | Body is rich text, sanitised to the editor's tags. A Tiptap mention `<span data-type="mention" data-id="<auth user id>">` of a project member notifies them; the author and non-members never. An edit notifies only people it newly mentions |
+| POST/PUT | comment routes as before | as before | Body is rich text, sanitised to the editor's tags. A Tiptap mention `<span data-type="mention" data-id="<auth user id>">` of a project member notifies them; the author and non-members never. An edit notifies only people it newly mentions. Answers carry `author_name` |
+| POST | `/projects/{id}/comments`, `/projects/{id}/tasks/{taskID}/comments` | `comments.add` | Optional `Idempotency-Key` (at most 128 characters), unique per tenant and author: a repeat within 24 h answers 200 with the comment the first request made and `Idempotent-Replayed: true` (no second row, notice, activity entry or live hint). The key is kept in `comments.metadata.idempotency_key`, found through the `(tenant_id, user_id, created_at)` index, and a transaction advisory lock on (tenant, author, key) makes racing replays apply once. The same key on another task or the project answers 409 `idempotency_key_reused` |
 | POST | `/projects/{id}/attachments/uploads` | `comments.add` | `{file_name, content_type, size, task_id?}` gives `{key, upload: {url, method: PUT, headers, expires_at}, max_bytes, allowed_types}`. PUT the file to `upload.url` with exactly `upload.headers` |
 | POST | `/projects/{id}/attachments` | `comments.add` | `{key, file_name, task_id?}` after the PUT. The stored bytes are checked (size, sniffed type); a bad file is deleted, 400. Confirming twice returns the same row |
 | GET | `/projects/{id}/attachments` | `comments.view` | Newest first, `?task_id`, paged; each with a signed `url` (15 minutes) |
@@ -129,6 +150,51 @@ come from `projects_users` and may be empty for someone who never signed in to p
   comment as plain text (200 characters). `task_id` is empty for a project comment.
 - **`project.task.status_changed`:** to the task's assignees; plus `from_status`, `to_status`,
   `to_status_label`.
+
+## Time (sprint 13, 2026-11-16)
+
+ERP owns timesheets. These routes read and write the signed-in user's ERP timesheet over S2S
+(`internal/platform/erp/timesheets.go`, erp-api `/hrm/attendance/timesheets/for-user`); projects-api
+stores no hours. Every route needs the `time_tracking` feature and ERP's `attendance` feature (the
+hours land on ERP timesheets, and erp-api lets the service key past its own plan gate, so the
+user's token is checked here). Either missing answers 403 `feature_not_available` naming it. Every
+route needs a signed-in user (401 for a service key). `?tz=` is an IANA zone, default
+Africa/Nairobi; it decides where a day starts.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/time/week` | `time.view_own` | `?week_start=` any date of the week (default this week), `?tz=`. `?user_id=` reads someone else's week and needs `time.view`. Answers the week below |
+| PUT | `/time/entries` | `time.add` | `{project_id, task_id?, date, hours, note?, billable?}` sets the day's hours (0 to 24, two places) for that project and task, opening the Monday to Sunday timesheet on ERP when none covers the date. `user_id` in the body logs for someone else and needs `time.manage`. Answers ERP's `{employee_id, timesheet, entry}` |
+| POST | `/time/week/submit` | `time.add` | `{week_start?}` sends ERP's submit for the user's timesheets over that week. `{data: [timesheet]}`. Approval and rejection stay in ERP |
+| GET | `/time/timer` | `time.view_own` | The user's running timer anywhere: `{data: {project_id, task_id, task_title, started_at} \| null}` |
+| POST | `/time/timer/stop` | `time.add` | `{project_id, task_id?, started_at, stopped_at, note?, billable?}` (RFC 3339 from the browser, so an offline stop logs the real run; at most 24 h; not in the future). Adds the time to the entries, split at midnight in `?tz=` (one ERP add per date, each in its own week), then clears the user's timer on the task. `{segments: [{date, hours}], entries: [...]}` |
+| GET | `/tasks/{taskID}/timer` | `time.view_own` | The user's timer on the task, `{data: timer \| null}` |
+| POST | `/tasks/{taskID}/timer` | `time.add` | Starts the user's timer on the task. One timer per user: one running on another task is stopped first (logged as above, `?tz=`), listed in `stopped`. Starting the running timer again keeps its start. `{timer, stopped: [...]}` |
+| DELETE | `/tasks/{taskID}/timer` | `time.add` | Discards the user's timer on the task without logging. 204 |
+
+`time.view` and `time.manage` imply `view_own` and `add`. Project and task routes go through
+membership scoping (404).
+
+- **Week:** `{week_start, week_end, days[7], status, editable, timesheets: [{id, period_start,
+  period_end, status, rejection_reason?, editable}], rows: [{project_id, project_name, task_id?,
+  task_title?, billable, hours: {date: h}, notes?: {date: text}, total}], day_totals: {date: h},
+  total, billable_total}`. `status` is `none` (nothing logged yet), `draft`, `submitted`,
+  `approved`, `rejected`, or `mixed` when ERP has several timesheets over the week. A row with
+  `project_id: null` is time logged in ERP without a project. Hours are regular plus overtime.
+- **Billable:** defaults from the project's `billing_type` (only `time_and_materials` bills hours);
+  `billable: true` on any other project is 422 `validation_error`. The project's rate is
+  `metadata.hourly_rate` (decimal string, above zero, two places at most, validated on project
+  create and update) in the project's `currency`.
+- **Timer state:** `tasks.metadata.timers` is `{auth user id: RFC 3339 start}`, written in one jsonb
+  statement and server owned like `status_mutations` (a task update never takes it from a client).
+  The browser keeps its own copy for an offline stop.
+- **Errors:** 409 `no_employee_record` when the user has no ERP employee record (with a message to
+  ask HR); ERP's 409 `timesheet_locked` (the week is submitted or approved) and
+  `nothing_to_submit` pass through; 422 `validation_error`; 503 `erp_unavailable` without ERP;
+  502 `erp_unavailable` when ERP does not answer. A timer stop across midnight that fails after
+  its first date adds `logged_segments` to the error so a retry sends only the rest.
+- **Figures:** EVM and utilisation read the same ERP hours (`project-hours`: approved and
+  submitted regular plus overtime), so a logged and submitted hour shows there with no change.
 
 ## QA and acceptance
 

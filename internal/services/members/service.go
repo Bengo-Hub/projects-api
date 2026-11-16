@@ -5,14 +5,18 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/ent"
+	"github.com/bengobox/projects-service/internal/ent/predicate"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	entmember "github.com/bengobox/projects-service/internal/ent/projectmember"
+	entuser "github.com/bengobox/projects-service/internal/ent/projectsuser"
 	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/people"
 	"github.com/bengobox/projects-service/internal/services/txn"
 )
 
@@ -55,16 +59,71 @@ type UpdateMemberInput struct {
 	RoleCode string `json:"role_code"`
 }
 
-// ListMembers returns all active members of a project.
-func (s *Service) ListMembers(ctx context.Context, tenantID, projectID uuid.UUID) ([]*ent.ProjectMember, error) {
-	items, err := s.client.ProjectMember.Query().
-		Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID)).
-		Order(ent.Asc(entmember.FieldJoinedAt)).
-		Limit(subListLimit).All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list members: %w", err)
+// Member is a project member with the name and email of the local copy of their SSO identity
+// (projects_users). Both are empty for someone who has not signed in to projects yet.
+type Member struct {
+	*ent.ProjectMember
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// ListMembersFilter pages and searches a project's members. Search matches the name or email
+// (case-insensitive substring, wildcards taken literally).
+type ListMembersFilter struct {
+	Search string
+	Limit  int
+	Offset int
+}
+
+// matching keeps members whose local user row matches term by name or email. It reads as
+// EXISTS (SELECT 1 FROM projects_users u WHERE u.tenant_id = m.tenant_id AND
+// u.auth_service_user_id = m.user_id AND (u.name ILIKE ? OR u.email ILIKE ?)): one probe of the
+// (tenant_id, auth_service_user_id) unique index per member of the project, whose rows come from
+// the (tenant_id, project_id, user_id) index, so the search never scans the tenant's users.
+func matching(term string) predicate.ProjectMember {
+	return predicate.ProjectMember(func(s *sql.Selector) {
+		u := sql.Table(entuser.Table)
+		s.Where(sql.Exists(sql.Select(u.C(entuser.FieldID)).From(u).Where(sql.And(
+			sql.ColumnsEQ(u.C(entuser.FieldTenantID), s.C(entmember.FieldTenantID)),
+			sql.ColumnsEQ(u.C(entuser.FieldAuthServiceUserID), s.C(entmember.FieldUserID)),
+			sql.Or(sql.ContainsFold(u.C(entuser.FieldName), term), sql.ContainsFold(u.C(entuser.FieldEmail), term)),
+		))))
+	})
+}
+
+// ListMembers returns one page of a project's members, longest standing first, with the total.
+// Names and emails for the whole page come from projects_users in one batched query.
+func (s *Service) ListMembers(ctx context.Context, tenantID, projectID uuid.UUID, filter ListMembersFilter) ([]Member, int, error) {
+	if filter.Limit <= 0 || filter.Limit > subListLimit {
+		filter.Limit = subListLimit
 	}
-	return items, nil
+	q := s.client.ProjectMember.Query().Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID))
+	if filter.Search != "" {
+		q = q.Where(matching(filter.Search))
+	}
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count members: %w", err)
+	}
+	rows, err := q.Order(ent.Asc(entmember.FieldJoinedAt), ent.Asc(entmember.FieldID)).
+		Offset(filter.Offset).Limit(filter.Limit).All(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list members: %w", err)
+	}
+	ids := make([]uuid.UUID, len(rows))
+	for i, m := range rows {
+		ids[i] = m.UserID
+	}
+	known, err := people.Lookup(ctx, s.client.ProjectsUser, tenantID, ids)
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]Member, len(rows))
+	for i, m := range rows {
+		p := known[m.UserID]
+		out[i] = Member{ProjectMember: m, Name: p.Name, Email: p.Email}
+	}
+	return out, total, nil
 }
 
 func record(ctx context.Context, tx *ent.Tx, tenantID, projectID, userID uuid.UUID, action string, changes map[string]any) error {

@@ -14,8 +14,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	entmember "github.com/bengobox/projects-service/internal/ent/projectmember"
-	entuser "github.com/bengobox/projects-service/internal/ent/projectsuser"
 	"github.com/bengobox/projects-service/internal/platform/events"
+	"github.com/bengobox/projects-service/internal/services/people"
 )
 
 // Event types (subject project.<type>).
@@ -27,42 +27,6 @@ const (
 
 // ExcerptLength is the most characters of a comment a mention notice carries.
 const ExcerptLength = 200
-
-// Person is a local copy of an SSO user.
-type Person struct {
-	ID    uuid.UUID
-	Email string
-	Name  string
-}
-
-// DisplayName is the name, else the email, else a neutral word.
-func (p Person) DisplayName() string {
-	switch {
-	case p.Name != "":
-		return p.Name
-	case p.Email != "":
-		return p.Email
-	}
-	return "A teammate"
-}
-
-// People returns the tenant's local users among ids, keyed by auth-api user id. An id without a
-// local row (never signed in to projects) is absent.
-func People(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, ids []uuid.UUID) (map[uuid.UUID]Person, error) {
-	out := make(map[uuid.UUID]Person, len(ids))
-	if len(ids) == 0 {
-		return out, nil
-	}
-	rows, err := tx.ProjectsUser.Query().
-		Where(entuser.TenantID(tenantID), entuser.AuthServiceUserIDIn(ids...)).All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("load people: %w", err)
-	}
-	for _, u := range rows {
-		out[u.AuthServiceUserID] = Person{ID: u.AuthServiceUserID, Email: u.Email, Name: u.Name}
-	}
-	return out, nil
-}
 
 // Members returns which of ids own or actively belong to the project (the same rule as
 // membership scoping): only they may be assigned or mentioned.
@@ -101,7 +65,7 @@ type Notice struct {
 	// TaskID is uuid.Nil for a mention in a project comment.
 	TaskID    uuid.UUID
 	TaskTitle string
-	Actor     Person
+	Actor     people.Person
 	// CommentExcerpt is set on mentions: the comment as plain text, at most ExcerptLength.
 	CommentExcerpt string
 	// ActionPath is the UI path the notice links to, e.g. /{org}/projects/{id}/tasks?task={id}.
@@ -143,7 +107,7 @@ func Write(ctx context.Context, tx *ent.Tx, eventType string, n Notice, recipien
 	if len(recipients) == 0 {
 		return nil
 	}
-	people, err := People(ctx, tx, n.TenantID, recipients)
+	known, err := people.Lookup(ctx, tx.ProjectsUser, n.TenantID, recipients)
 	if err != nil {
 		return err
 	}
@@ -157,7 +121,7 @@ func Write(ctx context.Context, tx *ent.Tx, eventType string, n Notice, recipien
 			continue
 		}
 		seen[id] = true
-		who := people[id]
+		who := known[id]
 		payload := map[string]any{
 			"project_id":        n.ProjectID.String(),
 			"project_name":      n.ProjectName,
@@ -185,17 +149,17 @@ func Write(ctx context.Context, tx *ent.Tx, eventType string, n Notice, recipien
 }
 
 // Actor loads the acting user's local copy (empty name and email when they have no row).
-func Actor(ctx context.Context, tx *ent.Tx, tenantID, actorID uuid.UUID) (Person, error) {
+func Actor(ctx context.Context, tx *ent.Tx, tenantID, actorID uuid.UUID) (people.Person, error) {
 	if actorID == uuid.Nil {
-		return Person{}, nil
+		return people.Person{}, nil
 	}
-	people, err := People(ctx, tx, tenantID, []uuid.UUID{actorID})
+	known, err := people.Lookup(ctx, tx.ProjectsUser, tenantID, []uuid.UUID{actorID})
 	if err != nil {
-		return Person{}, err
+		return people.Person{}, err
 	}
-	p, ok := people[actorID]
+	p, ok := known[actorID]
 	if !ok {
-		p = Person{ID: actorID}
+		p = people.Person{ID: actorID}
 	}
 	return p, nil
 }

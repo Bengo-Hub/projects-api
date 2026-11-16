@@ -81,6 +81,7 @@ func testRouter(t *testing.T, r *fakeRBAC, members fakeMembers) http.Handler {
 			Activity:    handlers.NewActivityHandler(log, nil),
 			Tenders:     handlers.NewTenderHandler(log, nil),
 			Financials:  handlers.NewFinancialsHandler(log, nil),
+			Time:        handlers.NewTimeHandler(log, nil),
 		},
 		Authenticate: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

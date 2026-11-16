@@ -65,7 +65,7 @@ func (s *Service) ChangeStatus(ctx context.Context, tenantID, projectID, taskID 
 			return fmt.Errorf("fetch task: %w", err)
 		}
 		now := time.Now().UTC()
-		keys := recentMutations(t.Metadata, now)
+		keys := recentMutations(t.Metadata, metaStatusMutations, now)
 		if key != "" {
 			if _, seen := keys[key]; seen {
 				replayed = true
@@ -143,10 +143,11 @@ func loadAssignees(ctx context.Context, tx *ent.Tx, t *ent.Task) error {
 	return nil
 }
 
-// recentMutations reads the status_mutations keys of a task's metadata still inside the window.
-func recentMutations(meta map[string]any, now time.Time) map[string]time.Time {
+// recentMutations reads the idempotency keys a task's metadata keeps under field
+// (status_mutations, checklist_mutations) still inside the window.
+func recentMutations(meta map[string]any, field string, now time.Time) map[string]time.Time {
 	out := map[string]time.Time{}
-	raw, _ := meta[metaStatusMutations].(map[string]any)
+	raw, _ := meta[field].(map[string]any)
 	for k, v := range raw {
 		s, _ := v.(string)
 		at, err := time.Parse(time.RFC3339Nano, s)

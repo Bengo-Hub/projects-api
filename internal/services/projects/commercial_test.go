@@ -32,3 +32,34 @@ func TestNormalizeCommercialRejectsBadIDAndClearsEmpty(t *testing.T) {
 		t.Fatalf("empty id: %v %v", meta, err)
 	}
 }
+
+// hourly_rate is validated server side: a positive amount with at most two places, kept as a
+// decimal string; empty clears it.
+func TestNormalizeCommercialHourlyRate(t *testing.T) {
+	for sent, want := range map[any]string{"2500": "2500", " 2500.50 ": "2500.50", 1800.5: "1800.5", 120: "120"} {
+		meta := map[string]any{MetaHourlyRate: sent}
+		if err := normalizeCommercial(meta); err != nil || meta[MetaHourlyRate] != want {
+			t.Errorf("%v: stored %v (%v), want %q", sent, meta[MetaHourlyRate], err, want)
+		}
+	}
+	for _, bad := range []any{"0", "0.00", "-5", "12.345", "abc", "1e3", true} {
+		if err := normalizeCommercial(map[string]any{MetaHourlyRate: bad}); err == nil {
+			t.Errorf("%v must be refused", bad)
+		}
+	}
+	meta := map[string]any{MetaHourlyRate: ""}
+	if err := normalizeCommercial(meta); err != nil || meta[MetaHourlyRate] != nil {
+		t.Fatalf("empty rate: %v %v", meta, err)
+	}
+}
+
+func TestBillsHours(t *testing.T) {
+	if !BillsHours(map[string]any{MetaBillingType: "time_and_materials"}) {
+		t.Error("time and materials bills hours")
+	}
+	for _, meta := range []map[string]any{nil, {}, {MetaBillingType: "fixed"}, {MetaBillingType: "non_billable"}} {
+		if BillsHours(meta) {
+			t.Errorf("%v must not bill hours", meta)
+		}
+	}
+}

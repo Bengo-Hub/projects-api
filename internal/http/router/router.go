@@ -31,6 +31,7 @@ type Handlers struct {
 	Activity    *handlers.ActivityHandler
 	Tenders     *handlers.TenderHandler
 	Financials  *handlers.FinancialsHandler
+	Time        *handlers.TimeHandler
 }
 
 // Deps is everything the router needs.
@@ -167,6 +168,12 @@ func New(d Deps) http.Handler {
 			if h.Financials != nil {
 				// Project financials, portfolio and project budgets: the budget_tracking feature.
 				h.Financials.RegisterRoutes(tenant, requireFeature("budget_tracking"))
+			}
+			if h.Time != nil {
+				// Time tracking: the time_tracking feature, and ERP's attendance feature because the
+				// hours go to ERP timesheets. erp-api lets the service key through its own gate, so
+				// the tenant's ERP entitlement is checked here on the user's token.
+				h.Time.RegisterRoutes(tenant, requireFeature("time_tracking"), requireFeature("attendance"))
 			}
 			if d.QA.Tenant != nil {
 				// QA and acceptance; each route is gated on a projects.qa.* permission.

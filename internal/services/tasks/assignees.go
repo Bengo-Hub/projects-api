@@ -37,17 +37,26 @@ func assigneeOrder(q *ent.TaskAssigneeQuery) { q.Order(assigneeOrderBy()...) }
 // recent status changes (see ChangeStatus). Clients never write it.
 const metaStatusMutations = "status_mutations"
 
+// metaTimers is the server-owned key of running timers (timetracking: user id to start time),
+// written only by the timer routes.
+const metaTimers = "timers"
+
+// serverOwnedMeta are the task metadata keys clients never write. The checklist and its
+// idempotency keys change only through the checklist operations (see ApplyChecklist).
+var serverOwnedMeta = []string{metaStatusMutations, metaTimers, MetaChecklist, metaChecklistMutations}
+
 // clientMetadata is the metadata a client update leaves on a task: the client's map, with the
 // server-owned keys kept from current and never taken from the client.
 func clientMetadata(current, in map[string]any) map[string]any {
-	out := make(map[string]any, len(in)+1)
+	out := make(map[string]any, len(in)+len(serverOwnedMeta))
 	for k, v := range in {
-		if k != metaStatusMutations {
+		out[k] = v
+	}
+	for _, k := range serverOwnedMeta {
+		delete(out, k)
+		if v, ok := current[k]; ok {
 			out[k] = v
 		}
-	}
-	if v, ok := current[metaStatusMutations]; ok {
-		out[metaStatusMutations] = v
 	}
 	return out
 }

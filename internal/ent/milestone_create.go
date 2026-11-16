@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
@@ -20,6 +22,7 @@ type MilestoneCreate struct {
 	config
 	mutation *MilestoneMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -255,6 +258,7 @@ func (mc *MilestoneCreate) createSpec() (*Milestone, *sqlgraph.CreateSpec) {
 		_node = &Milestone{config: mc.config}
 		_spec = sqlgraph.NewCreateSpec(milestone.Table, sqlgraph.NewFieldSpec(milestone.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = mc.conflict
 	if id, ok := mc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -311,11 +315,397 @@ func (mc *MilestoneCreate) createSpec() (*Milestone, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Milestone.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.MilestoneUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (mc *MilestoneCreate) OnConflict(opts ...sql.ConflictOption) *MilestoneUpsertOne {
+	mc.conflict = opts
+	return &MilestoneUpsertOne{
+		create: mc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Milestone.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (mc *MilestoneCreate) OnConflictColumns(columns ...string) *MilestoneUpsertOne {
+	mc.conflict = append(mc.conflict, sql.ConflictColumns(columns...))
+	return &MilestoneUpsertOne{
+		create: mc,
+	}
+}
+
+type (
+	// MilestoneUpsertOne is the builder for "upsert"-ing
+	//  one Milestone node.
+	MilestoneUpsertOne struct {
+		create *MilestoneCreate
+	}
+
+	// MilestoneUpsert is the "OnConflict" setter.
+	MilestoneUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *MilestoneUpsert) SetTenantID(v uuid.UUID) *MilestoneUpsert {
+	u.Set(milestone.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *MilestoneUpsert) UpdateTenantID() *MilestoneUpsert {
+	u.SetExcluded(milestone.FieldTenantID)
+	return u
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *MilestoneUpsert) SetProjectID(v uuid.UUID) *MilestoneUpsert {
+	u.Set(milestone.FieldProjectID, v)
+	return u
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *MilestoneUpsert) UpdateProjectID() *MilestoneUpsert {
+	u.SetExcluded(milestone.FieldProjectID)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *MilestoneUpsert) SetName(v string) *MilestoneUpsert {
+	u.Set(milestone.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *MilestoneUpsert) UpdateName() *MilestoneUpsert {
+	u.SetExcluded(milestone.FieldName)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *MilestoneUpsert) SetDescription(v string) *MilestoneUpsert {
+	u.Set(milestone.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *MilestoneUpsert) UpdateDescription() *MilestoneUpsert {
+	u.SetExcluded(milestone.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *MilestoneUpsert) ClearDescription() *MilestoneUpsert {
+	u.SetNull(milestone.FieldDescription)
+	return u
+}
+
+// SetTargetDate sets the "target_date" field.
+func (u *MilestoneUpsert) SetTargetDate(v time.Time) *MilestoneUpsert {
+	u.Set(milestone.FieldTargetDate, v)
+	return u
+}
+
+// UpdateTargetDate sets the "target_date" field to the value that was provided on create.
+func (u *MilestoneUpsert) UpdateTargetDate() *MilestoneUpsert {
+	u.SetExcluded(milestone.FieldTargetDate)
+	return u
+}
+
+// ClearTargetDate clears the value of the "target_date" field.
+func (u *MilestoneUpsert) ClearTargetDate() *MilestoneUpsert {
+	u.SetNull(milestone.FieldTargetDate)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *MilestoneUpsert) SetStatus(v string) *MilestoneUpsert {
+	u.Set(milestone.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *MilestoneUpsert) UpdateStatus() *MilestoneUpsert {
+	u.SetExcluded(milestone.FieldStatus)
+	return u
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (u *MilestoneUpsert) SetCompletedAt(v time.Time) *MilestoneUpsert {
+	u.Set(milestone.FieldCompletedAt, v)
+	return u
+}
+
+// UpdateCompletedAt sets the "completed_at" field to the value that was provided on create.
+func (u *MilestoneUpsert) UpdateCompletedAt() *MilestoneUpsert {
+	u.SetExcluded(milestone.FieldCompletedAt)
+	return u
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (u *MilestoneUpsert) ClearCompletedAt() *MilestoneUpsert {
+	u.SetNull(milestone.FieldCompletedAt)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *MilestoneUpsert) SetUpdatedAt(v time.Time) *MilestoneUpsert {
+	u.Set(milestone.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *MilestoneUpsert) UpdateUpdatedAt() *MilestoneUpsert {
+	u.SetExcluded(milestone.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Milestone.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(milestone.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *MilestoneUpsertOne) UpdateNewValues() *MilestoneUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(milestone.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(milestone.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Milestone.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *MilestoneUpsertOne) Ignore() *MilestoneUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *MilestoneUpsertOne) DoNothing() *MilestoneUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the MilestoneCreate.OnConflict
+// documentation for more info.
+func (u *MilestoneUpsertOne) Update(set func(*MilestoneUpsert)) *MilestoneUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&MilestoneUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *MilestoneUpsertOne) SetTenantID(v uuid.UUID) *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *MilestoneUpsertOne) UpdateTenantID() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *MilestoneUpsertOne) SetProjectID(v uuid.UUID) *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *MilestoneUpsertOne) UpdateProjectID() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *MilestoneUpsertOne) SetName(v string) *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *MilestoneUpsertOne) UpdateName() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *MilestoneUpsertOne) SetDescription(v string) *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *MilestoneUpsertOne) UpdateDescription() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *MilestoneUpsertOne) ClearDescription() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetTargetDate sets the "target_date" field.
+func (u *MilestoneUpsertOne) SetTargetDate(v time.Time) *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetTargetDate(v)
+	})
+}
+
+// UpdateTargetDate sets the "target_date" field to the value that was provided on create.
+func (u *MilestoneUpsertOne) UpdateTargetDate() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateTargetDate()
+	})
+}
+
+// ClearTargetDate clears the value of the "target_date" field.
+func (u *MilestoneUpsertOne) ClearTargetDate() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.ClearTargetDate()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *MilestoneUpsertOne) SetStatus(v string) *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *MilestoneUpsertOne) UpdateStatus() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (u *MilestoneUpsertOne) SetCompletedAt(v time.Time) *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetCompletedAt(v)
+	})
+}
+
+// UpdateCompletedAt sets the "completed_at" field to the value that was provided on create.
+func (u *MilestoneUpsertOne) UpdateCompletedAt() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateCompletedAt()
+	})
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (u *MilestoneUpsertOne) ClearCompletedAt() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.ClearCompletedAt()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *MilestoneUpsertOne) SetUpdatedAt(v time.Time) *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *MilestoneUpsertOne) UpdateUpdatedAt() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *MilestoneUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for MilestoneCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *MilestoneUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *MilestoneUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: MilestoneUpsertOne.ID is not supported by MySQL driver. Use MilestoneUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *MilestoneUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // MilestoneCreateBulk is the builder for creating many Milestone entities in bulk.
 type MilestoneCreateBulk struct {
 	config
 	err      error
 	builders []*MilestoneCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Milestone entities in the database.
@@ -345,6 +735,7 @@ func (mcb *MilestoneCreateBulk) Save(ctx context.Context) ([]*Milestone, error) 
 					_, err = mutators[i+1].Mutate(root, mcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = mcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, mcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -391,6 +782,256 @@ func (mcb *MilestoneCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (mcb *MilestoneCreateBulk) ExecX(ctx context.Context) {
 	if err := mcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Milestone.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.MilestoneUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (mcb *MilestoneCreateBulk) OnConflict(opts ...sql.ConflictOption) *MilestoneUpsertBulk {
+	mcb.conflict = opts
+	return &MilestoneUpsertBulk{
+		create: mcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Milestone.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (mcb *MilestoneCreateBulk) OnConflictColumns(columns ...string) *MilestoneUpsertBulk {
+	mcb.conflict = append(mcb.conflict, sql.ConflictColumns(columns...))
+	return &MilestoneUpsertBulk{
+		create: mcb,
+	}
+}
+
+// MilestoneUpsertBulk is the builder for "upsert"-ing
+// a bulk of Milestone nodes.
+type MilestoneUpsertBulk struct {
+	create *MilestoneCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Milestone.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(milestone.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *MilestoneUpsertBulk) UpdateNewValues() *MilestoneUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(milestone.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(milestone.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Milestone.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *MilestoneUpsertBulk) Ignore() *MilestoneUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *MilestoneUpsertBulk) DoNothing() *MilestoneUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the MilestoneCreateBulk.OnConflict
+// documentation for more info.
+func (u *MilestoneUpsertBulk) Update(set func(*MilestoneUpsert)) *MilestoneUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&MilestoneUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *MilestoneUpsertBulk) SetTenantID(v uuid.UUID) *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *MilestoneUpsertBulk) UpdateTenantID() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *MilestoneUpsertBulk) SetProjectID(v uuid.UUID) *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *MilestoneUpsertBulk) UpdateProjectID() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *MilestoneUpsertBulk) SetName(v string) *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *MilestoneUpsertBulk) UpdateName() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *MilestoneUpsertBulk) SetDescription(v string) *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *MilestoneUpsertBulk) UpdateDescription() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *MilestoneUpsertBulk) ClearDescription() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetTargetDate sets the "target_date" field.
+func (u *MilestoneUpsertBulk) SetTargetDate(v time.Time) *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetTargetDate(v)
+	})
+}
+
+// UpdateTargetDate sets the "target_date" field to the value that was provided on create.
+func (u *MilestoneUpsertBulk) UpdateTargetDate() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateTargetDate()
+	})
+}
+
+// ClearTargetDate clears the value of the "target_date" field.
+func (u *MilestoneUpsertBulk) ClearTargetDate() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.ClearTargetDate()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *MilestoneUpsertBulk) SetStatus(v string) *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *MilestoneUpsertBulk) UpdateStatus() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetCompletedAt sets the "completed_at" field.
+func (u *MilestoneUpsertBulk) SetCompletedAt(v time.Time) *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetCompletedAt(v)
+	})
+}
+
+// UpdateCompletedAt sets the "completed_at" field to the value that was provided on create.
+func (u *MilestoneUpsertBulk) UpdateCompletedAt() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateCompletedAt()
+	})
+}
+
+// ClearCompletedAt clears the value of the "completed_at" field.
+func (u *MilestoneUpsertBulk) ClearCompletedAt() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.ClearCompletedAt()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *MilestoneUpsertBulk) SetUpdatedAt(v time.Time) *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *MilestoneUpsertBulk) UpdateUpdatedAt() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *MilestoneUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the MilestoneCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for MilestoneCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *MilestoneUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

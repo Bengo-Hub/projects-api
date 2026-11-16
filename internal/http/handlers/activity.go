@@ -4,74 +4,58 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	httpware "github.com/Bengo-Hub/httpware"
-	"github.com/bengobox/projects-service/internal/ent"
-	entactivity "github.com/bengobox/projects-service/internal/ent/activity"
+	"github.com/bengobox/projects-service/internal/http/authz"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
+	"github.com/bengobox/projects-service/internal/services/activity"
 )
 
-// ActivityHandler handles activity read-only endpoints.
+// ActivityHandler serves the project and task activity feeds.
 type ActivityHandler struct {
-	log    *zap.Logger
-	client *ent.Client
+	log *zap.Logger
+	svc *activity.Service
 }
 
 // NewActivityHandler creates a new activity handler.
-func NewActivityHandler(log *zap.Logger, client *ent.Client) *ActivityHandler {
-	return &ActivityHandler{log: log.Named("activity.handler"), client: client}
+func NewActivityHandler(log *zap.Logger, svc *activity.Service) *ActivityHandler {
+	return &ActivityHandler{log: log.Named("activity.handler"), svc: svc}
 }
 
-// RegisterRoutes registers activity routes.
+// RegisterRoutes registers activity routes. The feed is part of seeing the project.
 func (h *ActivityHandler) RegisterRoutes(r chi.Router) {
-	r.Get("/projects/{projectID}/activities", h.ListByProject)
-	r.Get("/projects/{projectID}/tasks/{taskID}/activities", h.ListByTask)
+	view := authz.Require(rbac.PermProjectsView)
+	r.With(view).Get("/projects/{projectID}/activities", h.ListByProject)
+	r.With(view).Get("/projects/{projectID}/tasks/{taskID}/activities", h.ListByTask)
 }
 
+// ListByProject returns the project's latest 100 entries, newest first.
 func (h *ActivityHandler) ListByProject(w http.ResponseWriter, r *http.Request) {
-	tenantIDStr := httpware.GetTenantID(r.Context())
-	tenantID, err := uuid.Parse(tenantIDStr)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid tenant id")
+	tenantID, projectID, ok := projectScope(w, r)
+	if !ok {
 		return
 	}
-	projectID, err := uuid.Parse(chi.URLParam(r, "projectID"))
+	items, err := h.svc.ListByProject(r.Context(), tenantID, projectID)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid project id")
-		return
-	}
-	items, err := h.client.Activity.Query().
-		Where(entactivity.TenantID(tenantID), entactivity.ProjectID(projectID)).
-		Order(ent.Desc(entactivity.FieldOccurredAt)).
-		Limit(100).
-		All(r.Context())
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, h.log, "project activity failed", err)
 		return
 	}
 	respondJSON(w, http.StatusOK, map[string]any{"data": items})
 }
 
+// ListByTask returns the task's latest 100 entries, newest first.
 func (h *ActivityHandler) ListByTask(w http.ResponseWriter, r *http.Request) {
-	tenantIDStr := httpware.GetTenantID(r.Context())
-	tenantID, err := uuid.Parse(tenantIDStr)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid tenant id")
+	tenantID, projectID, ok := projectScope(w, r)
+	if !ok {
 		return
 	}
-	taskID, err := uuid.Parse(chi.URLParam(r, "taskID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid task id")
+	taskID, ok := taskParam(w, r)
+	if !ok {
 		return
 	}
-	items, err := h.client.Activity.Query().
-		Where(entactivity.TenantID(tenantID), entactivity.TaskID(taskID)).
-		Order(ent.Desc(entactivity.FieldOccurredAt)).
-		Limit(100).
-		All(r.Context())
+	items, err := h.svc.ListByTask(r.Context(), tenantID, projectID, taskID)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, h.log, "task activity failed", err)
 		return
 	}
 	respondJSON(w, http.StatusOK, map[string]any{"data": items})

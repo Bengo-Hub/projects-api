@@ -5,12 +5,13 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	authclient "github.com/Bengo-Hub/shared-auth-client"
-	httpware "github.com/Bengo-Hub/httpware"
+	"github.com/bengobox/projects-service/internal/http/authz"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/services/comments"
 )
 
@@ -30,86 +31,127 @@ func NewCommentHandler(log *zap.Logger, svc *comments.Service) *CommentHandler {
 // /projects/{projectID} path, and chi prefers it over the /projects mount, so getting a project,
 // its summary and /projects/metrics all answered 404.
 func (h *CommentHandler) RegisterRoutes(r chi.Router) {
-	r.Get("/projects/{projectID}/comments", h.ListByProject)
-	r.Post("/projects/{projectID}/comments", h.CreateProjectComment)
-	r.Get("/projects/{projectID}/tasks/{taskID}/comments", h.ListByTask)
-	r.Post("/projects/{projectID}/tasks/{taskID}/comments", h.CreateTaskComment)
-	r.Put("/projects/{projectID}/comments/{commentID}", h.Update)
-	r.Delete("/projects/{projectID}/comments/{commentID}", h.Delete)
+	view := authz.Require(rbac.PermCommentsView)
+	add := authz.Require(rbac.PermCommentsAdd)
+	r.With(view).Get("/projects/{projectID}/comments", h.ListByProject)
+	r.With(add).Post("/projects/{projectID}/comments", h.CreateProjectComment)
+	r.With(view).Get("/projects/{projectID}/tasks/{taskID}/comments", h.ListByTask)
+	r.With(add).Post("/projects/{projectID}/tasks/{taskID}/comments", h.CreateTaskComment)
+	r.With(authz.Require(rbac.PermCommentsManage, rbac.PermCommentsChangeOwn)).Put("/projects/{projectID}/comments/{commentID}", h.Update)
+	r.With(authz.Require(rbac.PermCommentsManage, rbac.PermCommentsDeleteOwn)).Delete("/projects/{projectID}/comments/{commentID}", h.Delete)
 }
 
+func (h *CommentHandler) writeErr(w http.ResponseWriter, err error, msg string) {
+	var verr comments.ValidationError
+	switch {
+	case errors.Is(err, comments.ErrNotFound):
+		respondError(w, http.StatusNotFound, "not found")
+	case errors.Is(err, comments.ErrNotOwner):
+		authz.Forbidden(w, rbac.PermCommentsManage)
+	case errors.As(err, &verr):
+		respondError(w, http.StatusBadRequest, verr.Error())
+	default:
+		serverError(w, h.log, msg, err)
+	}
+}
+
+// ListByProject returns one page of the project's comments (?limit, ?page or ?offset).
 func (h *CommentHandler) ListByProject(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := commentProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	items, err := h.svc.ListCommentsByProject(r.Context(), tenantID, projectID)
+	p := pagination.Parse(r)
+	items, total, err := h.svc.ListCommentsByProject(r.Context(), tenantID, projectID, p.Limit, p.Offset)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, h.log, "list project comments failed", err)
 		return
 	}
-	respondJSON(w, http.StatusOK, map[string]any{"data": items})
+	respondJSON(w, http.StatusOK, pagination.NewResponse(items, total, p))
 }
 
 func (h *CommentHandler) CreateProjectComment(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := commentProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	input := extractCommentInput(r)
+	input, ok := decodeComment(w, r)
+	if !ok {
+		return
+	}
 	c, err := h.svc.CreateProjectComment(r.Context(), tenantID, projectID, input)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "create project comment failed")
 		return
 	}
 	respondJSON(w, http.StatusCreated, c)
 }
 
+// ListByTask returns one page of the task's comments, oldest first (?limit, ?page or ?offset).
 func (h *CommentHandler) ListByTask(w http.ResponseWriter, r *http.Request) {
-	tenantID, ok := parseTenant(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	taskID, err := uuid.Parse(chi.URLParam(r, "taskID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid task id")
+	taskID, ok := taskParam(w, r)
+	if !ok {
 		return
 	}
-	items, err := h.svc.ListCommentsByTask(r.Context(), tenantID, taskID)
+	p := pagination.Parse(r)
+	items, total, err := h.svc.ListCommentsByTask(r.Context(), tenantID, projectID, taskID, p.Limit, p.Offset)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, h.log, "list task comments failed", err)
 		return
 	}
-	respondJSON(w, http.StatusOK, map[string]any{"data": items})
+	respondJSON(w, http.StatusOK, pagination.NewResponse(items, total, p))
 }
 
 func (h *CommentHandler) CreateTaskComment(w http.ResponseWriter, r *http.Request) {
-	tenantID, ok := parseTenant(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	taskID, err := uuid.Parse(chi.URLParam(r, "taskID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid task id")
+	taskID, ok := taskParam(w, r)
+	if !ok {
 		return
 	}
-	input := extractCommentInput(r)
-	c, err := h.svc.CreateTaskComment(r.Context(), tenantID, taskID, input)
+	input, ok := decodeComment(w, r)
+	if !ok {
+		return
+	}
+	c, err := h.svc.CreateTaskComment(r.Context(), tenantID, projectID, taskID, input)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "create task comment failed")
 		return
 	}
 	respondJSON(w, http.StatusCreated, c)
 }
 
-func (h *CommentHandler) Update(w http.ResponseWriter, r *http.Request) {
-	tenantID, ok := parseTenant(w, r)
-	if !ok {
-		return
+// ownerOnly limits a comment change to the caller's own comment unless they moderate comments.
+func ownerOnly(r *http.Request) *uuid.UUID {
+	if accessOf(r).Has(rbac.PermCommentsManage) {
+		return nil
 	}
+	id := actorID(r)
+	return &id
+}
+
+func commentParam(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
 	id, err := uuid.Parse(chi.URLParam(r, "commentID"))
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "invalid comment id")
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
+func (h *CommentHandler) Update(w http.ResponseWriter, r *http.Request) {
+	tenantID, projectID, ok := projectScope(w, r)
+	if !ok {
+		return
+	}
+	id, ok := commentParam(w, r)
+	if !ok {
 		return
 	}
 	var input comments.UpdateCommentInput
@@ -117,69 +159,37 @@ func (h *CommentHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	c, err := h.svc.UpdateComment(r.Context(), tenantID, id, input)
-	if errors.Is(err, comments.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "comment not found")
-		return
-	}
+	c, err := h.svc.UpdateComment(r.Context(), tenantID, projectID, id, input, ownerOnly(r))
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "update comment failed")
 		return
 	}
 	respondJSON(w, http.StatusOK, c)
 }
 
 func (h *CommentHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	tenantID, ok := parseTenant(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	id, err := uuid.Parse(chi.URLParam(r, "commentID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid comment id")
+	id, ok := commentParam(w, r)
+	if !ok {
 		return
 	}
-	if err := h.svc.DeleteComment(r.Context(), tenantID, id); errors.Is(err, comments.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "comment not found")
-		return
-	} else if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+	if err := h.svc.DeleteComment(r.Context(), tenantID, projectID, id, ownerOnly(r)); err != nil {
+		h.writeErr(w, err, "delete comment failed")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// extractCommentInput decodes the request body and fills user_id from claims.
-func extractCommentInput(r *http.Request) comments.CreateCommentInput {
+// decodeComment reads the body; the author is always the signed-in caller.
+func decodeComment(w http.ResponseWriter, r *http.Request) (comments.CreateCommentInput, bool) {
 	var input comments.CreateCommentInput
-	_ = json.NewDecoder(r.Body).Decode(&input)
-	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
-		if uid, err := uuid.Parse(claims.Subject); err == nil {
-			input.UserID = uid
-		}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request body")
+		return input, false
 	}
-	return input
-}
-
-func commentProjectParams(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
-	tenantID, ok := parseTenant(w, r)
-	if !ok {
-		return uuid.Nil, uuid.Nil, false
-	}
-	projectID, err := uuid.Parse(chi.URLParam(r, "projectID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid project id")
-		return uuid.Nil, uuid.Nil, false
-	}
-	return tenantID, projectID, true
-}
-
-func parseTenant(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
-	tenantIDStr := httpware.GetTenantID(r.Context())
-	tenantID, err := uuid.Parse(tenantIDStr)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid tenant id")
-		return uuid.Nil, false
-	}
-	return tenantID, true
+	input.UserID = actorID(r)
+	return input, true
 }

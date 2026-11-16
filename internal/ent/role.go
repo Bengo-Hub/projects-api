@@ -3,7 +3,6 @@
 package ent
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -11,21 +10,24 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/bengobox/projects-service/internal/ent/role"
+	"github.com/google/uuid"
 )
 
 // Role is the model entity for the Role schema.
 type Role struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID string `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
+	// TenantID holds the value of the "tenant_id" field.
+	TenantID *uuid.UUID `json:"tenant_id,omitempty"`
+	// RoleCode holds the value of the "role_code" field.
+	RoleCode string `json:"role_code,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
-	// IsSystem holds the value of the "is_system" field.
-	IsSystem bool `json:"is_system,omitempty"`
-	// Permissions holds the value of the "permissions" field.
-	Permissions []string `json:"permissions,omitempty"`
+	// IsSystemRole holds the value of the "is_system_role" field.
+	IsSystemRole bool `json:"is_system_role,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -38,28 +40,39 @@ type Role struct {
 
 // RoleEdges holds the relations/edges for other nodes in the graph.
 type RoleEdges struct {
-	// UserRoles holds the value of the user_roles edge.
-	UserRoles []*UserRole `json:"user_roles,omitempty"`
+	// Permissions holds the value of the permissions edge.
+	Permissions []*Permission `json:"permissions,omitempty"`
+	// UserAssignments holds the value of the user_assignments edge.
+	UserAssignments []*UserRoleAssignment `json:"user_assignments,omitempty"`
 	// RolePermissions holds the value of the role_permissions edge.
 	RolePermissions []*RolePermission `json:"role_permissions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
-// UserRolesOrErr returns the UserRoles value or an error if the edge
+// PermissionsOrErr returns the Permissions value or an error if the edge
 // was not loaded in eager-loading.
-func (e RoleEdges) UserRolesOrErr() ([]*UserRole, error) {
+func (e RoleEdges) PermissionsOrErr() ([]*Permission, error) {
 	if e.loadedTypes[0] {
-		return e.UserRoles, nil
+		return e.Permissions, nil
 	}
-	return nil, &NotLoadedError{edge: "user_roles"}
+	return nil, &NotLoadedError{edge: "permissions"}
+}
+
+// UserAssignmentsOrErr returns the UserAssignments value or an error if the edge
+// was not loaded in eager-loading.
+func (e RoleEdges) UserAssignmentsOrErr() ([]*UserRoleAssignment, error) {
+	if e.loadedTypes[1] {
+		return e.UserAssignments, nil
+	}
+	return nil, &NotLoadedError{edge: "user_assignments"}
 }
 
 // RolePermissionsOrErr returns the RolePermissions value or an error if the edge
 // was not loaded in eager-loading.
 func (e RoleEdges) RolePermissionsOrErr() ([]*RolePermission, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.RolePermissions, nil
 	}
 	return nil, &NotLoadedError{edge: "role_permissions"}
@@ -70,14 +83,16 @@ func (*Role) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case role.FieldPermissions:
-			values[i] = new([]byte)
-		case role.FieldIsSystem:
+		case role.FieldTenantID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case role.FieldIsSystemRole:
 			values[i] = new(sql.NullBool)
-		case role.FieldID, role.FieldName, role.FieldDescription:
+		case role.FieldRoleCode, role.FieldName, role.FieldDescription:
 			values[i] = new(sql.NullString)
 		case role.FieldCreatedAt, role.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case role.FieldID:
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -94,10 +109,23 @@ func (r *Role) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case role.FieldID:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				r.ID = *value
+			}
+		case role.FieldTenantID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
 			} else if value.Valid {
-				r.ID = value.String
+				r.TenantID = new(uuid.UUID)
+				*r.TenantID = *value.S.(*uuid.UUID)
+			}
+		case role.FieldRoleCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field role_code", values[i])
+			} else if value.Valid {
+				r.RoleCode = value.String
 			}
 		case role.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -111,19 +139,11 @@ func (r *Role) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				r.Description = value.String
 			}
-		case role.FieldIsSystem:
+		case role.FieldIsSystemRole:
 			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field is_system", values[i])
+				return fmt.Errorf("unexpected type %T for field is_system_role", values[i])
 			} else if value.Valid {
-				r.IsSystem = value.Bool
-			}
-		case role.FieldPermissions:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field permissions", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &r.Permissions); err != nil {
-					return fmt.Errorf("unmarshal field permissions: %w", err)
-				}
+				r.IsSystemRole = value.Bool
 			}
 		case role.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -150,9 +170,14 @@ func (r *Role) Value(name string) (ent.Value, error) {
 	return r.selectValues.Get(name)
 }
 
-// QueryUserRoles queries the "user_roles" edge of the Role entity.
-func (r *Role) QueryUserRoles() *UserRoleQuery {
-	return NewRoleClient(r.config).QueryUserRoles(r)
+// QueryPermissions queries the "permissions" edge of the Role entity.
+func (r *Role) QueryPermissions() *PermissionQuery {
+	return NewRoleClient(r.config).QueryPermissions(r)
+}
+
+// QueryUserAssignments queries the "user_assignments" edge of the Role entity.
+func (r *Role) QueryUserAssignments() *UserRoleAssignmentQuery {
+	return NewRoleClient(r.config).QueryUserAssignments(r)
 }
 
 // QueryRolePermissions queries the "role_permissions" edge of the Role entity.
@@ -183,17 +208,22 @@ func (r *Role) String() string {
 	var builder strings.Builder
 	builder.WriteString("Role(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", r.ID))
+	if v := r.TenantID; v != nil {
+		builder.WriteString("tenant_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("role_code=")
+	builder.WriteString(r.RoleCode)
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(r.Name)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(r.Description)
 	builder.WriteString(", ")
-	builder.WriteString("is_system=")
-	builder.WriteString(fmt.Sprintf("%v", r.IsSystem))
-	builder.WriteString(", ")
-	builder.WriteString("permissions=")
-	builder.WriteString(fmt.Sprintf("%v", r.Permissions))
+	builder.WriteString("is_system_role=")
+	builder.WriteString(fmt.Sprintf("%v", r.IsSystemRole))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(r.CreatedAt.Format(time.ANSIC))

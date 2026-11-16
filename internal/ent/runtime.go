@@ -8,6 +8,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
 	"github.com/bengobox/projects-service/internal/ent/comment"
+	"github.com/bengobox/projects-service/internal/ent/documentsequence"
 	"github.com/bengobox/projects-service/internal/ent/fieldkey"
 	"github.com/bengobox/projects-service/internal/ent/fieldkeyaudit"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
@@ -15,6 +16,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/permission"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/ent/projectsuser"
 	"github.com/bengobox/projects-service/internal/ent/qacriterion"
 	"github.com/bengobox/projects-service/internal/ent/qadefect"
 	"github.com/bengobox/projects-service/internal/ent/qainvite"
@@ -22,7 +24,6 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/qasession"
 	"github.com/bengobox/projects-service/internal/ent/qatemplate"
 	"github.com/bengobox/projects-service/internal/ent/role"
-	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/schema"
 	"github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
@@ -32,7 +33,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
-	"github.com/bengobox/projects-service/internal/ent/userrole"
+	"github.com/bengobox/projects-service/internal/ent/userroleassignment"
 	"github.com/google/uuid"
 )
 
@@ -92,6 +93,26 @@ func init() {
 	commentDescID := commentFields[0].Descriptor()
 	// comment.DefaultID holds the default value on creation for the id field.
 	comment.DefaultID = commentDescID.Default.(func() uuid.UUID)
+	documentsequenceFields := schema.DocumentSequence{}.Fields()
+	_ = documentsequenceFields
+	// documentsequenceDescKind is the schema descriptor for kind field.
+	documentsequenceDescKind := documentsequenceFields[2].Descriptor()
+	// documentsequence.KindValidator is a validator for the "kind" field. It is called by the builders before save.
+	documentsequence.KindValidator = documentsequenceDescKind.Validators[0].(func(string) error)
+	// documentsequenceDescLastValue is the schema descriptor for last_value field.
+	documentsequenceDescLastValue := documentsequenceFields[3].Descriptor()
+	// documentsequence.DefaultLastValue holds the default value on creation for the last_value field.
+	documentsequence.DefaultLastValue = documentsequenceDescLastValue.Default.(int64)
+	// documentsequenceDescUpdatedAt is the schema descriptor for updated_at field.
+	documentsequenceDescUpdatedAt := documentsequenceFields[4].Descriptor()
+	// documentsequence.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	documentsequence.DefaultUpdatedAt = documentsequenceDescUpdatedAt.Default.(func() time.Time)
+	// documentsequence.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	documentsequence.UpdateDefaultUpdatedAt = documentsequenceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// documentsequenceDescID is the schema descriptor for id field.
+	documentsequenceDescID := documentsequenceFields[0].Descriptor()
+	// documentsequence.DefaultID holds the default value on creation for the id field.
+	documentsequence.DefaultID = documentsequenceDescID.Default.(func() uuid.UUID)
 	fieldkeyFields := schema.FieldKey{}.Fields()
 	_ = fieldkeyFields
 	// fieldkeyDescKeyEnc is the schema descriptor for key_enc field.
@@ -213,7 +234,7 @@ func init() {
 	// outboxevent.DefaultAttempts holds the default value on creation for the attempts field.
 	outboxevent.DefaultAttempts = outboxeventDescAttempts.Default.(int)
 	// outboxeventDescCreatedAt is the schema descriptor for created_at field.
-	outboxeventDescCreatedAt := outboxeventFields[9].Descriptor()
+	outboxeventDescCreatedAt := outboxeventFields[11].Descriptor()
 	// outboxevent.DefaultCreatedAt holds the default value on creation for the created_at field.
 	outboxevent.DefaultCreatedAt = outboxeventDescCreatedAt.Default.(func() time.Time)
 	// outboxeventDescID is the schema descriptor for id field.
@@ -222,6 +243,10 @@ func init() {
 	outboxevent.DefaultID = outboxeventDescID.Default.(func() uuid.UUID)
 	permissionFields := schema.Permission{}.Fields()
 	_ = permissionFields
+	// permissionDescPermissionCode is the schema descriptor for permission_code field.
+	permissionDescPermissionCode := permissionFields[1].Descriptor()
+	// permission.PermissionCodeValidator is a validator for the "permission_code" field. It is called by the builders before save.
+	permission.PermissionCodeValidator = permissionDescPermissionCode.Validators[0].(func(string) error)
 	// permissionDescName is the schema descriptor for name field.
 	permissionDescName := permissionFields[2].Descriptor()
 	// permission.NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -280,6 +305,30 @@ func init() {
 	projectmemberDescID := projectmemberFields[0].Descriptor()
 	// projectmember.DefaultID holds the default value on creation for the id field.
 	projectmember.DefaultID = projectmemberDescID.Default.(func() uuid.UUID)
+	projectsuserFields := schema.ProjectsUser{}.Fields()
+	_ = projectsuserFields
+	// projectsuserDescStatus is the schema descriptor for status field.
+	projectsuserDescStatus := projectsuserFields[5].Descriptor()
+	// projectsuser.DefaultStatus holds the default value on creation for the status field.
+	projectsuser.DefaultStatus = projectsuserDescStatus.Default.(string)
+	// projectsuserDescSyncStatus is the schema descriptor for sync_status field.
+	projectsuserDescSyncStatus := projectsuserFields[6].Descriptor()
+	// projectsuser.DefaultSyncStatus holds the default value on creation for the sync_status field.
+	projectsuser.DefaultSyncStatus = projectsuserDescSyncStatus.Default.(string)
+	// projectsuserDescCreatedAt is the schema descriptor for created_at field.
+	projectsuserDescCreatedAt := projectsuserFields[8].Descriptor()
+	// projectsuser.DefaultCreatedAt holds the default value on creation for the created_at field.
+	projectsuser.DefaultCreatedAt = projectsuserDescCreatedAt.Default.(func() time.Time)
+	// projectsuserDescUpdatedAt is the schema descriptor for updated_at field.
+	projectsuserDescUpdatedAt := projectsuserFields[9].Descriptor()
+	// projectsuser.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	projectsuser.DefaultUpdatedAt = projectsuserDescUpdatedAt.Default.(func() time.Time)
+	// projectsuser.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	projectsuser.UpdateDefaultUpdatedAt = projectsuserDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// projectsuserDescID is the schema descriptor for id field.
+	projectsuserDescID := projectsuserFields[0].Descriptor()
+	// projectsuser.DefaultID holds the default value on creation for the id field.
+	projectsuser.DefaultID = projectsuserDescID.Default.(func() uuid.UUID)
 	qacriterionFields := schema.QACriterion{}.Fields()
 	_ = qacriterionFields
 	// qacriterionDescSubjectKind is the schema descriptor for subject_kind field.
@@ -582,34 +631,32 @@ func init() {
 	qatemplate.DefaultID = qatemplateDescID.Default.(func() uuid.UUID)
 	roleFields := schema.Role{}.Fields()
 	_ = roleFields
+	// roleDescRoleCode is the schema descriptor for role_code field.
+	roleDescRoleCode := roleFields[2].Descriptor()
+	// role.RoleCodeValidator is a validator for the "role_code" field. It is called by the builders before save.
+	role.RoleCodeValidator = roleDescRoleCode.Validators[0].(func(string) error)
 	// roleDescName is the schema descriptor for name field.
-	roleDescName := roleFields[1].Descriptor()
+	roleDescName := roleFields[3].Descriptor()
 	// role.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	role.NameValidator = roleDescName.Validators[0].(func(string) error)
-	// roleDescIsSystem is the schema descriptor for is_system field.
-	roleDescIsSystem := roleFields[3].Descriptor()
-	// role.DefaultIsSystem holds the default value on creation for the is_system field.
-	role.DefaultIsSystem = roleDescIsSystem.Default.(bool)
+	// roleDescIsSystemRole is the schema descriptor for is_system_role field.
+	roleDescIsSystemRole := roleFields[5].Descriptor()
+	// role.DefaultIsSystemRole holds the default value on creation for the is_system_role field.
+	role.DefaultIsSystemRole = roleDescIsSystemRole.Default.(bool)
 	// roleDescCreatedAt is the schema descriptor for created_at field.
-	roleDescCreatedAt := roleFields[5].Descriptor()
+	roleDescCreatedAt := roleFields[6].Descriptor()
 	// role.DefaultCreatedAt holds the default value on creation for the created_at field.
 	role.DefaultCreatedAt = roleDescCreatedAt.Default.(func() time.Time)
 	// roleDescUpdatedAt is the schema descriptor for updated_at field.
-	roleDescUpdatedAt := roleFields[6].Descriptor()
+	roleDescUpdatedAt := roleFields[7].Descriptor()
 	// role.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	role.DefaultUpdatedAt = roleDescUpdatedAt.Default.(func() time.Time)
 	// role.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	role.UpdateDefaultUpdatedAt = roleDescUpdatedAt.UpdateDefault.(func() time.Time)
-	rolepermissionFields := schema.RolePermission{}.Fields()
-	_ = rolepermissionFields
-	// rolepermissionDescAssignedAt is the schema descriptor for assigned_at field.
-	rolepermissionDescAssignedAt := rolepermissionFields[3].Descriptor()
-	// rolepermission.DefaultAssignedAt holds the default value on creation for the assigned_at field.
-	rolepermission.DefaultAssignedAt = rolepermissionDescAssignedAt.Default.(func() time.Time)
-	// rolepermissionDescID is the schema descriptor for id field.
-	rolepermissionDescID := rolepermissionFields[0].Descriptor()
-	// rolepermission.DefaultID holds the default value on creation for the id field.
-	rolepermission.DefaultID = rolepermissionDescID.Default.(func() uuid.UUID)
+	// roleDescID is the schema descriptor for id field.
+	roleDescID := roleFields[0].Descriptor()
+	// role.DefaultID holds the default value on creation for the id field.
+	role.DefaultID = roleDescID.Default.(func() uuid.UUID)
 	taskFields := schema.Task{}.Fields()
 	_ = taskFields
 	// taskDescTitle is the schema descriptor for title field.
@@ -658,6 +705,10 @@ func init() {
 	taskdependency.DefaultID = taskdependencyDescID.Default.(func() uuid.UUID)
 	tenderFields := schema.Tender{}.Fields()
 	_ = tenderFields
+	// tenderDescNumber is the schema descriptor for number field.
+	tenderDescNumber := tenderFields[2].Descriptor()
+	// tender.NumberValidator is a validator for the "number" field. It is called by the builders before save.
+	tender.NumberValidator = tenderDescNumber.Validators[0].(func(string) error)
 	// tenderDescTitle is the schema descriptor for title field.
 	tenderDescTitle := tenderFields[3].Descriptor()
 	// tender.TitleValidator is a validator for the "title" field. It is called by the builders before save.
@@ -762,14 +813,14 @@ func init() {
 	tendermeetingDescID := tendermeetingFields[0].Descriptor()
 	// tendermeeting.DefaultID holds the default value on creation for the id field.
 	tendermeeting.DefaultID = tendermeetingDescID.Default.(func() uuid.UUID)
-	userroleFields := schema.UserRole{}.Fields()
-	_ = userroleFields
-	// userroleDescAssignedAt is the schema descriptor for assigned_at field.
-	userroleDescAssignedAt := userroleFields[4].Descriptor()
-	// userrole.DefaultAssignedAt holds the default value on creation for the assigned_at field.
-	userrole.DefaultAssignedAt = userroleDescAssignedAt.Default.(func() time.Time)
-	// userroleDescID is the schema descriptor for id field.
-	userroleDescID := userroleFields[0].Descriptor()
-	// userrole.DefaultID holds the default value on creation for the id field.
-	userrole.DefaultID = userroleDescID.Default.(func() uuid.UUID)
+	userroleassignmentFields := schema.UserRoleAssignment{}.Fields()
+	_ = userroleassignmentFields
+	// userroleassignmentDescAssignedAt is the schema descriptor for assigned_at field.
+	userroleassignmentDescAssignedAt := userroleassignmentFields[5].Descriptor()
+	// userroleassignment.DefaultAssignedAt holds the default value on creation for the assigned_at field.
+	userroleassignment.DefaultAssignedAt = userroleassignmentDescAssignedAt.Default.(func() time.Time)
+	// userroleassignmentDescID is the schema descriptor for id field.
+	userroleassignmentDescID := userroleassignmentFields[0].Descriptor()
+	// userroleassignment.DefaultID holds the default value on creation for the id field.
+	userroleassignment.DefaultID = userroleassignmentDescID.Default.(func() uuid.UUID)
 }

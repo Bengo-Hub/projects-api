@@ -66,13 +66,16 @@ func (Task) Fields() []ent.Field {
 }
 
 // Indexes of the Task: project task lists and status counts, and the tenant-wide monthly
-// trend windows over created_at, completed_at and due_date.
+// trend windows over created_at, completed_at and due_date, "my tasks" by assignee and the subtask
+// tree by parent.
 func (Task) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "project_id", "status"),
 		index.Fields("tenant_id", "created_at"),
 		index.Fields("tenant_id", "completed_at"),
 		index.Fields("tenant_id", "due_date"),
+		index.Fields("tenant_id", "assignee_id"),
+		index.Fields("tenant_id", "parent_id"),
 	}
 }
 

@@ -3,11 +3,8 @@
 package rolepermission
 
 import (
-	"time"
-
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/google/uuid"
 )
 
 const (
@@ -15,18 +12,14 @@ const (
 	Label = "role_permission"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldRoleCode holds the string denoting the role_code field in the database.
-	FieldRoleCode = "role_code"
+	// FieldRoleID holds the string denoting the role_id field in the database.
+	FieldRoleID = "role_id"
 	// FieldPermissionID holds the string denoting the permission_id field in the database.
 	FieldPermissionID = "permission_id"
-	// FieldAssignedAt holds the string denoting the assigned_at field in the database.
-	FieldAssignedAt = "assigned_at"
 	// EdgeRole holds the string denoting the role edge name in mutations.
 	EdgeRole = "role"
 	// EdgePermission holds the string denoting the permission edge name in mutations.
 	EdgePermission = "permission"
-	// RoleFieldID holds the string denoting the ID field of the Role.
-	RoleFieldID = "code"
 	// Table holds the table name of the rolepermission in the database.
 	Table = "role_permissions"
 	// RoleTable is the table that holds the role relation/edge.
@@ -35,7 +28,7 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "role" package.
 	RoleInverseTable = "roles"
 	// RoleColumn is the table column denoting the role relation/edge.
-	RoleColumn = "role_code"
+	RoleColumn = "role_id"
 	// PermissionTable is the table that holds the permission relation/edge.
 	PermissionTable = "role_permissions"
 	// PermissionInverseTable is the table name for the Permission entity.
@@ -48,9 +41,8 @@ const (
 // Columns holds all SQL columns for rolepermission fields.
 var Columns = []string{
 	FieldID,
-	FieldRoleCode,
+	FieldRoleID,
 	FieldPermissionID,
-	FieldAssignedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -63,13 +55,6 @@ func ValidColumn(column string) bool {
 	return false
 }
 
-var (
-	// DefaultAssignedAt holds the default value on creation for the "assigned_at" field.
-	DefaultAssignedAt func() time.Time
-	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
-)
-
 // OrderOption defines the ordering options for the RolePermission queries.
 type OrderOption func(*sql.Selector)
 
@@ -78,19 +63,14 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByRoleCode orders the results by the role_code field.
-func ByRoleCode(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRoleCode, opts...).ToFunc()
+// ByRoleID orders the results by the role_id field.
+func ByRoleID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRoleID, opts...).ToFunc()
 }
 
 // ByPermissionID orders the results by the permission_id field.
 func ByPermissionID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPermissionID, opts...).ToFunc()
-}
-
-// ByAssignedAt orders the results by the assigned_at field.
-func ByAssignedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAssignedAt, opts...).ToFunc()
 }
 
 // ByRoleField orders the results by role field.
@@ -109,14 +89,14 @@ func ByPermissionField(field string, opts ...sql.OrderTermOption) OrderOption {
 func newRoleStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(RoleInverseTable, RoleFieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, RoleTable, RoleColumn),
+		sqlgraph.To(RoleInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, RoleTable, RoleColumn),
 	)
 }
 func newPermissionStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PermissionInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, PermissionTable, PermissionColumn),
+		sqlgraph.Edge(sqlgraph.M2O, false, PermissionTable, PermissionColumn),
 	)
 }

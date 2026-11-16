@@ -12,32 +12,35 @@ import (
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/ent"
 	entmilestone "github.com/bengobox/projects-service/internal/ent/milestone"
+	entproject "github.com/bengobox/projects-service/internal/ent/project"
+	"github.com/bengobox/projects-service/internal/platform/events"
+	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/txn"
 )
 
 // ErrNotFound is returned when a milestone is not found.
 var ErrNotFound = errors.New("not found")
 
-// Publisher emits milestone domain events to the shared-events outbox. Kept as a narrow
-// interface so the service stays decoupled from the events platform package.
-type Publisher interface {
-	PublishMilestoneReached(ctx context.Context, tenantID, milestoneID uuid.UUID, payload map[string]any) error
-}
+// ValidationError is a refused input, answered 400.
+type ValidationError string
+
+func (e ValidationError) Error() string { return string(e) }
+
+// EventMilestoneReached is emitted (project.milestone.reached) when a milestone is completed;
+// notifications-api emails the tenant.
+const EventMilestoneReached = "milestone.reached"
 
 // Service handles milestone CRUD operations.
 type Service struct {
-	client    *ent.Client
-	cache     *sharedcache.Aside
-	log       *zap.Logger
-	publisher Publisher
+	client *ent.Client
+	cache  *sharedcache.Aside
+	log    *zap.Logger
 }
 
 // NewService creates a new milestones service.
 func NewService(client *ent.Client, cache *sharedcache.Aside, log *zap.Logger) *Service {
 	return &Service{client: client, cache: cache, log: log.Named("milestones.svc")}
 }
-
-// SetPublisher wires the event publisher used to emit project.milestone.reached.
-func (s *Service) SetPublisher(p Publisher) { s.publisher = p }
 
 // CreateMilestoneInput holds data for creating a milestone.
 type CreateMilestoneInput struct {
@@ -81,88 +84,128 @@ func (s *Service) GetMilestone(ctx context.Context, tenantID, projectID, id uuid
 	return m, nil
 }
 
-// CreateMilestone creates a new milestone for a project.
+func record(ctx context.Context, tx *ent.Tx, m *ent.Milestone, action string, changes map[string]any) error {
+	return activity.Record(ctx, tx, activity.Entry{
+		TenantID: m.TenantID, ProjectID: activity.Ref(m.ProjectID), EntityType: "milestone", EntityID: m.ID,
+		Action: action, Changes: changes,
+	})
+}
+
+// CreateMilestone creates a new milestone for a project of the tenant.
 func (s *Service) CreateMilestone(ctx context.Context, tenantID, projectID uuid.UUID, input CreateMilestoneInput) (*ent.Milestone, error) {
 	if input.Name == "" {
-		return nil, fmt.Errorf("name is required")
+		return nil, ValidationError("name is required")
 	}
 	status := input.Status
 	if status == "" {
 		status = "pending"
 	}
-	c := s.client.Milestone.Create().
-		SetTenantID(tenantID).
-		SetProjectID(projectID).
-		SetName(input.Name).
-		SetDescription(input.Description).
-		SetStatus(status)
-	if input.TargetDate != nil {
-		c = c.SetTargetDate(*input.TargetDate)
-	}
-	m, err := c.Save(ctx)
+	var m *ent.Milestone
+	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+		ok, err := tx.Project.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).Exist(ctx)
+		if err != nil {
+			return fmt.Errorf("validate project: %w", err)
+		}
+		if !ok {
+			return ErrNotFound
+		}
+		c := tx.Milestone.Create().
+			SetTenantID(tenantID).
+			SetProjectID(projectID).
+			SetName(input.Name).
+			SetDescription(input.Description).
+			SetStatus(status)
+		if input.TargetDate != nil {
+			c = c.SetTargetDate(*input.TargetDate)
+		}
+		if m, err = c.Save(ctx); err != nil {
+			return fmt.Errorf("create milestone: %w", err)
+		}
+		return record(ctx, tx, m, activity.ActionCreated, map[string]any{"name": m.Name, "status": m.Status})
+	})
 	if err != nil {
-		return nil, fmt.Errorf("create milestone: %w", err)
+		return nil, err
 	}
 	return m, nil
 }
 
-// UpdateMilestone updates an existing milestone.
+// UpdateMilestone updates an existing milestone. Completing it writes project.milestone.reached in
+// the same transaction.
 func (s *Service) UpdateMilestone(ctx context.Context, tenantID, projectID, id uuid.UUID, input UpdateMilestoneInput) (*ent.Milestone, error) {
-	m, err := s.GetMilestone(ctx, tenantID, projectID, id)
-	if err != nil {
-		return nil, err
-	}
-	u := m.Update()
-	if input.Name != nil {
-		u = u.SetName(*input.Name)
-	}
-	if input.Description != nil {
-		u = u.SetDescription(*input.Description)
-	}
-	if input.Status != nil {
-		u = u.SetStatus(*input.Status)
-		if *input.Status == "completed" {
-			now := time.Now()
-			u = u.SetCompletedAt(now)
+	var updated *ent.Milestone
+	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+		m, err := tx.Milestone.Query().
+			Where(entmilestone.ID(id), entmilestone.TenantID(tenantID), entmilestone.ProjectID(projectID)).Only(ctx)
+		if ent.IsNotFound(err) {
+			return ErrNotFound
 		}
-	}
-	if input.TargetDate != nil {
-		u = u.SetTargetDate(*input.TargetDate)
-	}
-	updated, err := u.Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("update milestone: %w", err)
-	}
-
-	// On completion, emit project.milestone.reached so notifications-api can email the
-	// tenant. Best-effort: a publish failure must not fail the milestone update.
-	if input.Status != nil && *input.Status == "completed" && s.publisher != nil {
+		if err != nil {
+			return fmt.Errorf("fetch milestone: %w", err)
+		}
+		changes := map[string]any{}
+		u := m.Update()
+		if input.Name != nil {
+			u = u.SetName(*input.Name)
+			changes["name"] = *input.Name
+		}
+		if input.Description != nil {
+			u = u.SetDescription(*input.Description)
+			changes["description"] = "changed"
+		}
+		completed := false
+		if input.Status != nil {
+			u = u.SetStatus(*input.Status)
+			changes["status"] = map[string]any{"from": m.Status, "to": *input.Status}
+			if *input.Status == "completed" {
+				u = u.SetCompletedAt(time.Now())
+				completed = m.Status != "completed"
+			}
+		}
+		if input.TargetDate != nil {
+			u = u.SetTargetDate(*input.TargetDate)
+			changes["target_date"] = input.TargetDate.Format(time.DateOnly)
+		}
+		if updated, err = u.Save(ctx); err != nil {
+			return fmt.Errorf("update milestone: %w", err)
+		}
+		if err := record(ctx, tx, updated, activity.ActionUpdated, changes); err != nil {
+			return err
+		}
+		if !completed {
+			return nil
+		}
 		projectName := ""
-		if proj, perr := s.client.Project.Get(ctx, projectID); perr == nil {
+		if proj, perr := tx.Project.Get(ctx, projectID); perr == nil {
 			projectName = proj.Name
 		}
-		if perr := s.publisher.PublishMilestoneReached(ctx, tenantID, updated.ID, map[string]any{
+		return events.Write(ctx, tx, events.AggregateProject, EventMilestoneReached, updated.ID, tenantID, map[string]any{
 			"project_id":      projectID.String(),
 			"project_name":    projectName,
 			"milestone_name":  updated.Name,
 			"completion_date": time.Now().UTC().Format(time.RFC3339),
 			"progress":        100,
-		}); perr != nil {
-			s.log.Warn("publish milestone.reached failed", zap.Error(perr))
-		}
+		})
+	})
+	if err != nil {
+		return nil, err
 	}
 	return updated, nil
 }
 
 // DeleteMilestone deletes a milestone.
 func (s *Service) DeleteMilestone(ctx context.Context, tenantID, projectID, id uuid.UUID) error {
-	n, err := s.client.Milestone.Delete().
-		Where(entmilestone.ID(id), entmilestone.TenantID(tenantID), entmilestone.ProjectID(projectID)).Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("delete milestone: %w", err)
-	}
-	if n == 0 {
-		return ErrNotFound
-	}
-	return nil
+	return txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+		m, err := tx.Milestone.Query().
+			Where(entmilestone.ID(id), entmilestone.TenantID(tenantID), entmilestone.ProjectID(projectID)).Only(ctx)
+		if ent.IsNotFound(err) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return fmt.Errorf("fetch milestone: %w", err)
+		}
+		if err := tx.Milestone.DeleteOne(m).Exec(ctx); err != nil {
+			return fmt.Errorf("delete milestone: %w", err)
+		}
+		return record(ctx, tx, m, activity.ActionDeleted, map[string]any{"name": m.Name})
+	})
 }

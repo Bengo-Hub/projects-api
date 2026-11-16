@@ -836,7 +836,40 @@ Superset dashboards can be embedded into the Projects Service UI using iframe em
 
 See `docs/sprints/` for detailed sprint planning.
 
-**Status re-verified against code 2026-09-27:** Sprint 0 done; Sprints 1, 3, 4 and 7 partially done; Sprints 2, 5, 6, 8, 9, 10 and 11 planned. Each sprint doc carries its own status line, and every open item is in [docs/backlog.md](docs/backlog.md). Project finance (budgets via treasury, EVM, portfolio, tender pipeline) is In progress under `.claude/plans/budgets-planning-projects-bi-2026-09-27.md`.
+**Status re-verified against code 2026-11-16** (plan: `.claude/plans/projects-service-competitive-revamp-2026-11-16.md`). Each sprint doc carries its own dated status line, and every open item is in [docs/backlog.md](docs/backlog.md).
+
+| Sprint | Status 2026-11-16 | What is really there |
+|---|---|---|
+| 0 Foundations | Done | Scaffold, SSO, health, metrics. The local RBAC tables were never used and are retired in 0b |
+| 0b Hardening (new) | In progress | Local RBAC per the shared-docs trinity pattern and SSO guide (JIT, `auth/me`, codes on every route), shared lib bumps, embedded migrations, transactional outbox, query fixes |
+| 1 Tenders | Partial | CRUD, committees, evaluations, meetings, document links, metrics. Open: sections, submissions, go/no-go |
+| 2 Tender to project | Planned | Nothing yet |
+| 3 Planning | Partial | Projects, WBS codes, subtasks, typed dependencies, Gantt data, milestones. Open: real Gantt chart, baselines, critical path |
+| 4 Collaboration | Partial | Members and comments. The activity feed had routes but nothing wrote to it until 0b. Open: mentions, attachments, live updates |
+| 5 Time and budget | Budget done, time open | Budgets live in treasury (S2S), EVM and portfolio done. Time tracking moves to sprint 13 |
+| 6 Resources | Partial | Utilisation from ERP timesheet hours. Open: workload planner (sprint 16) |
+| 7 Governance and reporting | Partial | EVM, portfolio, summary, metrics, trend. Open: risk register, change requests, status reports |
+| 8 Superset | Deferred | Kept deferred until the service has paying tenants |
+| 9 External integrations | Planned | Needs Google and Microsoft OAuth credentials first |
+| 10 AI | Planned | Prepaid AI credits only |
+| 11 Polish | Partial | 23 test files exist. Open: coverage on new code, file splits, security review |
+| QA and acceptance (built outside the old plan) | Done | Templates, criteria, sessions, invites, results, defects to ticketing, PDF report. See `docs/api.md` |
+| 12 Work management core (new) | Planned | Task drawer, mentions, attachments, multiple assignees, drag and drop board, calendar, Gantt chart, My Work, live updates |
+| 13 Time tracking (new) | Planned | Timer and timesheets posted to ERP |
+| 14 Client portal (new) | Planned | Clients sign in through auth-api, see progress, approve milestones |
+| 15 Billing and profitability (new) | Planned | Milestones and billable hours to treasury draft invoices, margin by client |
+| 16 Planning depth (new) | Planned | Workload, baselines, risks, change requests, templates, recurring tasks, status rules, automations |
+
+**Priority order I am building in:** 0b, 12, 13, 14, 15, 16, then the open parts of 1 and 2, then 7 reports, 11, 10 and 9. Sprint 8 stays deferred.
+
+**Plan gating (decided 2026-11-16):** I reuse the Projects feature codes that already exist in subscriptions-api (`psProjectsBlock`) and add only two. Every Projects tier: `project_management` (projects), `task_tracking` (board, drawer, list, calendar, My Work), `team_collaboration` (comments, mentions, attachments), `time_tracking` (timer, timesheets) and `client_portal` (the client portal, so it is never a paid add-on). Tier 3: `gantt_chart` (Gantt chart and baselines), `milestone_billing` (milestone and time invoicing, profitability), `budget_tracking` (financials, as today), and the new `workload_planning` and `project_automation` (status rules and automations). Templates, recurring tasks, risks and change requests sit under `project_management`. The platform tenant is exempt through the shared gating helper.
+
+### Find, Flip, Fix (read 2026-11-16)
+I compared the tools people pay for. Sources are Capterra, G2 and GetApp reviews, ClickUp and Asana feedback forums, Teamwork and Zoho product pages, and Business Daily. Vendor pages count as weak evidence.
+
+- **Find.** Zoho Projects (Gantt, timers, Blueprint status rules, from about $4 a user) has 54% negative mobile ratings on Capterra and charges extra for client access. Teamwork.com wins agencies with retainer and fixed-fee budgets, profit by client, a workload planner and a client portal, but locks them in higher tiers. ClickUp is laggy on phones past 500 tasks and only partly works offline. Asana has one assignee per task and no native time tracking. monday.com has a 3-seat minimum. Kenyan tools (JengaFlow, BidiiBuild) offer M-Pesa but only for construction.
+- **Flip.** Projects for East African service firms and agencies: projects, time and billing joined to treasury invoices, M-Pesa, PayHero and eTIMS, a branded client portal with WhatsApp and email updates, KES pricing, no seat minimum, and a UI that works on a phone over a weak connection.
+- **Fix.** These become tests: every page works at 390 px with a bottom nav; lists stay paged and indexed and a 1,000-task board stays responsive; a native timer posts hours to ERP; tasks take several assignees; the client portal comes with the advanced plan, not as an add-on; a milestone becomes a draft invoice in three clicks or fewer; status, comment and timer updates queue while offline; projects can set allowed status moves and required fields; a plan lock always shows a message, never a silent failure.
 
 ### Sprint 0: Foundations ✅ (COMPLETED)
 - Project scaffold, config, logging

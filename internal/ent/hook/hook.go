@@ -45,6 +45,18 @@ func (f CommentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CommentMutation", m)
 }
 
+// The DocumentSequenceFunc type is an adapter to allow the use of ordinary
+// function as DocumentSequence mutator.
+type DocumentSequenceFunc func(context.Context, *ent.DocumentSequenceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DocumentSequenceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DocumentSequenceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DocumentSequenceMutation", m)
+}
+
 // The FieldKeyFunc type is an adapter to allow the use of ordinary
 // function as FieldKey mutator.
 type FieldKeyFunc func(context.Context, *ent.FieldKeyMutation) (ent.Value, error)
@@ -127,6 +139,18 @@ func (f ProjectMemberFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectMemberMutation", m)
+}
+
+// The ProjectsUserFunc type is an adapter to allow the use of ordinary
+// function as ProjectsUser mutator.
+type ProjectsUserFunc func(context.Context, *ent.ProjectsUserMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProjectsUserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProjectsUserMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectsUserMutation", m)
 }
 
 // The QACriterionFunc type is an adapter to allow the use of ordinary
@@ -321,16 +345,16 @@ func (f TenderMeetingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenderMeetingMutation", m)
 }
 
-// The UserRoleFunc type is an adapter to allow the use of ordinary
-// function as UserRole mutator.
-type UserRoleFunc func(context.Context, *ent.UserRoleMutation) (ent.Value, error)
+// The UserRoleAssignmentFunc type is an adapter to allow the use of ordinary
+// function as UserRoleAssignment mutator.
+type UserRoleAssignmentFunc func(context.Context, *ent.UserRoleAssignmentMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f UserRoleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.UserRoleMutation); ok {
+func (f UserRoleAssignmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserRoleAssignmentMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserRoleMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserRoleAssignmentMutation", m)
 }
 
 // Condition is a hook condition function.

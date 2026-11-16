@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/qaresult"
@@ -19,6 +21,7 @@ type QAResultCreate struct {
 	config
 	mutation *QAResultMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -315,6 +318,7 @@ func (qrc *QAResultCreate) createSpec() (*QAResult, *sqlgraph.CreateSpec) {
 		_node = &QAResult{config: qrc.config}
 		_spec = sqlgraph.NewCreateSpec(qaresult.Table, sqlgraph.NewFieldSpec(qaresult.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = qrc.conflict
 	if id, ok := qrc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -382,11 +386,251 @@ func (qrc *QAResultCreate) createSpec() (*QAResult, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QAResult.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QAResultUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qrc *QAResultCreate) OnConflict(opts ...sql.ConflictOption) *QAResultUpsertOne {
+	qrc.conflict = opts
+	return &QAResultUpsertOne{
+		create: qrc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QAResult.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qrc *QAResultCreate) OnConflictColumns(columns ...string) *QAResultUpsertOne {
+	qrc.conflict = append(qrc.conflict, sql.ConflictColumns(columns...))
+	return &QAResultUpsertOne{
+		create: qrc,
+	}
+}
+
+type (
+	// QAResultUpsertOne is the builder for "upsert"-ing
+	//  one QAResult node.
+	QAResultUpsertOne struct {
+		create *QAResultCreate
+	}
+
+	// QAResultUpsert is the "OnConflict" setter.
+	QAResultUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetDefectID sets the "defect_id" field.
+func (u *QAResultUpsert) SetDefectID(v uuid.UUID) *QAResultUpsert {
+	u.Set(qaresult.FieldDefectID, v)
+	return u
+}
+
+// UpdateDefectID sets the "defect_id" field to the value that was provided on create.
+func (u *QAResultUpsert) UpdateDefectID() *QAResultUpsert {
+	u.SetExcluded(qaresult.FieldDefectID)
+	return u
+}
+
+// ClearDefectID clears the value of the "defect_id" field.
+func (u *QAResultUpsert) ClearDefectID() *QAResultUpsert {
+	u.SetNull(qaresult.FieldDefectID)
+	return u
+}
+
+// SetIsCurrent sets the "is_current" field.
+func (u *QAResultUpsert) SetIsCurrent(v bool) *QAResultUpsert {
+	u.Set(qaresult.FieldIsCurrent, v)
+	return u
+}
+
+// UpdateIsCurrent sets the "is_current" field to the value that was provided on create.
+func (u *QAResultUpsert) UpdateIsCurrent() *QAResultUpsert {
+	u.SetExcluded(qaresult.FieldIsCurrent)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.QAResult.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qaresult.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QAResultUpsertOne) UpdateNewValues() *QAResultUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(qaresult.FieldID)
+		}
+		if _, exists := u.create.mutation.TenantID(); exists {
+			s.SetIgnore(qaresult.FieldTenantID)
+		}
+		if _, exists := u.create.mutation.SessionID(); exists {
+			s.SetIgnore(qaresult.FieldSessionID)
+		}
+		if _, exists := u.create.mutation.CriterionID(); exists {
+			s.SetIgnore(qaresult.FieldCriterionID)
+		}
+		if _, exists := u.create.mutation.TesterKey(); exists {
+			s.SetIgnore(qaresult.FieldTesterKey)
+		}
+		if _, exists := u.create.mutation.TesterHint(); exists {
+			s.SetIgnore(qaresult.FieldTesterHint)
+		}
+		if _, exists := u.create.mutation.TesterUserID(); exists {
+			s.SetIgnore(qaresult.FieldTesterUserID)
+		}
+		if _, exists := u.create.mutation.InviteID(); exists {
+			s.SetIgnore(qaresult.FieldInviteID)
+		}
+		if _, exists := u.create.mutation.Result(); exists {
+			s.SetIgnore(qaresult.FieldResult)
+		}
+		if _, exists := u.create.mutation.Severity(); exists {
+			s.SetIgnore(qaresult.FieldSeverity)
+		}
+		if _, exists := u.create.mutation.Device(); exists {
+			s.SetIgnore(qaresult.FieldDevice)
+		}
+		if _, exists := u.create.mutation.Notes(); exists {
+			s.SetIgnore(qaresult.FieldNotes)
+		}
+		if _, exists := u.create.mutation.EvidenceKeys(); exists {
+			s.SetIgnore(qaresult.FieldEvidenceKeys)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(qaresult.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QAResult.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *QAResultUpsertOne) Ignore() *QAResultUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QAResultUpsertOne) DoNothing() *QAResultUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QAResultCreate.OnConflict
+// documentation for more info.
+func (u *QAResultUpsertOne) Update(set func(*QAResultUpsert)) *QAResultUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QAResultUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDefectID sets the "defect_id" field.
+func (u *QAResultUpsertOne) SetDefectID(v uuid.UUID) *QAResultUpsertOne {
+	return u.Update(func(s *QAResultUpsert) {
+		s.SetDefectID(v)
+	})
+}
+
+// UpdateDefectID sets the "defect_id" field to the value that was provided on create.
+func (u *QAResultUpsertOne) UpdateDefectID() *QAResultUpsertOne {
+	return u.Update(func(s *QAResultUpsert) {
+		s.UpdateDefectID()
+	})
+}
+
+// ClearDefectID clears the value of the "defect_id" field.
+func (u *QAResultUpsertOne) ClearDefectID() *QAResultUpsertOne {
+	return u.Update(func(s *QAResultUpsert) {
+		s.ClearDefectID()
+	})
+}
+
+// SetIsCurrent sets the "is_current" field.
+func (u *QAResultUpsertOne) SetIsCurrent(v bool) *QAResultUpsertOne {
+	return u.Update(func(s *QAResultUpsert) {
+		s.SetIsCurrent(v)
+	})
+}
+
+// UpdateIsCurrent sets the "is_current" field to the value that was provided on create.
+func (u *QAResultUpsertOne) UpdateIsCurrent() *QAResultUpsertOne {
+	return u.Update(func(s *QAResultUpsert) {
+		s.UpdateIsCurrent()
+	})
+}
+
+// Exec executes the query.
+func (u *QAResultUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QAResultCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QAResultUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *QAResultUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: QAResultUpsertOne.ID is not supported by MySQL driver. Use QAResultUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *QAResultUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // QAResultCreateBulk is the builder for creating many QAResult entities in bulk.
 type QAResultCreateBulk struct {
 	config
 	err      error
 	builders []*QAResultCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the QAResult entities in the database.
@@ -416,6 +660,7 @@ func (qrcb *QAResultCreateBulk) Save(ctx context.Context) ([]*QAResult, error) {
 					_, err = mutators[i+1].Mutate(root, qrcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = qrcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, qrcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -462,6 +707,194 @@ func (qrcb *QAResultCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (qrcb *QAResultCreateBulk) ExecX(ctx context.Context) {
 	if err := qrcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QAResult.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QAResultUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qrcb *QAResultCreateBulk) OnConflict(opts ...sql.ConflictOption) *QAResultUpsertBulk {
+	qrcb.conflict = opts
+	return &QAResultUpsertBulk{
+		create: qrcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QAResult.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qrcb *QAResultCreateBulk) OnConflictColumns(columns ...string) *QAResultUpsertBulk {
+	qrcb.conflict = append(qrcb.conflict, sql.ConflictColumns(columns...))
+	return &QAResultUpsertBulk{
+		create: qrcb,
+	}
+}
+
+// QAResultUpsertBulk is the builder for "upsert"-ing
+// a bulk of QAResult nodes.
+type QAResultUpsertBulk struct {
+	create *QAResultCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.QAResult.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qaresult.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QAResultUpsertBulk) UpdateNewValues() *QAResultUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(qaresult.FieldID)
+			}
+			if _, exists := b.mutation.TenantID(); exists {
+				s.SetIgnore(qaresult.FieldTenantID)
+			}
+			if _, exists := b.mutation.SessionID(); exists {
+				s.SetIgnore(qaresult.FieldSessionID)
+			}
+			if _, exists := b.mutation.CriterionID(); exists {
+				s.SetIgnore(qaresult.FieldCriterionID)
+			}
+			if _, exists := b.mutation.TesterKey(); exists {
+				s.SetIgnore(qaresult.FieldTesterKey)
+			}
+			if _, exists := b.mutation.TesterHint(); exists {
+				s.SetIgnore(qaresult.FieldTesterHint)
+			}
+			if _, exists := b.mutation.TesterUserID(); exists {
+				s.SetIgnore(qaresult.FieldTesterUserID)
+			}
+			if _, exists := b.mutation.InviteID(); exists {
+				s.SetIgnore(qaresult.FieldInviteID)
+			}
+			if _, exists := b.mutation.Result(); exists {
+				s.SetIgnore(qaresult.FieldResult)
+			}
+			if _, exists := b.mutation.Severity(); exists {
+				s.SetIgnore(qaresult.FieldSeverity)
+			}
+			if _, exists := b.mutation.Device(); exists {
+				s.SetIgnore(qaresult.FieldDevice)
+			}
+			if _, exists := b.mutation.Notes(); exists {
+				s.SetIgnore(qaresult.FieldNotes)
+			}
+			if _, exists := b.mutation.EvidenceKeys(); exists {
+				s.SetIgnore(qaresult.FieldEvidenceKeys)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(qaresult.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QAResult.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *QAResultUpsertBulk) Ignore() *QAResultUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QAResultUpsertBulk) DoNothing() *QAResultUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QAResultCreateBulk.OnConflict
+// documentation for more info.
+func (u *QAResultUpsertBulk) Update(set func(*QAResultUpsert)) *QAResultUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QAResultUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetDefectID sets the "defect_id" field.
+func (u *QAResultUpsertBulk) SetDefectID(v uuid.UUID) *QAResultUpsertBulk {
+	return u.Update(func(s *QAResultUpsert) {
+		s.SetDefectID(v)
+	})
+}
+
+// UpdateDefectID sets the "defect_id" field to the value that was provided on create.
+func (u *QAResultUpsertBulk) UpdateDefectID() *QAResultUpsertBulk {
+	return u.Update(func(s *QAResultUpsert) {
+		s.UpdateDefectID()
+	})
+}
+
+// ClearDefectID clears the value of the "defect_id" field.
+func (u *QAResultUpsertBulk) ClearDefectID() *QAResultUpsertBulk {
+	return u.Update(func(s *QAResultUpsert) {
+		s.ClearDefectID()
+	})
+}
+
+// SetIsCurrent sets the "is_current" field.
+func (u *QAResultUpsertBulk) SetIsCurrent(v bool) *QAResultUpsertBulk {
+	return u.Update(func(s *QAResultUpsert) {
+		s.SetIsCurrent(v)
+	})
+}
+
+// UpdateIsCurrent sets the "is_current" field to the value that was provided on create.
+func (u *QAResultUpsertBulk) UpdateIsCurrent() *QAResultUpsertBulk {
+	return u.Update(func(s *QAResultUpsert) {
+		s.UpdateIsCurrent()
+	})
+}
+
+// Exec executes the query.
+func (u *QAResultUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the QAResultCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QAResultCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QAResultUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

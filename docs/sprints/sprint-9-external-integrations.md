@@ -1,6 +1,6 @@
 # Sprint 9: External Integrations
 
-**Status**: Planned (verified against code 2026-09-27). No Google, Microsoft, Zoom or storage integration exists.
+**Status**: Planned, blocked on credentials (verified against code 2026-11-16). No Google, Microsoft, Zoom or storage integration exists. Building it needs Google and Microsoft OAuth app credentials, which the owner has to create. Attachments use the shared object storage in sprint 12, not an outside drive.
 
 **Duration**: 4 weeks  
 **Sprint Goal**: Integrate with external collaboration and productivity tools.  

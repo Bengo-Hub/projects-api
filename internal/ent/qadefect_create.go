@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/qadefect"
@@ -19,6 +21,7 @@ type QADefectCreate struct {
 	config
 	mutation *QADefectMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -274,6 +277,7 @@ func (qdc *QADefectCreate) createSpec() (*QADefect, *sqlgraph.CreateSpec) {
 		_node = &QADefect{config: qdc.config}
 		_spec = sqlgraph.NewCreateSpec(qadefect.Table, sqlgraph.NewFieldSpec(qadefect.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = qdc.conflict
 	if id, ok := qdc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -325,11 +329,370 @@ func (qdc *QADefectCreate) createSpec() (*QADefect, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QADefect.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QADefectUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qdc *QADefectCreate) OnConflict(opts ...sql.ConflictOption) *QADefectUpsertOne {
+	qdc.conflict = opts
+	return &QADefectUpsertOne{
+		create: qdc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QADefect.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qdc *QADefectCreate) OnConflictColumns(columns ...string) *QADefectUpsertOne {
+	qdc.conflict = append(qdc.conflict, sql.ConflictColumns(columns...))
+	return &QADefectUpsertOne{
+		create: qdc,
+	}
+}
+
+type (
+	// QADefectUpsertOne is the builder for "upsert"-ing
+	//  one QADefect node.
+	QADefectUpsertOne struct {
+		create *QADefectCreate
+	}
+
+	// QADefectUpsert is the "OnConflict" setter.
+	QADefectUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetSeverity sets the "severity" field.
+func (u *QADefectUpsert) SetSeverity(v int) *QADefectUpsert {
+	u.Set(qadefect.FieldSeverity, v)
+	return u
+}
+
+// UpdateSeverity sets the "severity" field to the value that was provided on create.
+func (u *QADefectUpsert) UpdateSeverity() *QADefectUpsert {
+	u.SetExcluded(qadefect.FieldSeverity)
+	return u
+}
+
+// AddSeverity adds v to the "severity" field.
+func (u *QADefectUpsert) AddSeverity(v int) *QADefectUpsert {
+	u.Add(qadefect.FieldSeverity, v)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *QADefectUpsert) SetStatus(v string) *QADefectUpsert {
+	u.Set(qadefect.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QADefectUpsert) UpdateStatus() *QADefectUpsert {
+	u.SetExcluded(qadefect.FieldStatus)
+	return u
+}
+
+// SetTicketID sets the "ticket_id" field.
+func (u *QADefectUpsert) SetTicketID(v string) *QADefectUpsert {
+	u.Set(qadefect.FieldTicketID, v)
+	return u
+}
+
+// UpdateTicketID sets the "ticket_id" field to the value that was provided on create.
+func (u *QADefectUpsert) UpdateTicketID() *QADefectUpsert {
+	u.SetExcluded(qadefect.FieldTicketID)
+	return u
+}
+
+// ClearTicketID clears the value of the "ticket_id" field.
+func (u *QADefectUpsert) ClearTicketID() *QADefectUpsert {
+	u.SetNull(qadefect.FieldTicketID)
+	return u
+}
+
+// SetTicketNumber sets the "ticket_number" field.
+func (u *QADefectUpsert) SetTicketNumber(v string) *QADefectUpsert {
+	u.Set(qadefect.FieldTicketNumber, v)
+	return u
+}
+
+// UpdateTicketNumber sets the "ticket_number" field to the value that was provided on create.
+func (u *QADefectUpsert) UpdateTicketNumber() *QADefectUpsert {
+	u.SetExcluded(qadefect.FieldTicketNumber)
+	return u
+}
+
+// ClearTicketNumber clears the value of the "ticket_number" field.
+func (u *QADefectUpsert) ClearTicketNumber() *QADefectUpsert {
+	u.SetNull(qadefect.FieldTicketNumber)
+	return u
+}
+
+// SetLastError sets the "last_error" field.
+func (u *QADefectUpsert) SetLastError(v string) *QADefectUpsert {
+	u.Set(qadefect.FieldLastError, v)
+	return u
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *QADefectUpsert) UpdateLastError() *QADefectUpsert {
+	u.SetExcluded(qadefect.FieldLastError)
+	return u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *QADefectUpsert) ClearLastError() *QADefectUpsert {
+	u.SetNull(qadefect.FieldLastError)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QADefectUpsert) SetUpdatedAt(v time.Time) *QADefectUpsert {
+	u.Set(qadefect.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QADefectUpsert) UpdateUpdatedAt() *QADefectUpsert {
+	u.SetExcluded(qadefect.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.QADefect.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qadefect.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QADefectUpsertOne) UpdateNewValues() *QADefectUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(qadefect.FieldID)
+		}
+		if _, exists := u.create.mutation.TenantID(); exists {
+			s.SetIgnore(qadefect.FieldTenantID)
+		}
+		if _, exists := u.create.mutation.SessionID(); exists {
+			s.SetIgnore(qadefect.FieldSessionID)
+		}
+		if _, exists := u.create.mutation.CriterionID(); exists {
+			s.SetIgnore(qadefect.FieldCriterionID)
+		}
+		if _, exists := u.create.mutation.FirstResultID(); exists {
+			s.SetIgnore(qadefect.FieldFirstResultID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(qadefect.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QADefect.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *QADefectUpsertOne) Ignore() *QADefectUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QADefectUpsertOne) DoNothing() *QADefectUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QADefectCreate.OnConflict
+// documentation for more info.
+func (u *QADefectUpsertOne) Update(set func(*QADefectUpsert)) *QADefectUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QADefectUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetSeverity sets the "severity" field.
+func (u *QADefectUpsertOne) SetSeverity(v int) *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetSeverity(v)
+	})
+}
+
+// AddSeverity adds v to the "severity" field.
+func (u *QADefectUpsertOne) AddSeverity(v int) *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.AddSeverity(v)
+	})
+}
+
+// UpdateSeverity sets the "severity" field to the value that was provided on create.
+func (u *QADefectUpsertOne) UpdateSeverity() *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateSeverity()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *QADefectUpsertOne) SetStatus(v string) *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QADefectUpsertOne) UpdateStatus() *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetTicketID sets the "ticket_id" field.
+func (u *QADefectUpsertOne) SetTicketID(v string) *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetTicketID(v)
+	})
+}
+
+// UpdateTicketID sets the "ticket_id" field to the value that was provided on create.
+func (u *QADefectUpsertOne) UpdateTicketID() *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateTicketID()
+	})
+}
+
+// ClearTicketID clears the value of the "ticket_id" field.
+func (u *QADefectUpsertOne) ClearTicketID() *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.ClearTicketID()
+	})
+}
+
+// SetTicketNumber sets the "ticket_number" field.
+func (u *QADefectUpsertOne) SetTicketNumber(v string) *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetTicketNumber(v)
+	})
+}
+
+// UpdateTicketNumber sets the "ticket_number" field to the value that was provided on create.
+func (u *QADefectUpsertOne) UpdateTicketNumber() *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateTicketNumber()
+	})
+}
+
+// ClearTicketNumber clears the value of the "ticket_number" field.
+func (u *QADefectUpsertOne) ClearTicketNumber() *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.ClearTicketNumber()
+	})
+}
+
+// SetLastError sets the "last_error" field.
+func (u *QADefectUpsertOne) SetLastError(v string) *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetLastError(v)
+	})
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *QADefectUpsertOne) UpdateLastError() *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateLastError()
+	})
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *QADefectUpsertOne) ClearLastError() *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.ClearLastError()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QADefectUpsertOne) SetUpdatedAt(v time.Time) *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QADefectUpsertOne) UpdateUpdatedAt() *QADefectUpsertOne {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QADefectUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QADefectCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QADefectUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *QADefectUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: QADefectUpsertOne.ID is not supported by MySQL driver. Use QADefectUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *QADefectUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // QADefectCreateBulk is the builder for creating many QADefect entities in bulk.
 type QADefectCreateBulk struct {
 	config
 	err      error
 	builders []*QADefectCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the QADefect entities in the database.
@@ -359,6 +722,7 @@ func (qdcb *QADefectCreateBulk) Save(ctx context.Context) ([]*QADefect, error) {
 					_, err = mutators[i+1].Mutate(root, qdcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = qdcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, qdcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -405,6 +769,247 @@ func (qdcb *QADefectCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (qdcb *QADefectCreateBulk) ExecX(ctx context.Context) {
 	if err := qdcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QADefect.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QADefectUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qdcb *QADefectCreateBulk) OnConflict(opts ...sql.ConflictOption) *QADefectUpsertBulk {
+	qdcb.conflict = opts
+	return &QADefectUpsertBulk{
+		create: qdcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QADefect.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qdcb *QADefectCreateBulk) OnConflictColumns(columns ...string) *QADefectUpsertBulk {
+	qdcb.conflict = append(qdcb.conflict, sql.ConflictColumns(columns...))
+	return &QADefectUpsertBulk{
+		create: qdcb,
+	}
+}
+
+// QADefectUpsertBulk is the builder for "upsert"-ing
+// a bulk of QADefect nodes.
+type QADefectUpsertBulk struct {
+	create *QADefectCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.QADefect.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qadefect.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QADefectUpsertBulk) UpdateNewValues() *QADefectUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(qadefect.FieldID)
+			}
+			if _, exists := b.mutation.TenantID(); exists {
+				s.SetIgnore(qadefect.FieldTenantID)
+			}
+			if _, exists := b.mutation.SessionID(); exists {
+				s.SetIgnore(qadefect.FieldSessionID)
+			}
+			if _, exists := b.mutation.CriterionID(); exists {
+				s.SetIgnore(qadefect.FieldCriterionID)
+			}
+			if _, exists := b.mutation.FirstResultID(); exists {
+				s.SetIgnore(qadefect.FieldFirstResultID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(qadefect.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QADefect.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *QADefectUpsertBulk) Ignore() *QADefectUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QADefectUpsertBulk) DoNothing() *QADefectUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QADefectCreateBulk.OnConflict
+// documentation for more info.
+func (u *QADefectUpsertBulk) Update(set func(*QADefectUpsert)) *QADefectUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QADefectUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetSeverity sets the "severity" field.
+func (u *QADefectUpsertBulk) SetSeverity(v int) *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetSeverity(v)
+	})
+}
+
+// AddSeverity adds v to the "severity" field.
+func (u *QADefectUpsertBulk) AddSeverity(v int) *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.AddSeverity(v)
+	})
+}
+
+// UpdateSeverity sets the "severity" field to the value that was provided on create.
+func (u *QADefectUpsertBulk) UpdateSeverity() *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateSeverity()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *QADefectUpsertBulk) SetStatus(v string) *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QADefectUpsertBulk) UpdateStatus() *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetTicketID sets the "ticket_id" field.
+func (u *QADefectUpsertBulk) SetTicketID(v string) *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetTicketID(v)
+	})
+}
+
+// UpdateTicketID sets the "ticket_id" field to the value that was provided on create.
+func (u *QADefectUpsertBulk) UpdateTicketID() *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateTicketID()
+	})
+}
+
+// ClearTicketID clears the value of the "ticket_id" field.
+func (u *QADefectUpsertBulk) ClearTicketID() *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.ClearTicketID()
+	})
+}
+
+// SetTicketNumber sets the "ticket_number" field.
+func (u *QADefectUpsertBulk) SetTicketNumber(v string) *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetTicketNumber(v)
+	})
+}
+
+// UpdateTicketNumber sets the "ticket_number" field to the value that was provided on create.
+func (u *QADefectUpsertBulk) UpdateTicketNumber() *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateTicketNumber()
+	})
+}
+
+// ClearTicketNumber clears the value of the "ticket_number" field.
+func (u *QADefectUpsertBulk) ClearTicketNumber() *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.ClearTicketNumber()
+	})
+}
+
+// SetLastError sets the "last_error" field.
+func (u *QADefectUpsertBulk) SetLastError(v string) *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetLastError(v)
+	})
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *QADefectUpsertBulk) UpdateLastError() *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateLastError()
+	})
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *QADefectUpsertBulk) ClearLastError() *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.ClearLastError()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QADefectUpsertBulk) SetUpdatedAt(v time.Time) *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QADefectUpsertBulk) UpdateUpdatedAt() *QADefectUpsertBulk {
+	return u.Update(func(s *QADefectUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QADefectUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the QADefectCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QADefectCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QADefectUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

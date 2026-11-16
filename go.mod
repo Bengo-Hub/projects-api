@@ -2,22 +2,21 @@ module github.com/bengobox/projects-service
 
 go 1.26.0
 
-// Map module path to correct GitHub repository
-replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.16.1
-
-// use tagged releases for other shared modules
+// The auth-client repository publishes the module path github.com/Bengo-Hub/shared-auth-client,
+// so the tagged release is reached through this redirect (the whole fleet does the same).
+replace github.com/Bengo-Hub/shared-auth-client => github.com/Bengo-Hub/auth-client v0.20.0
 
 require (
 	ariga.io/atlas v0.19.1-0.20240203083654-5948b60a8e43
 	entgo.io/ent v0.13.1
-	github.com/Bengo-Hub/cache v0.5.7
-	github.com/Bengo-Hub/httpware v0.16.0
-	github.com/Bengo-Hub/pagination v0.3.0
+	github.com/Bengo-Hub/cache v0.5.10
+	github.com/Bengo-Hub/httpware v0.20.0
+	github.com/Bengo-Hub/pagination v0.5.0
 	github.com/Bengo-Hub/reports v0.2.0
-	github.com/Bengo-Hub/shared-auth-client v0.3.1
-	github.com/Bengo-Hub/shared-events v0.10.1
+	github.com/Bengo-Hub/shared-auth-client v0.0.0-00010101000000-000000000000
+	github.com/Bengo-Hub/shared-events v0.11.1
 	github.com/Bengo-Hub/shared-ratelimit v0.3.1
-	github.com/Bengo-Hub/shared-service-client v0.3.1
+	github.com/Bengo-Hub/shared-service-client v0.5.0
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0

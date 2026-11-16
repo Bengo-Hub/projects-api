@@ -21,7 +21,7 @@ type Tender struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// TenantID holds the value of the "tenant_id" field.
 	TenantID uuid.UUID `json:"tenant_id,omitempty"`
-	// Number holds the value of the "number" field.
+	// TND-{year}-{seq}, seq from the tenant's tender document sequence
 	Number string `json:"number,omitempty"`
 	// Title holds the value of the "title" field.
 	Title string `json:"title,omitempty"`

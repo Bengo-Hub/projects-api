@@ -5,18 +5,18 @@
 package treasury
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	serviceclient "github.com/Bengo-Hub/shared-service-client"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 // ErrNotConfigured is returned when the treasury URL or service key is missing.
@@ -30,19 +30,27 @@ type Error struct {
 
 func (e *Error) Error() string { return fmt.Sprintf("treasury: status %d", e.Status) }
 
-// Client calls treasury-api with the shared INTERNAL_SERVICE_KEY.
+// Client calls treasury-api with the shared INTERNAL_SERVICE_KEY through the shared service client
+// (circuit breaker; reads and PUT retried, POST never retried without an idempotency key).
 type Client struct {
-	baseURL string
-	apiKey  string
-	http    *http.Client
+	apiKey string
+	sc     *serviceclient.Client
 }
 
+// NewClient builds the client; an empty URL leaves it disabled.
 func NewClient(baseURL, apiKey string) *Client {
-	return &Client{baseURL: strings.TrimRight(baseURL, "/"), apiKey: apiKey, http: &http.Client{Timeout: 10 * time.Second}}
+	baseURL = strings.TrimRight(baseURL, "/")
+	if baseURL == "" {
+		return &Client{apiKey: apiKey}
+	}
+	cfg := serviceclient.DefaultConfig(baseURL, "treasury-api", zap.L().Named("treasury"))
+	cfg.Timeout = 10 * time.Second
+	cfg.MaxElapsedTime = 3 * time.Second
+	return &Client{apiKey: apiKey, sc: serviceclient.New(cfg)}
 }
 
 // Enabled reports whether S2S calls can be made.
-func (c *Client) Enabled() bool { return c != nil && c.baseURL != "" && c.apiKey != "" }
+func (c *Client) Enabled() bool { return c != nil && c.sc != nil && c.apiKey != "" }
 
 // Money is a decimal amount as treasury encodes it (a JSON string or number).
 type Money float64
@@ -99,38 +107,36 @@ func (c *Client) do(ctx context.Context, method, path string, userID *uuid.UUID,
 	if !c.Enabled() {
 		return ErrNotConfigured
 	}
-	var rdr io.Reader
-	if body != nil {
-		raw, err := json.Marshal(body)
-		if err != nil {
-			return err
-		}
-		rdr = bytes.NewReader(raw)
-	}
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, rdr)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("X-API-Key", c.apiKey)
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
+	headers := map[string]string{"X-API-Key": c.apiKey}
 	if userID != nil {
-		req.Header.Set("X-User-ID", userID.String())
+		headers["X-User-ID"] = userID.String()
 	}
-	resp, err := c.http.Do(req)
+	var resp *serviceclient.Response
+	var err error
+	switch method {
+	case http.MethodGet:
+		resp, err = c.sc.Get(ctx, path, headers)
+	case http.MethodPost:
+		resp, err = c.sc.Post(ctx, path, body, headers)
+	case http.MethodPut:
+		resp, err = c.sc.Put(ctx, path, body, headers)
+	default:
+		return fmt.Errorf("treasury: unsupported method %s", method)
+	}
 	if err != nil {
+		// A 5xx or 429 that outlasted the retries; anything else is a transport failure.
+		if status, ok := serviceclient.StatusCode(err); ok {
+			return &Error{Status: status}
+		}
 		return fmt.Errorf("treasury: %s %s: %w", method, path, err)
 	}
-	defer resp.Body.Close()
-	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return &Error{Status: resp.StatusCode, Body: raw}
+		return &Error{Status: resp.StatusCode, Body: resp.Body}
 	}
 	if out == nil {
 		return nil
 	}
-	return json.Unmarshal(raw, out)
+	return json.Unmarshal(resp.Body, out)
 }
 
 func s2s(tenantID uuid.UUID, rest string) string {

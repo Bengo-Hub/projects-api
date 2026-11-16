@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/tender"
@@ -23,6 +25,7 @@ type TenderCreate struct {
 	config
 	mutation *TenderMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -362,6 +365,11 @@ func (tc *TenderCreate) check() error {
 	if _, ok := tc.mutation.Number(); !ok {
 		return &ValidationError{Name: "number", err: errors.New(`ent: missing required field "Tender.number"`)}
 	}
+	if v, ok := tc.mutation.Number(); ok {
+		if err := tender.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Tender.number": %w`, err)}
+		}
+	}
 	if _, ok := tc.mutation.Title(); !ok {
 		return &ValidationError{Name: "title", err: errors.New(`ent: missing required field "Tender.title"`)}
 	}
@@ -430,6 +438,7 @@ func (tc *TenderCreate) createSpec() (*Tender, *sqlgraph.CreateSpec) {
 		_node = &Tender{config: tc.config}
 		_spec = sqlgraph.NewCreateSpec(tender.Table, sqlgraph.NewFieldSpec(tender.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = tc.conflict
 	if id, ok := tc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -569,11 +578,657 @@ func (tc *TenderCreate) createSpec() (*Tender, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Tender.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (tc *TenderCreate) OnConflict(opts ...sql.ConflictOption) *TenderUpsertOne {
+	tc.conflict = opts
+	return &TenderUpsertOne{
+		create: tc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Tender.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tc *TenderCreate) OnConflictColumns(columns ...string) *TenderUpsertOne {
+	tc.conflict = append(tc.conflict, sql.ConflictColumns(columns...))
+	return &TenderUpsertOne{
+		create: tc,
+	}
+}
+
+type (
+	// TenderUpsertOne is the builder for "upsert"-ing
+	//  one Tender node.
+	TenderUpsertOne struct {
+		create *TenderCreate
+	}
+
+	// TenderUpsert is the "OnConflict" setter.
+	TenderUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderUpsert) SetTenantID(v uuid.UUID) *TenderUpsert {
+	u.Set(tender.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateTenantID() *TenderUpsert {
+	u.SetExcluded(tender.FieldTenantID)
+	return u
+}
+
+// SetNumber sets the "number" field.
+func (u *TenderUpsert) SetNumber(v string) *TenderUpsert {
+	u.Set(tender.FieldNumber, v)
+	return u
+}
+
+// UpdateNumber sets the "number" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateNumber() *TenderUpsert {
+	u.SetExcluded(tender.FieldNumber)
+	return u
+}
+
+// SetTitle sets the "title" field.
+func (u *TenderUpsert) SetTitle(v string) *TenderUpsert {
+	u.Set(tender.FieldTitle, v)
+	return u
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateTitle() *TenderUpsert {
+	u.SetExcluded(tender.FieldTitle)
+	return u
+}
+
+// SetClientName sets the "client_name" field.
+func (u *TenderUpsert) SetClientName(v string) *TenderUpsert {
+	u.Set(tender.FieldClientName, v)
+	return u
+}
+
+// UpdateClientName sets the "client_name" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateClientName() *TenderUpsert {
+	u.SetExcluded(tender.FieldClientName)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *TenderUpsert) SetSource(v string) *TenderUpsert {
+	u.Set(tender.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateSource() *TenderUpsert {
+	u.SetExcluded(tender.FieldSource)
+	return u
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *TenderUpsert) ClearSource() *TenderUpsert {
+	u.SetNull(tender.FieldSource)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *TenderUpsert) SetStatus(v string) *TenderUpsert {
+	u.Set(tender.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateStatus() *TenderUpsert {
+	u.SetExcluded(tender.FieldStatus)
+	return u
+}
+
+// SetPriority sets the "priority" field.
+func (u *TenderUpsert) SetPriority(v string) *TenderUpsert {
+	u.Set(tender.FieldPriority, v)
+	return u
+}
+
+// UpdatePriority sets the "priority" field to the value that was provided on create.
+func (u *TenderUpsert) UpdatePriority() *TenderUpsert {
+	u.SetExcluded(tender.FieldPriority)
+	return u
+}
+
+// SetEstimatedValue sets the "estimated_value" field.
+func (u *TenderUpsert) SetEstimatedValue(v float64) *TenderUpsert {
+	u.Set(tender.FieldEstimatedValue, v)
+	return u
+}
+
+// UpdateEstimatedValue sets the "estimated_value" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateEstimatedValue() *TenderUpsert {
+	u.SetExcluded(tender.FieldEstimatedValue)
+	return u
+}
+
+// AddEstimatedValue adds v to the "estimated_value" field.
+func (u *TenderUpsert) AddEstimatedValue(v float64) *TenderUpsert {
+	u.Add(tender.FieldEstimatedValue, v)
+	return u
+}
+
+// ClearEstimatedValue clears the value of the "estimated_value" field.
+func (u *TenderUpsert) ClearEstimatedValue() *TenderUpsert {
+	u.SetNull(tender.FieldEstimatedValue)
+	return u
+}
+
+// SetCurrency sets the "currency" field.
+func (u *TenderUpsert) SetCurrency(v string) *TenderUpsert {
+	u.Set(tender.FieldCurrency, v)
+	return u
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateCurrency() *TenderUpsert {
+	u.SetExcluded(tender.FieldCurrency)
+	return u
+}
+
+// SetDeadline sets the "deadline" field.
+func (u *TenderUpsert) SetDeadline(v time.Time) *TenderUpsert {
+	u.Set(tender.FieldDeadline, v)
+	return u
+}
+
+// UpdateDeadline sets the "deadline" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateDeadline() *TenderUpsert {
+	u.SetExcluded(tender.FieldDeadline)
+	return u
+}
+
+// ClearDeadline clears the value of the "deadline" field.
+func (u *TenderUpsert) ClearDeadline() *TenderUpsert {
+	u.SetNull(tender.FieldDeadline)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *TenderUpsert) SetDescription(v string) *TenderUpsert {
+	u.Set(tender.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateDescription() *TenderUpsert {
+	u.SetExcluded(tender.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *TenderUpsert) ClearDescription() *TenderUpsert {
+	u.SetNull(tender.FieldDescription)
+	return u
+}
+
+// SetSubmissionType sets the "submission_type" field.
+func (u *TenderUpsert) SetSubmissionType(v string) *TenderUpsert {
+	u.Set(tender.FieldSubmissionType, v)
+	return u
+}
+
+// UpdateSubmissionType sets the "submission_type" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateSubmissionType() *TenderUpsert {
+	u.SetExcluded(tender.FieldSubmissionType)
+	return u
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (u *TenderUpsert) SetSubmittedAt(v time.Time) *TenderUpsert {
+	u.Set(tender.FieldSubmittedAt, v)
+	return u
+}
+
+// UpdateSubmittedAt sets the "submitted_at" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateSubmittedAt() *TenderUpsert {
+	u.SetExcluded(tender.FieldSubmittedAt)
+	return u
+}
+
+// ClearSubmittedAt clears the value of the "submitted_at" field.
+func (u *TenderUpsert) ClearSubmittedAt() *TenderUpsert {
+	u.SetNull(tender.FieldSubmittedAt)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *TenderUpsert) SetMetadata(v map[string]interface{}) *TenderUpsert {
+	u.Set(tender.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateMetadata() *TenderUpsert {
+	u.SetExcluded(tender.FieldMetadata)
+	return u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *TenderUpsert) ClearMetadata() *TenderUpsert {
+	u.SetNull(tender.FieldMetadata)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *TenderUpsert) SetUpdatedAt(v time.Time) *TenderUpsert {
+	u.Set(tender.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateUpdatedAt() *TenderUpsert {
+	u.SetExcluded(tender.FieldUpdatedAt)
+	return u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *TenderUpsert) SetCreatedBy(v uuid.UUID) *TenderUpsert {
+	u.Set(tender.FieldCreatedBy, v)
+	return u
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *TenderUpsert) UpdateCreatedBy() *TenderUpsert {
+	u.SetExcluded(tender.FieldCreatedBy)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Tender.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tender.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderUpsertOne) UpdateNewValues() *TenderUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(tender.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(tender.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Tender.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *TenderUpsertOne) Ignore() *TenderUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderUpsertOne) DoNothing() *TenderUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderCreate.OnConflict
+// documentation for more info.
+func (u *TenderUpsertOne) Update(set func(*TenderUpsert)) *TenderUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderUpsertOne) SetTenantID(v uuid.UUID) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateTenantID() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetNumber sets the "number" field.
+func (u *TenderUpsertOne) SetNumber(v string) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetNumber(v)
+	})
+}
+
+// UpdateNumber sets the "number" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateNumber() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateNumber()
+	})
+}
+
+// SetTitle sets the "title" field.
+func (u *TenderUpsertOne) SetTitle(v string) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateTitle() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetClientName sets the "client_name" field.
+func (u *TenderUpsertOne) SetClientName(v string) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetClientName(v)
+	})
+}
+
+// UpdateClientName sets the "client_name" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateClientName() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateClientName()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *TenderUpsertOne) SetSource(v string) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateSource() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *TenderUpsertOne) ClearSource() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearSource()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *TenderUpsertOne) SetStatus(v string) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateStatus() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetPriority sets the "priority" field.
+func (u *TenderUpsertOne) SetPriority(v string) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetPriority(v)
+	})
+}
+
+// UpdatePriority sets the "priority" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdatePriority() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdatePriority()
+	})
+}
+
+// SetEstimatedValue sets the "estimated_value" field.
+func (u *TenderUpsertOne) SetEstimatedValue(v float64) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetEstimatedValue(v)
+	})
+}
+
+// AddEstimatedValue adds v to the "estimated_value" field.
+func (u *TenderUpsertOne) AddEstimatedValue(v float64) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.AddEstimatedValue(v)
+	})
+}
+
+// UpdateEstimatedValue sets the "estimated_value" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateEstimatedValue() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateEstimatedValue()
+	})
+}
+
+// ClearEstimatedValue clears the value of the "estimated_value" field.
+func (u *TenderUpsertOne) ClearEstimatedValue() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearEstimatedValue()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *TenderUpsertOne) SetCurrency(v string) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateCurrency() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateCurrency()
+	})
+}
+
+// SetDeadline sets the "deadline" field.
+func (u *TenderUpsertOne) SetDeadline(v time.Time) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetDeadline(v)
+	})
+}
+
+// UpdateDeadline sets the "deadline" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateDeadline() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateDeadline()
+	})
+}
+
+// ClearDeadline clears the value of the "deadline" field.
+func (u *TenderUpsertOne) ClearDeadline() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearDeadline()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *TenderUpsertOne) SetDescription(v string) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateDescription() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *TenderUpsertOne) ClearDescription() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetSubmissionType sets the "submission_type" field.
+func (u *TenderUpsertOne) SetSubmissionType(v string) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetSubmissionType(v)
+	})
+}
+
+// UpdateSubmissionType sets the "submission_type" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateSubmissionType() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateSubmissionType()
+	})
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (u *TenderUpsertOne) SetSubmittedAt(v time.Time) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetSubmittedAt(v)
+	})
+}
+
+// UpdateSubmittedAt sets the "submitted_at" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateSubmittedAt() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateSubmittedAt()
+	})
+}
+
+// ClearSubmittedAt clears the value of the "submitted_at" field.
+func (u *TenderUpsertOne) ClearSubmittedAt() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearSubmittedAt()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *TenderUpsertOne) SetMetadata(v map[string]interface{}) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateMetadata() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *TenderUpsertOne) ClearMetadata() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *TenderUpsertOne) SetUpdatedAt(v time.Time) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateUpdatedAt() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *TenderUpsertOne) SetCreatedBy(v uuid.UUID) *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *TenderUpsertOne) UpdateCreatedBy() *TenderUpsertOne {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *TenderUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: TenderUpsertOne.ID is not supported by MySQL driver. Use TenderUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *TenderUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // TenderCreateBulk is the builder for creating many Tender entities in bulk.
 type TenderCreateBulk struct {
 	config
 	err      error
 	builders []*TenderCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Tender entities in the database.
@@ -603,6 +1258,7 @@ func (tcb *TenderCreateBulk) Save(ctx context.Context) ([]*Tender, error) {
 					_, err = mutators[i+1].Mutate(root, tcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = tcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, tcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -649,6 +1305,396 @@ func (tcb *TenderCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (tcb *TenderCreateBulk) ExecX(ctx context.Context) {
 	if err := tcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Tender.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (tcb *TenderCreateBulk) OnConflict(opts ...sql.ConflictOption) *TenderUpsertBulk {
+	tcb.conflict = opts
+	return &TenderUpsertBulk{
+		create: tcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Tender.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tcb *TenderCreateBulk) OnConflictColumns(columns ...string) *TenderUpsertBulk {
+	tcb.conflict = append(tcb.conflict, sql.ConflictColumns(columns...))
+	return &TenderUpsertBulk{
+		create: tcb,
+	}
+}
+
+// TenderUpsertBulk is the builder for "upsert"-ing
+// a bulk of Tender nodes.
+type TenderUpsertBulk struct {
+	create *TenderCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Tender.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tender.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderUpsertBulk) UpdateNewValues() *TenderUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(tender.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(tender.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Tender.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *TenderUpsertBulk) Ignore() *TenderUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderUpsertBulk) DoNothing() *TenderUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderCreateBulk.OnConflict
+// documentation for more info.
+func (u *TenderUpsertBulk) Update(set func(*TenderUpsert)) *TenderUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderUpsertBulk) SetTenantID(v uuid.UUID) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateTenantID() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetNumber sets the "number" field.
+func (u *TenderUpsertBulk) SetNumber(v string) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetNumber(v)
+	})
+}
+
+// UpdateNumber sets the "number" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateNumber() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateNumber()
+	})
+}
+
+// SetTitle sets the "title" field.
+func (u *TenderUpsertBulk) SetTitle(v string) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateTitle() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetClientName sets the "client_name" field.
+func (u *TenderUpsertBulk) SetClientName(v string) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetClientName(v)
+	})
+}
+
+// UpdateClientName sets the "client_name" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateClientName() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateClientName()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *TenderUpsertBulk) SetSource(v string) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateSource() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// ClearSource clears the value of the "source" field.
+func (u *TenderUpsertBulk) ClearSource() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearSource()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *TenderUpsertBulk) SetStatus(v string) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateStatus() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetPriority sets the "priority" field.
+func (u *TenderUpsertBulk) SetPriority(v string) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetPriority(v)
+	})
+}
+
+// UpdatePriority sets the "priority" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdatePriority() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdatePriority()
+	})
+}
+
+// SetEstimatedValue sets the "estimated_value" field.
+func (u *TenderUpsertBulk) SetEstimatedValue(v float64) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetEstimatedValue(v)
+	})
+}
+
+// AddEstimatedValue adds v to the "estimated_value" field.
+func (u *TenderUpsertBulk) AddEstimatedValue(v float64) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.AddEstimatedValue(v)
+	})
+}
+
+// UpdateEstimatedValue sets the "estimated_value" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateEstimatedValue() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateEstimatedValue()
+	})
+}
+
+// ClearEstimatedValue clears the value of the "estimated_value" field.
+func (u *TenderUpsertBulk) ClearEstimatedValue() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearEstimatedValue()
+	})
+}
+
+// SetCurrency sets the "currency" field.
+func (u *TenderUpsertBulk) SetCurrency(v string) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetCurrency(v)
+	})
+}
+
+// UpdateCurrency sets the "currency" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateCurrency() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateCurrency()
+	})
+}
+
+// SetDeadline sets the "deadline" field.
+func (u *TenderUpsertBulk) SetDeadline(v time.Time) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetDeadline(v)
+	})
+}
+
+// UpdateDeadline sets the "deadline" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateDeadline() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateDeadline()
+	})
+}
+
+// ClearDeadline clears the value of the "deadline" field.
+func (u *TenderUpsertBulk) ClearDeadline() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearDeadline()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *TenderUpsertBulk) SetDescription(v string) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateDescription() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *TenderUpsertBulk) ClearDescription() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetSubmissionType sets the "submission_type" field.
+func (u *TenderUpsertBulk) SetSubmissionType(v string) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetSubmissionType(v)
+	})
+}
+
+// UpdateSubmissionType sets the "submission_type" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateSubmissionType() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateSubmissionType()
+	})
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (u *TenderUpsertBulk) SetSubmittedAt(v time.Time) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetSubmittedAt(v)
+	})
+}
+
+// UpdateSubmittedAt sets the "submitted_at" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateSubmittedAt() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateSubmittedAt()
+	})
+}
+
+// ClearSubmittedAt clears the value of the "submitted_at" field.
+func (u *TenderUpsertBulk) ClearSubmittedAt() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearSubmittedAt()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *TenderUpsertBulk) SetMetadata(v map[string]interface{}) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateMetadata() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *TenderUpsertBulk) ClearMetadata() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *TenderUpsertBulk) SetUpdatedAt(v time.Time) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateUpdatedAt() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *TenderUpsertBulk) SetCreatedBy(v uuid.UUID) *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *TenderUpsertBulk) UpdateCreatedBy() *TenderUpsertBulk {
+	return u.Update(func(s *TenderUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the TenderCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

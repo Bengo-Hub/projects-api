@@ -56,9 +56,9 @@ func IDLTE(id uuid.UUID) predicate.Permission {
 	return predicate.Permission(sql.FieldLTE(FieldID, id))
 }
 
-// TenantID applies equality check predicate on the "tenant_id" field. It's identical to TenantIDEQ.
-func TenantID(v uuid.UUID) predicate.Permission {
-	return predicate.Permission(sql.FieldEQ(FieldTenantID, v))
+// PermissionCode applies equality check predicate on the "permission_code" field. It's identical to PermissionCodeEQ.
+func PermissionCode(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldEQ(FieldPermissionCode, v))
 }
 
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
@@ -91,44 +91,69 @@ func CreatedAt(v time.Time) predicate.Permission {
 	return predicate.Permission(sql.FieldEQ(FieldCreatedAt, v))
 }
 
-// TenantIDEQ applies the EQ predicate on the "tenant_id" field.
-func TenantIDEQ(v uuid.UUID) predicate.Permission {
-	return predicate.Permission(sql.FieldEQ(FieldTenantID, v))
+// PermissionCodeEQ applies the EQ predicate on the "permission_code" field.
+func PermissionCodeEQ(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldEQ(FieldPermissionCode, v))
 }
 
-// TenantIDNEQ applies the NEQ predicate on the "tenant_id" field.
-func TenantIDNEQ(v uuid.UUID) predicate.Permission {
-	return predicate.Permission(sql.FieldNEQ(FieldTenantID, v))
+// PermissionCodeNEQ applies the NEQ predicate on the "permission_code" field.
+func PermissionCodeNEQ(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldNEQ(FieldPermissionCode, v))
 }
 
-// TenantIDIn applies the In predicate on the "tenant_id" field.
-func TenantIDIn(vs ...uuid.UUID) predicate.Permission {
-	return predicate.Permission(sql.FieldIn(FieldTenantID, vs...))
+// PermissionCodeIn applies the In predicate on the "permission_code" field.
+func PermissionCodeIn(vs ...string) predicate.Permission {
+	return predicate.Permission(sql.FieldIn(FieldPermissionCode, vs...))
 }
 
-// TenantIDNotIn applies the NotIn predicate on the "tenant_id" field.
-func TenantIDNotIn(vs ...uuid.UUID) predicate.Permission {
-	return predicate.Permission(sql.FieldNotIn(FieldTenantID, vs...))
+// PermissionCodeNotIn applies the NotIn predicate on the "permission_code" field.
+func PermissionCodeNotIn(vs ...string) predicate.Permission {
+	return predicate.Permission(sql.FieldNotIn(FieldPermissionCode, vs...))
 }
 
-// TenantIDGT applies the GT predicate on the "tenant_id" field.
-func TenantIDGT(v uuid.UUID) predicate.Permission {
-	return predicate.Permission(sql.FieldGT(FieldTenantID, v))
+// PermissionCodeGT applies the GT predicate on the "permission_code" field.
+func PermissionCodeGT(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldGT(FieldPermissionCode, v))
 }
 
-// TenantIDGTE applies the GTE predicate on the "tenant_id" field.
-func TenantIDGTE(v uuid.UUID) predicate.Permission {
-	return predicate.Permission(sql.FieldGTE(FieldTenantID, v))
+// PermissionCodeGTE applies the GTE predicate on the "permission_code" field.
+func PermissionCodeGTE(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldGTE(FieldPermissionCode, v))
 }
 
-// TenantIDLT applies the LT predicate on the "tenant_id" field.
-func TenantIDLT(v uuid.UUID) predicate.Permission {
-	return predicate.Permission(sql.FieldLT(FieldTenantID, v))
+// PermissionCodeLT applies the LT predicate on the "permission_code" field.
+func PermissionCodeLT(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldLT(FieldPermissionCode, v))
 }
 
-// TenantIDLTE applies the LTE predicate on the "tenant_id" field.
-func TenantIDLTE(v uuid.UUID) predicate.Permission {
-	return predicate.Permission(sql.FieldLTE(FieldTenantID, v))
+// PermissionCodeLTE applies the LTE predicate on the "permission_code" field.
+func PermissionCodeLTE(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldLTE(FieldPermissionCode, v))
+}
+
+// PermissionCodeContains applies the Contains predicate on the "permission_code" field.
+func PermissionCodeContains(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldContains(FieldPermissionCode, v))
+}
+
+// PermissionCodeHasPrefix applies the HasPrefix predicate on the "permission_code" field.
+func PermissionCodeHasPrefix(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldHasPrefix(FieldPermissionCode, v))
+}
+
+// PermissionCodeHasSuffix applies the HasSuffix predicate on the "permission_code" field.
+func PermissionCodeHasSuffix(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldHasSuffix(FieldPermissionCode, v))
+}
+
+// PermissionCodeEqualFold applies the EqualFold predicate on the "permission_code" field.
+func PermissionCodeEqualFold(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldEqualFold(FieldPermissionCode, v))
+}
+
+// PermissionCodeContainsFold applies the ContainsFold predicate on the "permission_code" field.
+func PermissionCodeContainsFold(v string) predicate.Permission {
+	return predicate.Permission(sql.FieldContainsFold(FieldPermissionCode, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -516,12 +541,35 @@ func CreatedAtLTE(v time.Time) predicate.Permission {
 	return predicate.Permission(sql.FieldLTE(FieldCreatedAt, v))
 }
 
+// HasRoles applies the HasEdge predicate on the "roles" edge.
+func HasRoles() predicate.Permission {
+	return predicate.Permission(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, RolesTable, RolesPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRolesWith applies the HasEdge predicate on the "roles" edge with a given conditions (other predicates).
+func HasRolesWith(preds ...predicate.Role) predicate.Permission {
+	return predicate.Permission(func(s *sql.Selector) {
+		step := newRolesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasRolePermissions applies the HasEdge predicate on the "role_permissions" edge.
 func HasRolePermissions() predicate.Permission {
 	return predicate.Permission(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, RolePermissionsTable, RolePermissionsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, RolePermissionsTable, RolePermissionsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

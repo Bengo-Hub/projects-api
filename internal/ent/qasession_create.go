@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/qasession"
@@ -20,6 +22,7 @@ type QASessionCreate struct {
 	config
 	mutation *QASessionMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -367,6 +370,7 @@ func (qsc *QASessionCreate) createSpec() (*QASession, *sqlgraph.CreateSpec) {
 		_node = &QASession{config: qsc.config}
 		_spec = sqlgraph.NewCreateSpec(qasession.Table, sqlgraph.NewFieldSpec(qasession.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = qsc.conflict
 	if id, ok := qsc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -442,11 +446,565 @@ func (qsc *QASessionCreate) createSpec() (*QASession, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QASession.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QASessionUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qsc *QASessionCreate) OnConflict(opts ...sql.ConflictOption) *QASessionUpsertOne {
+	qsc.conflict = opts
+	return &QASessionUpsertOne{
+		create: qsc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QASession.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qsc *QASessionCreate) OnConflictColumns(columns ...string) *QASessionUpsertOne {
+	qsc.conflict = append(qsc.conflict, sql.ConflictColumns(columns...))
+	return &QASessionUpsertOne{
+		create: qsc,
+	}
+}
+
+type (
+	// QASessionUpsertOne is the builder for "upsert"-ing
+	//  one QASession node.
+	QASessionUpsertOne struct {
+		create *QASessionCreate
+	}
+
+	// QASessionUpsert is the "OnConflict" setter.
+	QASessionUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTitle sets the "title" field.
+func (u *QASessionUpsert) SetTitle(v string) *QASessionUpsert {
+	u.Set(qasession.FieldTitle, v)
+	return u
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateTitle() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldTitle)
+	return u
+}
+
+// SetSubjectKind sets the "subject_kind" field.
+func (u *QASessionUpsert) SetSubjectKind(v string) *QASessionUpsert {
+	u.Set(qasession.FieldSubjectKind, v)
+	return u
+}
+
+// UpdateSubjectKind sets the "subject_kind" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateSubjectKind() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldSubjectKind)
+	return u
+}
+
+// SetSubjectRef sets the "subject_ref" field.
+func (u *QASessionUpsert) SetSubjectRef(v string) *QASessionUpsert {
+	u.Set(qasession.FieldSubjectRef, v)
+	return u
+}
+
+// UpdateSubjectRef sets the "subject_ref" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateSubjectRef() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldSubjectRef)
+	return u
+}
+
+// ClearSubjectRef clears the value of the "subject_ref" field.
+func (u *QASessionUpsert) ClearSubjectRef() *QASessionUpsert {
+	u.SetNull(qasession.FieldSubjectRef)
+	return u
+}
+
+// SetCriteriaSnapshot sets the "criteria_snapshot" field.
+func (u *QASessionUpsert) SetCriteriaSnapshot(v []qamodel.SnapshotCriterion) *QASessionUpsert {
+	u.Set(qasession.FieldCriteriaSnapshot, v)
+	return u
+}
+
+// UpdateCriteriaSnapshot sets the "criteria_snapshot" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateCriteriaSnapshot() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldCriteriaSnapshot)
+	return u
+}
+
+// ClearCriteriaSnapshot clears the value of the "criteria_snapshot" field.
+func (u *QASessionUpsert) ClearCriteriaSnapshot() *QASessionUpsert {
+	u.SetNull(qasession.FieldCriteriaSnapshot)
+	return u
+}
+
+// SetPassRule sets the "pass_rule" field.
+func (u *QASessionUpsert) SetPassRule(v qamodel.PassRule) *QASessionUpsert {
+	u.Set(qasession.FieldPassRule, v)
+	return u
+}
+
+// UpdatePassRule sets the "pass_rule" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdatePassRule() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldPassRule)
+	return u
+}
+
+// ClearPassRule clears the value of the "pass_rule" field.
+func (u *QASessionUpsert) ClearPassRule() *QASessionUpsert {
+	u.SetNull(qasession.FieldPassRule)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *QASessionUpsert) SetStatus(v string) *QASessionUpsert {
+	u.Set(qasession.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateStatus() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldStatus)
+	return u
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *QASessionUpsert) SetOwnerID(v uuid.UUID) *QASessionUpsert {
+	u.Set(qasession.FieldOwnerID, v)
+	return u
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateOwnerID() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldOwnerID)
+	return u
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (u *QASessionUpsert) SetOpenedAt(v time.Time) *QASessionUpsert {
+	u.Set(qasession.FieldOpenedAt, v)
+	return u
+}
+
+// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateOpenedAt() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldOpenedAt)
+	return u
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (u *QASessionUpsert) ClearOpenedAt() *QASessionUpsert {
+	u.SetNull(qasession.FieldOpenedAt)
+	return u
+}
+
+// SetClosedAt sets the "closed_at" field.
+func (u *QASessionUpsert) SetClosedAt(v time.Time) *QASessionUpsert {
+	u.Set(qasession.FieldClosedAt, v)
+	return u
+}
+
+// UpdateClosedAt sets the "closed_at" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateClosedAt() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldClosedAt)
+	return u
+}
+
+// ClearClosedAt clears the value of the "closed_at" field.
+func (u *QASessionUpsert) ClearClosedAt() *QASessionUpsert {
+	u.SetNull(qasession.FieldClosedAt)
+	return u
+}
+
+// SetDocumentHash sets the "document_hash" field.
+func (u *QASessionUpsert) SetDocumentHash(v string) *QASessionUpsert {
+	u.Set(qasession.FieldDocumentHash, v)
+	return u
+}
+
+// UpdateDocumentHash sets the "document_hash" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateDocumentHash() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldDocumentHash)
+	return u
+}
+
+// ClearDocumentHash clears the value of the "document_hash" field.
+func (u *QASessionUpsert) ClearDocumentHash() *QASessionUpsert {
+	u.SetNull(qasession.FieldDocumentHash)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *QASessionUpsert) SetMetadata(v map[string]interface{}) *QASessionUpsert {
+	u.Set(qasession.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateMetadata() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldMetadata)
+	return u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *QASessionUpsert) ClearMetadata() *QASessionUpsert {
+	u.SetNull(qasession.FieldMetadata)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QASessionUpsert) SetUpdatedAt(v time.Time) *QASessionUpsert {
+	u.Set(qasession.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QASessionUpsert) UpdateUpdatedAt() *QASessionUpsert {
+	u.SetExcluded(qasession.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.QASession.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qasession.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QASessionUpsertOne) UpdateNewValues() *QASessionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(qasession.FieldID)
+		}
+		if _, exists := u.create.mutation.TenantID(); exists {
+			s.SetIgnore(qasession.FieldTenantID)
+		}
+		if _, exists := u.create.mutation.TemplateID(); exists {
+			s.SetIgnore(qasession.FieldTemplateID)
+		}
+		if _, exists := u.create.mutation.TemplateVersion(); exists {
+			s.SetIgnore(qasession.FieldTemplateVersion)
+		}
+		if _, exists := u.create.mutation.ShareCode(); exists {
+			s.SetIgnore(qasession.FieldShareCode)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(qasession.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QASession.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *QASessionUpsertOne) Ignore() *QASessionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QASessionUpsertOne) DoNothing() *QASessionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QASessionCreate.OnConflict
+// documentation for more info.
+func (u *QASessionUpsertOne) Update(set func(*QASessionUpsert)) *QASessionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QASessionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTitle sets the "title" field.
+func (u *QASessionUpsertOne) SetTitle(v string) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateTitle() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetSubjectKind sets the "subject_kind" field.
+func (u *QASessionUpsertOne) SetSubjectKind(v string) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetSubjectKind(v)
+	})
+}
+
+// UpdateSubjectKind sets the "subject_kind" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateSubjectKind() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateSubjectKind()
+	})
+}
+
+// SetSubjectRef sets the "subject_ref" field.
+func (u *QASessionUpsertOne) SetSubjectRef(v string) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetSubjectRef(v)
+	})
+}
+
+// UpdateSubjectRef sets the "subject_ref" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateSubjectRef() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateSubjectRef()
+	})
+}
+
+// ClearSubjectRef clears the value of the "subject_ref" field.
+func (u *QASessionUpsertOne) ClearSubjectRef() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearSubjectRef()
+	})
+}
+
+// SetCriteriaSnapshot sets the "criteria_snapshot" field.
+func (u *QASessionUpsertOne) SetCriteriaSnapshot(v []qamodel.SnapshotCriterion) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetCriteriaSnapshot(v)
+	})
+}
+
+// UpdateCriteriaSnapshot sets the "criteria_snapshot" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateCriteriaSnapshot() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateCriteriaSnapshot()
+	})
+}
+
+// ClearCriteriaSnapshot clears the value of the "criteria_snapshot" field.
+func (u *QASessionUpsertOne) ClearCriteriaSnapshot() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearCriteriaSnapshot()
+	})
+}
+
+// SetPassRule sets the "pass_rule" field.
+func (u *QASessionUpsertOne) SetPassRule(v qamodel.PassRule) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetPassRule(v)
+	})
+}
+
+// UpdatePassRule sets the "pass_rule" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdatePassRule() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdatePassRule()
+	})
+}
+
+// ClearPassRule clears the value of the "pass_rule" field.
+func (u *QASessionUpsertOne) ClearPassRule() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearPassRule()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *QASessionUpsertOne) SetStatus(v string) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateStatus() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *QASessionUpsertOne) SetOwnerID(v uuid.UUID) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateOwnerID() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateOwnerID()
+	})
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (u *QASessionUpsertOne) SetOpenedAt(v time.Time) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetOpenedAt(v)
+	})
+}
+
+// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateOpenedAt() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateOpenedAt()
+	})
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (u *QASessionUpsertOne) ClearOpenedAt() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearOpenedAt()
+	})
+}
+
+// SetClosedAt sets the "closed_at" field.
+func (u *QASessionUpsertOne) SetClosedAt(v time.Time) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetClosedAt(v)
+	})
+}
+
+// UpdateClosedAt sets the "closed_at" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateClosedAt() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateClosedAt()
+	})
+}
+
+// ClearClosedAt clears the value of the "closed_at" field.
+func (u *QASessionUpsertOne) ClearClosedAt() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearClosedAt()
+	})
+}
+
+// SetDocumentHash sets the "document_hash" field.
+func (u *QASessionUpsertOne) SetDocumentHash(v string) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetDocumentHash(v)
+	})
+}
+
+// UpdateDocumentHash sets the "document_hash" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateDocumentHash() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateDocumentHash()
+	})
+}
+
+// ClearDocumentHash clears the value of the "document_hash" field.
+func (u *QASessionUpsertOne) ClearDocumentHash() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearDocumentHash()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *QASessionUpsertOne) SetMetadata(v map[string]interface{}) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateMetadata() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *QASessionUpsertOne) ClearMetadata() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QASessionUpsertOne) SetUpdatedAt(v time.Time) *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QASessionUpsertOne) UpdateUpdatedAt() *QASessionUpsertOne {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QASessionUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QASessionCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QASessionUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *QASessionUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: QASessionUpsertOne.ID is not supported by MySQL driver. Use QASessionUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *QASessionUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // QASessionCreateBulk is the builder for creating many QASession entities in bulk.
 type QASessionCreateBulk struct {
 	config
 	err      error
 	builders []*QASessionCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the QASession entities in the database.
@@ -476,6 +1034,7 @@ func (qscb *QASessionCreateBulk) Save(ctx context.Context) ([]*QASession, error)
 					_, err = mutators[i+1].Mutate(root, qscb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = qscb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, qscb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -522,6 +1081,352 @@ func (qscb *QASessionCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (qscb *QASessionCreateBulk) ExecX(ctx context.Context) {
 	if err := qscb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QASession.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QASessionUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qscb *QASessionCreateBulk) OnConflict(opts ...sql.ConflictOption) *QASessionUpsertBulk {
+	qscb.conflict = opts
+	return &QASessionUpsertBulk{
+		create: qscb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QASession.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qscb *QASessionCreateBulk) OnConflictColumns(columns ...string) *QASessionUpsertBulk {
+	qscb.conflict = append(qscb.conflict, sql.ConflictColumns(columns...))
+	return &QASessionUpsertBulk{
+		create: qscb,
+	}
+}
+
+// QASessionUpsertBulk is the builder for "upsert"-ing
+// a bulk of QASession nodes.
+type QASessionUpsertBulk struct {
+	create *QASessionCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.QASession.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qasession.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QASessionUpsertBulk) UpdateNewValues() *QASessionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(qasession.FieldID)
+			}
+			if _, exists := b.mutation.TenantID(); exists {
+				s.SetIgnore(qasession.FieldTenantID)
+			}
+			if _, exists := b.mutation.TemplateID(); exists {
+				s.SetIgnore(qasession.FieldTemplateID)
+			}
+			if _, exists := b.mutation.TemplateVersion(); exists {
+				s.SetIgnore(qasession.FieldTemplateVersion)
+			}
+			if _, exists := b.mutation.ShareCode(); exists {
+				s.SetIgnore(qasession.FieldShareCode)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(qasession.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QASession.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *QASessionUpsertBulk) Ignore() *QASessionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QASessionUpsertBulk) DoNothing() *QASessionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QASessionCreateBulk.OnConflict
+// documentation for more info.
+func (u *QASessionUpsertBulk) Update(set func(*QASessionUpsert)) *QASessionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QASessionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTitle sets the "title" field.
+func (u *QASessionUpsertBulk) SetTitle(v string) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateTitle() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetSubjectKind sets the "subject_kind" field.
+func (u *QASessionUpsertBulk) SetSubjectKind(v string) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetSubjectKind(v)
+	})
+}
+
+// UpdateSubjectKind sets the "subject_kind" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateSubjectKind() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateSubjectKind()
+	})
+}
+
+// SetSubjectRef sets the "subject_ref" field.
+func (u *QASessionUpsertBulk) SetSubjectRef(v string) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetSubjectRef(v)
+	})
+}
+
+// UpdateSubjectRef sets the "subject_ref" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateSubjectRef() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateSubjectRef()
+	})
+}
+
+// ClearSubjectRef clears the value of the "subject_ref" field.
+func (u *QASessionUpsertBulk) ClearSubjectRef() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearSubjectRef()
+	})
+}
+
+// SetCriteriaSnapshot sets the "criteria_snapshot" field.
+func (u *QASessionUpsertBulk) SetCriteriaSnapshot(v []qamodel.SnapshotCriterion) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetCriteriaSnapshot(v)
+	})
+}
+
+// UpdateCriteriaSnapshot sets the "criteria_snapshot" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateCriteriaSnapshot() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateCriteriaSnapshot()
+	})
+}
+
+// ClearCriteriaSnapshot clears the value of the "criteria_snapshot" field.
+func (u *QASessionUpsertBulk) ClearCriteriaSnapshot() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearCriteriaSnapshot()
+	})
+}
+
+// SetPassRule sets the "pass_rule" field.
+func (u *QASessionUpsertBulk) SetPassRule(v qamodel.PassRule) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetPassRule(v)
+	})
+}
+
+// UpdatePassRule sets the "pass_rule" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdatePassRule() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdatePassRule()
+	})
+}
+
+// ClearPassRule clears the value of the "pass_rule" field.
+func (u *QASessionUpsertBulk) ClearPassRule() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearPassRule()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *QASessionUpsertBulk) SetStatus(v string) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateStatus() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetOwnerID sets the "owner_id" field.
+func (u *QASessionUpsertBulk) SetOwnerID(v uuid.UUID) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetOwnerID(v)
+	})
+}
+
+// UpdateOwnerID sets the "owner_id" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateOwnerID() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateOwnerID()
+	})
+}
+
+// SetOpenedAt sets the "opened_at" field.
+func (u *QASessionUpsertBulk) SetOpenedAt(v time.Time) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetOpenedAt(v)
+	})
+}
+
+// UpdateOpenedAt sets the "opened_at" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateOpenedAt() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateOpenedAt()
+	})
+}
+
+// ClearOpenedAt clears the value of the "opened_at" field.
+func (u *QASessionUpsertBulk) ClearOpenedAt() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearOpenedAt()
+	})
+}
+
+// SetClosedAt sets the "closed_at" field.
+func (u *QASessionUpsertBulk) SetClosedAt(v time.Time) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetClosedAt(v)
+	})
+}
+
+// UpdateClosedAt sets the "closed_at" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateClosedAt() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateClosedAt()
+	})
+}
+
+// ClearClosedAt clears the value of the "closed_at" field.
+func (u *QASessionUpsertBulk) ClearClosedAt() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearClosedAt()
+	})
+}
+
+// SetDocumentHash sets the "document_hash" field.
+func (u *QASessionUpsertBulk) SetDocumentHash(v string) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetDocumentHash(v)
+	})
+}
+
+// UpdateDocumentHash sets the "document_hash" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateDocumentHash() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateDocumentHash()
+	})
+}
+
+// ClearDocumentHash clears the value of the "document_hash" field.
+func (u *QASessionUpsertBulk) ClearDocumentHash() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearDocumentHash()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *QASessionUpsertBulk) SetMetadata(v map[string]interface{}) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateMetadata() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *QASessionUpsertBulk) ClearMetadata() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QASessionUpsertBulk) SetUpdatedAt(v time.Time) *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QASessionUpsertBulk) UpdateUpdatedAt() *QASessionUpsertBulk {
+	return u.Update(func(s *QASessionUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QASessionUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the QASessionCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QASessionCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QASessionUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

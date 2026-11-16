@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
@@ -20,6 +22,7 @@ type TenderCommitteeMemberCreate struct {
 	config
 	mutation *TenderCommitteeMemberMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetCommitteeID sets the "committee_id" field.
@@ -187,6 +190,7 @@ func (tcmc *TenderCommitteeMemberCreate) createSpec() (*TenderCommitteeMember, *
 		_node = &TenderCommitteeMember{config: tcmc.config}
 		_spec = sqlgraph.NewCreateSpec(tendercommitteemember.Table, sqlgraph.NewFieldSpec(tendercommitteemember.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = tcmc.conflict
 	if id, ok := tcmc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -227,11 +231,254 @@ func (tcmc *TenderCommitteeMemberCreate) createSpec() (*TenderCommitteeMember, *
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.TenderCommitteeMember.Create().
+//		SetCommitteeID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderCommitteeMemberUpsert) {
+//			SetCommitteeID(v+v).
+//		}).
+//		Exec(ctx)
+func (tcmc *TenderCommitteeMemberCreate) OnConflict(opts ...sql.ConflictOption) *TenderCommitteeMemberUpsertOne {
+	tcmc.conflict = opts
+	return &TenderCommitteeMemberUpsertOne{
+		create: tcmc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.TenderCommitteeMember.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tcmc *TenderCommitteeMemberCreate) OnConflictColumns(columns ...string) *TenderCommitteeMemberUpsertOne {
+	tcmc.conflict = append(tcmc.conflict, sql.ConflictColumns(columns...))
+	return &TenderCommitteeMemberUpsertOne{
+		create: tcmc,
+	}
+}
+
+type (
+	// TenderCommitteeMemberUpsertOne is the builder for "upsert"-ing
+	//  one TenderCommitteeMember node.
+	TenderCommitteeMemberUpsertOne struct {
+		create *TenderCommitteeMemberCreate
+	}
+
+	// TenderCommitteeMemberUpsert is the "OnConflict" setter.
+	TenderCommitteeMemberUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetCommitteeID sets the "committee_id" field.
+func (u *TenderCommitteeMemberUpsert) SetCommitteeID(v uuid.UUID) *TenderCommitteeMemberUpsert {
+	u.Set(tendercommitteemember.FieldCommitteeID, v)
+	return u
+}
+
+// UpdateCommitteeID sets the "committee_id" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsert) UpdateCommitteeID() *TenderCommitteeMemberUpsert {
+	u.SetExcluded(tendercommitteemember.FieldCommitteeID)
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderCommitteeMemberUpsert) SetTenantID(v uuid.UUID) *TenderCommitteeMemberUpsert {
+	u.Set(tendercommitteemember.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsert) UpdateTenantID() *TenderCommitteeMemberUpsert {
+	u.SetExcluded(tendercommitteemember.FieldTenantID)
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *TenderCommitteeMemberUpsert) SetUserID(v uuid.UUID) *TenderCommitteeMemberUpsert {
+	u.Set(tendercommitteemember.FieldUserID, v)
+	return u
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsert) UpdateUserID() *TenderCommitteeMemberUpsert {
+	u.SetExcluded(tendercommitteemember.FieldUserID)
+	return u
+}
+
+// SetRole sets the "role" field.
+func (u *TenderCommitteeMemberUpsert) SetRole(v string) *TenderCommitteeMemberUpsert {
+	u.Set(tendercommitteemember.FieldRole, v)
+	return u
+}
+
+// UpdateRole sets the "role" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsert) UpdateRole() *TenderCommitteeMemberUpsert {
+	u.SetExcluded(tendercommitteemember.FieldRole)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.TenderCommitteeMember.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tendercommitteemember.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderCommitteeMemberUpsertOne) UpdateNewValues() *TenderCommitteeMemberUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(tendercommitteemember.FieldID)
+		}
+		if _, exists := u.create.mutation.JoinedAt(); exists {
+			s.SetIgnore(tendercommitteemember.FieldJoinedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.TenderCommitteeMember.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *TenderCommitteeMemberUpsertOne) Ignore() *TenderCommitteeMemberUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderCommitteeMemberUpsertOne) DoNothing() *TenderCommitteeMemberUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderCommitteeMemberCreate.OnConflict
+// documentation for more info.
+func (u *TenderCommitteeMemberUpsertOne) Update(set func(*TenderCommitteeMemberUpsert)) *TenderCommitteeMemberUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderCommitteeMemberUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetCommitteeID sets the "committee_id" field.
+func (u *TenderCommitteeMemberUpsertOne) SetCommitteeID(v uuid.UUID) *TenderCommitteeMemberUpsertOne {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.SetCommitteeID(v)
+	})
+}
+
+// UpdateCommitteeID sets the "committee_id" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsertOne) UpdateCommitteeID() *TenderCommitteeMemberUpsertOne {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.UpdateCommitteeID()
+	})
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderCommitteeMemberUpsertOne) SetTenantID(v uuid.UUID) *TenderCommitteeMemberUpsertOne {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsertOne) UpdateTenantID() *TenderCommitteeMemberUpsertOne {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *TenderCommitteeMemberUpsertOne) SetUserID(v uuid.UUID) *TenderCommitteeMemberUpsertOne {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsertOne) UpdateUserID() *TenderCommitteeMemberUpsertOne {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetRole sets the "role" field.
+func (u *TenderCommitteeMemberUpsertOne) SetRole(v string) *TenderCommitteeMemberUpsertOne {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.SetRole(v)
+	})
+}
+
+// UpdateRole sets the "role" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsertOne) UpdateRole() *TenderCommitteeMemberUpsertOne {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.UpdateRole()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderCommitteeMemberUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderCommitteeMemberCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderCommitteeMemberUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *TenderCommitteeMemberUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: TenderCommitteeMemberUpsertOne.ID is not supported by MySQL driver. Use TenderCommitteeMemberUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *TenderCommitteeMemberUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // TenderCommitteeMemberCreateBulk is the builder for creating many TenderCommitteeMember entities in bulk.
 type TenderCommitteeMemberCreateBulk struct {
 	config
 	err      error
 	builders []*TenderCommitteeMemberCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the TenderCommitteeMember entities in the database.
@@ -261,6 +508,7 @@ func (tcmcb *TenderCommitteeMemberCreateBulk) Save(ctx context.Context) ([]*Tend
 					_, err = mutators[i+1].Mutate(root, tcmcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = tcmcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, tcmcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -307,6 +555,179 @@ func (tcmcb *TenderCommitteeMemberCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (tcmcb *TenderCommitteeMemberCreateBulk) ExecX(ctx context.Context) {
 	if err := tcmcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.TenderCommitteeMember.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderCommitteeMemberUpsert) {
+//			SetCommitteeID(v+v).
+//		}).
+//		Exec(ctx)
+func (tcmcb *TenderCommitteeMemberCreateBulk) OnConflict(opts ...sql.ConflictOption) *TenderCommitteeMemberUpsertBulk {
+	tcmcb.conflict = opts
+	return &TenderCommitteeMemberUpsertBulk{
+		create: tcmcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.TenderCommitteeMember.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tcmcb *TenderCommitteeMemberCreateBulk) OnConflictColumns(columns ...string) *TenderCommitteeMemberUpsertBulk {
+	tcmcb.conflict = append(tcmcb.conflict, sql.ConflictColumns(columns...))
+	return &TenderCommitteeMemberUpsertBulk{
+		create: tcmcb,
+	}
+}
+
+// TenderCommitteeMemberUpsertBulk is the builder for "upsert"-ing
+// a bulk of TenderCommitteeMember nodes.
+type TenderCommitteeMemberUpsertBulk struct {
+	create *TenderCommitteeMemberCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.TenderCommitteeMember.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tendercommitteemember.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderCommitteeMemberUpsertBulk) UpdateNewValues() *TenderCommitteeMemberUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(tendercommitteemember.FieldID)
+			}
+			if _, exists := b.mutation.JoinedAt(); exists {
+				s.SetIgnore(tendercommitteemember.FieldJoinedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.TenderCommitteeMember.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *TenderCommitteeMemberUpsertBulk) Ignore() *TenderCommitteeMemberUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderCommitteeMemberUpsertBulk) DoNothing() *TenderCommitteeMemberUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderCommitteeMemberCreateBulk.OnConflict
+// documentation for more info.
+func (u *TenderCommitteeMemberUpsertBulk) Update(set func(*TenderCommitteeMemberUpsert)) *TenderCommitteeMemberUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderCommitteeMemberUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetCommitteeID sets the "committee_id" field.
+func (u *TenderCommitteeMemberUpsertBulk) SetCommitteeID(v uuid.UUID) *TenderCommitteeMemberUpsertBulk {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.SetCommitteeID(v)
+	})
+}
+
+// UpdateCommitteeID sets the "committee_id" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsertBulk) UpdateCommitteeID() *TenderCommitteeMemberUpsertBulk {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.UpdateCommitteeID()
+	})
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderCommitteeMemberUpsertBulk) SetTenantID(v uuid.UUID) *TenderCommitteeMemberUpsertBulk {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsertBulk) UpdateTenantID() *TenderCommitteeMemberUpsertBulk {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *TenderCommitteeMemberUpsertBulk) SetUserID(v uuid.UUID) *TenderCommitteeMemberUpsertBulk {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsertBulk) UpdateUserID() *TenderCommitteeMemberUpsertBulk {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetRole sets the "role" field.
+func (u *TenderCommitteeMemberUpsertBulk) SetRole(v string) *TenderCommitteeMemberUpsertBulk {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.SetRole(v)
+	})
+}
+
+// UpdateRole sets the "role" field to the value that was provided on create.
+func (u *TenderCommitteeMemberUpsertBulk) UpdateRole() *TenderCommitteeMemberUpsertBulk {
+	return u.Update(func(s *TenderCommitteeMemberUpsert) {
+		s.UpdateRole()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderCommitteeMemberUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the TenderCommitteeMemberCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderCommitteeMemberCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderCommitteeMemberUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

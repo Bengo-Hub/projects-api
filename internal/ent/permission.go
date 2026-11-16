@@ -18,8 +18,8 @@ type Permission struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// TenantID holds the value of the "tenant_id" field.
-	TenantID uuid.UUID `json:"tenant_id,omitempty"`
+	// PermissionCode holds the value of the "permission_code" field.
+	PermissionCode string `json:"permission_code,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Module holds the value of the "module" field.
@@ -40,17 +40,28 @@ type Permission struct {
 
 // PermissionEdges holds the relations/edges for other nodes in the graph.
 type PermissionEdges struct {
+	// Roles holds the value of the roles edge.
+	Roles []*Role `json:"roles,omitempty"`
 	// RolePermissions holds the value of the role_permissions edge.
 	RolePermissions []*RolePermission `json:"role_permissions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
+}
+
+// RolesOrErr returns the Roles value or an error if the edge
+// was not loaded in eager-loading.
+func (e PermissionEdges) RolesOrErr() ([]*Role, error) {
+	if e.loadedTypes[0] {
+		return e.Roles, nil
+	}
+	return nil, &NotLoadedError{edge: "roles"}
 }
 
 // RolePermissionsOrErr returns the RolePermissions value or an error if the edge
 // was not loaded in eager-loading.
 func (e PermissionEdges) RolePermissionsOrErr() ([]*RolePermission, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.RolePermissions, nil
 	}
 	return nil, &NotLoadedError{edge: "role_permissions"}
@@ -61,11 +72,11 @@ func (*Permission) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case permission.FieldName, permission.FieldModule, permission.FieldAction, permission.FieldResource, permission.FieldDescription:
+		case permission.FieldPermissionCode, permission.FieldName, permission.FieldModule, permission.FieldAction, permission.FieldResource, permission.FieldDescription:
 			values[i] = new(sql.NullString)
 		case permission.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
-		case permission.FieldID, permission.FieldTenantID:
+		case permission.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -88,11 +99,11 @@ func (pe *Permission) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				pe.ID = *value
 			}
-		case permission.FieldTenantID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field tenant_id", values[i])
-			} else if value != nil {
-				pe.TenantID = *value
+		case permission.FieldPermissionCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field permission_code", values[i])
+			} else if value.Valid {
+				pe.PermissionCode = value.String
 			}
 		case permission.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -143,6 +154,11 @@ func (pe *Permission) Value(name string) (ent.Value, error) {
 	return pe.selectValues.Get(name)
 }
 
+// QueryRoles queries the "roles" edge of the Permission entity.
+func (pe *Permission) QueryRoles() *RoleQuery {
+	return NewPermissionClient(pe.config).QueryRoles(pe)
+}
+
 // QueryRolePermissions queries the "role_permissions" edge of the Permission entity.
 func (pe *Permission) QueryRolePermissions() *RolePermissionQuery {
 	return NewPermissionClient(pe.config).QueryRolePermissions(pe)
@@ -171,8 +187,8 @@ func (pe *Permission) String() string {
 	var builder strings.Builder
 	builder.WriteString("Permission(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", pe.ID))
-	builder.WriteString("tenant_id=")
-	builder.WriteString(fmt.Sprintf("%v", pe.TenantID))
+	builder.WriteString("permission_code=")
+	builder.WriteString(pe.PermissionCode)
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(pe.Name)

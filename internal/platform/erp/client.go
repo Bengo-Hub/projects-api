@@ -4,30 +4,39 @@ package erp
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	serviceclient "github.com/Bengo-Hub/shared-service-client"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 var ErrNotConfigured = errors.New("erp: not configured")
 
+// Client calls erp-api through the shared service client (circuit breaker, bounded retries of
+// reads, tracing).
 type Client struct {
-	baseURL string
-	apiKey  string
-	http    *http.Client
+	apiKey string
+	sc     *serviceclient.Client
 }
 
+// NewClient builds the client; an empty URL leaves it disabled.
 func NewClient(baseURL, apiKey string) *Client {
-	return &Client{baseURL: strings.TrimRight(baseURL, "/"), apiKey: apiKey, http: &http.Client{Timeout: 10 * time.Second}}
+	baseURL = strings.TrimRight(baseURL, "/")
+	if baseURL == "" {
+		return &Client{apiKey: apiKey}
+	}
+	cfg := serviceclient.DefaultConfig(baseURL, "erp-api", zap.L().Named("erp"))
+	cfg.Timeout = 10 * time.Second
+	cfg.MaxElapsedTime = 3 * time.Second
+	return &Client{apiKey: apiKey, sc: serviceclient.New(cfg)}
 }
 
-func (c *Client) Enabled() bool { return c != nil && c.baseURL != "" && c.apiKey != "" }
+func (c *Client) Enabled() bool { return c != nil && c.sc != nil && c.apiKey != "" }
 
 // Hours is the time logged against one project.
 type Hours struct {
@@ -50,24 +59,18 @@ func (c *Client) ProjectHours(ctx context.Context, tenantID uuid.UUID, projectID
 		ids[i] = id.String()
 	}
 	q := url.Values{"project_ids": {strings.Join(ids, ",")}}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/api/v1/hrm/attendance/timesheets/project-hours?"+q.Encode(), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("X-API-Key", c.apiKey)
-	req.Header.Set("X-Tenant-ID", tenantID.String())
-	resp, err := c.http.Do(req)
+	resp, err := c.sc.Get(ctx, "/api/v1/hrm/attendance/timesheets/project-hours?"+q.Encode(),
+		map[string]string{"X-API-Key": c.apiKey, "X-Tenant-ID": tenantID.String()})
 	if err != nil {
 		return nil, fmt.Errorf("erp: project hours: %w", err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("erp: project hours: status %d", resp.StatusCode)
 	}
 	var body struct {
 		Data []Hours `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+	if err := resp.DecodeJSON(&body); err != nil {
 		return nil, fmt.Errorf("erp: project hours: %w", err)
 	}
 	for _, h := range body.Data {

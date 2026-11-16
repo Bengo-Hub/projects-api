@@ -1,27 +1,61 @@
 package tasks
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
+
+	"github.com/bengobox/projects-service/internal/testutil"
 )
 
-func TestReaches(t *testing.T) {
-	a, b, c, d := uuid.New(), uuid.New(), uuid.New(), uuid.New()
-	// a depends on b, b depends on c; d is unrelated. A cycle b -> a -> b is also present to prove
-	// the walk terminates.
-	g := map[uuid.UUID][]uuid.UUID{a: {b}, b: {c, a}}
-	if !reaches(g, a, c) {
-		t.Error("a reaches c through b")
+// The recursive CTE walks only from the new target: a chain a -> b -> c refuses c -> a, a cycle
+// already in the data (b -> a) terminates, another tenant's edges are never followed, and
+// unrelated tasks link freely.
+func TestAddDependencyCycleCheck(t *testing.T) {
+	client := testutil.Client(t)
+	ctx := context.Background()
+	tenant := uuid.New()
+	p := client.Project.Create().SetTenantID(tenant).SetName("P").SetOwnerID(uuid.New()).SaveX(ctx)
+	task := func() uuid.UUID {
+		return client.Task.Create().SetTenantID(tenant).SetProjectID(p.ID).SetTitle("t").SaveX(ctx).ID
 	}
-	if reaches(g, c, a) {
-		t.Error("c depends on nothing")
+	a, b, c, d := task(), task(), task(), task()
+	svc := NewService(client, nil, zap.NewNop())
+	for _, e := range [][2]uuid.UUID{{a, b}, {b, c}} {
+		if err := svc.AddDependency(ctx, tenant, p.ID, e[0], e[1], ""); err != nil {
+			t.Fatalf("add %v: %v", e, err)
+		}
 	}
-	if reaches(g, a, d) {
-		t.Error("d is unrelated")
+	if err := svc.AddDependency(ctx, tenant, p.ID, c, a, ""); err != ErrCircularDependency {
+		t.Errorf("c -> a closes a -> b -> c -> a: got %v", err)
 	}
-	if !reaches(g, d, d) {
-		t.Error("a node reaches itself")
+	if err := svc.AddDependency(ctx, tenant, p.ID, a, a, ""); err != ErrCircularDependency {
+		t.Errorf("self dependency: got %v", err)
+	}
+	if err := svc.AddDependency(ctx, tenant, p.ID, d, c, ""); err != nil {
+		t.Errorf("d -> c is fine: %v", err)
+	}
+	// A cycle written straight to the table (older data) must not make the walk loop.
+	client.TaskDependency.Create().SetTaskID(b).SetDependsOnTaskID(a).SetDependencyType("FS").SaveX(ctx)
+	found, err := func() (bool, error) {
+		tx, err := client.Tx(ctx)
+		if err != nil {
+			return false, err
+		}
+		defer func() { _ = tx.Rollback() }()
+		return reachesInDB(ctx, tx, tenant, a, d)
+	}()
+	if err != nil || found {
+		t.Errorf("a does not reach d despite the b <-> a cycle: found=%v err=%v", found, err)
+	}
+	// A task of another tenant is not found.
+	other := uuid.New()
+	op := client.Project.Create().SetTenantID(other).SetName("O").SetOwnerID(uuid.New()).SaveX(ctx)
+	ot := client.Task.Create().SetTenantID(other).SetProjectID(op.ID).SetTitle("o").SaveX(ctx).ID
+	if err := svc.AddDependency(ctx, tenant, p.ID, a, ot, ""); err != ErrNotFound {
+		t.Errorf("cross-tenant dependency: got %v, want ErrNotFound", err)
 	}
 }
 

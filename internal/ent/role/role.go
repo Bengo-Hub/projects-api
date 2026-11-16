@@ -7,61 +7,74 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
 	// Label holds the string label denoting the role type in the database.
 	Label = "role"
 	// FieldID holds the string denoting the id field in the database.
-	FieldID = "code"
+	FieldID = "id"
+	// FieldTenantID holds the string denoting the tenant_id field in the database.
+	FieldTenantID = "tenant_id"
+	// FieldRoleCode holds the string denoting the role_code field in the database.
+	FieldRoleCode = "role_code"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
-	// FieldIsSystem holds the string denoting the is_system field in the database.
-	FieldIsSystem = "is_system"
-	// FieldPermissions holds the string denoting the permissions field in the database.
-	FieldPermissions = "permissions"
+	// FieldIsSystemRole holds the string denoting the is_system_role field in the database.
+	FieldIsSystemRole = "is_system_role"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// EdgeUserRoles holds the string denoting the user_roles edge name in mutations.
-	EdgeUserRoles = "user_roles"
+	// EdgePermissions holds the string denoting the permissions edge name in mutations.
+	EdgePermissions = "permissions"
+	// EdgeUserAssignments holds the string denoting the user_assignments edge name in mutations.
+	EdgeUserAssignments = "user_assignments"
 	// EdgeRolePermissions holds the string denoting the role_permissions edge name in mutations.
 	EdgeRolePermissions = "role_permissions"
-	// UserRoleFieldID holds the string denoting the ID field of the UserRole.
-	UserRoleFieldID = "id"
-	// RolePermissionFieldID holds the string denoting the ID field of the RolePermission.
-	RolePermissionFieldID = "id"
 	// Table holds the table name of the role in the database.
 	Table = "roles"
-	// UserRolesTable is the table that holds the user_roles relation/edge.
-	UserRolesTable = "user_roles"
-	// UserRolesInverseTable is the table name for the UserRole entity.
-	// It exists in this package in order to avoid circular dependency with the "userrole" package.
-	UserRolesInverseTable = "user_roles"
-	// UserRolesColumn is the table column denoting the user_roles relation/edge.
-	UserRolesColumn = "role_code"
+	// PermissionsTable is the table that holds the permissions relation/edge. The primary key declared below.
+	PermissionsTable = "role_permissions"
+	// PermissionsInverseTable is the table name for the Permission entity.
+	// It exists in this package in order to avoid circular dependency with the "permission" package.
+	PermissionsInverseTable = "permissions"
+	// UserAssignmentsTable is the table that holds the user_assignments relation/edge.
+	UserAssignmentsTable = "user_role_assignments"
+	// UserAssignmentsInverseTable is the table name for the UserRoleAssignment entity.
+	// It exists in this package in order to avoid circular dependency with the "userroleassignment" package.
+	UserAssignmentsInverseTable = "user_role_assignments"
+	// UserAssignmentsColumn is the table column denoting the user_assignments relation/edge.
+	UserAssignmentsColumn = "role_id"
 	// RolePermissionsTable is the table that holds the role_permissions relation/edge.
 	RolePermissionsTable = "role_permissions"
 	// RolePermissionsInverseTable is the table name for the RolePermission entity.
 	// It exists in this package in order to avoid circular dependency with the "rolepermission" package.
 	RolePermissionsInverseTable = "role_permissions"
 	// RolePermissionsColumn is the table column denoting the role_permissions relation/edge.
-	RolePermissionsColumn = "role_code"
+	RolePermissionsColumn = "role_id"
 )
 
 // Columns holds all SQL columns for role fields.
 var Columns = []string{
 	FieldID,
+	FieldTenantID,
+	FieldRoleCode,
 	FieldName,
 	FieldDescription,
-	FieldIsSystem,
-	FieldPermissions,
+	FieldIsSystemRole,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
+
+var (
+	// PermissionsPrimaryKey and PermissionsColumn2 are the table columns denoting the
+	// primary key for the permissions relation (M2M).
+	PermissionsPrimaryKey = []string{"role_id", "permission_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -74,16 +87,20 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// RoleCodeValidator is a validator for the "role_code" field. It is called by the builders before save.
+	RoleCodeValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// DefaultIsSystem holds the default value on creation for the "is_system" field.
-	DefaultIsSystem bool
+	// DefaultIsSystemRole holds the default value on creation for the "is_system_role" field.
+	DefaultIsSystemRole bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
 )
 
 // OrderOption defines the ordering options for the Role queries.
@@ -92,6 +109,16 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByTenantID orders the results by the tenant_id field.
+func ByTenantID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantID, opts...).ToFunc()
+}
+
+// ByRoleCode orders the results by the role_code field.
+func ByRoleCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRoleCode, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.
@@ -104,9 +131,9 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
 }
 
-// ByIsSystem orders the results by the is_system field.
-func ByIsSystem(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIsSystem, opts...).ToFunc()
+// ByIsSystemRole orders the results by the is_system_role field.
+func ByIsSystemRole(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsSystemRole, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
@@ -119,17 +146,31 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// ByUserRolesCount orders the results by user_roles count.
-func ByUserRolesCount(opts ...sql.OrderTermOption) OrderOption {
+// ByPermissionsCount orders the results by permissions count.
+func ByPermissionsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newUserRolesStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newPermissionsStep(), opts...)
 	}
 }
 
-// ByUserRoles orders the results by user_roles terms.
-func ByUserRoles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByPermissions orders the results by permissions terms.
+func ByPermissions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newUserRolesStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newPermissionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByUserAssignmentsCount orders the results by user_assignments count.
+func ByUserAssignmentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUserAssignmentsStep(), opts...)
+	}
+}
+
+// ByUserAssignments orders the results by user_assignments terms.
+func ByUserAssignments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUserAssignmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -146,17 +187,24 @@ func ByRolePermissions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRolePermissionsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newUserRolesStep() *sqlgraph.Step {
+func newPermissionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(UserRolesInverseTable, UserRoleFieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, UserRolesTable, UserRolesColumn),
+		sqlgraph.To(PermissionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, PermissionsTable, PermissionsPrimaryKey...),
+	)
+}
+func newUserAssignmentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UserAssignmentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, UserAssignmentsTable, UserAssignmentsColumn),
 	)
 }
 func newRolePermissionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(RolePermissionsInverseTable, RolePermissionFieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, RolePermissionsTable, RolePermissionsColumn),
+		sqlgraph.To(RolePermissionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, RolePermissionsTable, RolePermissionsColumn),
 	)
 }

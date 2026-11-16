@@ -1,6 +1,6 @@
 # Sprint 7: Governance & Reporting
 
-**Status**: Partially done (verified against code 2026-09-27). Only a per-project summary exists, and it eager-loads tasks and milestones instead of grouping in SQL. Not built: governance hierarchy, decision logs, change control. Financial reports, EVM, the portfolio dashboard with RAG health, task throughput and tender pipeline reports are In progress (plan budgets-planning-projects-bi-2026-09-27, Phases 3 and 5). See `docs/backlog.md`.
+**Status**: Partially done (verified against code 2026-11-16). Live: the project summary (grouped in SQL), EVM, the portfolio with red/amber/green health, task trend, project metrics, tender metrics and the QA PDF report. Risks and change requests moved to sprint 16. Open here: status reports as PDF through the shared reports module, and a weekly WhatsApp and email digest. See `docs/backlog.md`.
 
 **Duration**: 3 weeks  
 **Sprint Goal**: Implement project governance, change control, and standard reporting.  

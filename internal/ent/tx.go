@@ -4,6 +4,8 @@ package ent
 
 import (
 	"context"
+	stdsql "database/sql"
+	"fmt"
 	"sync"
 
 	"entgo.io/ent/dialect"
@@ -18,6 +20,8 @@ type Tx struct {
 	Attachment *AttachmentClient
 	// Comment is the client for interacting with the Comment builders.
 	Comment *CommentClient
+	// DocumentSequence is the client for interacting with the DocumentSequence builders.
+	DocumentSequence *DocumentSequenceClient
 	// FieldKey is the client for interacting with the FieldKey builders.
 	FieldKey *FieldKeyClient
 	// FieldKeyAudit is the client for interacting with the FieldKeyAudit builders.
@@ -32,6 +36,8 @@ type Tx struct {
 	Project *ProjectClient
 	// ProjectMember is the client for interacting with the ProjectMember builders.
 	ProjectMember *ProjectMemberClient
+	// ProjectsUser is the client for interacting with the ProjectsUser builders.
+	ProjectsUser *ProjectsUserClient
 	// QACriterion is the client for interacting with the QACriterion builders.
 	QACriterion *QACriterionClient
 	// QADefect is the client for interacting with the QADefect builders.
@@ -64,8 +70,8 @@ type Tx struct {
 	TenderEvaluation *TenderEvaluationClient
 	// TenderMeeting is the client for interacting with the TenderMeeting builders.
 	TenderMeeting *TenderMeetingClient
-	// UserRole is the client for interacting with the UserRole builders.
-	UserRole *UserRoleClient
+	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
+	UserRoleAssignment *UserRoleAssignmentClient
 
 	// lazily loaded.
 	client     *Client
@@ -200,6 +206,7 @@ func (tx *Tx) init() {
 	tx.Activity = NewActivityClient(tx.config)
 	tx.Attachment = NewAttachmentClient(tx.config)
 	tx.Comment = NewCommentClient(tx.config)
+	tx.DocumentSequence = NewDocumentSequenceClient(tx.config)
 	tx.FieldKey = NewFieldKeyClient(tx.config)
 	tx.FieldKeyAudit = NewFieldKeyAuditClient(tx.config)
 	tx.Milestone = NewMilestoneClient(tx.config)
@@ -207,6 +214,7 @@ func (tx *Tx) init() {
 	tx.Permission = NewPermissionClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
 	tx.ProjectMember = NewProjectMemberClient(tx.config)
+	tx.ProjectsUser = NewProjectsUserClient(tx.config)
 	tx.QACriterion = NewQACriterionClient(tx.config)
 	tx.QADefect = NewQADefectClient(tx.config)
 	tx.QAInvite = NewQAInviteClient(tx.config)
@@ -223,7 +231,7 @@ func (tx *Tx) init() {
 	tx.TenderDocument = NewTenderDocumentClient(tx.config)
 	tx.TenderEvaluation = NewTenderEvaluationClient(tx.config)
 	tx.TenderMeeting = NewTenderMeetingClient(tx.config)
-	tx.UserRole = NewUserRoleClient(tx.config)
+	tx.UserRoleAssignment = NewUserRoleAssignmentClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -286,3 +294,27 @@ func (tx *txDriver) Query(ctx context.Context, query string, args, v any) error 
 }
 
 var _ dialect.Driver = (*txDriver)(nil)
+
+// ExecContext allows calling the underlying ExecContext method of the transaction if it is supported by it.
+// See, database/sql#Tx.ExecContext for more information.
+func (tx *txDriver) ExecContext(ctx context.Context, query string, args ...any) (stdsql.Result, error) {
+	ex, ok := tx.tx.(interface {
+		ExecContext(context.Context, string, ...any) (stdsql.Result, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("Tx.ExecContext is not supported")
+	}
+	return ex.ExecContext(ctx, query, args...)
+}
+
+// QueryContext allows calling the underlying QueryContext method of the transaction if it is supported by it.
+// See, database/sql#Tx.QueryContext for more information.
+func (tx *txDriver) QueryContext(ctx context.Context, query string, args ...any) (*stdsql.Rows, error) {
+	q, ok := tx.tx.(interface {
+		QueryContext(context.Context, string, ...any) (*stdsql.Rows, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("Tx.QueryContext is not supported")
+	}
+	return q.QueryContext(ctx, query, args...)
+}

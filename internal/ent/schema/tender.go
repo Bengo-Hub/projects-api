@@ -17,7 +17,7 @@ func (Tender) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Immutable(),
 		field.UUID("tenant_id", uuid.UUID{}),
-		field.String("number").Unique(),
+		field.String("number").NotEmpty().Comment("TND-{year}-{seq}, seq from the tenant's tender document sequence"),
 		field.String("title").NotEmpty(),
 		field.String("client_name").NotEmpty(),
 		field.String("source").Optional(),
@@ -47,6 +47,8 @@ func (Tender) Edges() []ent.Edge {
 
 func (Tender) Indexes() []ent.Index {
 	return []ent.Index{
+		// Numbers are per tenant: every tenant's first tender is ...-0001.
+		index.Fields("tenant_id", "number").Unique(),
 		index.Fields("tenant_id", "status"),
 		index.Fields("tenant_id", "deadline"),
 	}

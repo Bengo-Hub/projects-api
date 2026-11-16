@@ -1,6 +1,6 @@
 # Sprint 4: Team & Collaboration
 
-**Status**: Partially done (verified against code 2026-09-27). Project members, task comments, project and task activity feeds and RBAC roles are live. Not built: @mentions, attachment routes (the `attachment` table is unused), WebSocket updates, and pagination on comments and members. See `docs/backlog.md`.
+**Status**: Partially done (verified against code 2026-11-16). Project members and task comments are live. The activity feed had read routes, but nothing wrote `Activity` rows, so it was always empty; sprint 0b adds the writer. The local RBAC roles were never enforced; sprint 0b replaces them with auth-api permission codes and project membership scoping. Mentions, attachments, multiple assignees and live updates (SSE through the shared events fan-out hub, not raw WebSocket) moved to sprint 12. See `docs/backlog.md`.
 
 **Duration**: 3 weeks  
 **Sprint Goal**: Implement team management, real-time collaboration, and activity tracking.  

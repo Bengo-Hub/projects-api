@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/qacriterion"
@@ -21,6 +23,7 @@ type QATemplateCreate struct {
 	config
 	mutation *QATemplateMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -333,6 +336,7 @@ func (qtc *QATemplateCreate) createSpec() (*QATemplate, *sqlgraph.CreateSpec) {
 		_node = &QATemplate{config: qtc.config}
 		_spec = sqlgraph.NewCreateSpec(qatemplate.Table, sqlgraph.NewFieldSpec(qatemplate.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = qtc.conflict
 	if id, ok := qtc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -404,11 +408,478 @@ func (qtc *QATemplateCreate) createSpec() (*QATemplate, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QATemplate.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QATemplateUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qtc *QATemplateCreate) OnConflict(opts ...sql.ConflictOption) *QATemplateUpsertOne {
+	qtc.conflict = opts
+	return &QATemplateUpsertOne{
+		create: qtc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QATemplate.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qtc *QATemplateCreate) OnConflictColumns(columns ...string) *QATemplateUpsertOne {
+	qtc.conflict = append(qtc.conflict, sql.ConflictColumns(columns...))
+	return &QATemplateUpsertOne{
+		create: qtc,
+	}
+}
+
+type (
+	// QATemplateUpsertOne is the builder for "upsert"-ing
+	//  one QATemplate node.
+	QATemplateUpsertOne struct {
+		create *QATemplateCreate
+	}
+
+	// QATemplateUpsert is the "OnConflict" setter.
+	QATemplateUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetName sets the "name" field.
+func (u *QATemplateUpsert) SetName(v string) *QATemplateUpsert {
+	u.Set(qatemplate.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdateName() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldName)
+	return u
+}
+
+// SetKind sets the "kind" field.
+func (u *QATemplateUpsert) SetKind(v string) *QATemplateUpsert {
+	u.Set(qatemplate.FieldKind, v)
+	return u
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdateKind() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldKind)
+	return u
+}
+
+// SetServiceTag sets the "service_tag" field.
+func (u *QATemplateUpsert) SetServiceTag(v string) *QATemplateUpsert {
+	u.Set(qatemplate.FieldServiceTag, v)
+	return u
+}
+
+// UpdateServiceTag sets the "service_tag" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdateServiceTag() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldServiceTag)
+	return u
+}
+
+// ClearServiceTag clears the value of the "service_tag" field.
+func (u *QATemplateUpsert) ClearServiceTag() *QATemplateUpsert {
+	u.SetNull(qatemplate.FieldServiceTag)
+	return u
+}
+
+// SetVersion sets the "version" field.
+func (u *QATemplateUpsert) SetVersion(v int) *QATemplateUpsert {
+	u.Set(qatemplate.FieldVersion, v)
+	return u
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdateVersion() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldVersion)
+	return u
+}
+
+// AddVersion adds v to the "version" field.
+func (u *QATemplateUpsert) AddVersion(v int) *QATemplateUpsert {
+	u.Add(qatemplate.FieldVersion, v)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *QATemplateUpsert) SetStatus(v string) *QATemplateUpsert {
+	u.Set(qatemplate.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdateStatus() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldStatus)
+	return u
+}
+
+// SetNeedsReview sets the "needs_review" field.
+func (u *QATemplateUpsert) SetNeedsReview(v bool) *QATemplateUpsert {
+	u.Set(qatemplate.FieldNeedsReview, v)
+	return u
+}
+
+// UpdateNeedsReview sets the "needs_review" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdateNeedsReview() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldNeedsReview)
+	return u
+}
+
+// SetPassRule sets the "pass_rule" field.
+func (u *QATemplateUpsert) SetPassRule(v qamodel.PassRule) *QATemplateUpsert {
+	u.Set(qatemplate.FieldPassRule, v)
+	return u
+}
+
+// UpdatePassRule sets the "pass_rule" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdatePassRule() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldPassRule)
+	return u
+}
+
+// ClearPassRule clears the value of the "pass_rule" field.
+func (u *QATemplateUpsert) ClearPassRule() *QATemplateUpsert {
+	u.SetNull(qatemplate.FieldPassRule)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *QATemplateUpsert) SetMetadata(v map[string]interface{}) *QATemplateUpsert {
+	u.Set(qatemplate.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdateMetadata() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldMetadata)
+	return u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *QATemplateUpsert) ClearMetadata() *QATemplateUpsert {
+	u.SetNull(qatemplate.FieldMetadata)
+	return u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *QATemplateUpsert) SetCreatedBy(v uuid.UUID) *QATemplateUpsert {
+	u.Set(qatemplate.FieldCreatedBy, v)
+	return u
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdateCreatedBy() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldCreatedBy)
+	return u
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *QATemplateUpsert) ClearCreatedBy() *QATemplateUpsert {
+	u.SetNull(qatemplate.FieldCreatedBy)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QATemplateUpsert) SetUpdatedAt(v time.Time) *QATemplateUpsert {
+	u.Set(qatemplate.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QATemplateUpsert) UpdateUpdatedAt() *QATemplateUpsert {
+	u.SetExcluded(qatemplate.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.QATemplate.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qatemplate.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QATemplateUpsertOne) UpdateNewValues() *QATemplateUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(qatemplate.FieldID)
+		}
+		if _, exists := u.create.mutation.TenantID(); exists {
+			s.SetIgnore(qatemplate.FieldTenantID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(qatemplate.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QATemplate.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *QATemplateUpsertOne) Ignore() *QATemplateUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QATemplateUpsertOne) DoNothing() *QATemplateUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QATemplateCreate.OnConflict
+// documentation for more info.
+func (u *QATemplateUpsertOne) Update(set func(*QATemplateUpsert)) *QATemplateUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QATemplateUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *QATemplateUpsertOne) SetName(v string) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdateName() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetKind sets the "kind" field.
+func (u *QATemplateUpsertOne) SetKind(v string) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetKind(v)
+	})
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdateKind() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateKind()
+	})
+}
+
+// SetServiceTag sets the "service_tag" field.
+func (u *QATemplateUpsertOne) SetServiceTag(v string) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetServiceTag(v)
+	})
+}
+
+// UpdateServiceTag sets the "service_tag" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdateServiceTag() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateServiceTag()
+	})
+}
+
+// ClearServiceTag clears the value of the "service_tag" field.
+func (u *QATemplateUpsertOne) ClearServiceTag() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.ClearServiceTag()
+	})
+}
+
+// SetVersion sets the "version" field.
+func (u *QATemplateUpsertOne) SetVersion(v int) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// AddVersion adds v to the "version" field.
+func (u *QATemplateUpsertOne) AddVersion(v int) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.AddVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdateVersion() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateVersion()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *QATemplateUpsertOne) SetStatus(v string) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdateStatus() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetNeedsReview sets the "needs_review" field.
+func (u *QATemplateUpsertOne) SetNeedsReview(v bool) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetNeedsReview(v)
+	})
+}
+
+// UpdateNeedsReview sets the "needs_review" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdateNeedsReview() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateNeedsReview()
+	})
+}
+
+// SetPassRule sets the "pass_rule" field.
+func (u *QATemplateUpsertOne) SetPassRule(v qamodel.PassRule) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetPassRule(v)
+	})
+}
+
+// UpdatePassRule sets the "pass_rule" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdatePassRule() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdatePassRule()
+	})
+}
+
+// ClearPassRule clears the value of the "pass_rule" field.
+func (u *QATemplateUpsertOne) ClearPassRule() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.ClearPassRule()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *QATemplateUpsertOne) SetMetadata(v map[string]interface{}) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdateMetadata() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *QATemplateUpsertOne) ClearMetadata() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *QATemplateUpsertOne) SetCreatedBy(v uuid.UUID) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdateCreatedBy() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *QATemplateUpsertOne) ClearCreatedBy() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.ClearCreatedBy()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QATemplateUpsertOne) SetUpdatedAt(v time.Time) *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QATemplateUpsertOne) UpdateUpdatedAt() *QATemplateUpsertOne {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QATemplateUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QATemplateCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QATemplateUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *QATemplateUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: QATemplateUpsertOne.ID is not supported by MySQL driver. Use QATemplateUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *QATemplateUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // QATemplateCreateBulk is the builder for creating many QATemplate entities in bulk.
 type QATemplateCreateBulk struct {
 	config
 	err      error
 	builders []*QATemplateCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the QATemplate entities in the database.
@@ -438,6 +909,7 @@ func (qtcb *QATemplateCreateBulk) Save(ctx context.Context) ([]*QATemplate, erro
 					_, err = mutators[i+1].Mutate(root, qtcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = qtcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, qtcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -484,6 +956,301 @@ func (qtcb *QATemplateCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (qtcb *QATemplateCreateBulk) ExecX(ctx context.Context) {
 	if err := qtcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QATemplate.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QATemplateUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qtcb *QATemplateCreateBulk) OnConflict(opts ...sql.ConflictOption) *QATemplateUpsertBulk {
+	qtcb.conflict = opts
+	return &QATemplateUpsertBulk{
+		create: qtcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QATemplate.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qtcb *QATemplateCreateBulk) OnConflictColumns(columns ...string) *QATemplateUpsertBulk {
+	qtcb.conflict = append(qtcb.conflict, sql.ConflictColumns(columns...))
+	return &QATemplateUpsertBulk{
+		create: qtcb,
+	}
+}
+
+// QATemplateUpsertBulk is the builder for "upsert"-ing
+// a bulk of QATemplate nodes.
+type QATemplateUpsertBulk struct {
+	create *QATemplateCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.QATemplate.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qatemplate.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QATemplateUpsertBulk) UpdateNewValues() *QATemplateUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(qatemplate.FieldID)
+			}
+			if _, exists := b.mutation.TenantID(); exists {
+				s.SetIgnore(qatemplate.FieldTenantID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(qatemplate.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QATemplate.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *QATemplateUpsertBulk) Ignore() *QATemplateUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QATemplateUpsertBulk) DoNothing() *QATemplateUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QATemplateCreateBulk.OnConflict
+// documentation for more info.
+func (u *QATemplateUpsertBulk) Update(set func(*QATemplateUpsert)) *QATemplateUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QATemplateUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *QATemplateUpsertBulk) SetName(v string) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdateName() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetKind sets the "kind" field.
+func (u *QATemplateUpsertBulk) SetKind(v string) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetKind(v)
+	})
+}
+
+// UpdateKind sets the "kind" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdateKind() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateKind()
+	})
+}
+
+// SetServiceTag sets the "service_tag" field.
+func (u *QATemplateUpsertBulk) SetServiceTag(v string) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetServiceTag(v)
+	})
+}
+
+// UpdateServiceTag sets the "service_tag" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdateServiceTag() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateServiceTag()
+	})
+}
+
+// ClearServiceTag clears the value of the "service_tag" field.
+func (u *QATemplateUpsertBulk) ClearServiceTag() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.ClearServiceTag()
+	})
+}
+
+// SetVersion sets the "version" field.
+func (u *QATemplateUpsertBulk) SetVersion(v int) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// AddVersion adds v to the "version" field.
+func (u *QATemplateUpsertBulk) AddVersion(v int) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.AddVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdateVersion() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateVersion()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *QATemplateUpsertBulk) SetStatus(v string) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdateStatus() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetNeedsReview sets the "needs_review" field.
+func (u *QATemplateUpsertBulk) SetNeedsReview(v bool) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetNeedsReview(v)
+	})
+}
+
+// UpdateNeedsReview sets the "needs_review" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdateNeedsReview() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateNeedsReview()
+	})
+}
+
+// SetPassRule sets the "pass_rule" field.
+func (u *QATemplateUpsertBulk) SetPassRule(v qamodel.PassRule) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetPassRule(v)
+	})
+}
+
+// UpdatePassRule sets the "pass_rule" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdatePassRule() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdatePassRule()
+	})
+}
+
+// ClearPassRule clears the value of the "pass_rule" field.
+func (u *QATemplateUpsertBulk) ClearPassRule() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.ClearPassRule()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *QATemplateUpsertBulk) SetMetadata(v map[string]interface{}) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdateMetadata() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *QATemplateUpsertBulk) ClearMetadata() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *QATemplateUpsertBulk) SetCreatedBy(v uuid.UUID) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdateCreatedBy() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// ClearCreatedBy clears the value of the "created_by" field.
+func (u *QATemplateUpsertBulk) ClearCreatedBy() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.ClearCreatedBy()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QATemplateUpsertBulk) SetUpdatedAt(v time.Time) *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QATemplateUpsertBulk) UpdateUpdatedAt() *QATemplateUpsertBulk {
+	return u.Update(func(s *QATemplateUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QATemplateUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the QATemplateCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QATemplateCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QATemplateUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

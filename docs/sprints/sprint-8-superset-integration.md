@@ -1,6 +1,6 @@
 # Sprint 8: Apache Superset Integration
 
-**Status**: Planned, deferred (verified against code 2026-09-27). No Superset views, client or embed route exist. In-app reports come first under plan budgets-planning-projects-bi-2026-09-27.
+**Status**: Planned, deferred (verified against code 2026-11-16). No Superset views, client or embed route exist. In-app reports (EVM, portfolio, trend) already cover the dashboards; Superset waits until tenants ask for custom analysis.
 
 **Duration**: 2 weeks  
 **Sprint Goal**: Integrate Apache Superset for advanced business intelligence and data visualization.  

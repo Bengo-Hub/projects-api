@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/qacriterion"
@@ -20,6 +22,7 @@ type QACriterionCreate struct {
 	config
 	mutation *QACriterionMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTemplateID sets the "template_id" field.
@@ -378,6 +381,7 @@ func (qcc *QACriterionCreate) createSpec() (*QACriterion, *sqlgraph.CreateSpec) 
 		_node = &QACriterion{config: qcc.config}
 		_spec = sqlgraph.NewCreateSpec(qacriterion.Table, sqlgraph.NewFieldSpec(qacriterion.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = qcc.conflict
 	if id, ok := qcc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -458,11 +462,595 @@ func (qcc *QACriterionCreate) createSpec() (*QACriterion, *sqlgraph.CreateSpec) 
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QACriterion.Create().
+//		SetTemplateID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QACriterionUpsert) {
+//			SetTemplateID(v+v).
+//		}).
+//		Exec(ctx)
+func (qcc *QACriterionCreate) OnConflict(opts ...sql.ConflictOption) *QACriterionUpsertOne {
+	qcc.conflict = opts
+	return &QACriterionUpsertOne{
+		create: qcc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QACriterion.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qcc *QACriterionCreate) OnConflictColumns(columns ...string) *QACriterionUpsertOne {
+	qcc.conflict = append(qcc.conflict, sql.ConflictColumns(columns...))
+	return &QACriterionUpsertOne{
+		create: qcc,
+	}
+}
+
+type (
+	// QACriterionUpsertOne is the builder for "upsert"-ing
+	//  one QACriterion node.
+	QACriterionUpsertOne struct {
+		create *QACriterionCreate
+	}
+
+	// QACriterionUpsert is the "OnConflict" setter.
+	QACriterionUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTemplateID sets the "template_id" field.
+func (u *QACriterionUpsert) SetTemplateID(v uuid.UUID) *QACriterionUpsert {
+	u.Set(qacriterion.FieldTemplateID, v)
+	return u
+}
+
+// UpdateTemplateID sets the "template_id" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateTemplateID() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldTemplateID)
+	return u
+}
+
+// SetSubjectKind sets the "subject_kind" field.
+func (u *QACriterionUpsert) SetSubjectKind(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldSubjectKind, v)
+	return u
+}
+
+// UpdateSubjectKind sets the "subject_kind" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateSubjectKind() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldSubjectKind)
+	return u
+}
+
+// SetSubjectRef sets the "subject_ref" field.
+func (u *QACriterionUpsert) SetSubjectRef(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldSubjectRef, v)
+	return u
+}
+
+// UpdateSubjectRef sets the "subject_ref" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateSubjectRef() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldSubjectRef)
+	return u
+}
+
+// ClearSubjectRef clears the value of the "subject_ref" field.
+func (u *QACriterionUpsert) ClearSubjectRef() *QACriterionUpsert {
+	u.SetNull(qacriterion.FieldSubjectRef)
+	return u
+}
+
+// SetAreaCode sets the "area_code" field.
+func (u *QACriterionUpsert) SetAreaCode(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldAreaCode, v)
+	return u
+}
+
+// UpdateAreaCode sets the "area_code" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateAreaCode() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldAreaCode)
+	return u
+}
+
+// ClearAreaCode clears the value of the "area_code" field.
+func (u *QACriterionUpsert) ClearAreaCode() *QACriterionUpsert {
+	u.SetNull(qacriterion.FieldAreaCode)
+	return u
+}
+
+// SetTitle sets the "title" field.
+func (u *QACriterionUpsert) SetTitle(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldTitle, v)
+	return u
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateTitle() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldTitle)
+	return u
+}
+
+// SetRequirementRef sets the "requirement_ref" field.
+func (u *QACriterionUpsert) SetRequirementRef(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldRequirementRef, v)
+	return u
+}
+
+// UpdateRequirementRef sets the "requirement_ref" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateRequirementRef() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldRequirementRef)
+	return u
+}
+
+// ClearRequirementRef clears the value of the "requirement_ref" field.
+func (u *QACriterionUpsert) ClearRequirementRef() *QACriterionUpsert {
+	u.SetNull(qacriterion.FieldRequirementRef)
+	return u
+}
+
+// SetPreconditions sets the "preconditions" field.
+func (u *QACriterionUpsert) SetPreconditions(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldPreconditions, v)
+	return u
+}
+
+// UpdatePreconditions sets the "preconditions" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdatePreconditions() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldPreconditions)
+	return u
+}
+
+// ClearPreconditions clears the value of the "preconditions" field.
+func (u *QACriterionUpsert) ClearPreconditions() *QACriterionUpsert {
+	u.SetNull(qacriterion.FieldPreconditions)
+	return u
+}
+
+// SetSteps sets the "steps" field.
+func (u *QACriterionUpsert) SetSteps(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldSteps, v)
+	return u
+}
+
+// UpdateSteps sets the "steps" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateSteps() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldSteps)
+	return u
+}
+
+// ClearSteps clears the value of the "steps" field.
+func (u *QACriterionUpsert) ClearSteps() *QACriterionUpsert {
+	u.SetNull(qacriterion.FieldSteps)
+	return u
+}
+
+// SetExpectedResult sets the "expected_result" field.
+func (u *QACriterionUpsert) SetExpectedResult(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldExpectedResult, v)
+	return u
+}
+
+// UpdateExpectedResult sets the "expected_result" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateExpectedResult() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldExpectedResult)
+	return u
+}
+
+// ClearExpectedResult clears the value of the "expected_result" field.
+func (u *QACriterionUpsert) ClearExpectedResult() *QACriterionUpsert {
+	u.SetNull(qacriterion.FieldExpectedResult)
+	return u
+}
+
+// SetWeight sets the "weight" field.
+func (u *QACriterionUpsert) SetWeight(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldWeight, v)
+	return u
+}
+
+// UpdateWeight sets the "weight" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateWeight() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldWeight)
+	return u
+}
+
+// SetAutomatedRef sets the "automated_ref" field.
+func (u *QACriterionUpsert) SetAutomatedRef(v string) *QACriterionUpsert {
+	u.Set(qacriterion.FieldAutomatedRef, v)
+	return u
+}
+
+// UpdateAutomatedRef sets the "automated_ref" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateAutomatedRef() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldAutomatedRef)
+	return u
+}
+
+// ClearAutomatedRef clears the value of the "automated_ref" field.
+func (u *QACriterionUpsert) ClearAutomatedRef() *QACriterionUpsert {
+	u.SetNull(qacriterion.FieldAutomatedRef)
+	return u
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *QACriterionUpsert) SetSortOrder(v int) *QACriterionUpsert {
+	u.Set(qacriterion.FieldSortOrder, v)
+	return u
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateSortOrder() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldSortOrder)
+	return u
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *QACriterionUpsert) AddSortOrder(v int) *QACriterionUpsert {
+	u.Add(qacriterion.FieldSortOrder, v)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QACriterionUpsert) SetUpdatedAt(v time.Time) *QACriterionUpsert {
+	u.Set(qacriterion.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QACriterionUpsert) UpdateUpdatedAt() *QACriterionUpsert {
+	u.SetExcluded(qacriterion.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.QACriterion.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qacriterion.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QACriterionUpsertOne) UpdateNewValues() *QACriterionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(qacriterion.FieldID)
+		}
+		if _, exists := u.create.mutation.TenantID(); exists {
+			s.SetIgnore(qacriterion.FieldTenantID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(qacriterion.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QACriterion.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *QACriterionUpsertOne) Ignore() *QACriterionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QACriterionUpsertOne) DoNothing() *QACriterionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QACriterionCreate.OnConflict
+// documentation for more info.
+func (u *QACriterionUpsertOne) Update(set func(*QACriterionUpsert)) *QACriterionUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QACriterionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTemplateID sets the "template_id" field.
+func (u *QACriterionUpsertOne) SetTemplateID(v uuid.UUID) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetTemplateID(v)
+	})
+}
+
+// UpdateTemplateID sets the "template_id" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateTemplateID() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateTemplateID()
+	})
+}
+
+// SetSubjectKind sets the "subject_kind" field.
+func (u *QACriterionUpsertOne) SetSubjectKind(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetSubjectKind(v)
+	})
+}
+
+// UpdateSubjectKind sets the "subject_kind" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateSubjectKind() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateSubjectKind()
+	})
+}
+
+// SetSubjectRef sets the "subject_ref" field.
+func (u *QACriterionUpsertOne) SetSubjectRef(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetSubjectRef(v)
+	})
+}
+
+// UpdateSubjectRef sets the "subject_ref" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateSubjectRef() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateSubjectRef()
+	})
+}
+
+// ClearSubjectRef clears the value of the "subject_ref" field.
+func (u *QACriterionUpsertOne) ClearSubjectRef() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearSubjectRef()
+	})
+}
+
+// SetAreaCode sets the "area_code" field.
+func (u *QACriterionUpsertOne) SetAreaCode(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetAreaCode(v)
+	})
+}
+
+// UpdateAreaCode sets the "area_code" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateAreaCode() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateAreaCode()
+	})
+}
+
+// ClearAreaCode clears the value of the "area_code" field.
+func (u *QACriterionUpsertOne) ClearAreaCode() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearAreaCode()
+	})
+}
+
+// SetTitle sets the "title" field.
+func (u *QACriterionUpsertOne) SetTitle(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateTitle() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetRequirementRef sets the "requirement_ref" field.
+func (u *QACriterionUpsertOne) SetRequirementRef(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetRequirementRef(v)
+	})
+}
+
+// UpdateRequirementRef sets the "requirement_ref" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateRequirementRef() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateRequirementRef()
+	})
+}
+
+// ClearRequirementRef clears the value of the "requirement_ref" field.
+func (u *QACriterionUpsertOne) ClearRequirementRef() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearRequirementRef()
+	})
+}
+
+// SetPreconditions sets the "preconditions" field.
+func (u *QACriterionUpsertOne) SetPreconditions(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetPreconditions(v)
+	})
+}
+
+// UpdatePreconditions sets the "preconditions" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdatePreconditions() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdatePreconditions()
+	})
+}
+
+// ClearPreconditions clears the value of the "preconditions" field.
+func (u *QACriterionUpsertOne) ClearPreconditions() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearPreconditions()
+	})
+}
+
+// SetSteps sets the "steps" field.
+func (u *QACriterionUpsertOne) SetSteps(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetSteps(v)
+	})
+}
+
+// UpdateSteps sets the "steps" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateSteps() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateSteps()
+	})
+}
+
+// ClearSteps clears the value of the "steps" field.
+func (u *QACriterionUpsertOne) ClearSteps() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearSteps()
+	})
+}
+
+// SetExpectedResult sets the "expected_result" field.
+func (u *QACriterionUpsertOne) SetExpectedResult(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetExpectedResult(v)
+	})
+}
+
+// UpdateExpectedResult sets the "expected_result" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateExpectedResult() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateExpectedResult()
+	})
+}
+
+// ClearExpectedResult clears the value of the "expected_result" field.
+func (u *QACriterionUpsertOne) ClearExpectedResult() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearExpectedResult()
+	})
+}
+
+// SetWeight sets the "weight" field.
+func (u *QACriterionUpsertOne) SetWeight(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetWeight(v)
+	})
+}
+
+// UpdateWeight sets the "weight" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateWeight() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateWeight()
+	})
+}
+
+// SetAutomatedRef sets the "automated_ref" field.
+func (u *QACriterionUpsertOne) SetAutomatedRef(v string) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetAutomatedRef(v)
+	})
+}
+
+// UpdateAutomatedRef sets the "automated_ref" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateAutomatedRef() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateAutomatedRef()
+	})
+}
+
+// ClearAutomatedRef clears the value of the "automated_ref" field.
+func (u *QACriterionUpsertOne) ClearAutomatedRef() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearAutomatedRef()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *QACriterionUpsertOne) SetSortOrder(v int) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *QACriterionUpsertOne) AddSortOrder(v int) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateSortOrder() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QACriterionUpsertOne) SetUpdatedAt(v time.Time) *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QACriterionUpsertOne) UpdateUpdatedAt() *QACriterionUpsertOne {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QACriterionUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QACriterionCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QACriterionUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *QACriterionUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: QACriterionUpsertOne.ID is not supported by MySQL driver. Use QACriterionUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *QACriterionUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // QACriterionCreateBulk is the builder for creating many QACriterion entities in bulk.
 type QACriterionCreateBulk struct {
 	config
 	err      error
 	builders []*QACriterionCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the QACriterion entities in the database.
@@ -492,6 +1080,7 @@ func (qccb *QACriterionCreateBulk) Save(ctx context.Context) ([]*QACriterion, er
 					_, err = mutators[i+1].Mutate(root, qccb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = qccb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, qccb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -538,6 +1127,364 @@ func (qccb *QACriterionCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (qccb *QACriterionCreateBulk) ExecX(ctx context.Context) {
 	if err := qccb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QACriterion.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QACriterionUpsert) {
+//			SetTemplateID(v+v).
+//		}).
+//		Exec(ctx)
+func (qccb *QACriterionCreateBulk) OnConflict(opts ...sql.ConflictOption) *QACriterionUpsertBulk {
+	qccb.conflict = opts
+	return &QACriterionUpsertBulk{
+		create: qccb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QACriterion.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qccb *QACriterionCreateBulk) OnConflictColumns(columns ...string) *QACriterionUpsertBulk {
+	qccb.conflict = append(qccb.conflict, sql.ConflictColumns(columns...))
+	return &QACriterionUpsertBulk{
+		create: qccb,
+	}
+}
+
+// QACriterionUpsertBulk is the builder for "upsert"-ing
+// a bulk of QACriterion nodes.
+type QACriterionUpsertBulk struct {
+	create *QACriterionCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.QACriterion.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qacriterion.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QACriterionUpsertBulk) UpdateNewValues() *QACriterionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(qacriterion.FieldID)
+			}
+			if _, exists := b.mutation.TenantID(); exists {
+				s.SetIgnore(qacriterion.FieldTenantID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(qacriterion.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QACriterion.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *QACriterionUpsertBulk) Ignore() *QACriterionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QACriterionUpsertBulk) DoNothing() *QACriterionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QACriterionCreateBulk.OnConflict
+// documentation for more info.
+func (u *QACriterionUpsertBulk) Update(set func(*QACriterionUpsert)) *QACriterionUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QACriterionUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTemplateID sets the "template_id" field.
+func (u *QACriterionUpsertBulk) SetTemplateID(v uuid.UUID) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetTemplateID(v)
+	})
+}
+
+// UpdateTemplateID sets the "template_id" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateTemplateID() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateTemplateID()
+	})
+}
+
+// SetSubjectKind sets the "subject_kind" field.
+func (u *QACriterionUpsertBulk) SetSubjectKind(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetSubjectKind(v)
+	})
+}
+
+// UpdateSubjectKind sets the "subject_kind" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateSubjectKind() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateSubjectKind()
+	})
+}
+
+// SetSubjectRef sets the "subject_ref" field.
+func (u *QACriterionUpsertBulk) SetSubjectRef(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetSubjectRef(v)
+	})
+}
+
+// UpdateSubjectRef sets the "subject_ref" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateSubjectRef() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateSubjectRef()
+	})
+}
+
+// ClearSubjectRef clears the value of the "subject_ref" field.
+func (u *QACriterionUpsertBulk) ClearSubjectRef() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearSubjectRef()
+	})
+}
+
+// SetAreaCode sets the "area_code" field.
+func (u *QACriterionUpsertBulk) SetAreaCode(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetAreaCode(v)
+	})
+}
+
+// UpdateAreaCode sets the "area_code" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateAreaCode() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateAreaCode()
+	})
+}
+
+// ClearAreaCode clears the value of the "area_code" field.
+func (u *QACriterionUpsertBulk) ClearAreaCode() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearAreaCode()
+	})
+}
+
+// SetTitle sets the "title" field.
+func (u *QACriterionUpsertBulk) SetTitle(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateTitle() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetRequirementRef sets the "requirement_ref" field.
+func (u *QACriterionUpsertBulk) SetRequirementRef(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetRequirementRef(v)
+	})
+}
+
+// UpdateRequirementRef sets the "requirement_ref" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateRequirementRef() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateRequirementRef()
+	})
+}
+
+// ClearRequirementRef clears the value of the "requirement_ref" field.
+func (u *QACriterionUpsertBulk) ClearRequirementRef() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearRequirementRef()
+	})
+}
+
+// SetPreconditions sets the "preconditions" field.
+func (u *QACriterionUpsertBulk) SetPreconditions(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetPreconditions(v)
+	})
+}
+
+// UpdatePreconditions sets the "preconditions" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdatePreconditions() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdatePreconditions()
+	})
+}
+
+// ClearPreconditions clears the value of the "preconditions" field.
+func (u *QACriterionUpsertBulk) ClearPreconditions() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearPreconditions()
+	})
+}
+
+// SetSteps sets the "steps" field.
+func (u *QACriterionUpsertBulk) SetSteps(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetSteps(v)
+	})
+}
+
+// UpdateSteps sets the "steps" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateSteps() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateSteps()
+	})
+}
+
+// ClearSteps clears the value of the "steps" field.
+func (u *QACriterionUpsertBulk) ClearSteps() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearSteps()
+	})
+}
+
+// SetExpectedResult sets the "expected_result" field.
+func (u *QACriterionUpsertBulk) SetExpectedResult(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetExpectedResult(v)
+	})
+}
+
+// UpdateExpectedResult sets the "expected_result" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateExpectedResult() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateExpectedResult()
+	})
+}
+
+// ClearExpectedResult clears the value of the "expected_result" field.
+func (u *QACriterionUpsertBulk) ClearExpectedResult() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearExpectedResult()
+	})
+}
+
+// SetWeight sets the "weight" field.
+func (u *QACriterionUpsertBulk) SetWeight(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetWeight(v)
+	})
+}
+
+// UpdateWeight sets the "weight" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateWeight() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateWeight()
+	})
+}
+
+// SetAutomatedRef sets the "automated_ref" field.
+func (u *QACriterionUpsertBulk) SetAutomatedRef(v string) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetAutomatedRef(v)
+	})
+}
+
+// UpdateAutomatedRef sets the "automated_ref" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateAutomatedRef() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateAutomatedRef()
+	})
+}
+
+// ClearAutomatedRef clears the value of the "automated_ref" field.
+func (u *QACriterionUpsertBulk) ClearAutomatedRef() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.ClearAutomatedRef()
+	})
+}
+
+// SetSortOrder sets the "sort_order" field.
+func (u *QACriterionUpsertBulk) SetSortOrder(v int) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetSortOrder(v)
+	})
+}
+
+// AddSortOrder adds v to the "sort_order" field.
+func (u *QACriterionUpsertBulk) AddSortOrder(v int) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.AddSortOrder(v)
+	})
+}
+
+// UpdateSortOrder sets the "sort_order" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateSortOrder() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateSortOrder()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QACriterionUpsertBulk) SetUpdatedAt(v time.Time) *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QACriterionUpsertBulk) UpdateUpdatedAt() *QACriterionUpsertBulk {
+	return u.Update(func(s *QACriterionUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QACriterionUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the QACriterionCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QACriterionCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QACriterionUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

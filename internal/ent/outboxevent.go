@@ -27,14 +27,18 @@ type OutboxEvent struct {
 	AggregateID uuid.UUID `json:"aggregate_id,omitempty"`
 	// EventType holds the value of the "event_type" field.
 	EventType string `json:"event_type,omitempty"`
-	// Payload holds the value of the "payload" field.
-	Payload map[string]interface{} `json:"payload,omitempty"`
+	// The whole shared-events envelope, published as is
+	Payload json.RawMessage `json:"payload,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
 	// Attempts holds the value of the "attempts" field.
 	Attempts int `json:"attempts,omitempty"`
 	// LastAttemptAt holds the value of the "last_attempt_at" field.
-	LastAttemptAt time.Time `json:"last_attempt_at,omitempty"`
+	LastAttemptAt *time.Time `json:"last_attempt_at,omitempty"`
+	// PublishedAt holds the value of the "published_at" field.
+	PublishedAt *time.Time `json:"published_at,omitempty"`
+	// ErrorMessage holds the value of the "error_message" field.
+	ErrorMessage *string `json:"error_message,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt    time.Time `json:"created_at,omitempty"`
 	selectValues sql.SelectValues
@@ -49,9 +53,9 @@ func (*OutboxEvent) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case outboxevent.FieldAttempts:
 			values[i] = new(sql.NullInt64)
-		case outboxevent.FieldAggregateType, outboxevent.FieldEventType, outboxevent.FieldStatus:
+		case outboxevent.FieldAggregateType, outboxevent.FieldEventType, outboxevent.FieldStatus, outboxevent.FieldErrorMessage:
 			values[i] = new(sql.NullString)
-		case outboxevent.FieldLastAttemptAt, outboxevent.FieldCreatedAt:
+		case outboxevent.FieldLastAttemptAt, outboxevent.FieldPublishedAt, outboxevent.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case outboxevent.FieldID, outboxevent.FieldTenantID, outboxevent.FieldAggregateID:
 			values[i] = new(uuid.UUID)
@@ -124,7 +128,22 @@ func (oe *OutboxEvent) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_attempt_at", values[i])
 			} else if value.Valid {
-				oe.LastAttemptAt = value.Time
+				oe.LastAttemptAt = new(time.Time)
+				*oe.LastAttemptAt = value.Time
+			}
+		case outboxevent.FieldPublishedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field published_at", values[i])
+			} else if value.Valid {
+				oe.PublishedAt = new(time.Time)
+				*oe.PublishedAt = value.Time
+			}
+		case outboxevent.FieldErrorMessage:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field error_message", values[i])
+			} else if value.Valid {
+				oe.ErrorMessage = new(string)
+				*oe.ErrorMessage = value.String
 			}
 		case outboxevent.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -189,8 +208,20 @@ func (oe *OutboxEvent) String() string {
 	builder.WriteString("attempts=")
 	builder.WriteString(fmt.Sprintf("%v", oe.Attempts))
 	builder.WriteString(", ")
-	builder.WriteString("last_attempt_at=")
-	builder.WriteString(oe.LastAttemptAt.Format(time.ANSIC))
+	if v := oe.LastAttemptAt; v != nil {
+		builder.WriteString("last_attempt_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := oe.PublishedAt; v != nil {
+		builder.WriteString("published_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := oe.ErrorMessage; v != nil {
+		builder.WriteString("error_message=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(oe.CreatedAt.Format(time.ANSIC))

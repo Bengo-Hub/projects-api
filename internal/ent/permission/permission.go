@@ -15,8 +15,8 @@ const (
 	Label = "permission"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldTenantID holds the string denoting the tenant_id field in the database.
-	FieldTenantID = "tenant_id"
+	// FieldPermissionCode holds the string denoting the permission_code field in the database.
+	FieldPermissionCode = "permission_code"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldModule holds the string denoting the module field in the database.
@@ -29,10 +29,17 @@ const (
 	FieldDescription = "description"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// EdgeRoles holds the string denoting the roles edge name in mutations.
+	EdgeRoles = "roles"
 	// EdgeRolePermissions holds the string denoting the role_permissions edge name in mutations.
 	EdgeRolePermissions = "role_permissions"
 	// Table holds the table name of the permission in the database.
 	Table = "permissions"
+	// RolesTable is the table that holds the roles relation/edge. The primary key declared below.
+	RolesTable = "role_permissions"
+	// RolesInverseTable is the table name for the Role entity.
+	// It exists in this package in order to avoid circular dependency with the "role" package.
+	RolesInverseTable = "roles"
 	// RolePermissionsTable is the table that holds the role_permissions relation/edge.
 	RolePermissionsTable = "role_permissions"
 	// RolePermissionsInverseTable is the table name for the RolePermission entity.
@@ -45,7 +52,7 @@ const (
 // Columns holds all SQL columns for permission fields.
 var Columns = []string{
 	FieldID,
-	FieldTenantID,
+	FieldPermissionCode,
 	FieldName,
 	FieldModule,
 	FieldAction,
@@ -53,6 +60,12 @@ var Columns = []string{
 	FieldDescription,
 	FieldCreatedAt,
 }
+
+var (
+	// RolesPrimaryKey and RolesColumn2 are the table columns denoting the
+	// primary key for the roles relation (M2M).
+	RolesPrimaryKey = []string{"role_id", "permission_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -65,6 +78,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// PermissionCodeValidator is a validator for the "permission_code" field. It is called by the builders before save.
+	PermissionCodeValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// ModuleValidator is a validator for the "module" field. It is called by the builders before save.
@@ -85,9 +100,9 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByTenantID orders the results by the tenant_id field.
-func ByTenantID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTenantID, opts...).ToFunc()
+// ByPermissionCode orders the results by the permission_code field.
+func ByPermissionCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPermissionCode, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.
@@ -120,6 +135,20 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
 }
 
+// ByRolesCount orders the results by roles count.
+func ByRolesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRolesStep(), opts...)
+	}
+}
+
+// ByRoles orders the results by roles terms.
+func ByRoles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRolesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByRolePermissionsCount orders the results by role_permissions count.
 func ByRolePermissionsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -133,10 +162,17 @@ func ByRolePermissions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRolePermissionsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+func newRolesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RolesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, RolesTable, RolesPrimaryKey...),
+	)
+}
 func newRolePermissionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RolePermissionsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, RolePermissionsTable, RolePermissionsColumn),
+		sqlgraph.Edge(sqlgraph.O2M, true, RolePermissionsTable, RolePermissionsColumn),
 	)
 }

@@ -5,7 +5,6 @@ package ent
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -19,13 +18,11 @@ import (
 type RolePermission struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
-	// RoleCode holds the value of the "role_code" field.
-	RoleCode string `json:"role_code,omitempty"`
+	ID int `json:"id,omitempty"`
+	// RoleID holds the value of the "role_id" field.
+	RoleID uuid.UUID `json:"role_id,omitempty"`
 	// PermissionID holds the value of the "permission_id" field.
 	PermissionID uuid.UUID `json:"permission_id,omitempty"`
-	// AssignedAt holds the value of the "assigned_at" field.
-	AssignedAt time.Time `json:"assigned_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RolePermissionQuery when eager-loading is set.
 	Edges        RolePermissionEdges `json:"edges"`
@@ -70,11 +67,9 @@ func (*RolePermission) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case rolepermission.FieldRoleCode:
-			values[i] = new(sql.NullString)
-		case rolepermission.FieldAssignedAt:
-			values[i] = new(sql.NullTime)
-		case rolepermission.FieldID, rolepermission.FieldPermissionID:
+		case rolepermission.FieldID:
+			values[i] = new(sql.NullInt64)
+		case rolepermission.FieldRoleID, rolepermission.FieldPermissionID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -92,28 +87,22 @@ func (rp *RolePermission) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case rolepermission.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field id", values[i])
-			} else if value != nil {
-				rp.ID = *value
+			value, ok := values[i].(*sql.NullInt64)
+			if !ok {
+				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-		case rolepermission.FieldRoleCode:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field role_code", values[i])
-			} else if value.Valid {
-				rp.RoleCode = value.String
+			rp.ID = int(value.Int64)
+		case rolepermission.FieldRoleID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field role_id", values[i])
+			} else if value != nil {
+				rp.RoleID = *value
 			}
 		case rolepermission.FieldPermissionID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field permission_id", values[i])
 			} else if value != nil {
 				rp.PermissionID = *value
-			}
-		case rolepermission.FieldAssignedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field assigned_at", values[i])
-			} else if value.Valid {
-				rp.AssignedAt = value.Time
 			}
 		default:
 			rp.selectValues.Set(columns[i], values[i])
@@ -161,14 +150,11 @@ func (rp *RolePermission) String() string {
 	var builder strings.Builder
 	builder.WriteString("RolePermission(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", rp.ID))
-	builder.WriteString("role_code=")
-	builder.WriteString(rp.RoleCode)
+	builder.WriteString("role_id=")
+	builder.WriteString(fmt.Sprintf("%v", rp.RoleID))
 	builder.WriteString(", ")
 	builder.WriteString("permission_id=")
 	builder.WriteString(fmt.Sprintf("%v", rp.PermissionID))
-	builder.WriteString(", ")
-	builder.WriteString("assigned_at=")
-	builder.WriteString(rp.AssignedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

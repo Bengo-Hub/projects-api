@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# Use direct PostgreSQL URL for migrate/seed to bypass PgBouncer transaction mode.
+# Use direct PostgreSQL URL for migrate to bypass PgBouncer transaction mode.
 MIGRATE_URL="${POSTGRES_MIGRATE_URL:-$POSTGRES_URL}"
 
 echo "=========================================="
@@ -27,5 +27,4 @@ if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
 fi
 
 echo "Migrations applied successfully"
-POSTGRES_URL="$MIGRATE_URL" /usr/local/bin/projects-seed || echo "Seed completed with warnings (non-fatal)"
 exec /usr/local/bin/projects-api

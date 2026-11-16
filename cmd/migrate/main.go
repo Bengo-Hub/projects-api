@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
+
+	"go.uber.org/zap"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -15,6 +18,7 @@ import (
 	"github.com/bengobox/projects-service/internal/config"
 	"github.com/bengobox/projects-service/internal/ent"
 	"github.com/bengobox/projects-service/internal/ent/migrate"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/platform/database"
 )
 
@@ -58,17 +62,38 @@ func main() {
 		}
 	}
 
-	if err := database.DropRetiredTables(ctx, db); err != nil {
-		log.Fatalf("migrate: %v", err)
-	}
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	client := ent.NewClient(ent.Driver(drv))
 	defer client.Close()
 
-	migrateErr := client.Schema.Create(ctx, schema.WithDir(migrate.Dir))
+	migrateErr := run(ctx, db, client)
 	unlock()
 	if migrateErr != nil {
 		log.Fatalf("migrate: %v", migrateErr)
 	}
 	log.Println("migrations completed")
+}
+
+// run applies the schema and the fixups Schema.Create cannot do, then seeds the permission
+// registry and system roles. Every step is idempotent; all of it runs under the advisory lock.
+func run(ctx context.Context, db *sql.DB, client *ent.Client) error {
+	if err := database.DropRetiredTables(ctx, db); err != nil {
+		return err
+	}
+	if err := migrate.ReshapeRBACTables(ctx, db); err != nil {
+		return err
+	}
+	if err := client.Schema.Create(ctx, schema.WithDir(migrate.Dir)); err != nil {
+		return err
+	}
+	if err := migrate.DropLegacyIndexes(ctx, db); err != nil {
+		return err
+	}
+	if err := migrate.BackfillTenderSequences(ctx, db); err != nil {
+		return err
+	}
+	if err := rbac.NewService(client, nil, zap.NewNop()).Seed(ctx); err != nil {
+		return fmt.Errorf("seed rbac: %w", err)
+	}
+	return nil
 }

@@ -1,6 +1,6 @@
 # Sprint 10: AI & Advanced Features
 
-**Status**: Planned (verified against code 2026-09-27). No pgvector column or AI feature exists.
+**Status**: Planned (verified against code 2026-11-16). No pgvector column or AI feature exists. When built: AI runs on prepaid AI credits from subscriptions-api (only the platform tenant is exempt), model ids come from config, and the UI uses plain icons, not sparkle or bot icons. First features: break a task into subtasks, and write a project status summary from real activity.
 
 **Duration**: 3 weeks  
 **Sprint Goal**: Implement AI-powered features using pgvector and predictive analytics.  

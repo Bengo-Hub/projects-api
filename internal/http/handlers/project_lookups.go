@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap"
 
 	httpware "github.com/Bengo-Hub/httpware"
+	"github.com/bengobox/projects-service/internal/http/authz"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/platform/marketflow"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 )
@@ -32,8 +34,10 @@ func (h *ProjectHandler) WithLookups(contacts contactSearcher, costCenters costC
 }
 
 func (h *ProjectHandler) registerLookups(r chi.Router) {
-	r.Get("/lookups/contacts", h.LookupContacts)
-	r.Get("/lookups/cost-centers", h.LookupCostCenters)
+	// The pickers serve the project form, so they need the right to create or edit a project.
+	form := authz.Require(rbac.PermProjectsAdd, rbac.PermProjectsChange)
+	r.With(form).Get("/lookups/contacts", h.LookupContacts)
+	r.With(form).Get("/lookups/cost-centers", h.LookupCostCenters)
 }
 
 type lookupOption struct {

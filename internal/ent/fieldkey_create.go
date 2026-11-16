@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/fieldkey"
@@ -19,6 +21,7 @@ type FieldKeyCreate struct {
 	config
 	mutation *FieldKeyMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetKeyEnc sets the "key_enc" field.
@@ -294,6 +297,7 @@ func (fkc *FieldKeyCreate) createSpec() (*FieldKey, *sqlgraph.CreateSpec) {
 		_node = &FieldKey{config: fkc.config}
 		_spec = sqlgraph.NewCreateSpec(fieldkey.Table, sqlgraph.NewFieldSpec(fieldkey.FieldID, field.TypeString))
 	)
+	_spec.OnConflict = fkc.conflict
 	if id, ok := fkc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = id
@@ -345,11 +349,419 @@ func (fkc *FieldKeyCreate) createSpec() (*FieldKey, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.FieldKey.Create().
+//		SetKeyEnc(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.FieldKeyUpsert) {
+//			SetKeyEnc(v+v).
+//		}).
+//		Exec(ctx)
+func (fkc *FieldKeyCreate) OnConflict(opts ...sql.ConflictOption) *FieldKeyUpsertOne {
+	fkc.conflict = opts
+	return &FieldKeyUpsertOne{
+		create: fkc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.FieldKey.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (fkc *FieldKeyCreate) OnConflictColumns(columns ...string) *FieldKeyUpsertOne {
+	fkc.conflict = append(fkc.conflict, sql.ConflictColumns(columns...))
+	return &FieldKeyUpsertOne{
+		create: fkc,
+	}
+}
+
+type (
+	// FieldKeyUpsertOne is the builder for "upsert"-ing
+	//  one FieldKey node.
+	FieldKeyUpsertOne struct {
+		create *FieldKeyCreate
+	}
+
+	// FieldKeyUpsert is the "OnConflict" setter.
+	FieldKeyUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetKeyEnc sets the "key_enc" field.
+func (u *FieldKeyUpsert) SetKeyEnc(v string) *FieldKeyUpsert {
+	u.Set(fieldkey.FieldKeyEnc, v)
+	return u
+}
+
+// UpdateKeyEnc sets the "key_enc" field to the value that was provided on create.
+func (u *FieldKeyUpsert) UpdateKeyEnc() *FieldKeyUpsert {
+	u.SetExcluded(fieldkey.FieldKeyEnc)
+	return u
+}
+
+// ClearKeyEnc clears the value of the "key_enc" field.
+func (u *FieldKeyUpsert) ClearKeyEnc() *FieldKeyUpsert {
+	u.SetNull(fieldkey.FieldKeyEnc)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *FieldKeyUpsert) SetStatus(v fieldkey.Status) *FieldKeyUpsert {
+	u.Set(fieldkey.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *FieldKeyUpsert) UpdateStatus() *FieldKeyUpsert {
+	u.SetExcluded(fieldkey.FieldStatus)
+	return u
+}
+
+// SetResealHeartbeatAt sets the "reseal_heartbeat_at" field.
+func (u *FieldKeyUpsert) SetResealHeartbeatAt(v time.Time) *FieldKeyUpsert {
+	u.Set(fieldkey.FieldResealHeartbeatAt, v)
+	return u
+}
+
+// UpdateResealHeartbeatAt sets the "reseal_heartbeat_at" field to the value that was provided on create.
+func (u *FieldKeyUpsert) UpdateResealHeartbeatAt() *FieldKeyUpsert {
+	u.SetExcluded(fieldkey.FieldResealHeartbeatAt)
+	return u
+}
+
+// ClearResealHeartbeatAt clears the value of the "reseal_heartbeat_at" field.
+func (u *FieldKeyUpsert) ClearResealHeartbeatAt() *FieldKeyUpsert {
+	u.SetNull(fieldkey.FieldResealHeartbeatAt)
+	return u
+}
+
+// SetResealDoneAt sets the "reseal_done_at" field.
+func (u *FieldKeyUpsert) SetResealDoneAt(v time.Time) *FieldKeyUpsert {
+	u.Set(fieldkey.FieldResealDoneAt, v)
+	return u
+}
+
+// UpdateResealDoneAt sets the "reseal_done_at" field to the value that was provided on create.
+func (u *FieldKeyUpsert) UpdateResealDoneAt() *FieldKeyUpsert {
+	u.SetExcluded(fieldkey.FieldResealDoneAt)
+	return u
+}
+
+// ClearResealDoneAt clears the value of the "reseal_done_at" field.
+func (u *FieldKeyUpsert) ClearResealDoneAt() *FieldKeyUpsert {
+	u.SetNull(fieldkey.FieldResealDoneAt)
+	return u
+}
+
+// SetResealed sets the "resealed" field.
+func (u *FieldKeyUpsert) SetResealed(v int) *FieldKeyUpsert {
+	u.Set(fieldkey.FieldResealed, v)
+	return u
+}
+
+// UpdateResealed sets the "resealed" field to the value that was provided on create.
+func (u *FieldKeyUpsert) UpdateResealed() *FieldKeyUpsert {
+	u.SetExcluded(fieldkey.FieldResealed)
+	return u
+}
+
+// AddResealed adds v to the "resealed" field.
+func (u *FieldKeyUpsert) AddResealed(v int) *FieldKeyUpsert {
+	u.Add(fieldkey.FieldResealed, v)
+	return u
+}
+
+// SetResealFailed sets the "reseal_failed" field.
+func (u *FieldKeyUpsert) SetResealFailed(v int) *FieldKeyUpsert {
+	u.Set(fieldkey.FieldResealFailed, v)
+	return u
+}
+
+// UpdateResealFailed sets the "reseal_failed" field to the value that was provided on create.
+func (u *FieldKeyUpsert) UpdateResealFailed() *FieldKeyUpsert {
+	u.SetExcluded(fieldkey.FieldResealFailed)
+	return u
+}
+
+// AddResealFailed adds v to the "reseal_failed" field.
+func (u *FieldKeyUpsert) AddResealFailed(v int) *FieldKeyUpsert {
+	u.Add(fieldkey.FieldResealFailed, v)
+	return u
+}
+
+// SetRetiredAt sets the "retired_at" field.
+func (u *FieldKeyUpsert) SetRetiredAt(v time.Time) *FieldKeyUpsert {
+	u.Set(fieldkey.FieldRetiredAt, v)
+	return u
+}
+
+// UpdateRetiredAt sets the "retired_at" field to the value that was provided on create.
+func (u *FieldKeyUpsert) UpdateRetiredAt() *FieldKeyUpsert {
+	u.SetExcluded(fieldkey.FieldRetiredAt)
+	return u
+}
+
+// ClearRetiredAt clears the value of the "retired_at" field.
+func (u *FieldKeyUpsert) ClearRetiredAt() *FieldKeyUpsert {
+	u.SetNull(fieldkey.FieldRetiredAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.FieldKey.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(fieldkey.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *FieldKeyUpsertOne) UpdateNewValues() *FieldKeyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(fieldkey.FieldID)
+		}
+		if _, exists := u.create.mutation.Fingerprint(); exists {
+			s.SetIgnore(fieldkey.FieldFingerprint)
+		}
+		if _, exists := u.create.mutation.RootFingerprint(); exists {
+			s.SetIgnore(fieldkey.FieldRootFingerprint)
+		}
+		if _, exists := u.create.mutation.CreatedBy(); exists {
+			s.SetIgnore(fieldkey.FieldCreatedBy)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(fieldkey.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.FieldKey.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *FieldKeyUpsertOne) Ignore() *FieldKeyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *FieldKeyUpsertOne) DoNothing() *FieldKeyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the FieldKeyCreate.OnConflict
+// documentation for more info.
+func (u *FieldKeyUpsertOne) Update(set func(*FieldKeyUpsert)) *FieldKeyUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&FieldKeyUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetKeyEnc sets the "key_enc" field.
+func (u *FieldKeyUpsertOne) SetKeyEnc(v string) *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetKeyEnc(v)
+	})
+}
+
+// UpdateKeyEnc sets the "key_enc" field to the value that was provided on create.
+func (u *FieldKeyUpsertOne) UpdateKeyEnc() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateKeyEnc()
+	})
+}
+
+// ClearKeyEnc clears the value of the "key_enc" field.
+func (u *FieldKeyUpsertOne) ClearKeyEnc() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.ClearKeyEnc()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *FieldKeyUpsertOne) SetStatus(v fieldkey.Status) *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *FieldKeyUpsertOne) UpdateStatus() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetResealHeartbeatAt sets the "reseal_heartbeat_at" field.
+func (u *FieldKeyUpsertOne) SetResealHeartbeatAt(v time.Time) *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetResealHeartbeatAt(v)
+	})
+}
+
+// UpdateResealHeartbeatAt sets the "reseal_heartbeat_at" field to the value that was provided on create.
+func (u *FieldKeyUpsertOne) UpdateResealHeartbeatAt() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateResealHeartbeatAt()
+	})
+}
+
+// ClearResealHeartbeatAt clears the value of the "reseal_heartbeat_at" field.
+func (u *FieldKeyUpsertOne) ClearResealHeartbeatAt() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.ClearResealHeartbeatAt()
+	})
+}
+
+// SetResealDoneAt sets the "reseal_done_at" field.
+func (u *FieldKeyUpsertOne) SetResealDoneAt(v time.Time) *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetResealDoneAt(v)
+	})
+}
+
+// UpdateResealDoneAt sets the "reseal_done_at" field to the value that was provided on create.
+func (u *FieldKeyUpsertOne) UpdateResealDoneAt() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateResealDoneAt()
+	})
+}
+
+// ClearResealDoneAt clears the value of the "reseal_done_at" field.
+func (u *FieldKeyUpsertOne) ClearResealDoneAt() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.ClearResealDoneAt()
+	})
+}
+
+// SetResealed sets the "resealed" field.
+func (u *FieldKeyUpsertOne) SetResealed(v int) *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetResealed(v)
+	})
+}
+
+// AddResealed adds v to the "resealed" field.
+func (u *FieldKeyUpsertOne) AddResealed(v int) *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.AddResealed(v)
+	})
+}
+
+// UpdateResealed sets the "resealed" field to the value that was provided on create.
+func (u *FieldKeyUpsertOne) UpdateResealed() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateResealed()
+	})
+}
+
+// SetResealFailed sets the "reseal_failed" field.
+func (u *FieldKeyUpsertOne) SetResealFailed(v int) *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetResealFailed(v)
+	})
+}
+
+// AddResealFailed adds v to the "reseal_failed" field.
+func (u *FieldKeyUpsertOne) AddResealFailed(v int) *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.AddResealFailed(v)
+	})
+}
+
+// UpdateResealFailed sets the "reseal_failed" field to the value that was provided on create.
+func (u *FieldKeyUpsertOne) UpdateResealFailed() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateResealFailed()
+	})
+}
+
+// SetRetiredAt sets the "retired_at" field.
+func (u *FieldKeyUpsertOne) SetRetiredAt(v time.Time) *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetRetiredAt(v)
+	})
+}
+
+// UpdateRetiredAt sets the "retired_at" field to the value that was provided on create.
+func (u *FieldKeyUpsertOne) UpdateRetiredAt() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateRetiredAt()
+	})
+}
+
+// ClearRetiredAt clears the value of the "retired_at" field.
+func (u *FieldKeyUpsertOne) ClearRetiredAt() *FieldKeyUpsertOne {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.ClearRetiredAt()
+	})
+}
+
+// Exec executes the query.
+func (u *FieldKeyUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for FieldKeyCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *FieldKeyUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *FieldKeyUpsertOne) ID(ctx context.Context) (id string, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: FieldKeyUpsertOne.ID is not supported by MySQL driver. Use FieldKeyUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *FieldKeyUpsertOne) IDX(ctx context.Context) string {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // FieldKeyCreateBulk is the builder for creating many FieldKey entities in bulk.
 type FieldKeyCreateBulk struct {
 	config
 	err      error
 	builders []*FieldKeyCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the FieldKey entities in the database.
@@ -379,6 +791,7 @@ func (fkcb *FieldKeyCreateBulk) Save(ctx context.Context) ([]*FieldKey, error) {
 					_, err = mutators[i+1].Mutate(root, fkcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = fkcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, fkcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -425,6 +838,272 @@ func (fkcb *FieldKeyCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (fkcb *FieldKeyCreateBulk) ExecX(ctx context.Context) {
 	if err := fkcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.FieldKey.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.FieldKeyUpsert) {
+//			SetKeyEnc(v+v).
+//		}).
+//		Exec(ctx)
+func (fkcb *FieldKeyCreateBulk) OnConflict(opts ...sql.ConflictOption) *FieldKeyUpsertBulk {
+	fkcb.conflict = opts
+	return &FieldKeyUpsertBulk{
+		create: fkcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.FieldKey.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (fkcb *FieldKeyCreateBulk) OnConflictColumns(columns ...string) *FieldKeyUpsertBulk {
+	fkcb.conflict = append(fkcb.conflict, sql.ConflictColumns(columns...))
+	return &FieldKeyUpsertBulk{
+		create: fkcb,
+	}
+}
+
+// FieldKeyUpsertBulk is the builder for "upsert"-ing
+// a bulk of FieldKey nodes.
+type FieldKeyUpsertBulk struct {
+	create *FieldKeyCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.FieldKey.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(fieldkey.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *FieldKeyUpsertBulk) UpdateNewValues() *FieldKeyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(fieldkey.FieldID)
+			}
+			if _, exists := b.mutation.Fingerprint(); exists {
+				s.SetIgnore(fieldkey.FieldFingerprint)
+			}
+			if _, exists := b.mutation.RootFingerprint(); exists {
+				s.SetIgnore(fieldkey.FieldRootFingerprint)
+			}
+			if _, exists := b.mutation.CreatedBy(); exists {
+				s.SetIgnore(fieldkey.FieldCreatedBy)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(fieldkey.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.FieldKey.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *FieldKeyUpsertBulk) Ignore() *FieldKeyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *FieldKeyUpsertBulk) DoNothing() *FieldKeyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the FieldKeyCreateBulk.OnConflict
+// documentation for more info.
+func (u *FieldKeyUpsertBulk) Update(set func(*FieldKeyUpsert)) *FieldKeyUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&FieldKeyUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetKeyEnc sets the "key_enc" field.
+func (u *FieldKeyUpsertBulk) SetKeyEnc(v string) *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetKeyEnc(v)
+	})
+}
+
+// UpdateKeyEnc sets the "key_enc" field to the value that was provided on create.
+func (u *FieldKeyUpsertBulk) UpdateKeyEnc() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateKeyEnc()
+	})
+}
+
+// ClearKeyEnc clears the value of the "key_enc" field.
+func (u *FieldKeyUpsertBulk) ClearKeyEnc() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.ClearKeyEnc()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *FieldKeyUpsertBulk) SetStatus(v fieldkey.Status) *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *FieldKeyUpsertBulk) UpdateStatus() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetResealHeartbeatAt sets the "reseal_heartbeat_at" field.
+func (u *FieldKeyUpsertBulk) SetResealHeartbeatAt(v time.Time) *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetResealHeartbeatAt(v)
+	})
+}
+
+// UpdateResealHeartbeatAt sets the "reseal_heartbeat_at" field to the value that was provided on create.
+func (u *FieldKeyUpsertBulk) UpdateResealHeartbeatAt() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateResealHeartbeatAt()
+	})
+}
+
+// ClearResealHeartbeatAt clears the value of the "reseal_heartbeat_at" field.
+func (u *FieldKeyUpsertBulk) ClearResealHeartbeatAt() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.ClearResealHeartbeatAt()
+	})
+}
+
+// SetResealDoneAt sets the "reseal_done_at" field.
+func (u *FieldKeyUpsertBulk) SetResealDoneAt(v time.Time) *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetResealDoneAt(v)
+	})
+}
+
+// UpdateResealDoneAt sets the "reseal_done_at" field to the value that was provided on create.
+func (u *FieldKeyUpsertBulk) UpdateResealDoneAt() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateResealDoneAt()
+	})
+}
+
+// ClearResealDoneAt clears the value of the "reseal_done_at" field.
+func (u *FieldKeyUpsertBulk) ClearResealDoneAt() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.ClearResealDoneAt()
+	})
+}
+
+// SetResealed sets the "resealed" field.
+func (u *FieldKeyUpsertBulk) SetResealed(v int) *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetResealed(v)
+	})
+}
+
+// AddResealed adds v to the "resealed" field.
+func (u *FieldKeyUpsertBulk) AddResealed(v int) *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.AddResealed(v)
+	})
+}
+
+// UpdateResealed sets the "resealed" field to the value that was provided on create.
+func (u *FieldKeyUpsertBulk) UpdateResealed() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateResealed()
+	})
+}
+
+// SetResealFailed sets the "reseal_failed" field.
+func (u *FieldKeyUpsertBulk) SetResealFailed(v int) *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetResealFailed(v)
+	})
+}
+
+// AddResealFailed adds v to the "reseal_failed" field.
+func (u *FieldKeyUpsertBulk) AddResealFailed(v int) *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.AddResealFailed(v)
+	})
+}
+
+// UpdateResealFailed sets the "reseal_failed" field to the value that was provided on create.
+func (u *FieldKeyUpsertBulk) UpdateResealFailed() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateResealFailed()
+	})
+}
+
+// SetRetiredAt sets the "retired_at" field.
+func (u *FieldKeyUpsertBulk) SetRetiredAt(v time.Time) *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.SetRetiredAt(v)
+	})
+}
+
+// UpdateRetiredAt sets the "retired_at" field to the value that was provided on create.
+func (u *FieldKeyUpsertBulk) UpdateRetiredAt() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.UpdateRetiredAt()
+	})
+}
+
+// ClearRetiredAt clears the value of the "retired_at" field.
+func (u *FieldKeyUpsertBulk) ClearRetiredAt() *FieldKeyUpsertBulk {
+	return u.Update(func(s *FieldKeyUpsert) {
+		s.ClearRetiredAt()
+	})
+}
+
+// Exec executes the query.
+func (u *FieldKeyUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the FieldKeyCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for FieldKeyCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *FieldKeyUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

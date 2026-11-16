@@ -6,11 +6,12 @@ import (
 	"net/http"
 
 	"github.com/Bengo-Hub/pagination"
-	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/bengobox/projects-service/internal/http/authz"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/financials"
 )
@@ -31,12 +32,14 @@ func NewFinancialsHandler(log *zap.Logger, svc *financials.Service) *FinancialsH
 func (h *FinancialsHandler) RegisterRoutes(r chi.Router, requireFeature func(http.Handler) http.Handler) {
 	r.Group(func(g chi.Router) {
 		g.Use(requireFeature)
-		g.Get("/financials/portfolio", h.Portfolio)
-		g.Get("/financials/projects/{projectID}", h.Project)
-		g.Get("/financials/projects/{projectID}/budgets", h.ListBudgets)
-		g.Post("/financials/projects/{projectID}/budgets", h.CreateBudget)
-		g.Put("/financials/projects/{projectID}/budgets/{budgetID}", h.UpdateBudget)
-		g.Post("/financials/projects/{projectID}/budgets/{budgetID}/submit", h.SubmitBudget)
+		view := authz.Require(rbac.PermFinancialsView)
+		manage := authz.Require(rbac.PermFinancialsManage)
+		g.With(view).Get("/financials/portfolio", h.Portfolio)
+		g.With(view).Get("/financials/projects/{projectID}", h.Project)
+		g.With(view).Get("/financials/projects/{projectID}/budgets", h.ListBudgets)
+		g.With(manage).Post("/financials/projects/{projectID}/budgets", h.CreateBudget)
+		g.With(manage).Put("/financials/projects/{projectID}/budgets/{budgetID}", h.UpdateBudget)
+		g.With(manage).Post("/financials/projects/{projectID}/budgets/{budgetID}/submit", h.SubmitBudget)
 	})
 }
 
@@ -50,7 +53,7 @@ func (h *FinancialsHandler) RegisterRoutes(r chi.Router, requireFeature func(htt
 // @Success 200 {object} financials.ProjectFinancials
 // @Router /api/v1/{tenantID}/financials/projects/{projectID} [get]
 func (h *FinancialsHandler) Project(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := projectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
@@ -82,7 +85,7 @@ func (h *FinancialsHandler) Portfolio(w http.ResponseWriter, r *http.Request) {
 	}
 	p := pagination.Parse(r)
 	rows, total, err := h.svc.Portfolio(r.Context(), tenantID, financials.PortfolioFilter{
-		Status: r.URL.Query().Get("status"), Limit: p.Limit, Offset: p.Offset,
+		Status: r.URL.Query().Get("status"), Limit: p.Limit, Offset: p.Offset, VisibleTo: accessOf(r).VisibleTo(),
 	})
 	if err != nil {
 		h.log.Error("portfolio failed", zap.Error(err))
@@ -109,25 +112,23 @@ func (h *FinancialsHandler) treasuryFailed(w http.ResponseWriter, err error) {
 }
 
 func actingUser(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
-	claims, ok := authclient.ClaimsFromContext(r.Context())
-	if ok && claims != nil {
-		if uid, err := uuid.Parse(claims.Subject); err == nil {
-			return uid, true
-		}
+	if uid := actorID(r); uid != uuid.Nil {
+		return uid, true
 	}
 	respondError(w, http.StatusUnauthorized, "a signed-in user is required")
 	return uuid.Nil, false
 }
 
-// projectExists confirms the project is the tenant's before touching its budget.
+// projectExists confirms the project is the tenant's (and visible to the caller) before touching
+// its budget.
 func (h *FinancialsHandler) projectExists(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
-	tenantID, projectID, ok := projectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return uuid.Nil, uuid.Nil, false
 	}
 	exists, err := h.svc.ProjectExists(r.Context(), tenantID, projectID)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "failed to load project")
+		serverError(w, h.log, "project lookup failed", err)
 		return uuid.Nil, uuid.Nil, false
 	}
 	if !exists {

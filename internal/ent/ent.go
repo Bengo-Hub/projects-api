@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
 	"github.com/bengobox/projects-service/internal/ent/comment"
+	"github.com/bengobox/projects-service/internal/ent/documentsequence"
 	"github.com/bengobox/projects-service/internal/ent/fieldkey"
 	"github.com/bengobox/projects-service/internal/ent/fieldkeyaudit"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
@@ -22,6 +23,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/permission"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/ent/projectsuser"
 	"github.com/bengobox/projects-service/internal/ent/qacriterion"
 	"github.com/bengobox/projects-service/internal/ent/qadefect"
 	"github.com/bengobox/projects-service/internal/ent/qainvite"
@@ -38,7 +40,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
-	"github.com/bengobox/projects-service/internal/ent/userrole"
+	"github.com/bengobox/projects-service/internal/ent/userroleassignment"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -102,6 +104,7 @@ func checkColumn(table, column string) error {
 			activity.Table:              activity.ValidColumn,
 			attachment.Table:            attachment.ValidColumn,
 			comment.Table:               comment.ValidColumn,
+			documentsequence.Table:      documentsequence.ValidColumn,
 			fieldkey.Table:              fieldkey.ValidColumn,
 			fieldkeyaudit.Table:         fieldkeyaudit.ValidColumn,
 			milestone.Table:             milestone.ValidColumn,
@@ -109,6 +112,7 @@ func checkColumn(table, column string) error {
 			permission.Table:            permission.ValidColumn,
 			project.Table:               project.ValidColumn,
 			projectmember.Table:         projectmember.ValidColumn,
+			projectsuser.Table:          projectsuser.ValidColumn,
 			qacriterion.Table:           qacriterion.ValidColumn,
 			qadefect.Table:              qadefect.ValidColumn,
 			qainvite.Table:              qainvite.ValidColumn,
@@ -125,7 +129,7 @@ func checkColumn(table, column string) error {
 			tenderdocument.Table:        tenderdocument.ValidColumn,
 			tenderevaluation.Table:      tenderevaluation.ValidColumn,
 			tendermeeting.Table:         tendermeeting.ValidColumn,
-			userrole.Table:              userrole.ValidColumn,
+			userroleassignment.Table:    userroleassignment.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

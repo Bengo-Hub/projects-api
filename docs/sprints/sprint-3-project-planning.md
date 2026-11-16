@@ -1,6 +1,6 @@
 # Sprint 3: Project Planning
 
-**Status**: Partially done (verified against code 2026-09-27). Tasks with `parent_id` and `wbs_code`, typed task dependencies, milestones with the `project.milestone.reached` event, and a Gantt data route are live. Open: task `estimated_hours` and `progress_pct` (In progress, plan budgets-planning-projects-bi-2026-09-27), a tenant-scoped single-query dependency cycle check (the current walk is N+1 and not tenant scoped), and capped task pagination. See `docs/backlog.md`.
+**Status**: Partially done (verified against code 2026-11-16). Live: tasks with `parent_id`, `wbs_code`, `start_date`, `estimated_hours` and `progress_pct`, typed dependencies, milestones with the `project.milestone.reached` event, capped task pagination, and a Gantt data route. The cycle check is one query, but it loads the whole tenant's dependency graph each time; sprint 0b replaces it with a recursive CTE and bounds the Gantt data. The Gantt chart, critical path and drag to reschedule are in sprint 12; baselines are in sprint 16. See `docs/backlog.md`.
 
 **Duration**: 4 weeks  
 **Sprint Goal**: Implement core project planning tools including WBS, task dependencies, and Gantt chart support.  

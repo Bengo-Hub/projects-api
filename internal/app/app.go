@@ -23,6 +23,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 	router "github.com/bengobox/projects-service/internal/http/router"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/platform/authotp"
 	"github.com/bengobox/projects-service/internal/platform/authusers"
 	"github.com/bengobox/projects-service/internal/platform/catalog"
@@ -32,15 +33,16 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/marketflow"
 	"github.com/bengobox/projects-service/internal/platform/ticketing"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
+	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/crmsync"
 	"github.com/bengobox/projects-service/internal/services/fieldkeys"
 	"github.com/bengobox/projects-service/internal/services/financials"
 	"github.com/bengobox/projects-service/internal/services/members"
+	"github.com/bengobox/projects-service/internal/services/membership"
 	"github.com/bengobox/projects-service/internal/services/milestones"
 	projectssvc "github.com/bengobox/projects-service/internal/services/projects"
 	"github.com/bengobox/projects-service/internal/services/qa"
-	"github.com/bengobox/projects-service/internal/services/rbac"
 	"github.com/bengobox/projects-service/internal/services/tasks"
 	"github.com/bengobox/projects-service/internal/services/tenders"
 	"github.com/bengobox/projects-service/internal/services/usersync"
@@ -101,6 +103,8 @@ func New(ctx context.Context) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("logger init: %w", err)
 	}
+	// Shared libraries and the 5xx sanitiser in the handlers log through the global logger.
+	zap.ReplaceGlobals(log)
 
 	dbPool, err := database.NewPool(ctx, cfg.Postgres)
 	if err != nil {
@@ -139,7 +143,8 @@ func New(ctx context.Context) (*App, error) {
 
 	healthHandler := handlers.NewHealthHandler(log, dbPool, redisClient, natsConn)
 
-	// Create a persistent ent client for runtime use (separate from migration client)
+	// The one runtime pool: ent, the outbox worker, the tenant purger, the tenant export and the
+	// field key re-seal all share it.
 	runtimeSQLDB, err := sql.Open("pgx", cfg.Postgres.URL)
 	if err != nil {
 		return nil, fmt.Errorf("sql open for runtime: %w", err)
@@ -150,32 +155,34 @@ func New(ctx context.Context) (*App, error) {
 	// Initialize shared cache client
 	cacheClient := sharedcache.New(redisClient, log)
 
-	// Initialize all services
+	// Layer 3: local RBAC. projects-migrate seeds the registry and system roles on every rollout;
+	// seeding again here keeps a pod that starts against an unmigrated copy consistent.
+	rbacService := rbac.NewService(entClient, cacheClient, log)
+	if err := rbacService.Seed(ctx); err != nil {
+		log.Warn("rbac seed at startup failed", zap.Error(err))
+	}
+	memberships := membership.New(entClient)
+
+	// Initialize all services. Every mutation writes its activity entry and its outbox event
+	// (project.*, project.milestone.reached) in the same transaction as the change.
 	projectService := projectssvc.NewService(entClient, cacheClient, log)
-	// project.created|updated|closed|deleted: treasury closes a project's budgets on closed/deleted.
-	projectService.SetPublisher(events.NewPublisher(runtimeSQLDB, log))
 	taskService := tasks.NewService(entClient, cacheClient, log)
 	milestoneService := milestones.NewService(entClient, cacheClient, log)
 	memberService := members.NewService(entClient, cacheClient, log)
+	memberService.OnChange(memberships.Forget)
 	commentService := comments.NewService(entClient, cacheClient, log)
 	tenderService := tenders.NewService(entClient, cacheClient, log)
-	rbacService := rbac.NewService(entClient, cacheClient, log)
 	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
 	authEventsConsumer := usersync.NewAuthEventsConsumer(entClient, log)
 
-	// Wire the milestone event publisher (shared-events transactional outbox). The
-	// background outbox worker (App.Run) drains it to JetStream so notifications-api
-	// receives project.milestone.reached and emails the tenant.
-	milestoneService.SetPublisher(events.NewPublisher(runtimeSQLDB, log))
-
 	// Initialize handlers
-	userHandler := handlers.NewUserHandler(log, rbacService, syncService)
+	rbacHandler := handlers.NewRBACHandler(log, rbacService, syncService)
 	projectHandler := handlers.NewProjectHandler(log, projectService)
 	taskHandler := handlers.NewTaskHandler(log, taskService)
 	milestoneHandler := handlers.NewMilestoneHandler(log, milestoneService)
 	memberHandler := handlers.NewMemberHandler(log, memberService)
 	commentHandler := handlers.NewCommentHandler(log, commentService)
-	activityHandler := handlers.NewActivityHandler(log, entClient)
+	activityHandler := handlers.NewActivityHandler(log, activity.NewService(entClient))
 	tenderHandler := handlers.NewTenderHandler(log, tenderService)
 	// Project money lives in treasury (budgets, booked costs); financials joins it with task
 	// progress for earned value.
@@ -197,7 +204,7 @@ func New(ctx context.Context) (*App, error) {
 		log.Warn("QA_HASH_KEY and INTERNAL_SERVICE_KEY are both empty; QA invites will not survive a restart")
 	}
 	qaService := qa.NewService(entClient, qaKeys, log).
-		WithPublisher(events.NewPublisher(runtimeSQLDB, log)).
+		WithPublisher(events.NewQAPublisher(entClient, log)).
 		WithTickets(ticketing.NewClient(cfg.Services.TicketingURL, cfg.Auth.APIKey, log)).
 		WithCatalog(catalog.New(cfg.QA.CatalogEnabled, cfg.Services.SubscriptionsURL, cfg.Auth.APIKey, log)).
 		WithOTP(authotp.NewClient(cfg.Auth.ServiceURL, cfg.Auth.APIKey)).
@@ -255,40 +262,45 @@ func New(ctx context.Context) (*App, error) {
 		authMiddleware = authclient.NewAuthMiddleware(validator)
 	}
 
-	// Initialize outbox publisher
+	// The outbox worker drains outbox_events (written inside each domain transaction) to JetStream,
+	// on the same pool as ent.
 	var outboxPublisher *eventslib.Publisher
-	if natsConn != nil && dbPool != nil {
+	if natsConn != nil {
 		js, err := natsConn.JetStream()
 		if err != nil {
 			log.Warn("failed to get jetstream context, outbox publisher disabled", zap.Error(err))
 		} else {
-			// Get underlying sql.DB for outbox repository
-			sqlDB, err := sql.Open("pgx", cfg.Postgres.URL)
-			if err == nil {
-				outboxRepo := eventslib.NewSQLOutboxRepository(sqlDB)
-				pubCfg := eventslib.DefaultPublisherConfig(js, outboxRepo, log)
-				outboxPublisher = eventslib.NewPublisher(pubCfg)
-				log.Info("outbox publisher initialized")
-				// tenant.purge (dormancy, a deleted tenant, a declined registration): delete every row this
-				// service holds for the tenant, by the shared schema-driven purger.
-				purger := &eventslib.TenantPurger{DB: sqlDB, Log: log.Named("tenant-purge"), Service: "projects"}
-				if err := purger.Subscribe(js); err != nil {
-					log.Warn("tenant purge consumer not started", zap.Error(err))
-				}
-			} else {
-				log.Warn("failed to create sql.DB for outbox, publisher disabled", zap.Error(err))
+			outboxRepo := eventslib.NewSQLOutboxRepository(runtimeSQLDB)
+			outboxPublisher = eventslib.NewPublisher(eventslib.DefaultPublisherConfig(js, outboxRepo, log))
+			log.Info("outbox publisher initialized")
+			// tenant.purge (dormancy, a deleted tenant, a declined registration): delete every row this
+			// service holds for the tenant, by the shared schema-driven purger.
+			purger := &eventslib.TenantPurger{DB: runtimeSQLDB, Log: log.Named("tenant-purge"), Service: "projects"}
+			if err := purger.Subscribe(js); err != nil {
+				log.Warn("tenant purge consumer not started", zap.Error(err))
 			}
 		}
 	}
 
-	chiRouter := router.New(log, healthHandler, userHandler,
-		projectHandler, taskHandler, milestoneHandler, memberHandler,
-		commentHandler, activityHandler, tenderHandler, financialsHandler,
-		authMiddleware, cfg.HTTP.AllowedOrigins, ratelimit.NewLimiter(redisClient, log, "projects"),
-		tenantExportHandler(runtimeSQLDB, cfg.Auth.APIKey),
-		crmLinksHandler(entClient, cacheClient, cfg.Auth.ServiceURL, cfg.Auth.APIKey, log),
-		qaRoutes,
-		router.PlatformRoutes{FieldKeys: handlers.NewFieldKeyHandler(fieldKeys, log)})
+	chiRouter := router.New(router.Deps{
+		Log:     log,
+		Service: router.ServiceInfo{Name: cfg.App.Name, Version: cfg.App.Version},
+		Handlers: router.Handlers{
+			Health: healthHandler, RBAC: rbacHandler, Projects: projectHandler, Tasks: taskHandler,
+			Milestones: milestoneHandler, Members: memberHandler, Comments: commentHandler,
+			Activity: activityHandler, Tenders: tenderHandler, Financials: financialsHandler,
+		},
+		Authenticate:   authMiddleware.RequireAuth,
+		AllowedOrigins: cfg.HTTP.AllowedOrigins,
+		Limiter:        ratelimit.NewLimiter(redisClient, log, "projects"),
+		Access:         rbacService,
+		Members:        memberships,
+		Tenants:        handlers.NewTenantResolver(cacheClient, cfg.Auth.ServiceURL),
+		TenantExport:   tenantExportHandler(runtimeSQLDB, cfg.Auth.APIKey),
+		CRMLinks:       crmLinksHandler(entClient, cacheClient, cfg.Auth.ServiceURL, cfg.Auth.APIKey, log),
+		QA:             qaRoutes,
+		Platform:       router.PlatformRoutes{FieldKeys: handlers.NewFieldKeyHandler(fieldKeys, log)},
+	})
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

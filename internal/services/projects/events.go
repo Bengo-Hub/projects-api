@@ -5,20 +5,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 
 	"github.com/bengobox/projects-service/internal/ent"
+	"github.com/bengobox/projects-service/internal/platform/events"
 )
 
-// Publisher is the slice of the events publisher the projects service needs.
-type Publisher interface {
-	PublishProjectEvent(ctx context.Context, tenantID, projectID uuid.UUID, eventType string, payload map[string]any) error
-}
-
-// SetPublisher wires project lifecycle events. Optional: without it nothing is published.
-func (s *Service) SetPublisher(p Publisher) { s.publisher = p }
-
-// Project event types (subject project.<type>).
+// Project event types (subject project.<type>). treasury-api closes a project's budgets and
+// releases its open commitments on closed and deleted.
 const (
 	EventCreated = "created"
 	EventUpdated = "updated"
@@ -54,13 +47,7 @@ func projectPayload(p *ent.Project) map[string]any {
 	return out
 }
 
-// emit publishes best-effort: the project change is already saved, so a failed event is logged,
-// not returned (the milestone events follow the same rule).
-func (s *Service) emit(ctx context.Context, tenantID, projectID uuid.UUID, eventType string, payload map[string]any) {
-	if s.publisher == nil {
-		return
-	}
-	if err := s.publisher.PublishProjectEvent(ctx, tenantID, projectID, eventType, payload); err != nil {
-		s.log.Warn("project event not published", zap.String("event", eventType), zap.String("project", projectID.String()), zap.Error(err))
-	}
+// emit writes a project event in the same transaction as the change.
+func emit(ctx context.Context, tx *ent.Tx, tenantID, projectID uuid.UUID, eventType string, payload map[string]any) error {
+	return events.Write(ctx, tx, events.AggregateProject, eventType, projectID, tenantID, payload)
 }

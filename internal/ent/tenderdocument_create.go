@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/tender"
@@ -20,6 +22,7 @@ type TenderDocumentCreate struct {
 	config
 	mutation *TenderDocumentMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenderID sets the "tender_id" field.
@@ -212,6 +215,7 @@ func (tdc *TenderDocumentCreate) createSpec() (*TenderDocument, *sqlgraph.Create
 		_node = &TenderDocument{config: tdc.config}
 		_spec = sqlgraph.NewCreateSpec(tenderdocument.Table, sqlgraph.NewFieldSpec(tenderdocument.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = tdc.conflict
 	if id, ok := tdc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -264,11 +268,371 @@ func (tdc *TenderDocumentCreate) createSpec() (*TenderDocument, *sqlgraph.Create
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.TenderDocument.Create().
+//		SetTenderID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderDocumentUpsert) {
+//			SetTenderID(v+v).
+//		}).
+//		Exec(ctx)
+func (tdc *TenderDocumentCreate) OnConflict(opts ...sql.ConflictOption) *TenderDocumentUpsertOne {
+	tdc.conflict = opts
+	return &TenderDocumentUpsertOne{
+		create: tdc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.TenderDocument.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tdc *TenderDocumentCreate) OnConflictColumns(columns ...string) *TenderDocumentUpsertOne {
+	tdc.conflict = append(tdc.conflict, sql.ConflictColumns(columns...))
+	return &TenderDocumentUpsertOne{
+		create: tdc,
+	}
+}
+
+type (
+	// TenderDocumentUpsertOne is the builder for "upsert"-ing
+	//  one TenderDocument node.
+	TenderDocumentUpsertOne struct {
+		create *TenderDocumentCreate
+	}
+
+	// TenderDocumentUpsert is the "OnConflict" setter.
+	TenderDocumentUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenderID sets the "tender_id" field.
+func (u *TenderDocumentUpsert) SetTenderID(v uuid.UUID) *TenderDocumentUpsert {
+	u.Set(tenderdocument.FieldTenderID, v)
+	return u
+}
+
+// UpdateTenderID sets the "tender_id" field to the value that was provided on create.
+func (u *TenderDocumentUpsert) UpdateTenderID() *TenderDocumentUpsert {
+	u.SetExcluded(tenderdocument.FieldTenderID)
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderDocumentUpsert) SetTenantID(v uuid.UUID) *TenderDocumentUpsert {
+	u.Set(tenderdocument.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderDocumentUpsert) UpdateTenantID() *TenderDocumentUpsert {
+	u.SetExcluded(tenderdocument.FieldTenantID)
+	return u
+}
+
+// SetFileURL sets the "file_url" field.
+func (u *TenderDocumentUpsert) SetFileURL(v string) *TenderDocumentUpsert {
+	u.Set(tenderdocument.FieldFileURL, v)
+	return u
+}
+
+// UpdateFileURL sets the "file_url" field to the value that was provided on create.
+func (u *TenderDocumentUpsert) UpdateFileURL() *TenderDocumentUpsert {
+	u.SetExcluded(tenderdocument.FieldFileURL)
+	return u
+}
+
+// SetFileName sets the "file_name" field.
+func (u *TenderDocumentUpsert) SetFileName(v string) *TenderDocumentUpsert {
+	u.Set(tenderdocument.FieldFileName, v)
+	return u
+}
+
+// UpdateFileName sets the "file_name" field to the value that was provided on create.
+func (u *TenderDocumentUpsert) UpdateFileName() *TenderDocumentUpsert {
+	u.SetExcluded(tenderdocument.FieldFileName)
+	return u
+}
+
+// SetFileSize sets the "file_size" field.
+func (u *TenderDocumentUpsert) SetFileSize(v int64) *TenderDocumentUpsert {
+	u.Set(tenderdocument.FieldFileSize, v)
+	return u
+}
+
+// UpdateFileSize sets the "file_size" field to the value that was provided on create.
+func (u *TenderDocumentUpsert) UpdateFileSize() *TenderDocumentUpsert {
+	u.SetExcluded(tenderdocument.FieldFileSize)
+	return u
+}
+
+// AddFileSize adds v to the "file_size" field.
+func (u *TenderDocumentUpsert) AddFileSize(v int64) *TenderDocumentUpsert {
+	u.Add(tenderdocument.FieldFileSize, v)
+	return u
+}
+
+// ClearFileSize clears the value of the "file_size" field.
+func (u *TenderDocumentUpsert) ClearFileSize() *TenderDocumentUpsert {
+	u.SetNull(tenderdocument.FieldFileSize)
+	return u
+}
+
+// SetMimeType sets the "mime_type" field.
+func (u *TenderDocumentUpsert) SetMimeType(v string) *TenderDocumentUpsert {
+	u.Set(tenderdocument.FieldMimeType, v)
+	return u
+}
+
+// UpdateMimeType sets the "mime_type" field to the value that was provided on create.
+func (u *TenderDocumentUpsert) UpdateMimeType() *TenderDocumentUpsert {
+	u.SetExcluded(tenderdocument.FieldMimeType)
+	return u
+}
+
+// ClearMimeType clears the value of the "mime_type" field.
+func (u *TenderDocumentUpsert) ClearMimeType() *TenderDocumentUpsert {
+	u.SetNull(tenderdocument.FieldMimeType)
+	return u
+}
+
+// SetUploadedBy sets the "uploaded_by" field.
+func (u *TenderDocumentUpsert) SetUploadedBy(v uuid.UUID) *TenderDocumentUpsert {
+	u.Set(tenderdocument.FieldUploadedBy, v)
+	return u
+}
+
+// UpdateUploadedBy sets the "uploaded_by" field to the value that was provided on create.
+func (u *TenderDocumentUpsert) UpdateUploadedBy() *TenderDocumentUpsert {
+	u.SetExcluded(tenderdocument.FieldUploadedBy)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.TenderDocument.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tenderdocument.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderDocumentUpsertOne) UpdateNewValues() *TenderDocumentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(tenderdocument.FieldID)
+		}
+		if _, exists := u.create.mutation.UploadedAt(); exists {
+			s.SetIgnore(tenderdocument.FieldUploadedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.TenderDocument.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *TenderDocumentUpsertOne) Ignore() *TenderDocumentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderDocumentUpsertOne) DoNothing() *TenderDocumentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderDocumentCreate.OnConflict
+// documentation for more info.
+func (u *TenderDocumentUpsertOne) Update(set func(*TenderDocumentUpsert)) *TenderDocumentUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderDocumentUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenderID sets the "tender_id" field.
+func (u *TenderDocumentUpsertOne) SetTenderID(v uuid.UUID) *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetTenderID(v)
+	})
+}
+
+// UpdateTenderID sets the "tender_id" field to the value that was provided on create.
+func (u *TenderDocumentUpsertOne) UpdateTenderID() *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateTenderID()
+	})
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderDocumentUpsertOne) SetTenantID(v uuid.UUID) *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderDocumentUpsertOne) UpdateTenantID() *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetFileURL sets the "file_url" field.
+func (u *TenderDocumentUpsertOne) SetFileURL(v string) *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetFileURL(v)
+	})
+}
+
+// UpdateFileURL sets the "file_url" field to the value that was provided on create.
+func (u *TenderDocumentUpsertOne) UpdateFileURL() *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateFileURL()
+	})
+}
+
+// SetFileName sets the "file_name" field.
+func (u *TenderDocumentUpsertOne) SetFileName(v string) *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetFileName(v)
+	})
+}
+
+// UpdateFileName sets the "file_name" field to the value that was provided on create.
+func (u *TenderDocumentUpsertOne) UpdateFileName() *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateFileName()
+	})
+}
+
+// SetFileSize sets the "file_size" field.
+func (u *TenderDocumentUpsertOne) SetFileSize(v int64) *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetFileSize(v)
+	})
+}
+
+// AddFileSize adds v to the "file_size" field.
+func (u *TenderDocumentUpsertOne) AddFileSize(v int64) *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.AddFileSize(v)
+	})
+}
+
+// UpdateFileSize sets the "file_size" field to the value that was provided on create.
+func (u *TenderDocumentUpsertOne) UpdateFileSize() *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateFileSize()
+	})
+}
+
+// ClearFileSize clears the value of the "file_size" field.
+func (u *TenderDocumentUpsertOne) ClearFileSize() *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.ClearFileSize()
+	})
+}
+
+// SetMimeType sets the "mime_type" field.
+func (u *TenderDocumentUpsertOne) SetMimeType(v string) *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetMimeType(v)
+	})
+}
+
+// UpdateMimeType sets the "mime_type" field to the value that was provided on create.
+func (u *TenderDocumentUpsertOne) UpdateMimeType() *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateMimeType()
+	})
+}
+
+// ClearMimeType clears the value of the "mime_type" field.
+func (u *TenderDocumentUpsertOne) ClearMimeType() *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.ClearMimeType()
+	})
+}
+
+// SetUploadedBy sets the "uploaded_by" field.
+func (u *TenderDocumentUpsertOne) SetUploadedBy(v uuid.UUID) *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetUploadedBy(v)
+	})
+}
+
+// UpdateUploadedBy sets the "uploaded_by" field to the value that was provided on create.
+func (u *TenderDocumentUpsertOne) UpdateUploadedBy() *TenderDocumentUpsertOne {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateUploadedBy()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderDocumentUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderDocumentCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderDocumentUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *TenderDocumentUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: TenderDocumentUpsertOne.ID is not supported by MySQL driver. Use TenderDocumentUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *TenderDocumentUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // TenderDocumentCreateBulk is the builder for creating many TenderDocument entities in bulk.
 type TenderDocumentCreateBulk struct {
 	config
 	err      error
 	builders []*TenderDocumentCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the TenderDocument entities in the database.
@@ -298,6 +662,7 @@ func (tdcb *TenderDocumentCreateBulk) Save(ctx context.Context) ([]*TenderDocume
 					_, err = mutators[i+1].Mutate(root, tdcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = tdcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, tdcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -344,6 +709,242 @@ func (tdcb *TenderDocumentCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (tdcb *TenderDocumentCreateBulk) ExecX(ctx context.Context) {
 	if err := tdcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.TenderDocument.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderDocumentUpsert) {
+//			SetTenderID(v+v).
+//		}).
+//		Exec(ctx)
+func (tdcb *TenderDocumentCreateBulk) OnConflict(opts ...sql.ConflictOption) *TenderDocumentUpsertBulk {
+	tdcb.conflict = opts
+	return &TenderDocumentUpsertBulk{
+		create: tdcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.TenderDocument.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tdcb *TenderDocumentCreateBulk) OnConflictColumns(columns ...string) *TenderDocumentUpsertBulk {
+	tdcb.conflict = append(tdcb.conflict, sql.ConflictColumns(columns...))
+	return &TenderDocumentUpsertBulk{
+		create: tdcb,
+	}
+}
+
+// TenderDocumentUpsertBulk is the builder for "upsert"-ing
+// a bulk of TenderDocument nodes.
+type TenderDocumentUpsertBulk struct {
+	create *TenderDocumentCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.TenderDocument.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tenderdocument.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderDocumentUpsertBulk) UpdateNewValues() *TenderDocumentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(tenderdocument.FieldID)
+			}
+			if _, exists := b.mutation.UploadedAt(); exists {
+				s.SetIgnore(tenderdocument.FieldUploadedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.TenderDocument.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *TenderDocumentUpsertBulk) Ignore() *TenderDocumentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderDocumentUpsertBulk) DoNothing() *TenderDocumentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderDocumentCreateBulk.OnConflict
+// documentation for more info.
+func (u *TenderDocumentUpsertBulk) Update(set func(*TenderDocumentUpsert)) *TenderDocumentUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderDocumentUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenderID sets the "tender_id" field.
+func (u *TenderDocumentUpsertBulk) SetTenderID(v uuid.UUID) *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetTenderID(v)
+	})
+}
+
+// UpdateTenderID sets the "tender_id" field to the value that was provided on create.
+func (u *TenderDocumentUpsertBulk) UpdateTenderID() *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateTenderID()
+	})
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderDocumentUpsertBulk) SetTenantID(v uuid.UUID) *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderDocumentUpsertBulk) UpdateTenantID() *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetFileURL sets the "file_url" field.
+func (u *TenderDocumentUpsertBulk) SetFileURL(v string) *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetFileURL(v)
+	})
+}
+
+// UpdateFileURL sets the "file_url" field to the value that was provided on create.
+func (u *TenderDocumentUpsertBulk) UpdateFileURL() *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateFileURL()
+	})
+}
+
+// SetFileName sets the "file_name" field.
+func (u *TenderDocumentUpsertBulk) SetFileName(v string) *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetFileName(v)
+	})
+}
+
+// UpdateFileName sets the "file_name" field to the value that was provided on create.
+func (u *TenderDocumentUpsertBulk) UpdateFileName() *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateFileName()
+	})
+}
+
+// SetFileSize sets the "file_size" field.
+func (u *TenderDocumentUpsertBulk) SetFileSize(v int64) *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetFileSize(v)
+	})
+}
+
+// AddFileSize adds v to the "file_size" field.
+func (u *TenderDocumentUpsertBulk) AddFileSize(v int64) *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.AddFileSize(v)
+	})
+}
+
+// UpdateFileSize sets the "file_size" field to the value that was provided on create.
+func (u *TenderDocumentUpsertBulk) UpdateFileSize() *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateFileSize()
+	})
+}
+
+// ClearFileSize clears the value of the "file_size" field.
+func (u *TenderDocumentUpsertBulk) ClearFileSize() *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.ClearFileSize()
+	})
+}
+
+// SetMimeType sets the "mime_type" field.
+func (u *TenderDocumentUpsertBulk) SetMimeType(v string) *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetMimeType(v)
+	})
+}
+
+// UpdateMimeType sets the "mime_type" field to the value that was provided on create.
+func (u *TenderDocumentUpsertBulk) UpdateMimeType() *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateMimeType()
+	})
+}
+
+// ClearMimeType clears the value of the "mime_type" field.
+func (u *TenderDocumentUpsertBulk) ClearMimeType() *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.ClearMimeType()
+	})
+}
+
+// SetUploadedBy sets the "uploaded_by" field.
+func (u *TenderDocumentUpsertBulk) SetUploadedBy(v uuid.UUID) *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.SetUploadedBy(v)
+	})
+}
+
+// UpdateUploadedBy sets the "uploaded_by" field to the value that was provided on create.
+func (u *TenderDocumentUpsertBulk) UpdateUploadedBy() *TenderDocumentUpsertBulk {
+	return u.Update(func(s *TenderDocumentUpsert) {
+		s.UpdateUploadedBy()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderDocumentUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the TenderDocumentCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderDocumentCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderDocumentUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

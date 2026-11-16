@@ -13,6 +13,7 @@ import (
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/platform/erp"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
+	"github.com/bengobox/projects-service/internal/services/membership"
 )
 
 // ErrNotFound is returned for a project the tenant does not have.
@@ -169,6 +170,8 @@ type PortfolioFilter struct {
 	Status string
 	Limit  int
 	Offset int
+	// VisibleTo limits the portfolio to the projects this user owns or belongs to (nil: all).
+	VisibleTo *uuid.UUID
 }
 
 // Portfolio returns one page of projects with their financial health: one project query, one
@@ -180,6 +183,9 @@ func (s *Service) Portfolio(ctx context.Context, tenantID uuid.UUID, f Portfolio
 	q := s.client.Project.Query().Where(entproject.TenantID(tenantID))
 	if f.Status != "" {
 		q = q.Where(entproject.Status(f.Status))
+	}
+	if f.VisibleTo != nil {
+		q = q.Where(membership.Visible(*f.VisibleTo))
 	}
 	total, err := q.Clone().Count(ctx)
 	if err != nil {

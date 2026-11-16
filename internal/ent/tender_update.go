@@ -471,6 +471,11 @@ func (tu *TenderUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (tu *TenderUpdate) check() error {
+	if v, ok := tu.mutation.Number(); ok {
+		if err := tender.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Tender.number": %w`, err)}
+		}
+	}
 	if v, ok := tu.mutation.Title(); ok {
 		if err := tender.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Tender.title": %w`, err)}
@@ -1216,6 +1221,11 @@ func (tuo *TenderUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (tuo *TenderUpdateOne) check() error {
+	if v, ok := tuo.mutation.Number(); ok {
+		if err := tender.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Tender.number": %w`, err)}
+		}
+	}
 	if v, ok := tuo.mutation.Title(); ok {
 		if err := tender.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Tender.title": %w`, err)}

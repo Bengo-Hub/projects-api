@@ -4,12 +4,14 @@ package ent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/predicate"
@@ -86,8 +88,14 @@ func (oeu *OutboxEventUpdate) SetNillableEventType(s *string) *OutboxEventUpdate
 }
 
 // SetPayload sets the "payload" field.
-func (oeu *OutboxEventUpdate) SetPayload(m map[string]interface{}) *OutboxEventUpdate {
-	oeu.mutation.SetPayload(m)
+func (oeu *OutboxEventUpdate) SetPayload(jm json.RawMessage) *OutboxEventUpdate {
+	oeu.mutation.SetPayload(jm)
+	return oeu
+}
+
+// AppendPayload appends jm to the "payload" field.
+func (oeu *OutboxEventUpdate) AppendPayload(jm json.RawMessage) *OutboxEventUpdate {
+	oeu.mutation.AppendPayload(jm)
 	return oeu
 }
 
@@ -149,6 +157,46 @@ func (oeu *OutboxEventUpdate) SetNillableLastAttemptAt(t *time.Time) *OutboxEven
 // ClearLastAttemptAt clears the value of the "last_attempt_at" field.
 func (oeu *OutboxEventUpdate) ClearLastAttemptAt() *OutboxEventUpdate {
 	oeu.mutation.ClearLastAttemptAt()
+	return oeu
+}
+
+// SetPublishedAt sets the "published_at" field.
+func (oeu *OutboxEventUpdate) SetPublishedAt(t time.Time) *OutboxEventUpdate {
+	oeu.mutation.SetPublishedAt(t)
+	return oeu
+}
+
+// SetNillablePublishedAt sets the "published_at" field if the given value is not nil.
+func (oeu *OutboxEventUpdate) SetNillablePublishedAt(t *time.Time) *OutboxEventUpdate {
+	if t != nil {
+		oeu.SetPublishedAt(*t)
+	}
+	return oeu
+}
+
+// ClearPublishedAt clears the value of the "published_at" field.
+func (oeu *OutboxEventUpdate) ClearPublishedAt() *OutboxEventUpdate {
+	oeu.mutation.ClearPublishedAt()
+	return oeu
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (oeu *OutboxEventUpdate) SetErrorMessage(s string) *OutboxEventUpdate {
+	oeu.mutation.SetErrorMessage(s)
+	return oeu
+}
+
+// SetNillableErrorMessage sets the "error_message" field if the given value is not nil.
+func (oeu *OutboxEventUpdate) SetNillableErrorMessage(s *string) *OutboxEventUpdate {
+	if s != nil {
+		oeu.SetErrorMessage(*s)
+	}
+	return oeu
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (oeu *OutboxEventUpdate) ClearErrorMessage() *OutboxEventUpdate {
+	oeu.mutation.ClearErrorMessage()
 	return oeu
 }
 
@@ -226,6 +274,11 @@ func (oeu *OutboxEventUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := oeu.mutation.Payload(); ok {
 		_spec.SetField(outboxevent.FieldPayload, field.TypeJSON, value)
 	}
+	if value, ok := oeu.mutation.AppendedPayload(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, outboxevent.FieldPayload, value)
+		})
+	}
 	if oeu.mutation.PayloadCleared() {
 		_spec.ClearField(outboxevent.FieldPayload, field.TypeJSON)
 	}
@@ -243,6 +296,18 @@ func (oeu *OutboxEventUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if oeu.mutation.LastAttemptAtCleared() {
 		_spec.ClearField(outboxevent.FieldLastAttemptAt, field.TypeTime)
+	}
+	if value, ok := oeu.mutation.PublishedAt(); ok {
+		_spec.SetField(outboxevent.FieldPublishedAt, field.TypeTime, value)
+	}
+	if oeu.mutation.PublishedAtCleared() {
+		_spec.ClearField(outboxevent.FieldPublishedAt, field.TypeTime)
+	}
+	if value, ok := oeu.mutation.ErrorMessage(); ok {
+		_spec.SetField(outboxevent.FieldErrorMessage, field.TypeString, value)
+	}
+	if oeu.mutation.ErrorMessageCleared() {
+		_spec.ClearField(outboxevent.FieldErrorMessage, field.TypeString)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, oeu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -321,8 +386,14 @@ func (oeuo *OutboxEventUpdateOne) SetNillableEventType(s *string) *OutboxEventUp
 }
 
 // SetPayload sets the "payload" field.
-func (oeuo *OutboxEventUpdateOne) SetPayload(m map[string]interface{}) *OutboxEventUpdateOne {
-	oeuo.mutation.SetPayload(m)
+func (oeuo *OutboxEventUpdateOne) SetPayload(jm json.RawMessage) *OutboxEventUpdateOne {
+	oeuo.mutation.SetPayload(jm)
+	return oeuo
+}
+
+// AppendPayload appends jm to the "payload" field.
+func (oeuo *OutboxEventUpdateOne) AppendPayload(jm json.RawMessage) *OutboxEventUpdateOne {
+	oeuo.mutation.AppendPayload(jm)
 	return oeuo
 }
 
@@ -384,6 +455,46 @@ func (oeuo *OutboxEventUpdateOne) SetNillableLastAttemptAt(t *time.Time) *Outbox
 // ClearLastAttemptAt clears the value of the "last_attempt_at" field.
 func (oeuo *OutboxEventUpdateOne) ClearLastAttemptAt() *OutboxEventUpdateOne {
 	oeuo.mutation.ClearLastAttemptAt()
+	return oeuo
+}
+
+// SetPublishedAt sets the "published_at" field.
+func (oeuo *OutboxEventUpdateOne) SetPublishedAt(t time.Time) *OutboxEventUpdateOne {
+	oeuo.mutation.SetPublishedAt(t)
+	return oeuo
+}
+
+// SetNillablePublishedAt sets the "published_at" field if the given value is not nil.
+func (oeuo *OutboxEventUpdateOne) SetNillablePublishedAt(t *time.Time) *OutboxEventUpdateOne {
+	if t != nil {
+		oeuo.SetPublishedAt(*t)
+	}
+	return oeuo
+}
+
+// ClearPublishedAt clears the value of the "published_at" field.
+func (oeuo *OutboxEventUpdateOne) ClearPublishedAt() *OutboxEventUpdateOne {
+	oeuo.mutation.ClearPublishedAt()
+	return oeuo
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (oeuo *OutboxEventUpdateOne) SetErrorMessage(s string) *OutboxEventUpdateOne {
+	oeuo.mutation.SetErrorMessage(s)
+	return oeuo
+}
+
+// SetNillableErrorMessage sets the "error_message" field if the given value is not nil.
+func (oeuo *OutboxEventUpdateOne) SetNillableErrorMessage(s *string) *OutboxEventUpdateOne {
+	if s != nil {
+		oeuo.SetErrorMessage(*s)
+	}
+	return oeuo
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (oeuo *OutboxEventUpdateOne) ClearErrorMessage() *OutboxEventUpdateOne {
+	oeuo.mutation.ClearErrorMessage()
 	return oeuo
 }
 
@@ -491,6 +602,11 @@ func (oeuo *OutboxEventUpdateOne) sqlSave(ctx context.Context) (_node *OutboxEve
 	if value, ok := oeuo.mutation.Payload(); ok {
 		_spec.SetField(outboxevent.FieldPayload, field.TypeJSON, value)
 	}
+	if value, ok := oeuo.mutation.AppendedPayload(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, outboxevent.FieldPayload, value)
+		})
+	}
 	if oeuo.mutation.PayloadCleared() {
 		_spec.ClearField(outboxevent.FieldPayload, field.TypeJSON)
 	}
@@ -508,6 +624,18 @@ func (oeuo *OutboxEventUpdateOne) sqlSave(ctx context.Context) (_node *OutboxEve
 	}
 	if oeuo.mutation.LastAttemptAtCleared() {
 		_spec.ClearField(outboxevent.FieldLastAttemptAt, field.TypeTime)
+	}
+	if value, ok := oeuo.mutation.PublishedAt(); ok {
+		_spec.SetField(outboxevent.FieldPublishedAt, field.TypeTime, value)
+	}
+	if oeuo.mutation.PublishedAtCleared() {
+		_spec.ClearField(outboxevent.FieldPublishedAt, field.TypeTime)
+	}
+	if value, ok := oeuo.mutation.ErrorMessage(); ok {
+		_spec.SetField(outboxevent.FieldErrorMessage, field.TypeString, value)
+	}
+	if oeuo.mutation.ErrorMessageCleared() {
+		_spec.ClearField(outboxevent.FieldErrorMessage, field.TypeString)
 	}
 	_node = &OutboxEvent{config: oeuo.config}
 	_spec.Assign = _node.assignValues

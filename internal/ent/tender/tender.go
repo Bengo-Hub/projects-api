@@ -122,6 +122,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// NumberValidator is a validator for the "number" field. It is called by the builders before save.
+	NumberValidator func(string) error
 	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	TitleValidator func(string) error
 	// ClientNameValidator is a validator for the "client_name" field. It is called by the builders before save.

@@ -1,7 +1,63 @@
 # projects-api: API reference
 
-This file covers the QA and acceptance module. The older project, task, tender and financials
-routes are listed in `internal/http/router/router.go` and the handlers under `internal/http/handlers`.
+Routes live in `internal/http/router/router.go` and the handlers under `internal/http/handlers`.
+Auth follows `shared-docs/docs/architecture/trinity-authorization-pattern.md` and
+`sso-integration-guide.md`.
+
+## Access (sprint 0b, 2026-11-16)
+
+Every tenant route runs: JWKS or service key auth, the tenant guard, subscription enforcement on
+mutations, just-in-time user provisioning, then the route's permission check.
+
+- **Permissions are local to this service.** The auth-api token carries only `auth.*` codes and
+  global roles. The registry is `internal/modules/rbac/permissions.go`: codes are
+  `projects.{module}.{action}`, with modules projects, tasks, milestones, members, comments,
+  tenders, financials, time, portal, qa and rbac. A module's `manage` implies its other actions,
+  `view`/`change`/`delete` imply their `_own` forms, and `qa.run` implies `qa.view`.
+- **Roles.** System roles are projects_admin, project_manager, member, viewer and client
+  (`roles.go`). A user's first request creates them locally with a role mapped from the global
+  role: superuser, admin or owner become projects_admin; manager or staff become member; anyone
+  else becomes viewer. The automatic role follows later changes to the global role. A role an
+  admin assigns replaces it and sticks. Superuser and platform owner skip permission checks, but
+  never plan gating.
+- **Membership.** Without `projects.projects.manage`, a user reaches only projects they own or
+  belong to; any other project answers 404. With `tasks.view_own` only, a user sees only tasks
+  assigned to them.
+- **S2S.** Service-key calls take the tenant from the path. `X-Tenant-ID` is ignored.
+
+### Profile and roles
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/api/v1/{tenant}/auth/me` | signed in | `{user_id, email, name, tenant_id, global_roles[], service_role, roles[], permissions[], is_platform_owner}`. The UI calls it after SSO `/auth/me` and gates on `permissions`. |
+| GET | `/api/v1/{tenant}/rbac/roles` | `projects.rbac.manage` | System and tenant roles with their codes |
+| GET | `/api/v1/{tenant}/rbac/permissions` | `projects.rbac.manage` | The registry |
+| GET | `/api/v1/{tenant}/rbac/users` | `projects.rbac.manage` | Users and their roles |
+| POST | `/api/v1/{tenant}/rbac/users/{authUserID}/roles` | `projects.rbac.manage` | `{role_code}`. Nobody changes their own roles. |
+| DELETE | `/api/v1/{tenant}/rbac/users/{authUserID}/roles/{roleCode}` | `projects.rbac.manage` | Revoking the last assigned role returns the user to the automatic role |
+
+### Errors and paging
+
+- **403 bodies:**
+  - Permission: `{"error", "code": "permission_denied", "required_permission"}`.
+  - Subscription: `{"code": "subscription_inactive" | "feature_not_available", "upgrade": true}`.
+  - Tenant mismatch: `{"code": "tenant_forbidden"}`.
+- **5xx bodies:** always `internal server error`; the detail goes to the log only.
+- **Lists:** tasks, tenders and comments take `limit` (default 20, max 500) with `page` or
+  `offset`, and answer `{data, total, limit, page, hasMore}`. There is no `page_size`.
+- **Gantt:** answers `{data, truncated, limit: 2000}`.
+- **GetTask:** returns the task with `edges.dependencies`, its latest 50 `comments` (oldest first)
+  and `comments_total`.
+
+### Data and events
+
+- **Tender numbers:** come from a per-tenant counter (`document_sequences`, kind `tender`), moved by
+  one `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` inside the tender's transaction. They are
+  unique per tenant, and a deleted tender never frees its number.
+- **Outbox:** events are written in the same transaction as the domain change. Every create,
+  update and delete on projects, tasks, milestones, members, comments and tenders also writes an
+  `activities` row in that transaction (`services/activity`).
+- **`project.milestone.reached`:** fires only when a milestone moves to completed.
 
 ## QA and acceptance
 
@@ -12,8 +68,8 @@ report.
 
 ### Permissions
 
-The codes travel in the auth-api token. Tenant admins (`admin`, `superuser`) and the platform owner
-pass without them.
+The codes come from this service's local RBAC (see Access above), not from the auth-api token.
+projects_admin, superuser and the platform owner hold all of them.
 
 | Code | Grants |
 |---|---|

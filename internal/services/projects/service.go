@@ -12,14 +12,16 @@ import (
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	enttask "github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/membership"
+	"github.com/bengobox/projects-service/internal/services/txn"
 )
 
 // Service handles project CRUD operations.
 type Service struct {
-	client    *ent.Client
-	cache     *sharedcache.Aside
-	log       *zap.Logger
-	publisher Publisher
+	client *ent.Client
+	cache  *sharedcache.Aside
+	log    *zap.Logger
 }
 
 // NewService creates a new projects service.
@@ -54,9 +56,18 @@ type UpdateProjectInput struct {
 
 // ListProjectsFilter holds filter options for listing projects.
 type ListProjectsFilter struct {
-	Status string `json:"status"`
-	Limit  int    `json:"limit"`
-	Offset int    `json:"offset"`
+	Status string
+	Limit  int
+	Offset int
+	// VisibleTo limits the list to the projects this user owns or belongs to (nil: every project).
+	VisibleTo *uuid.UUID
+}
+
+func scoped(q *ent.ProjectQuery, visibleTo *uuid.UUID) *ent.ProjectQuery {
+	if visibleTo != nil {
+		q = q.Where(membership.Visible(*visibleTo))
+	}
+	return q
 }
 
 // ListProjects returns a paginated list of projects for the given tenant.
@@ -65,7 +76,7 @@ func (s *Service) ListProjects(ctx context.Context, tenantID uuid.UUID, filter L
 		filter.Limit = 20
 	}
 
-	q := s.client.Project.Query().Where(entproject.TenantID(tenantID))
+	q := scoped(s.client.Project.Query().Where(entproject.TenantID(tenantID)), filter.VisibleTo)
 	if filter.Status != "" {
 		q = q.Where(entproject.Status(filter.Status))
 	}
@@ -81,11 +92,12 @@ func (s *Service) ListProjects(ctx context.Context, tenantID uuid.UUID, filter L
 	return items, total, nil
 }
 
-// GetProject fetches a single project with its edges.
+// GetProject fetches a single project with its members and milestones. Tasks come from the paged
+// task list, not from here.
 func (s *Service) GetProject(ctx context.Context, tenantID, id uuid.UUID) (*ent.Project, error) {
 	p, err := s.client.Project.Query().
 		Where(entproject.ID(id), entproject.TenantID(tenantID)).
-		WithTasks().WithMembers().WithMilestones().
+		WithMembers().WithMilestones().
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -109,102 +121,150 @@ func (s *Service) CreateProject(ctx context.Context, tenantID uuid.UUID, input C
 	if status == "" {
 		status = "active"
 	}
-	c := s.client.Project.Create().
-		SetTenantID(tenantID).
-		SetName(input.Name).
-		SetDescription(input.Description).
-		SetStatus(status).
-		SetCurrency(currency).
-		SetOwnerID(input.OwnerID)
-	if input.StartDate != nil {
-		c = c.SetStartDate(*input.StartDate)
-	}
-	if input.EndDate != nil {
-		c = c.SetEndDate(*input.EndDate)
-	}
-	if input.Budget != nil {
-		c = c.SetBudget(*input.Budget)
-	}
 	if input.Metadata != nil {
 		if err := normalizeCommercial(input.Metadata); err != nil {
 			return nil, err
 		}
-		c = c.SetMetadata(mergeMetadata(nil, input.Metadata))
 	}
-	p, err := c.Save(ctx)
+	var p *ent.Project
+	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+		c := tx.Project.Create().
+			SetTenantID(tenantID).
+			SetName(input.Name).
+			SetDescription(input.Description).
+			SetStatus(status).
+			SetCurrency(currency).
+			SetOwnerID(input.OwnerID)
+		if input.StartDate != nil {
+			c = c.SetStartDate(*input.StartDate)
+		}
+		if input.EndDate != nil {
+			c = c.SetEndDate(*input.EndDate)
+		}
+		if input.Budget != nil {
+			c = c.SetBudget(*input.Budget)
+		}
+		if input.Metadata != nil {
+			c = c.SetMetadata(mergeMetadata(nil, input.Metadata))
+		}
+		var err error
+		if p, err = c.Save(ctx); err != nil {
+			return fmt.Errorf("create project: %w", err)
+		}
+		if err := activity.Record(ctx, tx, activity.Entry{
+			TenantID: tenantID, ProjectID: activity.Ref(p.ID), EntityType: "project", EntityID: p.ID,
+			Action: activity.ActionCreated, Changes: map[string]any{"name": p.Name, "status": p.Status},
+		}); err != nil {
+			return err
+		}
+		return emit(ctx, tx, tenantID, p.ID, EventCreated, projectPayload(p))
+	})
 	if err != nil {
-		return nil, fmt.Errorf("create project: %w", err)
+		return nil, err
 	}
 	s.log.Info("project created", zap.String("id", p.ID.String()), zap.String("tenant", tenantID.String()))
-	s.emit(ctx, tenantID, p.ID, EventCreated, projectPayload(p))
 	return p, nil
 }
 
 // UpdateProject updates an existing project.
 func (s *Service) UpdateProject(ctx context.Context, tenantID, id uuid.UUID, input UpdateProjectInput) (*ent.Project, error) {
-	p, err := s.client.Project.Query().
-		Where(entproject.ID(id), entproject.TenantID(tenantID)).Only(ctx)
-	if err != nil {
-		if ent.IsNotFound(err) {
-			return nil, ErrNotFound
-		}
-		return nil, fmt.Errorf("fetch project: %w", err)
-	}
-	u := p.Update()
-	if input.Name != nil {
-		u = u.SetName(*input.Name)
-	}
-	if input.Description != nil {
-		u = u.SetDescription(*input.Description)
-	}
-	if input.Status != nil {
-		u = u.SetStatus(*input.Status)
-	}
-	if input.Currency != nil {
-		u = u.SetCurrency(*input.Currency)
-	}
-	if input.StartDate != nil {
-		u = u.SetStartDate(*input.StartDate)
-	}
-	if input.EndDate != nil {
-		u = u.SetEndDate(*input.EndDate)
-	}
-	if input.Budget != nil {
-		u = u.SetBudget(*input.Budget)
-	}
 	if input.Metadata != nil {
 		// A partial update: keys sent as null are removed, keys not sent are kept.
 		if err := normalizeCommercial(input.Metadata); err != nil {
 			return nil, err
 		}
-		u = u.SetMetadata(mergeMetadata(p.Metadata, input.Metadata))
 	}
-	prevStatus := p.Status
-	updated, err := u.Save(ctx)
+	var updated *ent.Project
+	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+		p, err := tx.Project.Query().Where(entproject.ID(id), entproject.TenantID(tenantID)).Only(ctx)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				return ErrNotFound
+			}
+			return fmt.Errorf("fetch project: %w", err)
+		}
+		changes := map[string]any{}
+		u := p.Update()
+		if input.Name != nil {
+			u = u.SetName(*input.Name)
+			changes["name"] = *input.Name
+		}
+		if input.Description != nil {
+			u = u.SetDescription(*input.Description)
+			changes["description"] = "changed"
+		}
+		if input.Status != nil {
+			u = u.SetStatus(*input.Status)
+			changes["status"] = map[string]any{"from": p.Status, "to": *input.Status}
+		}
+		if input.Currency != nil {
+			u = u.SetCurrency(*input.Currency)
+			changes["currency"] = *input.Currency
+		}
+		if input.StartDate != nil {
+			u = u.SetStartDate(*input.StartDate)
+			changes["start_date"] = input.StartDate.Format(time.DateOnly)
+		}
+		if input.EndDate != nil {
+			u = u.SetEndDate(*input.EndDate)
+			changes["end_date"] = input.EndDate.Format(time.DateOnly)
+		}
+		if input.Budget != nil {
+			u = u.SetBudget(*input.Budget)
+			changes["budget"] = *input.Budget
+		}
+		if input.Metadata != nil {
+			u = u.SetMetadata(mergeMetadata(p.Metadata, input.Metadata))
+			changes["metadata"] = "changed"
+		}
+		prevStatus := p.Status
+		if updated, err = u.Save(ctx); err != nil {
+			return fmt.Errorf("update project: %w", err)
+		}
+		if err := activity.Record(ctx, tx, activity.Entry{
+			TenantID: tenantID, ProjectID: activity.Ref(id), EntityType: "project", EntityID: id,
+			Action: activity.ActionUpdated, Changes: changes,
+		}); err != nil {
+			return err
+		}
+		payload := projectPayload(updated)
+		payload["previous_status"] = prevStatus
+		if err := emit(ctx, tx, tenantID, id, EventUpdated, payload); err != nil {
+			return err
+		}
+		if closesProject(prevStatus, updated.Status) {
+			return emit(ctx, tx, tenantID, id, EventClosed, payload)
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("update project: %w", err)
-	}
-	payload := projectPayload(updated)
-	payload["previous_status"] = prevStatus
-	s.emit(ctx, tenantID, updated.ID, EventUpdated, payload)
-	if closesProject(prevStatus, updated.Status) {
-		s.emit(ctx, tenantID, updated.ID, EventClosed, payload)
+		return nil, err
 	}
 	return updated, nil
 }
 
-// DeleteProject deletes a project by ID.
+// DeleteProject deletes a project by ID. Its feed entries stay (their project link is cleared by
+// the foreign key), with one entry recording the deletion.
 func (s *Service) DeleteProject(ctx context.Context, tenantID, id uuid.UUID) error {
-	n, err := s.client.Project.Delete().
-		Where(entproject.ID(id), entproject.TenantID(tenantID)).Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("delete project: %w", err)
-	}
-	if n == 0 {
-		return ErrNotFound
-	}
-	s.emit(ctx, tenantID, id, EventDeleted, map[string]any{"id": id.String(), "tenant_id": tenantID.String()})
-	return nil
+	return txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+		p, err := tx.Project.Query().Where(entproject.ID(id), entproject.TenantID(tenantID)).Only(ctx)
+		if ent.IsNotFound(err) {
+			return ErrNotFound
+		}
+		if err != nil {
+			return fmt.Errorf("fetch project: %w", err)
+		}
+		if err := tx.Project.DeleteOne(p).Exec(ctx); err != nil {
+			return fmt.Errorf("delete project: %w", err)
+		}
+		if err := activity.Record(ctx, tx, activity.Entry{
+			TenantID: tenantID, EntityType: "project", EntityID: id,
+			Action: activity.ActionDeleted, Changes: map[string]any{"name": p.Name},
+		}); err != nil {
+			return err
+		}
+		return emit(ctx, tx, tenantID, id, EventDeleted, map[string]any{"id": id.String(), "tenant_id": tenantID.String()})
+	})
 }
 
 // GetProjectSummary returns aggregated stats for a project, counted in SQL (tasks grouped by
@@ -279,14 +339,14 @@ type ProjectMetrics struct {
 	ByStatus map[string]int `json:"by_status"`
 }
 
-// GetProjectMetrics returns project counts by status for the tenant.
-func (s *Service) GetProjectMetrics(ctx context.Context, tenantID uuid.UUID) (ProjectMetrics, error) {
+// GetProjectMetrics returns project counts by status for the tenant, limited to the projects
+// visibleTo owns or belongs to when it is set.
+func (s *Service) GetProjectMetrics(ctx context.Context, tenantID uuid.UUID, visibleTo *uuid.UUID) (ProjectMetrics, error) {
 	var rows []struct {
 		Status string `json:"status"`
 		Count  int    `json:"count"`
 	}
-	if err := s.client.Project.Query().
-		Where(entproject.TenantID(tenantID)).
+	if err := scoped(s.client.Project.Query().Where(entproject.TenantID(tenantID)), visibleTo).
 		GroupBy(entproject.FieldStatus).
 		Aggregate(ent.Count()).
 		Scan(ctx, &rows); err != nil {

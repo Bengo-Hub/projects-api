@@ -1,6 +1,6 @@
 # Sprint 1: Tender Management Module
 
-**Status**: Partially done (verified against code 2026-09-27). Tender CRUD, committees, meetings, evaluations, documents and metrics are live. Not built: tender sections, submissions, go/no-go decisions, meeting platform integrations, tender events, document storage, swagger and any tests (the repo has no `_test.go` files). Known bugs: the metrics response shape does not match projects-ui, and tender page size is uncapped. See `docs/backlog.md`.  
+**Status**: Partially done (verified against code 2026-11-16). Tender CRUD, committees, meetings, evaluations, document links and metrics (one grouped query) are live, and handler tests exist. Not built: tender sections, submissions, go/no-go decisions, meeting platform integrations (sprint 9), tender events, document storage and swagger. The tender number used COUNT+1 and could repeat; sprint 0b replaces it with a race-free counter. Comes after sprints 0b and 12 to 16 in the build order. See `docs/backlog.md`.  
 **Duration**: 4 weeks  
 **Sprint Goal**: Implement complete tender management lifecycle from opportunity identification through submission  
 **Team Size**: x developers  

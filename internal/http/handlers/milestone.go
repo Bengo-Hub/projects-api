@@ -9,7 +9,8 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	httpware "github.com/Bengo-Hub/httpware"
+	"github.com/bengobox/projects-service/internal/http/authz"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/services/milestones"
 )
 
@@ -26,54 +27,71 @@ func NewMilestoneHandler(log *zap.Logger, svc *milestones.Service) *MilestoneHan
 
 // RegisterRoutes registers milestone routes.
 func (h *MilestoneHandler) RegisterRoutes(r chi.Router) {
+	view := authz.Require(rbac.PermMilestonesView)
 	r.Route("/projects/{projectID}/milestones", func(mr chi.Router) {
-		mr.Get("/", h.List)
-		mr.Post("/", h.Create)
+		mr.With(view).Get("/", h.List)
+		mr.With(authz.Require(rbac.PermMilestonesAdd)).Post("/", h.Create)
 		mr.Route("/{milestoneID}", func(m chi.Router) {
-			m.Get("/", h.Get)
-			m.Put("/", h.Update)
-			m.Delete("/", h.Delete)
+			m.With(view).Get("/", h.Get)
+			m.With(authz.Require(rbac.PermMilestonesChange)).Put("/", h.Update)
+			m.With(authz.Require(rbac.PermMilestonesDelete)).Delete("/", h.Delete)
 		})
 	})
 }
 
+func milestoneParam(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
+	id, err := uuid.Parse(chi.URLParam(r, "milestoneID"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid milestone id")
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
+func (h *MilestoneHandler) writeErr(w http.ResponseWriter, err error, notFound, msg string) {
+	var verr milestones.ValidationError
+	switch {
+	case errors.Is(err, milestones.ErrNotFound):
+		respondError(w, http.StatusNotFound, notFound)
+	case errors.As(err, &verr):
+		respondError(w, http.StatusBadRequest, verr.Error())
+	default:
+		serverError(w, h.log, msg, err)
+	}
+}
+
 func (h *MilestoneHandler) List(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := milestoneProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
 	items, err := h.svc.ListMilestones(r.Context(), tenantID, projectID)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, h.log, "list milestones failed", err)
 		return
 	}
 	respondJSON(w, http.StatusOK, map[string]any{"data": items})
 }
 
 func (h *MilestoneHandler) Get(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := milestoneProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	id, err := uuid.Parse(chi.URLParam(r, "milestoneID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid milestone id")
+	id, ok := milestoneParam(w, r)
+	if !ok {
 		return
 	}
 	m, err := h.svc.GetMilestone(r.Context(), tenantID, projectID, id)
-	if errors.Is(err, milestones.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "milestone not found")
-		return
-	}
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "milestone not found", "get milestone failed")
 		return
 	}
 	respondJSON(w, http.StatusOK, m)
 }
 
 func (h *MilestoneHandler) Create(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := milestoneProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
@@ -84,20 +102,19 @@ func (h *MilestoneHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	m, err := h.svc.CreateMilestone(r.Context(), tenantID, projectID, input)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "project not found", "create milestone failed")
 		return
 	}
 	respondJSON(w, http.StatusCreated, m)
 }
 
 func (h *MilestoneHandler) Update(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := milestoneProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	id, err := uuid.Parse(chi.URLParam(r, "milestoneID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid milestone id")
+	id, ok := milestoneParam(w, r)
+	if !ok {
 		return
 	}
 	var input milestones.UpdateMilestoneInput
@@ -106,48 +123,25 @@ func (h *MilestoneHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m, err := h.svc.UpdateMilestone(r.Context(), tenantID, projectID, id, input)
-	if errors.Is(err, milestones.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "milestone not found")
-		return
-	}
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "milestone not found", "update milestone failed")
 		return
 	}
 	respondJSON(w, http.StatusOK, m)
 }
 
 func (h *MilestoneHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := milestoneProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	id, err := uuid.Parse(chi.URLParam(r, "milestoneID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid milestone id")
+	id, ok := milestoneParam(w, r)
+	if !ok {
 		return
 	}
-	if err := h.svc.DeleteMilestone(r.Context(), tenantID, projectID, id); errors.Is(err, milestones.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "milestone not found")
-		return
-	} else if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+	if err := h.svc.DeleteMilestone(r.Context(), tenantID, projectID, id); err != nil {
+		h.writeErr(w, err, "milestone not found", "delete milestone failed")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func milestoneProjectParams(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
-	tenantIDStr := httpware.GetTenantID(r.Context())
-	tenantID, err := uuid.Parse(tenantIDStr)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid tenant id")
-		return uuid.Nil, uuid.Nil, false
-	}
-	projectID, err := uuid.Parse(chi.URLParam(r, "projectID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid project id")
-		return uuid.Nil, uuid.Nil, false
-	}
-	return tenantID, projectID, true
 }

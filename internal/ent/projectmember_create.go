@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/project"
@@ -20,6 +22,7 @@ type ProjectMemberCreate struct {
 	config
 	mutation *ProjectMemberMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -195,6 +198,7 @@ func (pmc *ProjectMemberCreate) createSpec() (*ProjectMember, *sqlgraph.CreateSp
 		_node = &ProjectMember{config: pmc.config}
 		_spec = sqlgraph.NewCreateSpec(projectmember.Table, sqlgraph.NewFieldSpec(projectmember.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = pmc.conflict
 	if id, ok := pmc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -243,11 +247,355 @@ func (pmc *ProjectMemberCreate) createSpec() (*ProjectMember, *sqlgraph.CreateSp
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ProjectMember.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ProjectMemberUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (pmc *ProjectMemberCreate) OnConflict(opts ...sql.ConflictOption) *ProjectMemberUpsertOne {
+	pmc.conflict = opts
+	return &ProjectMemberUpsertOne{
+		create: pmc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ProjectMember.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (pmc *ProjectMemberCreate) OnConflictColumns(columns ...string) *ProjectMemberUpsertOne {
+	pmc.conflict = append(pmc.conflict, sql.ConflictColumns(columns...))
+	return &ProjectMemberUpsertOne{
+		create: pmc,
+	}
+}
+
+type (
+	// ProjectMemberUpsertOne is the builder for "upsert"-ing
+	//  one ProjectMember node.
+	ProjectMemberUpsertOne struct {
+		create *ProjectMemberCreate
+	}
+
+	// ProjectMemberUpsert is the "OnConflict" setter.
+	ProjectMemberUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ProjectMemberUpsert) SetTenantID(v uuid.UUID) *ProjectMemberUpsert {
+	u.Set(projectmember.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ProjectMemberUpsert) UpdateTenantID() *ProjectMemberUpsert {
+	u.SetExcluded(projectmember.FieldTenantID)
+	return u
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *ProjectMemberUpsert) SetProjectID(v uuid.UUID) *ProjectMemberUpsert {
+	u.Set(projectmember.FieldProjectID, v)
+	return u
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *ProjectMemberUpsert) UpdateProjectID() *ProjectMemberUpsert {
+	u.SetExcluded(projectmember.FieldProjectID)
+	return u
+}
+
+// SetUserID sets the "user_id" field.
+func (u *ProjectMemberUpsert) SetUserID(v uuid.UUID) *ProjectMemberUpsert {
+	u.Set(projectmember.FieldUserID, v)
+	return u
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *ProjectMemberUpsert) UpdateUserID() *ProjectMemberUpsert {
+	u.SetExcluded(projectmember.FieldUserID)
+	return u
+}
+
+// SetRoleCode sets the "role_code" field.
+func (u *ProjectMemberUpsert) SetRoleCode(v string) *ProjectMemberUpsert {
+	u.Set(projectmember.FieldRoleCode, v)
+	return u
+}
+
+// UpdateRoleCode sets the "role_code" field to the value that was provided on create.
+func (u *ProjectMemberUpsert) UpdateRoleCode() *ProjectMemberUpsert {
+	u.SetExcluded(projectmember.FieldRoleCode)
+	return u
+}
+
+// SetJoinedAt sets the "joined_at" field.
+func (u *ProjectMemberUpsert) SetJoinedAt(v time.Time) *ProjectMemberUpsert {
+	u.Set(projectmember.FieldJoinedAt, v)
+	return u
+}
+
+// UpdateJoinedAt sets the "joined_at" field to the value that was provided on create.
+func (u *ProjectMemberUpsert) UpdateJoinedAt() *ProjectMemberUpsert {
+	u.SetExcluded(projectmember.FieldJoinedAt)
+	return u
+}
+
+// SetLeftAt sets the "left_at" field.
+func (u *ProjectMemberUpsert) SetLeftAt(v time.Time) *ProjectMemberUpsert {
+	u.Set(projectmember.FieldLeftAt, v)
+	return u
+}
+
+// UpdateLeftAt sets the "left_at" field to the value that was provided on create.
+func (u *ProjectMemberUpsert) UpdateLeftAt() *ProjectMemberUpsert {
+	u.SetExcluded(projectmember.FieldLeftAt)
+	return u
+}
+
+// ClearLeftAt clears the value of the "left_at" field.
+func (u *ProjectMemberUpsert) ClearLeftAt() *ProjectMemberUpsert {
+	u.SetNull(projectmember.FieldLeftAt)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ProjectMemberUpsert) SetMetadata(v map[string]interface{}) *ProjectMemberUpsert {
+	u.Set(projectmember.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ProjectMemberUpsert) UpdateMetadata() *ProjectMemberUpsert {
+	u.SetExcluded(projectmember.FieldMetadata)
+	return u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *ProjectMemberUpsert) ClearMetadata() *ProjectMemberUpsert {
+	u.SetNull(projectmember.FieldMetadata)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.ProjectMember.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(projectmember.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ProjectMemberUpsertOne) UpdateNewValues() *ProjectMemberUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(projectmember.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ProjectMember.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *ProjectMemberUpsertOne) Ignore() *ProjectMemberUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ProjectMemberUpsertOne) DoNothing() *ProjectMemberUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ProjectMemberCreate.OnConflict
+// documentation for more info.
+func (u *ProjectMemberUpsertOne) Update(set func(*ProjectMemberUpsert)) *ProjectMemberUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ProjectMemberUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ProjectMemberUpsertOne) SetTenantID(v uuid.UUID) *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ProjectMemberUpsertOne) UpdateTenantID() *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *ProjectMemberUpsertOne) SetProjectID(v uuid.UUID) *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *ProjectMemberUpsertOne) UpdateProjectID() *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *ProjectMemberUpsertOne) SetUserID(v uuid.UUID) *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *ProjectMemberUpsertOne) UpdateUserID() *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetRoleCode sets the "role_code" field.
+func (u *ProjectMemberUpsertOne) SetRoleCode(v string) *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetRoleCode(v)
+	})
+}
+
+// UpdateRoleCode sets the "role_code" field to the value that was provided on create.
+func (u *ProjectMemberUpsertOne) UpdateRoleCode() *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateRoleCode()
+	})
+}
+
+// SetJoinedAt sets the "joined_at" field.
+func (u *ProjectMemberUpsertOne) SetJoinedAt(v time.Time) *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetJoinedAt(v)
+	})
+}
+
+// UpdateJoinedAt sets the "joined_at" field to the value that was provided on create.
+func (u *ProjectMemberUpsertOne) UpdateJoinedAt() *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateJoinedAt()
+	})
+}
+
+// SetLeftAt sets the "left_at" field.
+func (u *ProjectMemberUpsertOne) SetLeftAt(v time.Time) *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetLeftAt(v)
+	})
+}
+
+// UpdateLeftAt sets the "left_at" field to the value that was provided on create.
+func (u *ProjectMemberUpsertOne) UpdateLeftAt() *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateLeftAt()
+	})
+}
+
+// ClearLeftAt clears the value of the "left_at" field.
+func (u *ProjectMemberUpsertOne) ClearLeftAt() *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.ClearLeftAt()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ProjectMemberUpsertOne) SetMetadata(v map[string]interface{}) *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ProjectMemberUpsertOne) UpdateMetadata() *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *ProjectMemberUpsertOne) ClearMetadata() *ProjectMemberUpsertOne {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// Exec executes the query.
+func (u *ProjectMemberUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ProjectMemberCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ProjectMemberUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *ProjectMemberUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: ProjectMemberUpsertOne.ID is not supported by MySQL driver. Use ProjectMemberUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *ProjectMemberUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // ProjectMemberCreateBulk is the builder for creating many ProjectMember entities in bulk.
 type ProjectMemberCreateBulk struct {
 	config
 	err      error
 	builders []*ProjectMemberCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the ProjectMember entities in the database.
@@ -277,6 +625,7 @@ func (pmcb *ProjectMemberCreateBulk) Save(ctx context.Context) ([]*ProjectMember
 					_, err = mutators[i+1].Mutate(root, pmcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = pmcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, pmcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -323,6 +672,232 @@ func (pmcb *ProjectMemberCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (pmcb *ProjectMemberCreateBulk) ExecX(ctx context.Context) {
 	if err := pmcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.ProjectMember.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.ProjectMemberUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (pmcb *ProjectMemberCreateBulk) OnConflict(opts ...sql.ConflictOption) *ProjectMemberUpsertBulk {
+	pmcb.conflict = opts
+	return &ProjectMemberUpsertBulk{
+		create: pmcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.ProjectMember.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (pmcb *ProjectMemberCreateBulk) OnConflictColumns(columns ...string) *ProjectMemberUpsertBulk {
+	pmcb.conflict = append(pmcb.conflict, sql.ConflictColumns(columns...))
+	return &ProjectMemberUpsertBulk{
+		create: pmcb,
+	}
+}
+
+// ProjectMemberUpsertBulk is the builder for "upsert"-ing
+// a bulk of ProjectMember nodes.
+type ProjectMemberUpsertBulk struct {
+	create *ProjectMemberCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.ProjectMember.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(projectmember.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *ProjectMemberUpsertBulk) UpdateNewValues() *ProjectMemberUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(projectmember.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.ProjectMember.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *ProjectMemberUpsertBulk) Ignore() *ProjectMemberUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *ProjectMemberUpsertBulk) DoNothing() *ProjectMemberUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the ProjectMemberCreateBulk.OnConflict
+// documentation for more info.
+func (u *ProjectMemberUpsertBulk) Update(set func(*ProjectMemberUpsert)) *ProjectMemberUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&ProjectMemberUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *ProjectMemberUpsertBulk) SetTenantID(v uuid.UUID) *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *ProjectMemberUpsertBulk) UpdateTenantID() *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetProjectID sets the "project_id" field.
+func (u *ProjectMemberUpsertBulk) SetProjectID(v uuid.UUID) *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetProjectID(v)
+	})
+}
+
+// UpdateProjectID sets the "project_id" field to the value that was provided on create.
+func (u *ProjectMemberUpsertBulk) UpdateProjectID() *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateProjectID()
+	})
+}
+
+// SetUserID sets the "user_id" field.
+func (u *ProjectMemberUpsertBulk) SetUserID(v uuid.UUID) *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetUserID(v)
+	})
+}
+
+// UpdateUserID sets the "user_id" field to the value that was provided on create.
+func (u *ProjectMemberUpsertBulk) UpdateUserID() *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateUserID()
+	})
+}
+
+// SetRoleCode sets the "role_code" field.
+func (u *ProjectMemberUpsertBulk) SetRoleCode(v string) *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetRoleCode(v)
+	})
+}
+
+// UpdateRoleCode sets the "role_code" field to the value that was provided on create.
+func (u *ProjectMemberUpsertBulk) UpdateRoleCode() *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateRoleCode()
+	})
+}
+
+// SetJoinedAt sets the "joined_at" field.
+func (u *ProjectMemberUpsertBulk) SetJoinedAt(v time.Time) *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetJoinedAt(v)
+	})
+}
+
+// UpdateJoinedAt sets the "joined_at" field to the value that was provided on create.
+func (u *ProjectMemberUpsertBulk) UpdateJoinedAt() *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateJoinedAt()
+	})
+}
+
+// SetLeftAt sets the "left_at" field.
+func (u *ProjectMemberUpsertBulk) SetLeftAt(v time.Time) *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetLeftAt(v)
+	})
+}
+
+// UpdateLeftAt sets the "left_at" field to the value that was provided on create.
+func (u *ProjectMemberUpsertBulk) UpdateLeftAt() *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateLeftAt()
+	})
+}
+
+// ClearLeftAt clears the value of the "left_at" field.
+func (u *ProjectMemberUpsertBulk) ClearLeftAt() *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.ClearLeftAt()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ProjectMemberUpsertBulk) SetMetadata(v map[string]interface{}) *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ProjectMemberUpsertBulk) UpdateMetadata() *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *ProjectMemberUpsertBulk) ClearMetadata() *ProjectMemberUpsertBulk {
+	return u.Update(func(s *ProjectMemberUpsert) {
+		s.ClearMetadata()
+	})
+}
+
+// Exec executes the query.
+func (u *ProjectMemberUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ProjectMemberCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for ProjectMemberCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *ProjectMemberUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

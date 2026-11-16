@@ -9,7 +9,8 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	httpware "github.com/Bengo-Hub/httpware"
+	"github.com/bengobox/projects-service/internal/http/authz"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/services/members"
 )
 
@@ -26,29 +27,53 @@ func NewMemberHandler(log *zap.Logger, svc *members.Service) *MemberHandler {
 
 // RegisterRoutes registers member routes.
 func (h *MemberHandler) RegisterRoutes(r chi.Router) {
+	manage := authz.Require(rbac.PermMembersManage)
 	r.Route("/projects/{projectID}/members", func(mr chi.Router) {
-		mr.Get("/", h.List)
-		mr.Post("/", h.Add)
-		mr.Put("/{userID}", h.UpdateRole)
-		mr.Delete("/{userID}", h.Remove)
+		mr.With(authz.Require(rbac.PermMembersView)).Get("/", h.List)
+		mr.With(manage).Post("/", h.Add)
+		mr.With(manage).Put("/{userID}", h.UpdateRole)
+		mr.With(manage).Delete("/{userID}", h.Remove)
 	})
 }
 
+func (h *MemberHandler) writeErr(w http.ResponseWriter, err error, msg string) {
+	var verr members.ValidationError
+	switch {
+	case errors.Is(err, members.ErrNotFound):
+		respondError(w, http.StatusNotFound, "member not found")
+	case errors.Is(err, members.ErrAlreadyMember):
+		respondError(w, http.StatusConflict, err.Error())
+	case errors.As(err, &verr):
+		respondError(w, http.StatusBadRequest, verr.Error())
+	default:
+		serverError(w, h.log, msg, err)
+	}
+}
+
+func userParam(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
+	id, err := uuid.Parse(chi.URLParam(r, "userID"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid user id")
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
 func (h *MemberHandler) List(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := memberProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
 	items, err := h.svc.ListMembers(r.Context(), tenantID, projectID)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, h.log, "list members failed", err)
 		return
 	}
 	respondJSON(w, http.StatusOK, map[string]any{"data": items})
 }
 
 func (h *MemberHandler) Add(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := memberProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
@@ -58,25 +83,20 @@ func (h *MemberHandler) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m, err := h.svc.AddMember(r.Context(), tenantID, projectID, input)
-	if errors.Is(err, members.ErrAlreadyMember) {
-		respondError(w, http.StatusConflict, err.Error())
-		return
-	}
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "add member failed")
 		return
 	}
 	respondJSON(w, http.StatusCreated, m)
 }
 
 func (h *MemberHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := memberProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	userID, err := uuid.Parse(chi.URLParam(r, "userID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid user id")
+	userID, ok := userParam(w, r)
+	if !ok {
 		return
 	}
 	var input members.UpdateMemberInput
@@ -85,48 +105,25 @@ func (h *MemberHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m, err := h.svc.UpdateMemberRole(r.Context(), tenantID, projectID, userID, input)
-	if errors.Is(err, members.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "member not found")
-		return
-	}
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "update member failed")
 		return
 	}
 	respondJSON(w, http.StatusOK, m)
 }
 
 func (h *MemberHandler) Remove(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := memberProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	userID, err := uuid.Parse(chi.URLParam(r, "userID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid user id")
+	userID, ok := userParam(w, r)
+	if !ok {
 		return
 	}
-	if err := h.svc.RemoveMember(r.Context(), tenantID, projectID, userID); errors.Is(err, members.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "member not found")
-		return
-	} else if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+	if err := h.svc.RemoveMember(r.Context(), tenantID, projectID, userID); err != nil {
+		h.writeErr(w, err, "remove member failed")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func memberProjectParams(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
-	tenantIDStr := httpware.GetTenantID(r.Context())
-	tenantID, err := uuid.Parse(tenantIDStr)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid tenant id")
-		return uuid.Nil, uuid.Nil, false
-	}
-	projectID, err := uuid.Parse(chi.URLParam(r, "projectID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid project id")
-		return uuid.Nil, uuid.Nil, false
-	}
-	return tenantID, projectID, true
 }

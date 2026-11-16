@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/bengobox/projects-service/internal/http/authz"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/platform/catalog"
 	"github.com/bengobox/projects-service/internal/services/qa"
 )
@@ -28,7 +30,7 @@ func NewQAHandler(log *zap.Logger, svc *qa.Service) *QAHandler {
 
 // RegisterRoutes mounts the routes with their permission gates.
 func (h *QAHandler) RegisterRoutes(r chi.Router) {
-	view, run, manage := requireQA(PermQAView), requireQA(PermQARun), requireQA(PermQAManage)
+	view, run, manage := authz.Require(rbac.PermQAView), authz.Require(rbac.PermQARun), authz.Require(rbac.PermQAManage)
 	r.Route("/qa", func(q chi.Router) {
 		q.With(view).Get("/catalog/features", h.CatalogFeatures)
 

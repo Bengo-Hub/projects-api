@@ -8,11 +8,14 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/bengobox/projects-service/internal/ent/permission"
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
-	"github.com/bengobox/projects-service/internal/ent/userrole"
+	"github.com/bengobox/projects-service/internal/ent/userroleassignment"
 	"github.com/google/uuid"
 )
 
@@ -21,6 +24,27 @@ type RoleCreate struct {
 	config
 	mutation *RoleMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (rc *RoleCreate) SetTenantID(u uuid.UUID) *RoleCreate {
+	rc.mutation.SetTenantID(u)
+	return rc
+}
+
+// SetNillableTenantID sets the "tenant_id" field if the given value is not nil.
+func (rc *RoleCreate) SetNillableTenantID(u *uuid.UUID) *RoleCreate {
+	if u != nil {
+		rc.SetTenantID(*u)
+	}
+	return rc
+}
+
+// SetRoleCode sets the "role_code" field.
+func (rc *RoleCreate) SetRoleCode(s string) *RoleCreate {
+	rc.mutation.SetRoleCode(s)
+	return rc
 }
 
 // SetName sets the "name" field.
@@ -43,23 +67,17 @@ func (rc *RoleCreate) SetNillableDescription(s *string) *RoleCreate {
 	return rc
 }
 
-// SetIsSystem sets the "is_system" field.
-func (rc *RoleCreate) SetIsSystem(b bool) *RoleCreate {
-	rc.mutation.SetIsSystem(b)
+// SetIsSystemRole sets the "is_system_role" field.
+func (rc *RoleCreate) SetIsSystemRole(b bool) *RoleCreate {
+	rc.mutation.SetIsSystemRole(b)
 	return rc
 }
 
-// SetNillableIsSystem sets the "is_system" field if the given value is not nil.
-func (rc *RoleCreate) SetNillableIsSystem(b *bool) *RoleCreate {
+// SetNillableIsSystemRole sets the "is_system_role" field if the given value is not nil.
+func (rc *RoleCreate) SetNillableIsSystemRole(b *bool) *RoleCreate {
 	if b != nil {
-		rc.SetIsSystem(*b)
+		rc.SetIsSystemRole(*b)
 	}
-	return rc
-}
-
-// SetPermissions sets the "permissions" field.
-func (rc *RoleCreate) SetPermissions(s []string) *RoleCreate {
-	rc.mutation.SetPermissions(s)
 	return rc
 }
 
@@ -92,35 +110,58 @@ func (rc *RoleCreate) SetNillableUpdatedAt(t *time.Time) *RoleCreate {
 }
 
 // SetID sets the "id" field.
-func (rc *RoleCreate) SetID(s string) *RoleCreate {
-	rc.mutation.SetID(s)
+func (rc *RoleCreate) SetID(u uuid.UUID) *RoleCreate {
+	rc.mutation.SetID(u)
 	return rc
 }
 
-// AddUserRoleIDs adds the "user_roles" edge to the UserRole entity by IDs.
-func (rc *RoleCreate) AddUserRoleIDs(ids ...uuid.UUID) *RoleCreate {
-	rc.mutation.AddUserRoleIDs(ids...)
+// SetNillableID sets the "id" field if the given value is not nil.
+func (rc *RoleCreate) SetNillableID(u *uuid.UUID) *RoleCreate {
+	if u != nil {
+		rc.SetID(*u)
+	}
 	return rc
 }
 
-// AddUserRoles adds the "user_roles" edges to the UserRole entity.
-func (rc *RoleCreate) AddUserRoles(u ...*UserRole) *RoleCreate {
+// AddPermissionIDs adds the "permissions" edge to the Permission entity by IDs.
+func (rc *RoleCreate) AddPermissionIDs(ids ...uuid.UUID) *RoleCreate {
+	rc.mutation.AddPermissionIDs(ids...)
+	return rc
+}
+
+// AddPermissions adds the "permissions" edges to the Permission entity.
+func (rc *RoleCreate) AddPermissions(p ...*Permission) *RoleCreate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return rc.AddPermissionIDs(ids...)
+}
+
+// AddUserAssignmentIDs adds the "user_assignments" edge to the UserRoleAssignment entity by IDs.
+func (rc *RoleCreate) AddUserAssignmentIDs(ids ...uuid.UUID) *RoleCreate {
+	rc.mutation.AddUserAssignmentIDs(ids...)
+	return rc
+}
+
+// AddUserAssignments adds the "user_assignments" edges to the UserRoleAssignment entity.
+func (rc *RoleCreate) AddUserAssignments(u ...*UserRoleAssignment) *RoleCreate {
 	ids := make([]uuid.UUID, len(u))
 	for i := range u {
 		ids[i] = u[i].ID
 	}
-	return rc.AddUserRoleIDs(ids...)
+	return rc.AddUserAssignmentIDs(ids...)
 }
 
 // AddRolePermissionIDs adds the "role_permissions" edge to the RolePermission entity by IDs.
-func (rc *RoleCreate) AddRolePermissionIDs(ids ...uuid.UUID) *RoleCreate {
+func (rc *RoleCreate) AddRolePermissionIDs(ids ...int) *RoleCreate {
 	rc.mutation.AddRolePermissionIDs(ids...)
 	return rc
 }
 
 // AddRolePermissions adds the "role_permissions" edges to the RolePermission entity.
 func (rc *RoleCreate) AddRolePermissions(r ...*RolePermission) *RoleCreate {
-	ids := make([]uuid.UUID, len(r))
+	ids := make([]int, len(r))
 	for i := range r {
 		ids[i] = r[i].ID
 	}
@@ -162,9 +203,9 @@ func (rc *RoleCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (rc *RoleCreate) defaults() {
-	if _, ok := rc.mutation.IsSystem(); !ok {
-		v := role.DefaultIsSystem
-		rc.mutation.SetIsSystem(v)
+	if _, ok := rc.mutation.IsSystemRole(); !ok {
+		v := role.DefaultIsSystemRole
+		rc.mutation.SetIsSystemRole(v)
 	}
 	if _, ok := rc.mutation.CreatedAt(); !ok {
 		v := role.DefaultCreatedAt()
@@ -174,10 +215,22 @@ func (rc *RoleCreate) defaults() {
 		v := role.DefaultUpdatedAt()
 		rc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := rc.mutation.ID(); !ok {
+		v := role.DefaultID()
+		rc.mutation.SetID(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (rc *RoleCreate) check() error {
+	if _, ok := rc.mutation.RoleCode(); !ok {
+		return &ValidationError{Name: "role_code", err: errors.New(`ent: missing required field "Role.role_code"`)}
+	}
+	if v, ok := rc.mutation.RoleCode(); ok {
+		if err := role.RoleCodeValidator(v); err != nil {
+			return &ValidationError{Name: "role_code", err: fmt.Errorf(`ent: validator failed for field "Role.role_code": %w`, err)}
+		}
+	}
 	if _, ok := rc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Role.name"`)}
 	}
@@ -186,8 +239,8 @@ func (rc *RoleCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Role.name": %w`, err)}
 		}
 	}
-	if _, ok := rc.mutation.IsSystem(); !ok {
-		return &ValidationError{Name: "is_system", err: errors.New(`ent: missing required field "Role.is_system"`)}
+	if _, ok := rc.mutation.IsSystemRole(); !ok {
+		return &ValidationError{Name: "is_system_role", err: errors.New(`ent: missing required field "Role.is_system_role"`)}
 	}
 	if _, ok := rc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Role.created_at"`)}
@@ -210,10 +263,10 @@ func (rc *RoleCreate) sqlSave(ctx context.Context) (*Role, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(string); ok {
-			_node.ID = id
-		} else {
-			return nil, fmt.Errorf("unexpected Role.ID type: %T", _spec.ID.Value)
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
 		}
 	}
 	rc.mutation.id = &_node.ID
@@ -224,11 +277,20 @@ func (rc *RoleCreate) sqlSave(ctx context.Context) (*Role, error) {
 func (rc *RoleCreate) createSpec() (*Role, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Role{config: rc.config}
-		_spec = sqlgraph.NewCreateSpec(role.Table, sqlgraph.NewFieldSpec(role.FieldID, field.TypeString))
+		_spec = sqlgraph.NewCreateSpec(role.Table, sqlgraph.NewFieldSpec(role.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = rc.conflict
 	if id, ok := rc.mutation.ID(); ok {
 		_node.ID = id
-		_spec.ID.Value = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := rc.mutation.TenantID(); ok {
+		_spec.SetField(role.FieldTenantID, field.TypeUUID, value)
+		_node.TenantID = &value
+	}
+	if value, ok := rc.mutation.RoleCode(); ok {
+		_spec.SetField(role.FieldRoleCode, field.TypeString, value)
+		_node.RoleCode = value
 	}
 	if value, ok := rc.mutation.Name(); ok {
 		_spec.SetField(role.FieldName, field.TypeString, value)
@@ -238,13 +300,9 @@ func (rc *RoleCreate) createSpec() (*Role, *sqlgraph.CreateSpec) {
 		_spec.SetField(role.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
-	if value, ok := rc.mutation.IsSystem(); ok {
-		_spec.SetField(role.FieldIsSystem, field.TypeBool, value)
-		_node.IsSystem = value
-	}
-	if value, ok := rc.mutation.Permissions(); ok {
-		_spec.SetField(role.FieldPermissions, field.TypeJSON, value)
-		_node.Permissions = value
+	if value, ok := rc.mutation.IsSystemRole(); ok {
+		_spec.SetField(role.FieldIsSystemRole, field.TypeBool, value)
+		_node.IsSystemRole = value
 	}
 	if value, ok := rc.mutation.CreatedAt(); ok {
 		_spec.SetField(role.FieldCreatedAt, field.TypeTime, value)
@@ -254,15 +312,31 @@ func (rc *RoleCreate) createSpec() (*Role, *sqlgraph.CreateSpec) {
 		_spec.SetField(role.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := rc.mutation.UserRolesIDs(); len(nodes) > 0 {
+	if nodes := rc.mutation.PermissionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   role.UserRolesTable,
-			Columns: []string{role.UserRolesColumn},
+			Table:   role.PermissionsTable,
+			Columns: role.PermissionsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userrole.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(permission.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.UserAssignmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   role.UserAssignmentsTable,
+			Columns: []string{role.UserAssignmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userroleassignment.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -273,12 +347,12 @@ func (rc *RoleCreate) createSpec() (*Role, *sqlgraph.CreateSpec) {
 	if nodes := rc.mutation.RolePermissionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: false,
+			Inverse: true,
 			Table:   role.RolePermissionsTable,
 			Columns: []string{role.RolePermissionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -289,11 +363,332 @@ func (rc *RoleCreate) createSpec() (*Role, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Role.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.RoleUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (rc *RoleCreate) OnConflict(opts ...sql.ConflictOption) *RoleUpsertOne {
+	rc.conflict = opts
+	return &RoleUpsertOne{
+		create: rc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Role.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (rc *RoleCreate) OnConflictColumns(columns ...string) *RoleUpsertOne {
+	rc.conflict = append(rc.conflict, sql.ConflictColumns(columns...))
+	return &RoleUpsertOne{
+		create: rc,
+	}
+}
+
+type (
+	// RoleUpsertOne is the builder for "upsert"-ing
+	//  one Role node.
+	RoleUpsertOne struct {
+		create *RoleCreate
+	}
+
+	// RoleUpsert is the "OnConflict" setter.
+	RoleUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenantID sets the "tenant_id" field.
+func (u *RoleUpsert) SetTenantID(v uuid.UUID) *RoleUpsert {
+	u.Set(role.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *RoleUpsert) UpdateTenantID() *RoleUpsert {
+	u.SetExcluded(role.FieldTenantID)
+	return u
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (u *RoleUpsert) ClearTenantID() *RoleUpsert {
+	u.SetNull(role.FieldTenantID)
+	return u
+}
+
+// SetRoleCode sets the "role_code" field.
+func (u *RoleUpsert) SetRoleCode(v string) *RoleUpsert {
+	u.Set(role.FieldRoleCode, v)
+	return u
+}
+
+// UpdateRoleCode sets the "role_code" field to the value that was provided on create.
+func (u *RoleUpsert) UpdateRoleCode() *RoleUpsert {
+	u.SetExcluded(role.FieldRoleCode)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *RoleUpsert) SetName(v string) *RoleUpsert {
+	u.Set(role.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *RoleUpsert) UpdateName() *RoleUpsert {
+	u.SetExcluded(role.FieldName)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *RoleUpsert) SetDescription(v string) *RoleUpsert {
+	u.Set(role.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *RoleUpsert) UpdateDescription() *RoleUpsert {
+	u.SetExcluded(role.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *RoleUpsert) ClearDescription() *RoleUpsert {
+	u.SetNull(role.FieldDescription)
+	return u
+}
+
+// SetIsSystemRole sets the "is_system_role" field.
+func (u *RoleUpsert) SetIsSystemRole(v bool) *RoleUpsert {
+	u.Set(role.FieldIsSystemRole, v)
+	return u
+}
+
+// UpdateIsSystemRole sets the "is_system_role" field to the value that was provided on create.
+func (u *RoleUpsert) UpdateIsSystemRole() *RoleUpsert {
+	u.SetExcluded(role.FieldIsSystemRole)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *RoleUpsert) SetUpdatedAt(v time.Time) *RoleUpsert {
+	u.Set(role.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *RoleUpsert) UpdateUpdatedAt() *RoleUpsert {
+	u.SetExcluded(role.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Role.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(role.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *RoleUpsertOne) UpdateNewValues() *RoleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(role.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(role.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Role.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *RoleUpsertOne) Ignore() *RoleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *RoleUpsertOne) DoNothing() *RoleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the RoleCreate.OnConflict
+// documentation for more info.
+func (u *RoleUpsertOne) Update(set func(*RoleUpsert)) *RoleUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&RoleUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *RoleUpsertOne) SetTenantID(v uuid.UUID) *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *RoleUpsertOne) UpdateTenantID() *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (u *RoleUpsertOne) ClearTenantID() *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.ClearTenantID()
+	})
+}
+
+// SetRoleCode sets the "role_code" field.
+func (u *RoleUpsertOne) SetRoleCode(v string) *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetRoleCode(v)
+	})
+}
+
+// UpdateRoleCode sets the "role_code" field to the value that was provided on create.
+func (u *RoleUpsertOne) UpdateRoleCode() *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateRoleCode()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *RoleUpsertOne) SetName(v string) *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *RoleUpsertOne) UpdateName() *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *RoleUpsertOne) SetDescription(v string) *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *RoleUpsertOne) UpdateDescription() *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *RoleUpsertOne) ClearDescription() *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetIsSystemRole sets the "is_system_role" field.
+func (u *RoleUpsertOne) SetIsSystemRole(v bool) *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetIsSystemRole(v)
+	})
+}
+
+// UpdateIsSystemRole sets the "is_system_role" field to the value that was provided on create.
+func (u *RoleUpsertOne) UpdateIsSystemRole() *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateIsSystemRole()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *RoleUpsertOne) SetUpdatedAt(v time.Time) *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *RoleUpsertOne) UpdateUpdatedAt() *RoleUpsertOne {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *RoleUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for RoleCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *RoleUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *RoleUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: RoleUpsertOne.ID is not supported by MySQL driver. Use RoleUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *RoleUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // RoleCreateBulk is the builder for creating many Role entities in bulk.
 type RoleCreateBulk struct {
 	config
 	err      error
 	builders []*RoleCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Role entities in the database.
@@ -323,6 +718,7 @@ func (rcb *RoleCreateBulk) Save(ctx context.Context) ([]*Role, error) {
 					_, err = mutators[i+1].Mutate(root, rcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = rcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, rcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -369,6 +765,221 @@ func (rcb *RoleCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (rcb *RoleCreateBulk) ExecX(ctx context.Context) {
 	if err := rcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Role.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.RoleUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (rcb *RoleCreateBulk) OnConflict(opts ...sql.ConflictOption) *RoleUpsertBulk {
+	rcb.conflict = opts
+	return &RoleUpsertBulk{
+		create: rcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Role.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (rcb *RoleCreateBulk) OnConflictColumns(columns ...string) *RoleUpsertBulk {
+	rcb.conflict = append(rcb.conflict, sql.ConflictColumns(columns...))
+	return &RoleUpsertBulk{
+		create: rcb,
+	}
+}
+
+// RoleUpsertBulk is the builder for "upsert"-ing
+// a bulk of Role nodes.
+type RoleUpsertBulk struct {
+	create *RoleCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Role.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(role.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *RoleUpsertBulk) UpdateNewValues() *RoleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(role.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(role.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Role.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *RoleUpsertBulk) Ignore() *RoleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *RoleUpsertBulk) DoNothing() *RoleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the RoleCreateBulk.OnConflict
+// documentation for more info.
+func (u *RoleUpsertBulk) Update(set func(*RoleUpsert)) *RoleUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&RoleUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *RoleUpsertBulk) SetTenantID(v uuid.UUID) *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *RoleUpsertBulk) UpdateTenantID() *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// ClearTenantID clears the value of the "tenant_id" field.
+func (u *RoleUpsertBulk) ClearTenantID() *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.ClearTenantID()
+	})
+}
+
+// SetRoleCode sets the "role_code" field.
+func (u *RoleUpsertBulk) SetRoleCode(v string) *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetRoleCode(v)
+	})
+}
+
+// UpdateRoleCode sets the "role_code" field to the value that was provided on create.
+func (u *RoleUpsertBulk) UpdateRoleCode() *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateRoleCode()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *RoleUpsertBulk) SetName(v string) *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *RoleUpsertBulk) UpdateName() *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *RoleUpsertBulk) SetDescription(v string) *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *RoleUpsertBulk) UpdateDescription() *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *RoleUpsertBulk) ClearDescription() *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.ClearDescription()
+	})
+}
+
+// SetIsSystemRole sets the "is_system_role" field.
+func (u *RoleUpsertBulk) SetIsSystemRole(v bool) *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetIsSystemRole(v)
+	})
+}
+
+// UpdateIsSystemRole sets the "is_system_role" field to the value that was provided on create.
+func (u *RoleUpsertBulk) UpdateIsSystemRole() *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateIsSystemRole()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *RoleUpsertBulk) SetUpdatedAt(v time.Time) *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *RoleUpsertBulk) UpdateUpdatedAt() *RoleUpsertBulk {
+	return u.Update(func(s *RoleUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *RoleUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the RoleCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for RoleCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *RoleUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

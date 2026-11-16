@@ -7,10 +7,9 @@ RUN apk add --no-cache git ca-certificates
 COPY go.mod go.sum ./
 RUN GOTOOLCHAIN=auto go mod download
 COPY . .
-# Build all binaries: api, migrate, seed
+# Build both binaries: api and migrate (migrate also seeds the permission registry and roles)
 RUN GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/projects-api ./cmd/api && \
-    GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/projects-migrate ./cmd/migrate && \
-    GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/projects-seed ./cmd/seed
+    GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/projects-migrate ./cmd/migrate
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata && \
@@ -18,7 +17,6 @@ RUN apk add --no-cache ca-certificates tzdata && \
 WORKDIR /app
 COPY --from=builder /out/projects-api /usr/local/bin/projects-api
 COPY --from=builder /out/projects-migrate /usr/local/bin/projects-migrate
-COPY --from=builder /out/projects-seed /usr/local/bin/projects-seed
 COPY internal/ent/migrate/migrations ./internal/ent/migrate/migrations
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

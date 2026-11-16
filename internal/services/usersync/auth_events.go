@@ -8,7 +8,7 @@ import (
 	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/projects-service/internal/ent"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
-	"github.com/bengobox/projects-service/internal/ent/userrole"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
@@ -21,12 +21,9 @@ const (
 )
 
 // AuthEventsConsumer reacts to auth-api's real hard-delete (AdminPurgeUser, published
-// as auth.user.deleted) of a platform user. projects-api has no local User table at
-// all — Service (sync.go) provisions users by calling out to auth-api rather than
-// projecting a local copy — but UserRole and ProjectMember both carry a plain
-// `user_id` UUID column (no ent edge/FK, since there's no local User to point at), so
-// a deleted user leaves orphaned role/membership rows here unless explicitly cleaned
-// up. Comment/Activity/TimeLog/TenderCommitteeMember also carry a user_id column but
+// as auth.user.deleted) of a platform user: it removes the JIT local user (ProjectsUser) with
+// its role assignments and the user's ProjectMember rows, which carry a plain auth user id.
+// Comment/Activity/TenderCommitteeMember also carry a user_id column but
 // are left untouched: they're content/audit/work-record data, not identity data,
 // mirroring auth-api's own precedent of leaving LoginAttempt/AuditLog rows in place.
 type AuthEventsConsumer struct {
@@ -124,9 +121,9 @@ func (c *AuthEventsConsumer) deleteUser(ctx context.Context, userID uuid.UUID) e
 		_ = tx.Rollback()
 		return fmt.Errorf("delete project members: %w", err)
 	}
-	if _, err := tx.UserRole.Delete().Where(userrole.UserID(userID)).Exec(ctx); err != nil {
+	if err := rbac.DeleteUser(ctx, tx, userID); err != nil {
 		_ = tx.Rollback()
-		return fmt.Errorf("delete user roles: %w", err)
+		return fmt.Errorf("delete local user and roles: %w", err)
 	}
 
 	return tx.Commit()

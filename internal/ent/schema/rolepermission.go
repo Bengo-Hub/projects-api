@@ -1,15 +1,14 @@
 package schema
 
 import (
-	"time"
-
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
-// RolePermission holds the schema definition for the RolePermission entity.
+// RolePermission is the role to permission junction.
 type RolePermission struct {
 	ent.Schema
 }
@@ -17,29 +16,23 @@ type RolePermission struct {
 // Fields of the RolePermission.
 func (RolePermission) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).
-			Default(uuid.New).
-			Immutable(),
-		field.String("role_code"),
+		field.UUID("role_id", uuid.UUID{}),
 		field.UUID("permission_id", uuid.UUID{}),
-		field.Time("assigned_at").
-			Default(time.Now),
 	}
 }
 
 // Edges of the RolePermission.
 func (RolePermission) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("role", Role.Type).
-			Ref("role_permissions").
-			Field("role_code").
-			Unique().
-			Required(),
-		edge.From("permission", Permission.Type).
-			Ref("role_permissions").
-			Field("permission_id").
-			Unique().
-			Required(),
+		edge.To("role", Role.Type).Field("role_id").Required().Unique(),
+		edge.To("permission", Permission.Type).Field("permission_id").Required().Unique(),
 	}
 }
 
+// Indexes of the RolePermission.
+func (RolePermission) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("role_id", "permission_id").Unique(),
+		index.Fields("permission_id"),
+	}
+}

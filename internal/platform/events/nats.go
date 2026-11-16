@@ -31,28 +31,16 @@ func EnsureStream(ctx context.Context, nc *nats.Conn, cfg config.EventsConfig) e
 		return fmt.Errorf("jetstream init: %w", err)
 	}
 
-	// Singular aggregate subject only (shared-events convention: subject =
-	// {aggregate_type}.{event_type}; notifications-api binds project.>). The legacy
-	// "projects.>" binding was dropped — nothing ever published or consumed it.
-	subjects := []string{"project.>"}
-
-	info, err := js.StreamInfo(cfg.StreamName)
-	if err == nil {
-		// Stream exists — reconcile the subject set (drops legacy projects.>, adds project.>
-		// on older deployments).
-		if len(info.Config.Subjects) != len(subjects) || info.Config.Subjects[0] != subjects[0] {
-			updated := info.Config
-			updated.Subjects = subjects
-			_, _ = js.UpdateStream(&updated)
-		}
+	// One subject per the shared-events convention ({aggregate_type}.{event_type});
+	// notifications-api and treasury bind project.>.
+	if _, err := js.StreamInfo(cfg.StreamName); err == nil {
 		return nil
 	}
 
 	_, err = js.AddStream(&nats.StreamConfig{
 		Name:     cfg.StreamName,
-		Subjects: subjects,
+		Subjects: []string{"project.>"},
 		Replicas: 1,
 	})
 	return err
 }
-

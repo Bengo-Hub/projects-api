@@ -15,6 +15,9 @@ type Attachment func(*sql.Selector)
 // Comment is the predicate function for comment builders.
 type Comment func(*sql.Selector)
 
+// DocumentSequence is the predicate function for documentsequence builders.
+type DocumentSequence func(*sql.Selector)
+
 // FieldKey is the predicate function for fieldkey builders.
 type FieldKey func(*sql.Selector)
 
@@ -35,6 +38,9 @@ type Project func(*sql.Selector)
 
 // ProjectMember is the predicate function for projectmember builders.
 type ProjectMember func(*sql.Selector)
+
+// ProjectsUser is the predicate function for projectsuser builders.
+type ProjectsUser func(*sql.Selector)
 
 // QACriterion is the predicate function for qacriterion builders.
 type QACriterion func(*sql.Selector)
@@ -84,5 +90,5 @@ type TenderEvaluation func(*sql.Selector)
 // TenderMeeting is the predicate function for tendermeeting builders.
 type TenderMeeting func(*sql.Selector)
 
-// UserRole is the predicate function for userrole builders.
-type UserRole func(*sql.Selector)
+// UserRoleAssignment is the predicate function for userroleassignment builders.
+type UserRoleAssignment func(*sql.Selector)

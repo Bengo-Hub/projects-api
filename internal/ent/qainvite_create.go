@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/qainvite"
@@ -19,6 +21,7 @@ type QAInviteCreate struct {
 	config
 	mutation *QAInviteMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenantID sets the "tenant_id" field.
@@ -324,6 +327,7 @@ func (qic *QAInviteCreate) createSpec() (*QAInvite, *sqlgraph.CreateSpec) {
 		_node = &QAInvite{config: qic.config}
 		_spec = sqlgraph.NewCreateSpec(qainvite.Table, sqlgraph.NewFieldSpec(qainvite.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = qic.conflict
 	if id, ok := qic.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -383,11 +387,471 @@ func (qic *QAInviteCreate) createSpec() (*QAInvite, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QAInvite.Create().
+//		SetTenantID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QAInviteUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qic *QAInviteCreate) OnConflict(opts ...sql.ConflictOption) *QAInviteUpsertOne {
+	qic.conflict = opts
+	return &QAInviteUpsertOne{
+		create: qic,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QAInvite.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qic *QAInviteCreate) OnConflictColumns(columns ...string) *QAInviteUpsertOne {
+	qic.conflict = append(qic.conflict, sql.ConflictColumns(columns...))
+	return &QAInviteUpsertOne{
+		create: qic,
+	}
+}
+
+type (
+	// QAInviteUpsertOne is the builder for "upsert"-ing
+	//  one QAInvite node.
+	QAInviteUpsertOne struct {
+		create *QAInviteCreate
+	}
+
+	// QAInviteUpsert is the "OnConflict" setter.
+	QAInviteUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetEmailHint sets the "email_hint" field.
+func (u *QAInviteUpsert) SetEmailHint(v string) *QAInviteUpsert {
+	u.Set(qainvite.FieldEmailHint, v)
+	return u
+}
+
+// UpdateEmailHint sets the "email_hint" field to the value that was provided on create.
+func (u *QAInviteUpsert) UpdateEmailHint() *QAInviteUpsert {
+	u.SetExcluded(qainvite.FieldEmailHint)
+	return u
+}
+
+// ClearEmailHint clears the value of the "email_hint" field.
+func (u *QAInviteUpsert) ClearEmailHint() *QAInviteUpsert {
+	u.SetNull(qainvite.FieldEmailHint)
+	return u
+}
+
+// SetEmailEnc sets the "email_enc" field.
+func (u *QAInviteUpsert) SetEmailEnc(v string) *QAInviteUpsert {
+	u.Set(qainvite.FieldEmailEnc, v)
+	return u
+}
+
+// UpdateEmailEnc sets the "email_enc" field to the value that was provided on create.
+func (u *QAInviteUpsert) UpdateEmailEnc() *QAInviteUpsert {
+	u.SetExcluded(qainvite.FieldEmailEnc)
+	return u
+}
+
+// ClearEmailEnc clears the value of the "email_enc" field.
+func (u *QAInviteUpsert) ClearEmailEnc() *QAInviteUpsert {
+	u.SetNull(qainvite.FieldEmailEnc)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *QAInviteUpsert) SetName(v string) *QAInviteUpsert {
+	u.Set(qainvite.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *QAInviteUpsert) UpdateName() *QAInviteUpsert {
+	u.SetExcluded(qainvite.FieldName)
+	return u
+}
+
+// ClearName clears the value of the "name" field.
+func (u *QAInviteUpsert) ClearName() *QAInviteUpsert {
+	u.SetNull(qainvite.FieldName)
+	return u
+}
+
+// SetRole sets the "role" field.
+func (u *QAInviteUpsert) SetRole(v string) *QAInviteUpsert {
+	u.Set(qainvite.FieldRole, v)
+	return u
+}
+
+// UpdateRole sets the "role" field to the value that was provided on create.
+func (u *QAInviteUpsert) UpdateRole() *QAInviteUpsert {
+	u.SetExcluded(qainvite.FieldRole)
+	return u
+}
+
+// SetStatus sets the "status" field.
+func (u *QAInviteUpsert) SetStatus(v string) *QAInviteUpsert {
+	u.Set(qainvite.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QAInviteUpsert) UpdateStatus() *QAInviteUpsert {
+	u.SetExcluded(qainvite.FieldStatus)
+	return u
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (u *QAInviteUpsert) SetLastSeenAt(v time.Time) *QAInviteUpsert {
+	u.Set(qainvite.FieldLastSeenAt, v)
+	return u
+}
+
+// UpdateLastSeenAt sets the "last_seen_at" field to the value that was provided on create.
+func (u *QAInviteUpsert) UpdateLastSeenAt() *QAInviteUpsert {
+	u.SetExcluded(qainvite.FieldLastSeenAt)
+	return u
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (u *QAInviteUpsert) ClearLastSeenAt() *QAInviteUpsert {
+	u.SetNull(qainvite.FieldLastSeenAt)
+	return u
+}
+
+// SetAccessNotBefore sets the "access_not_before" field.
+func (u *QAInviteUpsert) SetAccessNotBefore(v time.Time) *QAInviteUpsert {
+	u.Set(qainvite.FieldAccessNotBefore, v)
+	return u
+}
+
+// UpdateAccessNotBefore sets the "access_not_before" field to the value that was provided on create.
+func (u *QAInviteUpsert) UpdateAccessNotBefore() *QAInviteUpsert {
+	u.SetExcluded(qainvite.FieldAccessNotBefore)
+	return u
+}
+
+// ClearAccessNotBefore clears the value of the "access_not_before" field.
+func (u *QAInviteUpsert) ClearAccessNotBefore() *QAInviteUpsert {
+	u.SetNull(qainvite.FieldAccessNotBefore)
+	return u
+}
+
+// SetInvitedBy sets the "invited_by" field.
+func (u *QAInviteUpsert) SetInvitedBy(v uuid.UUID) *QAInviteUpsert {
+	u.Set(qainvite.FieldInvitedBy, v)
+	return u
+}
+
+// UpdateInvitedBy sets the "invited_by" field to the value that was provided on create.
+func (u *QAInviteUpsert) UpdateInvitedBy() *QAInviteUpsert {
+	u.SetExcluded(qainvite.FieldInvitedBy)
+	return u
+}
+
+// ClearInvitedBy clears the value of the "invited_by" field.
+func (u *QAInviteUpsert) ClearInvitedBy() *QAInviteUpsert {
+	u.SetNull(qainvite.FieldInvitedBy)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QAInviteUpsert) SetUpdatedAt(v time.Time) *QAInviteUpsert {
+	u.Set(qainvite.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QAInviteUpsert) UpdateUpdatedAt() *QAInviteUpsert {
+	u.SetExcluded(qainvite.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.QAInvite.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qainvite.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QAInviteUpsertOne) UpdateNewValues() *QAInviteUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(qainvite.FieldID)
+		}
+		if _, exists := u.create.mutation.TenantID(); exists {
+			s.SetIgnore(qainvite.FieldTenantID)
+		}
+		if _, exists := u.create.mutation.SessionID(); exists {
+			s.SetIgnore(qainvite.FieldSessionID)
+		}
+		if _, exists := u.create.mutation.EmailHash(); exists {
+			s.SetIgnore(qainvite.FieldEmailHash)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(qainvite.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QAInvite.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *QAInviteUpsertOne) Ignore() *QAInviteUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QAInviteUpsertOne) DoNothing() *QAInviteUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QAInviteCreate.OnConflict
+// documentation for more info.
+func (u *QAInviteUpsertOne) Update(set func(*QAInviteUpsert)) *QAInviteUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QAInviteUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetEmailHint sets the "email_hint" field.
+func (u *QAInviteUpsertOne) SetEmailHint(v string) *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetEmailHint(v)
+	})
+}
+
+// UpdateEmailHint sets the "email_hint" field to the value that was provided on create.
+func (u *QAInviteUpsertOne) UpdateEmailHint() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateEmailHint()
+	})
+}
+
+// ClearEmailHint clears the value of the "email_hint" field.
+func (u *QAInviteUpsertOne) ClearEmailHint() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearEmailHint()
+	})
+}
+
+// SetEmailEnc sets the "email_enc" field.
+func (u *QAInviteUpsertOne) SetEmailEnc(v string) *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetEmailEnc(v)
+	})
+}
+
+// UpdateEmailEnc sets the "email_enc" field to the value that was provided on create.
+func (u *QAInviteUpsertOne) UpdateEmailEnc() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateEmailEnc()
+	})
+}
+
+// ClearEmailEnc clears the value of the "email_enc" field.
+func (u *QAInviteUpsertOne) ClearEmailEnc() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearEmailEnc()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *QAInviteUpsertOne) SetName(v string) *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *QAInviteUpsertOne) UpdateName() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateName()
+	})
+}
+
+// ClearName clears the value of the "name" field.
+func (u *QAInviteUpsertOne) ClearName() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearName()
+	})
+}
+
+// SetRole sets the "role" field.
+func (u *QAInviteUpsertOne) SetRole(v string) *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetRole(v)
+	})
+}
+
+// UpdateRole sets the "role" field to the value that was provided on create.
+func (u *QAInviteUpsertOne) UpdateRole() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateRole()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *QAInviteUpsertOne) SetStatus(v string) *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QAInviteUpsertOne) UpdateStatus() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (u *QAInviteUpsertOne) SetLastSeenAt(v time.Time) *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetLastSeenAt(v)
+	})
+}
+
+// UpdateLastSeenAt sets the "last_seen_at" field to the value that was provided on create.
+func (u *QAInviteUpsertOne) UpdateLastSeenAt() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateLastSeenAt()
+	})
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (u *QAInviteUpsertOne) ClearLastSeenAt() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearLastSeenAt()
+	})
+}
+
+// SetAccessNotBefore sets the "access_not_before" field.
+func (u *QAInviteUpsertOne) SetAccessNotBefore(v time.Time) *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetAccessNotBefore(v)
+	})
+}
+
+// UpdateAccessNotBefore sets the "access_not_before" field to the value that was provided on create.
+func (u *QAInviteUpsertOne) UpdateAccessNotBefore() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateAccessNotBefore()
+	})
+}
+
+// ClearAccessNotBefore clears the value of the "access_not_before" field.
+func (u *QAInviteUpsertOne) ClearAccessNotBefore() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearAccessNotBefore()
+	})
+}
+
+// SetInvitedBy sets the "invited_by" field.
+func (u *QAInviteUpsertOne) SetInvitedBy(v uuid.UUID) *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetInvitedBy(v)
+	})
+}
+
+// UpdateInvitedBy sets the "invited_by" field to the value that was provided on create.
+func (u *QAInviteUpsertOne) UpdateInvitedBy() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateInvitedBy()
+	})
+}
+
+// ClearInvitedBy clears the value of the "invited_by" field.
+func (u *QAInviteUpsertOne) ClearInvitedBy() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearInvitedBy()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QAInviteUpsertOne) SetUpdatedAt(v time.Time) *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QAInviteUpsertOne) UpdateUpdatedAt() *QAInviteUpsertOne {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QAInviteUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QAInviteCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QAInviteUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *QAInviteUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: QAInviteUpsertOne.ID is not supported by MySQL driver. Use QAInviteUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *QAInviteUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // QAInviteCreateBulk is the builder for creating many QAInvite entities in bulk.
 type QAInviteCreateBulk struct {
 	config
 	err      error
 	builders []*QAInviteCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the QAInvite entities in the database.
@@ -417,6 +881,7 @@ func (qicb *QAInviteCreateBulk) Save(ctx context.Context) ([]*QAInvite, error) {
 					_, err = mutators[i+1].Mutate(root, qicb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = qicb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, qicb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -463,6 +928,300 @@ func (qicb *QAInviteCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (qicb *QAInviteCreateBulk) ExecX(ctx context.Context) {
 	if err := qicb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.QAInvite.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.QAInviteUpsert) {
+//			SetTenantID(v+v).
+//		}).
+//		Exec(ctx)
+func (qicb *QAInviteCreateBulk) OnConflict(opts ...sql.ConflictOption) *QAInviteUpsertBulk {
+	qicb.conflict = opts
+	return &QAInviteUpsertBulk{
+		create: qicb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.QAInvite.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (qicb *QAInviteCreateBulk) OnConflictColumns(columns ...string) *QAInviteUpsertBulk {
+	qicb.conflict = append(qicb.conflict, sql.ConflictColumns(columns...))
+	return &QAInviteUpsertBulk{
+		create: qicb,
+	}
+}
+
+// QAInviteUpsertBulk is the builder for "upsert"-ing
+// a bulk of QAInvite nodes.
+type QAInviteUpsertBulk struct {
+	create *QAInviteCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.QAInvite.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(qainvite.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *QAInviteUpsertBulk) UpdateNewValues() *QAInviteUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(qainvite.FieldID)
+			}
+			if _, exists := b.mutation.TenantID(); exists {
+				s.SetIgnore(qainvite.FieldTenantID)
+			}
+			if _, exists := b.mutation.SessionID(); exists {
+				s.SetIgnore(qainvite.FieldSessionID)
+			}
+			if _, exists := b.mutation.EmailHash(); exists {
+				s.SetIgnore(qainvite.FieldEmailHash)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(qainvite.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.QAInvite.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *QAInviteUpsertBulk) Ignore() *QAInviteUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *QAInviteUpsertBulk) DoNothing() *QAInviteUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the QAInviteCreateBulk.OnConflict
+// documentation for more info.
+func (u *QAInviteUpsertBulk) Update(set func(*QAInviteUpsert)) *QAInviteUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&QAInviteUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetEmailHint sets the "email_hint" field.
+func (u *QAInviteUpsertBulk) SetEmailHint(v string) *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetEmailHint(v)
+	})
+}
+
+// UpdateEmailHint sets the "email_hint" field to the value that was provided on create.
+func (u *QAInviteUpsertBulk) UpdateEmailHint() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateEmailHint()
+	})
+}
+
+// ClearEmailHint clears the value of the "email_hint" field.
+func (u *QAInviteUpsertBulk) ClearEmailHint() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearEmailHint()
+	})
+}
+
+// SetEmailEnc sets the "email_enc" field.
+func (u *QAInviteUpsertBulk) SetEmailEnc(v string) *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetEmailEnc(v)
+	})
+}
+
+// UpdateEmailEnc sets the "email_enc" field to the value that was provided on create.
+func (u *QAInviteUpsertBulk) UpdateEmailEnc() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateEmailEnc()
+	})
+}
+
+// ClearEmailEnc clears the value of the "email_enc" field.
+func (u *QAInviteUpsertBulk) ClearEmailEnc() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearEmailEnc()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *QAInviteUpsertBulk) SetName(v string) *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *QAInviteUpsertBulk) UpdateName() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateName()
+	})
+}
+
+// ClearName clears the value of the "name" field.
+func (u *QAInviteUpsertBulk) ClearName() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearName()
+	})
+}
+
+// SetRole sets the "role" field.
+func (u *QAInviteUpsertBulk) SetRole(v string) *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetRole(v)
+	})
+}
+
+// UpdateRole sets the "role" field to the value that was provided on create.
+func (u *QAInviteUpsertBulk) UpdateRole() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateRole()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *QAInviteUpsertBulk) SetStatus(v string) *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *QAInviteUpsertBulk) UpdateStatus() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateStatus()
+	})
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (u *QAInviteUpsertBulk) SetLastSeenAt(v time.Time) *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetLastSeenAt(v)
+	})
+}
+
+// UpdateLastSeenAt sets the "last_seen_at" field to the value that was provided on create.
+func (u *QAInviteUpsertBulk) UpdateLastSeenAt() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateLastSeenAt()
+	})
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (u *QAInviteUpsertBulk) ClearLastSeenAt() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearLastSeenAt()
+	})
+}
+
+// SetAccessNotBefore sets the "access_not_before" field.
+func (u *QAInviteUpsertBulk) SetAccessNotBefore(v time.Time) *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetAccessNotBefore(v)
+	})
+}
+
+// UpdateAccessNotBefore sets the "access_not_before" field to the value that was provided on create.
+func (u *QAInviteUpsertBulk) UpdateAccessNotBefore() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateAccessNotBefore()
+	})
+}
+
+// ClearAccessNotBefore clears the value of the "access_not_before" field.
+func (u *QAInviteUpsertBulk) ClearAccessNotBefore() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearAccessNotBefore()
+	})
+}
+
+// SetInvitedBy sets the "invited_by" field.
+func (u *QAInviteUpsertBulk) SetInvitedBy(v uuid.UUID) *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetInvitedBy(v)
+	})
+}
+
+// UpdateInvitedBy sets the "invited_by" field to the value that was provided on create.
+func (u *QAInviteUpsertBulk) UpdateInvitedBy() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateInvitedBy()
+	})
+}
+
+// ClearInvitedBy clears the value of the "invited_by" field.
+func (u *QAInviteUpsertBulk) ClearInvitedBy() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.ClearInvitedBy()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *QAInviteUpsertBulk) SetUpdatedAt(v time.Time) *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *QAInviteUpsertBulk) UpdateUpdatedAt() *QAInviteUpsertBulk {
+	return u.Update(func(s *QAInviteUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// Exec executes the query.
+func (u *QAInviteUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the QAInviteCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for QAInviteCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *QAInviteUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/tender"
@@ -20,6 +22,7 @@ type TenderEvaluationCreate struct {
 	config
 	mutation *TenderEvaluationMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenderID sets the "tender_id" field.
@@ -203,6 +206,7 @@ func (tec *TenderEvaluationCreate) createSpec() (*TenderEvaluation, *sqlgraph.Cr
 		_node = &TenderEvaluation{config: tec.config}
 		_spec = sqlgraph.NewCreateSpec(tenderevaluation.Table, sqlgraph.NewFieldSpec(tenderevaluation.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = tec.conflict
 	if id, ok := tec.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -251,11 +255,345 @@ func (tec *TenderEvaluationCreate) createSpec() (*TenderEvaluation, *sqlgraph.Cr
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.TenderEvaluation.Create().
+//		SetTenderID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderEvaluationUpsert) {
+//			SetTenderID(v+v).
+//		}).
+//		Exec(ctx)
+func (tec *TenderEvaluationCreate) OnConflict(opts ...sql.ConflictOption) *TenderEvaluationUpsertOne {
+	tec.conflict = opts
+	return &TenderEvaluationUpsertOne{
+		create: tec,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.TenderEvaluation.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tec *TenderEvaluationCreate) OnConflictColumns(columns ...string) *TenderEvaluationUpsertOne {
+	tec.conflict = append(tec.conflict, sql.ConflictColumns(columns...))
+	return &TenderEvaluationUpsertOne{
+		create: tec,
+	}
+}
+
+type (
+	// TenderEvaluationUpsertOne is the builder for "upsert"-ing
+	//  one TenderEvaluation node.
+	TenderEvaluationUpsertOne struct {
+		create *TenderEvaluationCreate
+	}
+
+	// TenderEvaluationUpsert is the "OnConflict" setter.
+	TenderEvaluationUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenderID sets the "tender_id" field.
+func (u *TenderEvaluationUpsert) SetTenderID(v uuid.UUID) *TenderEvaluationUpsert {
+	u.Set(tenderevaluation.FieldTenderID, v)
+	return u
+}
+
+// UpdateTenderID sets the "tender_id" field to the value that was provided on create.
+func (u *TenderEvaluationUpsert) UpdateTenderID() *TenderEvaluationUpsert {
+	u.SetExcluded(tenderevaluation.FieldTenderID)
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderEvaluationUpsert) SetTenantID(v uuid.UUID) *TenderEvaluationUpsert {
+	u.Set(tenderevaluation.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderEvaluationUpsert) UpdateTenantID() *TenderEvaluationUpsert {
+	u.SetExcluded(tenderevaluation.FieldTenantID)
+	return u
+}
+
+// SetEvaluatorID sets the "evaluator_id" field.
+func (u *TenderEvaluationUpsert) SetEvaluatorID(v uuid.UUID) *TenderEvaluationUpsert {
+	u.Set(tenderevaluation.FieldEvaluatorID, v)
+	return u
+}
+
+// UpdateEvaluatorID sets the "evaluator_id" field to the value that was provided on create.
+func (u *TenderEvaluationUpsert) UpdateEvaluatorID() *TenderEvaluationUpsert {
+	u.SetExcluded(tenderevaluation.FieldEvaluatorID)
+	return u
+}
+
+// SetScore sets the "score" field.
+func (u *TenderEvaluationUpsert) SetScore(v float64) *TenderEvaluationUpsert {
+	u.Set(tenderevaluation.FieldScore, v)
+	return u
+}
+
+// UpdateScore sets the "score" field to the value that was provided on create.
+func (u *TenderEvaluationUpsert) UpdateScore() *TenderEvaluationUpsert {
+	u.SetExcluded(tenderevaluation.FieldScore)
+	return u
+}
+
+// AddScore adds v to the "score" field.
+func (u *TenderEvaluationUpsert) AddScore(v float64) *TenderEvaluationUpsert {
+	u.Add(tenderevaluation.FieldScore, v)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *TenderEvaluationUpsert) SetNotes(v string) *TenderEvaluationUpsert {
+	u.Set(tenderevaluation.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *TenderEvaluationUpsert) UpdateNotes() *TenderEvaluationUpsert {
+	u.SetExcluded(tenderevaluation.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *TenderEvaluationUpsert) ClearNotes() *TenderEvaluationUpsert {
+	u.SetNull(tenderevaluation.FieldNotes)
+	return u
+}
+
+// SetCriteria sets the "criteria" field.
+func (u *TenderEvaluationUpsert) SetCriteria(v string) *TenderEvaluationUpsert {
+	u.Set(tenderevaluation.FieldCriteria, v)
+	return u
+}
+
+// UpdateCriteria sets the "criteria" field to the value that was provided on create.
+func (u *TenderEvaluationUpsert) UpdateCriteria() *TenderEvaluationUpsert {
+	u.SetExcluded(tenderevaluation.FieldCriteria)
+	return u
+}
+
+// ClearCriteria clears the value of the "criteria" field.
+func (u *TenderEvaluationUpsert) ClearCriteria() *TenderEvaluationUpsert {
+	u.SetNull(tenderevaluation.FieldCriteria)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.TenderEvaluation.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tenderevaluation.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderEvaluationUpsertOne) UpdateNewValues() *TenderEvaluationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(tenderevaluation.FieldID)
+		}
+		if _, exists := u.create.mutation.EvaluatedAt(); exists {
+			s.SetIgnore(tenderevaluation.FieldEvaluatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.TenderEvaluation.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *TenderEvaluationUpsertOne) Ignore() *TenderEvaluationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderEvaluationUpsertOne) DoNothing() *TenderEvaluationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderEvaluationCreate.OnConflict
+// documentation for more info.
+func (u *TenderEvaluationUpsertOne) Update(set func(*TenderEvaluationUpsert)) *TenderEvaluationUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderEvaluationUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenderID sets the "tender_id" field.
+func (u *TenderEvaluationUpsertOne) SetTenderID(v uuid.UUID) *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetTenderID(v)
+	})
+}
+
+// UpdateTenderID sets the "tender_id" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertOne) UpdateTenderID() *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateTenderID()
+	})
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderEvaluationUpsertOne) SetTenantID(v uuid.UUID) *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertOne) UpdateTenantID() *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetEvaluatorID sets the "evaluator_id" field.
+func (u *TenderEvaluationUpsertOne) SetEvaluatorID(v uuid.UUID) *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetEvaluatorID(v)
+	})
+}
+
+// UpdateEvaluatorID sets the "evaluator_id" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertOne) UpdateEvaluatorID() *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateEvaluatorID()
+	})
+}
+
+// SetScore sets the "score" field.
+func (u *TenderEvaluationUpsertOne) SetScore(v float64) *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetScore(v)
+	})
+}
+
+// AddScore adds v to the "score" field.
+func (u *TenderEvaluationUpsertOne) AddScore(v float64) *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.AddScore(v)
+	})
+}
+
+// UpdateScore sets the "score" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertOne) UpdateScore() *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateScore()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *TenderEvaluationUpsertOne) SetNotes(v string) *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertOne) UpdateNotes() *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *TenderEvaluationUpsertOne) ClearNotes() *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetCriteria sets the "criteria" field.
+func (u *TenderEvaluationUpsertOne) SetCriteria(v string) *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetCriteria(v)
+	})
+}
+
+// UpdateCriteria sets the "criteria" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertOne) UpdateCriteria() *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateCriteria()
+	})
+}
+
+// ClearCriteria clears the value of the "criteria" field.
+func (u *TenderEvaluationUpsertOne) ClearCriteria() *TenderEvaluationUpsertOne {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.ClearCriteria()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderEvaluationUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderEvaluationCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderEvaluationUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *TenderEvaluationUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: TenderEvaluationUpsertOne.ID is not supported by MySQL driver. Use TenderEvaluationUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *TenderEvaluationUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // TenderEvaluationCreateBulk is the builder for creating many TenderEvaluation entities in bulk.
 type TenderEvaluationCreateBulk struct {
 	config
 	err      error
 	builders []*TenderEvaluationCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the TenderEvaluation entities in the database.
@@ -285,6 +623,7 @@ func (tecb *TenderEvaluationCreateBulk) Save(ctx context.Context) ([]*TenderEval
 					_, err = mutators[i+1].Mutate(root, tecb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = tecb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, tecb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -331,6 +670,228 @@ func (tecb *TenderEvaluationCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (tecb *TenderEvaluationCreateBulk) ExecX(ctx context.Context) {
 	if err := tecb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.TenderEvaluation.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderEvaluationUpsert) {
+//			SetTenderID(v+v).
+//		}).
+//		Exec(ctx)
+func (tecb *TenderEvaluationCreateBulk) OnConflict(opts ...sql.ConflictOption) *TenderEvaluationUpsertBulk {
+	tecb.conflict = opts
+	return &TenderEvaluationUpsertBulk{
+		create: tecb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.TenderEvaluation.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tecb *TenderEvaluationCreateBulk) OnConflictColumns(columns ...string) *TenderEvaluationUpsertBulk {
+	tecb.conflict = append(tecb.conflict, sql.ConflictColumns(columns...))
+	return &TenderEvaluationUpsertBulk{
+		create: tecb,
+	}
+}
+
+// TenderEvaluationUpsertBulk is the builder for "upsert"-ing
+// a bulk of TenderEvaluation nodes.
+type TenderEvaluationUpsertBulk struct {
+	create *TenderEvaluationCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.TenderEvaluation.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tenderevaluation.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderEvaluationUpsertBulk) UpdateNewValues() *TenderEvaluationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(tenderevaluation.FieldID)
+			}
+			if _, exists := b.mutation.EvaluatedAt(); exists {
+				s.SetIgnore(tenderevaluation.FieldEvaluatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.TenderEvaluation.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *TenderEvaluationUpsertBulk) Ignore() *TenderEvaluationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderEvaluationUpsertBulk) DoNothing() *TenderEvaluationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderEvaluationCreateBulk.OnConflict
+// documentation for more info.
+func (u *TenderEvaluationUpsertBulk) Update(set func(*TenderEvaluationUpsert)) *TenderEvaluationUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderEvaluationUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenderID sets the "tender_id" field.
+func (u *TenderEvaluationUpsertBulk) SetTenderID(v uuid.UUID) *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetTenderID(v)
+	})
+}
+
+// UpdateTenderID sets the "tender_id" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertBulk) UpdateTenderID() *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateTenderID()
+	})
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderEvaluationUpsertBulk) SetTenantID(v uuid.UUID) *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertBulk) UpdateTenantID() *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetEvaluatorID sets the "evaluator_id" field.
+func (u *TenderEvaluationUpsertBulk) SetEvaluatorID(v uuid.UUID) *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetEvaluatorID(v)
+	})
+}
+
+// UpdateEvaluatorID sets the "evaluator_id" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertBulk) UpdateEvaluatorID() *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateEvaluatorID()
+	})
+}
+
+// SetScore sets the "score" field.
+func (u *TenderEvaluationUpsertBulk) SetScore(v float64) *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetScore(v)
+	})
+}
+
+// AddScore adds v to the "score" field.
+func (u *TenderEvaluationUpsertBulk) AddScore(v float64) *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.AddScore(v)
+	})
+}
+
+// UpdateScore sets the "score" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertBulk) UpdateScore() *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateScore()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *TenderEvaluationUpsertBulk) SetNotes(v string) *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertBulk) UpdateNotes() *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *TenderEvaluationUpsertBulk) ClearNotes() *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetCriteria sets the "criteria" field.
+func (u *TenderEvaluationUpsertBulk) SetCriteria(v string) *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.SetCriteria(v)
+	})
+}
+
+// UpdateCriteria sets the "criteria" field to the value that was provided on create.
+func (u *TenderEvaluationUpsertBulk) UpdateCriteria() *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.UpdateCriteria()
+	})
+}
+
+// ClearCriteria clears the value of the "criteria" field.
+func (u *TenderEvaluationUpsertBulk) ClearCriteria() *TenderEvaluationUpsertBulk {
+	return u.Update(func(s *TenderEvaluationUpsert) {
+		s.ClearCriteria()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderEvaluationUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the TenderEvaluationCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderEvaluationCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderEvaluationUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

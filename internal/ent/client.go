@@ -19,6 +19,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/activity"
 	"github.com/bengobox/projects-service/internal/ent/attachment"
 	"github.com/bengobox/projects-service/internal/ent/comment"
+	"github.com/bengobox/projects-service/internal/ent/documentsequence"
 	"github.com/bengobox/projects-service/internal/ent/fieldkey"
 	"github.com/bengobox/projects-service/internal/ent/fieldkeyaudit"
 	"github.com/bengobox/projects-service/internal/ent/milestone"
@@ -26,6 +27,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/permission"
 	"github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/ent/projectsuser"
 	"github.com/bengobox/projects-service/internal/ent/qacriterion"
 	"github.com/bengobox/projects-service/internal/ent/qadefect"
 	"github.com/bengobox/projects-service/internal/ent/qainvite"
@@ -42,7 +44,9 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
-	"github.com/bengobox/projects-service/internal/ent/userrole"
+	"github.com/bengobox/projects-service/internal/ent/userroleassignment"
+
+	stdsql "database/sql"
 )
 
 // Client is the client that holds all ent builders.
@@ -56,6 +60,8 @@ type Client struct {
 	Attachment *AttachmentClient
 	// Comment is the client for interacting with the Comment builders.
 	Comment *CommentClient
+	// DocumentSequence is the client for interacting with the DocumentSequence builders.
+	DocumentSequence *DocumentSequenceClient
 	// FieldKey is the client for interacting with the FieldKey builders.
 	FieldKey *FieldKeyClient
 	// FieldKeyAudit is the client for interacting with the FieldKeyAudit builders.
@@ -70,6 +76,8 @@ type Client struct {
 	Project *ProjectClient
 	// ProjectMember is the client for interacting with the ProjectMember builders.
 	ProjectMember *ProjectMemberClient
+	// ProjectsUser is the client for interacting with the ProjectsUser builders.
+	ProjectsUser *ProjectsUserClient
 	// QACriterion is the client for interacting with the QACriterion builders.
 	QACriterion *QACriterionClient
 	// QADefect is the client for interacting with the QADefect builders.
@@ -102,8 +110,8 @@ type Client struct {
 	TenderEvaluation *TenderEvaluationClient
 	// TenderMeeting is the client for interacting with the TenderMeeting builders.
 	TenderMeeting *TenderMeetingClient
-	// UserRole is the client for interacting with the UserRole builders.
-	UserRole *UserRoleClient
+	// UserRoleAssignment is the client for interacting with the UserRoleAssignment builders.
+	UserRoleAssignment *UserRoleAssignmentClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -118,6 +126,7 @@ func (c *Client) init() {
 	c.Activity = NewActivityClient(c.config)
 	c.Attachment = NewAttachmentClient(c.config)
 	c.Comment = NewCommentClient(c.config)
+	c.DocumentSequence = NewDocumentSequenceClient(c.config)
 	c.FieldKey = NewFieldKeyClient(c.config)
 	c.FieldKeyAudit = NewFieldKeyAuditClient(c.config)
 	c.Milestone = NewMilestoneClient(c.config)
@@ -125,6 +134,7 @@ func (c *Client) init() {
 	c.Permission = NewPermissionClient(c.config)
 	c.Project = NewProjectClient(c.config)
 	c.ProjectMember = NewProjectMemberClient(c.config)
+	c.ProjectsUser = NewProjectsUserClient(c.config)
 	c.QACriterion = NewQACriterionClient(c.config)
 	c.QADefect = NewQADefectClient(c.config)
 	c.QAInvite = NewQAInviteClient(c.config)
@@ -141,7 +151,7 @@ func (c *Client) init() {
 	c.TenderDocument = NewTenderDocumentClient(c.config)
 	c.TenderEvaluation = NewTenderEvaluationClient(c.config)
 	c.TenderMeeting = NewTenderMeetingClient(c.config)
-	c.UserRole = NewUserRoleClient(c.config)
+	c.UserRoleAssignment = NewUserRoleAssignmentClient(c.config)
 }
 
 type (
@@ -237,6 +247,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Activity:              NewActivityClient(cfg),
 		Attachment:            NewAttachmentClient(cfg),
 		Comment:               NewCommentClient(cfg),
+		DocumentSequence:      NewDocumentSequenceClient(cfg),
 		FieldKey:              NewFieldKeyClient(cfg),
 		FieldKeyAudit:         NewFieldKeyAuditClient(cfg),
 		Milestone:             NewMilestoneClient(cfg),
@@ -244,6 +255,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Permission:            NewPermissionClient(cfg),
 		Project:               NewProjectClient(cfg),
 		ProjectMember:         NewProjectMemberClient(cfg),
+		ProjectsUser:          NewProjectsUserClient(cfg),
 		QACriterion:           NewQACriterionClient(cfg),
 		QADefect:              NewQADefectClient(cfg),
 		QAInvite:              NewQAInviteClient(cfg),
@@ -260,7 +272,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		TenderDocument:        NewTenderDocumentClient(cfg),
 		TenderEvaluation:      NewTenderEvaluationClient(cfg),
 		TenderMeeting:         NewTenderMeetingClient(cfg),
-		UserRole:              NewUserRoleClient(cfg),
+		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
 	}, nil
 }
 
@@ -283,6 +295,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Activity:              NewActivityClient(cfg),
 		Attachment:            NewAttachmentClient(cfg),
 		Comment:               NewCommentClient(cfg),
+		DocumentSequence:      NewDocumentSequenceClient(cfg),
 		FieldKey:              NewFieldKeyClient(cfg),
 		FieldKeyAudit:         NewFieldKeyAuditClient(cfg),
 		Milestone:             NewMilestoneClient(cfg),
@@ -290,6 +303,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Permission:            NewPermissionClient(cfg),
 		Project:               NewProjectClient(cfg),
 		ProjectMember:         NewProjectMemberClient(cfg),
+		ProjectsUser:          NewProjectsUserClient(cfg),
 		QACriterion:           NewQACriterionClient(cfg),
 		QADefect:              NewQADefectClient(cfg),
 		QAInvite:              NewQAInviteClient(cfg),
@@ -306,7 +320,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		TenderDocument:        NewTenderDocumentClient(cfg),
 		TenderEvaluation:      NewTenderEvaluationClient(cfg),
 		TenderMeeting:         NewTenderMeetingClient(cfg),
-		UserRole:              NewUserRoleClient(cfg),
+		UserRoleAssignment:    NewUserRoleAssignmentClient(cfg),
 	}, nil
 }
 
@@ -336,12 +350,12 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Activity, c.Attachment, c.Comment, c.FieldKey, c.FieldKeyAudit, c.Milestone,
-		c.OutboxEvent, c.Permission, c.Project, c.ProjectMember, c.QACriterion,
-		c.QADefect, c.QAInvite, c.QAResult, c.QASession, c.QATemplate, c.Role,
-		c.RolePermission, c.Task, c.TaskDependency, c.Tender, c.TenderCommittee,
-		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
-		c.UserRole,
+		c.Activity, c.Attachment, c.Comment, c.DocumentSequence, c.FieldKey,
+		c.FieldKeyAudit, c.Milestone, c.OutboxEvent, c.Permission, c.Project,
+		c.ProjectMember, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
+		c.QAResult, c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task,
+		c.TaskDependency, c.Tender, c.TenderCommittee, c.TenderCommitteeMember,
+		c.TenderDocument, c.TenderEvaluation, c.TenderMeeting, c.UserRoleAssignment,
 	} {
 		n.Use(hooks...)
 	}
@@ -351,12 +365,12 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Activity, c.Attachment, c.Comment, c.FieldKey, c.FieldKeyAudit, c.Milestone,
-		c.OutboxEvent, c.Permission, c.Project, c.ProjectMember, c.QACriterion,
-		c.QADefect, c.QAInvite, c.QAResult, c.QASession, c.QATemplate, c.Role,
-		c.RolePermission, c.Task, c.TaskDependency, c.Tender, c.TenderCommittee,
-		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
-		c.UserRole,
+		c.Activity, c.Attachment, c.Comment, c.DocumentSequence, c.FieldKey,
+		c.FieldKeyAudit, c.Milestone, c.OutboxEvent, c.Permission, c.Project,
+		c.ProjectMember, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
+		c.QAResult, c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task,
+		c.TaskDependency, c.Tender, c.TenderCommittee, c.TenderCommitteeMember,
+		c.TenderDocument, c.TenderEvaluation, c.TenderMeeting, c.UserRoleAssignment,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -371,6 +385,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Attachment.mutate(ctx, m)
 	case *CommentMutation:
 		return c.Comment.mutate(ctx, m)
+	case *DocumentSequenceMutation:
+		return c.DocumentSequence.mutate(ctx, m)
 	case *FieldKeyMutation:
 		return c.FieldKey.mutate(ctx, m)
 	case *FieldKeyAuditMutation:
@@ -385,6 +401,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Project.mutate(ctx, m)
 	case *ProjectMemberMutation:
 		return c.ProjectMember.mutate(ctx, m)
+	case *ProjectsUserMutation:
+		return c.ProjectsUser.mutate(ctx, m)
 	case *QACriterionMutation:
 		return c.QACriterion.mutate(ctx, m)
 	case *QADefectMutation:
@@ -417,8 +435,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.TenderEvaluation.mutate(ctx, m)
 	case *TenderMeetingMutation:
 		return c.TenderMeeting.mutate(ctx, m)
-	case *UserRoleMutation:
-		return c.UserRole.mutate(ctx, m)
+	case *UserRoleAssignmentMutation:
+		return c.UserRoleAssignment.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -916,6 +934,139 @@ func (c *CommentClient) mutate(ctx context.Context, m *CommentMutation) (Value, 
 		return (&CommentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Comment mutation op: %q", m.Op())
+	}
+}
+
+// DocumentSequenceClient is a client for the DocumentSequence schema.
+type DocumentSequenceClient struct {
+	config
+}
+
+// NewDocumentSequenceClient returns a client for the DocumentSequence from the given config.
+func NewDocumentSequenceClient(c config) *DocumentSequenceClient {
+	return &DocumentSequenceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `documentsequence.Hooks(f(g(h())))`.
+func (c *DocumentSequenceClient) Use(hooks ...Hook) {
+	c.hooks.DocumentSequence = append(c.hooks.DocumentSequence, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `documentsequence.Intercept(f(g(h())))`.
+func (c *DocumentSequenceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DocumentSequence = append(c.inters.DocumentSequence, interceptors...)
+}
+
+// Create returns a builder for creating a DocumentSequence entity.
+func (c *DocumentSequenceClient) Create() *DocumentSequenceCreate {
+	mutation := newDocumentSequenceMutation(c.config, OpCreate)
+	return &DocumentSequenceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DocumentSequence entities.
+func (c *DocumentSequenceClient) CreateBulk(builders ...*DocumentSequenceCreate) *DocumentSequenceCreateBulk {
+	return &DocumentSequenceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DocumentSequenceClient) MapCreateBulk(slice any, setFunc func(*DocumentSequenceCreate, int)) *DocumentSequenceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DocumentSequenceCreateBulk{err: fmt.Errorf("calling to DocumentSequenceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DocumentSequenceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DocumentSequenceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DocumentSequence.
+func (c *DocumentSequenceClient) Update() *DocumentSequenceUpdate {
+	mutation := newDocumentSequenceMutation(c.config, OpUpdate)
+	return &DocumentSequenceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DocumentSequenceClient) UpdateOne(ds *DocumentSequence) *DocumentSequenceUpdateOne {
+	mutation := newDocumentSequenceMutation(c.config, OpUpdateOne, withDocumentSequence(ds))
+	return &DocumentSequenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DocumentSequenceClient) UpdateOneID(id uuid.UUID) *DocumentSequenceUpdateOne {
+	mutation := newDocumentSequenceMutation(c.config, OpUpdateOne, withDocumentSequenceID(id))
+	return &DocumentSequenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DocumentSequence.
+func (c *DocumentSequenceClient) Delete() *DocumentSequenceDelete {
+	mutation := newDocumentSequenceMutation(c.config, OpDelete)
+	return &DocumentSequenceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DocumentSequenceClient) DeleteOne(ds *DocumentSequence) *DocumentSequenceDeleteOne {
+	return c.DeleteOneID(ds.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DocumentSequenceClient) DeleteOneID(id uuid.UUID) *DocumentSequenceDeleteOne {
+	builder := c.Delete().Where(documentsequence.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DocumentSequenceDeleteOne{builder}
+}
+
+// Query returns a query builder for DocumentSequence.
+func (c *DocumentSequenceClient) Query() *DocumentSequenceQuery {
+	return &DocumentSequenceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDocumentSequence},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DocumentSequence entity by its id.
+func (c *DocumentSequenceClient) Get(ctx context.Context, id uuid.UUID) (*DocumentSequence, error) {
+	return c.Query().Where(documentsequence.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DocumentSequenceClient) GetX(ctx context.Context, id uuid.UUID) *DocumentSequence {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *DocumentSequenceClient) Hooks() []Hook {
+	return c.hooks.DocumentSequence
+}
+
+// Interceptors returns the client interceptors.
+func (c *DocumentSequenceClient) Interceptors() []Interceptor {
+	return c.inters.DocumentSequence
+}
+
+func (c *DocumentSequenceClient) mutate(ctx context.Context, m *DocumentSequenceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DocumentSequenceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DocumentSequenceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DocumentSequenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DocumentSequenceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DocumentSequence mutation op: %q", m.Op())
 	}
 }
 
@@ -1575,6 +1726,22 @@ func (c *PermissionClient) GetX(ctx context.Context, id uuid.UUID) *Permission {
 	return obj
 }
 
+// QueryRoles queries the roles edge of a Permission.
+func (c *PermissionClient) QueryRoles(pe *Permission) *RoleQuery {
+	query := (&RoleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pe.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(permission.Table, permission.FieldID, id),
+			sqlgraph.To(role.Table, role.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, permission.RolesTable, permission.RolesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pe.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryRolePermissions queries the role_permissions edge of a Permission.
 func (c *PermissionClient) QueryRolePermissions(pe *Permission) *RolePermissionQuery {
 	query := (&RolePermissionClient{config: c.config}).Query()
@@ -1583,7 +1750,7 @@ func (c *PermissionClient) QueryRolePermissions(pe *Permission) *RolePermissionQ
 		step := sqlgraph.NewStep(
 			sqlgraph.From(permission.Table, permission.FieldID, id),
 			sqlgraph.To(rolepermission.Table, rolepermission.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, permission.RolePermissionsTable, permission.RolePermissionsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, permission.RolePermissionsTable, permission.RolePermissionsColumn),
 		)
 		fromV = sqlgraph.Neighbors(pe.driver.Dialect(), step)
 		return fromV, nil
@@ -1991,6 +2158,155 @@ func (c *ProjectMemberClient) mutate(ctx context.Context, m *ProjectMemberMutati
 		return (&ProjectMemberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ProjectMember mutation op: %q", m.Op())
+	}
+}
+
+// ProjectsUserClient is a client for the ProjectsUser schema.
+type ProjectsUserClient struct {
+	config
+}
+
+// NewProjectsUserClient returns a client for the ProjectsUser from the given config.
+func NewProjectsUserClient(c config) *ProjectsUserClient {
+	return &ProjectsUserClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `projectsuser.Hooks(f(g(h())))`.
+func (c *ProjectsUserClient) Use(hooks ...Hook) {
+	c.hooks.ProjectsUser = append(c.hooks.ProjectsUser, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `projectsuser.Intercept(f(g(h())))`.
+func (c *ProjectsUserClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProjectsUser = append(c.inters.ProjectsUser, interceptors...)
+}
+
+// Create returns a builder for creating a ProjectsUser entity.
+func (c *ProjectsUserClient) Create() *ProjectsUserCreate {
+	mutation := newProjectsUserMutation(c.config, OpCreate)
+	return &ProjectsUserCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProjectsUser entities.
+func (c *ProjectsUserClient) CreateBulk(builders ...*ProjectsUserCreate) *ProjectsUserCreateBulk {
+	return &ProjectsUserCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProjectsUserClient) MapCreateBulk(slice any, setFunc func(*ProjectsUserCreate, int)) *ProjectsUserCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProjectsUserCreateBulk{err: fmt.Errorf("calling to ProjectsUserClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProjectsUserCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProjectsUserCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProjectsUser.
+func (c *ProjectsUserClient) Update() *ProjectsUserUpdate {
+	mutation := newProjectsUserMutation(c.config, OpUpdate)
+	return &ProjectsUserUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProjectsUserClient) UpdateOne(pu *ProjectsUser) *ProjectsUserUpdateOne {
+	mutation := newProjectsUserMutation(c.config, OpUpdateOne, withProjectsUser(pu))
+	return &ProjectsUserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProjectsUserClient) UpdateOneID(id uuid.UUID) *ProjectsUserUpdateOne {
+	mutation := newProjectsUserMutation(c.config, OpUpdateOne, withProjectsUserID(id))
+	return &ProjectsUserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProjectsUser.
+func (c *ProjectsUserClient) Delete() *ProjectsUserDelete {
+	mutation := newProjectsUserMutation(c.config, OpDelete)
+	return &ProjectsUserDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProjectsUserClient) DeleteOne(pu *ProjectsUser) *ProjectsUserDeleteOne {
+	return c.DeleteOneID(pu.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProjectsUserClient) DeleteOneID(id uuid.UUID) *ProjectsUserDeleteOne {
+	builder := c.Delete().Where(projectsuser.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProjectsUserDeleteOne{builder}
+}
+
+// Query returns a query builder for ProjectsUser.
+func (c *ProjectsUserClient) Query() *ProjectsUserQuery {
+	return &ProjectsUserQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProjectsUser},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProjectsUser entity by its id.
+func (c *ProjectsUserClient) Get(ctx context.Context, id uuid.UUID) (*ProjectsUser, error) {
+	return c.Query().Where(projectsuser.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProjectsUserClient) GetX(ctx context.Context, id uuid.UUID) *ProjectsUser {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRoleAssignments queries the role_assignments edge of a ProjectsUser.
+func (c *ProjectsUserClient) QueryRoleAssignments(pu *ProjectsUser) *UserRoleAssignmentQuery {
+	query := (&UserRoleAssignmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pu.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(projectsuser.Table, projectsuser.FieldID, id),
+			sqlgraph.To(userroleassignment.Table, userroleassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, projectsuser.RoleAssignmentsTable, projectsuser.RoleAssignmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pu.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProjectsUserClient) Hooks() []Hook {
+	return c.hooks.ProjectsUser
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProjectsUserClient) Interceptors() []Interceptor {
+	return c.inters.ProjectsUser
+}
+
+func (c *ProjectsUserClient) mutate(ctx context.Context, m *ProjectsUserMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProjectsUserCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProjectsUserUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProjectsUserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProjectsUserDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProjectsUser mutation op: %q", m.Op())
 	}
 }
 
@@ -2885,7 +3201,7 @@ func (c *RoleClient) UpdateOne(r *Role) *RoleUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *RoleClient) UpdateOneID(id string) *RoleUpdateOne {
+func (c *RoleClient) UpdateOneID(id uuid.UUID) *RoleUpdateOne {
 	mutation := newRoleMutation(c.config, OpUpdateOne, withRoleID(id))
 	return &RoleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -2902,7 +3218,7 @@ func (c *RoleClient) DeleteOne(r *Role) *RoleDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *RoleClient) DeleteOneID(id string) *RoleDeleteOne {
+func (c *RoleClient) DeleteOneID(id uuid.UUID) *RoleDeleteOne {
 	builder := c.Delete().Where(role.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -2919,12 +3235,12 @@ func (c *RoleClient) Query() *RoleQuery {
 }
 
 // Get returns a Role entity by its id.
-func (c *RoleClient) Get(ctx context.Context, id string) (*Role, error) {
+func (c *RoleClient) Get(ctx context.Context, id uuid.UUID) (*Role, error) {
 	return c.Query().Where(role.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *RoleClient) GetX(ctx context.Context, id string) *Role {
+func (c *RoleClient) GetX(ctx context.Context, id uuid.UUID) *Role {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -2932,15 +3248,31 @@ func (c *RoleClient) GetX(ctx context.Context, id string) *Role {
 	return obj
 }
 
-// QueryUserRoles queries the user_roles edge of a Role.
-func (c *RoleClient) QueryUserRoles(r *Role) *UserRoleQuery {
-	query := (&UserRoleClient{config: c.config}).Query()
+// QueryPermissions queries the permissions edge of a Role.
+func (c *RoleClient) QueryPermissions(r *Role) *PermissionQuery {
+	query := (&PermissionClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := r.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(role.Table, role.FieldID, id),
-			sqlgraph.To(userrole.Table, userrole.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, role.UserRolesTable, role.UserRolesColumn),
+			sqlgraph.To(permission.Table, permission.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, role.PermissionsTable, role.PermissionsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUserAssignments queries the user_assignments edge of a Role.
+func (c *RoleClient) QueryUserAssignments(r *Role) *UserRoleAssignmentQuery {
+	query := (&UserRoleAssignmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(role.Table, role.FieldID, id),
+			sqlgraph.To(userroleassignment.Table, userroleassignment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, role.UserAssignmentsTable, role.UserAssignmentsColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -2956,7 +3288,7 @@ func (c *RoleClient) QueryRolePermissions(r *Role) *RolePermissionQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(role.Table, role.FieldID, id),
 			sqlgraph.To(rolepermission.Table, rolepermission.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, role.RolePermissionsTable, role.RolePermissionsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, role.RolePermissionsTable, role.RolePermissionsColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -3050,7 +3382,7 @@ func (c *RolePermissionClient) UpdateOne(rp *RolePermission) *RolePermissionUpda
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *RolePermissionClient) UpdateOneID(id uuid.UUID) *RolePermissionUpdateOne {
+func (c *RolePermissionClient) UpdateOneID(id int) *RolePermissionUpdateOne {
 	mutation := newRolePermissionMutation(c.config, OpUpdateOne, withRolePermissionID(id))
 	return &RolePermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -3067,7 +3399,7 @@ func (c *RolePermissionClient) DeleteOne(rp *RolePermission) *RolePermissionDele
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *RolePermissionClient) DeleteOneID(id uuid.UUID) *RolePermissionDeleteOne {
+func (c *RolePermissionClient) DeleteOneID(id int) *RolePermissionDeleteOne {
 	builder := c.Delete().Where(rolepermission.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -3084,12 +3416,12 @@ func (c *RolePermissionClient) Query() *RolePermissionQuery {
 }
 
 // Get returns a RolePermission entity by its id.
-func (c *RolePermissionClient) Get(ctx context.Context, id uuid.UUID) (*RolePermission, error) {
+func (c *RolePermissionClient) Get(ctx context.Context, id int) (*RolePermission, error) {
 	return c.Query().Where(rolepermission.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *RolePermissionClient) GetX(ctx context.Context, id uuid.UUID) *RolePermission {
+func (c *RolePermissionClient) GetX(ctx context.Context, id int) *RolePermission {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -3105,7 +3437,7 @@ func (c *RolePermissionClient) QueryRole(rp *RolePermission) *RoleQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(rolepermission.Table, rolepermission.FieldID, id),
 			sqlgraph.To(role.Table, role.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, rolepermission.RoleTable, rolepermission.RoleColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, rolepermission.RoleTable, rolepermission.RoleColumn),
 		)
 		fromV = sqlgraph.Neighbors(rp.driver.Dialect(), step)
 		return fromV, nil
@@ -3121,7 +3453,7 @@ func (c *RolePermissionClient) QueryPermission(rp *RolePermission) *PermissionQu
 		step := sqlgraph.NewStep(
 			sqlgraph.From(rolepermission.Table, rolepermission.FieldID, id),
 			sqlgraph.To(permission.Table, permission.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, rolepermission.PermissionTable, rolepermission.PermissionColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, rolepermission.PermissionTable, rolepermission.PermissionColumn),
 		)
 		fromV = sqlgraph.Neighbors(rp.driver.Dialect(), step)
 		return fromV, nil
@@ -4474,107 +4806,107 @@ func (c *TenderMeetingClient) mutate(ctx context.Context, m *TenderMeetingMutati
 	}
 }
 
-// UserRoleClient is a client for the UserRole schema.
-type UserRoleClient struct {
+// UserRoleAssignmentClient is a client for the UserRoleAssignment schema.
+type UserRoleAssignmentClient struct {
 	config
 }
 
-// NewUserRoleClient returns a client for the UserRole from the given config.
-func NewUserRoleClient(c config) *UserRoleClient {
-	return &UserRoleClient{config: c}
+// NewUserRoleAssignmentClient returns a client for the UserRoleAssignment from the given config.
+func NewUserRoleAssignmentClient(c config) *UserRoleAssignmentClient {
+	return &UserRoleAssignmentClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `userrole.Hooks(f(g(h())))`.
-func (c *UserRoleClient) Use(hooks ...Hook) {
-	c.hooks.UserRole = append(c.hooks.UserRole, hooks...)
+// A call to `Use(f, g, h)` equals to `userroleassignment.Hooks(f(g(h())))`.
+func (c *UserRoleAssignmentClient) Use(hooks ...Hook) {
+	c.hooks.UserRoleAssignment = append(c.hooks.UserRoleAssignment, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `userrole.Intercept(f(g(h())))`.
-func (c *UserRoleClient) Intercept(interceptors ...Interceptor) {
-	c.inters.UserRole = append(c.inters.UserRole, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `userroleassignment.Intercept(f(g(h())))`.
+func (c *UserRoleAssignmentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserRoleAssignment = append(c.inters.UserRoleAssignment, interceptors...)
 }
 
-// Create returns a builder for creating a UserRole entity.
-func (c *UserRoleClient) Create() *UserRoleCreate {
-	mutation := newUserRoleMutation(c.config, OpCreate)
-	return &UserRoleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a UserRoleAssignment entity.
+func (c *UserRoleAssignmentClient) Create() *UserRoleAssignmentCreate {
+	mutation := newUserRoleAssignmentMutation(c.config, OpCreate)
+	return &UserRoleAssignmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of UserRole entities.
-func (c *UserRoleClient) CreateBulk(builders ...*UserRoleCreate) *UserRoleCreateBulk {
-	return &UserRoleCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of UserRoleAssignment entities.
+func (c *UserRoleAssignmentClient) CreateBulk(builders ...*UserRoleAssignmentCreate) *UserRoleAssignmentCreateBulk {
+	return &UserRoleAssignmentCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *UserRoleClient) MapCreateBulk(slice any, setFunc func(*UserRoleCreate, int)) *UserRoleCreateBulk {
+func (c *UserRoleAssignmentClient) MapCreateBulk(slice any, setFunc func(*UserRoleAssignmentCreate, int)) *UserRoleAssignmentCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &UserRoleCreateBulk{err: fmt.Errorf("calling to UserRoleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &UserRoleAssignmentCreateBulk{err: fmt.Errorf("calling to UserRoleAssignmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*UserRoleCreate, rv.Len())
+	builders := make([]*UserRoleAssignmentCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &UserRoleCreateBulk{config: c.config, builders: builders}
+	return &UserRoleAssignmentCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for UserRole.
-func (c *UserRoleClient) Update() *UserRoleUpdate {
-	mutation := newUserRoleMutation(c.config, OpUpdate)
-	return &UserRoleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for UserRoleAssignment.
+func (c *UserRoleAssignmentClient) Update() *UserRoleAssignmentUpdate {
+	mutation := newUserRoleAssignmentMutation(c.config, OpUpdate)
+	return &UserRoleAssignmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *UserRoleClient) UpdateOne(ur *UserRole) *UserRoleUpdateOne {
-	mutation := newUserRoleMutation(c.config, OpUpdateOne, withUserRole(ur))
-	return &UserRoleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *UserRoleAssignmentClient) UpdateOne(ura *UserRoleAssignment) *UserRoleAssignmentUpdateOne {
+	mutation := newUserRoleAssignmentMutation(c.config, OpUpdateOne, withUserRoleAssignment(ura))
+	return &UserRoleAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *UserRoleClient) UpdateOneID(id uuid.UUID) *UserRoleUpdateOne {
-	mutation := newUserRoleMutation(c.config, OpUpdateOne, withUserRoleID(id))
-	return &UserRoleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *UserRoleAssignmentClient) UpdateOneID(id uuid.UUID) *UserRoleAssignmentUpdateOne {
+	mutation := newUserRoleAssignmentMutation(c.config, OpUpdateOne, withUserRoleAssignmentID(id))
+	return &UserRoleAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for UserRole.
-func (c *UserRoleClient) Delete() *UserRoleDelete {
-	mutation := newUserRoleMutation(c.config, OpDelete)
-	return &UserRoleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for UserRoleAssignment.
+func (c *UserRoleAssignmentClient) Delete() *UserRoleAssignmentDelete {
+	mutation := newUserRoleAssignmentMutation(c.config, OpDelete)
+	return &UserRoleAssignmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *UserRoleClient) DeleteOne(ur *UserRole) *UserRoleDeleteOne {
-	return c.DeleteOneID(ur.ID)
+func (c *UserRoleAssignmentClient) DeleteOne(ura *UserRoleAssignment) *UserRoleAssignmentDeleteOne {
+	return c.DeleteOneID(ura.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *UserRoleClient) DeleteOneID(id uuid.UUID) *UserRoleDeleteOne {
-	builder := c.Delete().Where(userrole.ID(id))
+func (c *UserRoleAssignmentClient) DeleteOneID(id uuid.UUID) *UserRoleAssignmentDeleteOne {
+	builder := c.Delete().Where(userroleassignment.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &UserRoleDeleteOne{builder}
+	return &UserRoleAssignmentDeleteOne{builder}
 }
 
-// Query returns a query builder for UserRole.
-func (c *UserRoleClient) Query() *UserRoleQuery {
-	return &UserRoleQuery{
+// Query returns a query builder for UserRoleAssignment.
+func (c *UserRoleAssignmentClient) Query() *UserRoleAssignmentQuery {
+	return &UserRoleAssignmentQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeUserRole},
+		ctx:    &QueryContext{Type: TypeUserRoleAssignment},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a UserRole entity by its id.
-func (c *UserRoleClient) Get(ctx context.Context, id uuid.UUID) (*UserRole, error) {
-	return c.Query().Where(userrole.ID(id)).Only(ctx)
+// Get returns a UserRoleAssignment entity by its id.
+func (c *UserRoleAssignmentClient) Get(ctx context.Context, id uuid.UUID) (*UserRoleAssignment, error) {
+	return c.Query().Where(userroleassignment.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *UserRoleClient) GetX(ctx context.Context, id uuid.UUID) *UserRole {
+func (c *UserRoleAssignmentClient) GetX(ctx context.Context, id uuid.UUID) *UserRoleAssignment {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -4582,61 +4914,103 @@ func (c *UserRoleClient) GetX(ctx context.Context, id uuid.UUID) *UserRole {
 	return obj
 }
 
-// QueryRole queries the role edge of a UserRole.
-func (c *UserRoleClient) QueryRole(ur *UserRole) *RoleQuery {
+// QueryUser queries the user edge of a UserRoleAssignment.
+func (c *UserRoleAssignmentClient) QueryUser(ura *UserRoleAssignment) *ProjectsUserQuery {
+	query := (&ProjectsUserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ura.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userroleassignment.Table, userroleassignment.FieldID, id),
+			sqlgraph.To(projectsuser.Table, projectsuser.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, userroleassignment.UserTable, userroleassignment.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(ura.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRole queries the role edge of a UserRoleAssignment.
+func (c *UserRoleAssignmentClient) QueryRole(ura *UserRoleAssignment) *RoleQuery {
 	query := (&RoleClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := ur.ID
+		id := ura.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(userrole.Table, userrole.FieldID, id),
+			sqlgraph.From(userroleassignment.Table, userroleassignment.FieldID, id),
 			sqlgraph.To(role.Table, role.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, userrole.RoleTable, userrole.RoleColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, userroleassignment.RoleTable, userroleassignment.RoleColumn),
 		)
-		fromV = sqlgraph.Neighbors(ur.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(ura.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *UserRoleClient) Hooks() []Hook {
-	return c.hooks.UserRole
+func (c *UserRoleAssignmentClient) Hooks() []Hook {
+	return c.hooks.UserRoleAssignment
 }
 
 // Interceptors returns the client interceptors.
-func (c *UserRoleClient) Interceptors() []Interceptor {
-	return c.inters.UserRole
+func (c *UserRoleAssignmentClient) Interceptors() []Interceptor {
+	return c.inters.UserRoleAssignment
 }
 
-func (c *UserRoleClient) mutate(ctx context.Context, m *UserRoleMutation) (Value, error) {
+func (c *UserRoleAssignmentClient) mutate(ctx context.Context, m *UserRoleAssignmentMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&UserRoleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&UserRoleAssignmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&UserRoleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&UserRoleAssignmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&UserRoleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&UserRoleAssignmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&UserRoleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&UserRoleAssignmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown UserRole mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown UserRoleAssignment mutation op: %q", m.Op())
 	}
 }
 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Activity, Attachment, Comment, FieldKey, FieldKeyAudit, Milestone, OutboxEvent,
-		Permission, Project, ProjectMember, QACriterion, QADefect, QAInvite, QAResult,
-		QASession, QATemplate, Role, RolePermission, Task, TaskDependency, Tender,
-		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
-		TenderMeeting, UserRole []ent.Hook
+		Activity, Attachment, Comment, DocumentSequence, FieldKey, FieldKeyAudit,
+		Milestone, OutboxEvent, Permission, Project, ProjectMember, ProjectsUser,
+		QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate, Role,
+		RolePermission, Task, TaskDependency, Tender, TenderCommittee,
+		TenderCommitteeMember, TenderDocument, TenderEvaluation, TenderMeeting,
+		UserRoleAssignment []ent.Hook
 	}
 	inters struct {
-		Activity, Attachment, Comment, FieldKey, FieldKeyAudit, Milestone, OutboxEvent,
-		Permission, Project, ProjectMember, QACriterion, QADefect, QAInvite, QAResult,
-		QASession, QATemplate, Role, RolePermission, Task, TaskDependency, Tender,
-		TenderCommittee, TenderCommitteeMember, TenderDocument, TenderEvaluation,
-		TenderMeeting, UserRole []ent.Interceptor
+		Activity, Attachment, Comment, DocumentSequence, FieldKey, FieldKeyAudit,
+		Milestone, OutboxEvent, Permission, Project, ProjectMember, ProjectsUser,
+		QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate, Role,
+		RolePermission, Task, TaskDependency, Tender, TenderCommittee,
+		TenderCommitteeMember, TenderDocument, TenderEvaluation, TenderMeeting,
+		UserRoleAssignment []ent.Interceptor
 	}
 )
+
+// ExecContext allows calling the underlying ExecContext method of the driver if it is supported by it.
+// See, database/sql#DB.ExecContext for more information.
+func (c *config) ExecContext(ctx context.Context, query string, args ...any) (stdsql.Result, error) {
+	ex, ok := c.driver.(interface {
+		ExecContext(context.Context, string, ...any) (stdsql.Result, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("Driver.ExecContext is not supported")
+	}
+	return ex.ExecContext(ctx, query, args...)
+}
+
+// QueryContext allows calling the underlying QueryContext method of the driver if it is supported by it.
+// See, database/sql#DB.QueryContext for more information.
+func (c *config) QueryContext(ctx context.Context, query string, args ...any) (*stdsql.Rows, error) {
+	q, ok := c.driver.(interface {
+		QueryContext(context.Context, string, ...any) (*stdsql.Rows, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("Driver.QueryContext is not supported")
+	}
+	return q.QueryContext(ctx, query, args...)
+}

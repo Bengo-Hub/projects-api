@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/bengobox/projects-service/internal/ent/tender"
@@ -20,6 +22,7 @@ type TenderMeetingCreate struct {
 	config
 	mutation *TenderMeetingMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetTenderID sets the "tender_id" field.
@@ -238,6 +241,7 @@ func (tmc *TenderMeetingCreate) createSpec() (*TenderMeeting, *sqlgraph.CreateSp
 		_node = &TenderMeeting{config: tmc.config}
 		_spec = sqlgraph.NewCreateSpec(tendermeeting.Table, sqlgraph.NewFieldSpec(tendermeeting.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = tmc.conflict
 	if id, ok := tmc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -294,11 +298,384 @@ func (tmc *TenderMeetingCreate) createSpec() (*TenderMeeting, *sqlgraph.CreateSp
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.TenderMeeting.Create().
+//		SetTenderID(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderMeetingUpsert) {
+//			SetTenderID(v+v).
+//		}).
+//		Exec(ctx)
+func (tmc *TenderMeetingCreate) OnConflict(opts ...sql.ConflictOption) *TenderMeetingUpsertOne {
+	tmc.conflict = opts
+	return &TenderMeetingUpsertOne{
+		create: tmc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.TenderMeeting.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tmc *TenderMeetingCreate) OnConflictColumns(columns ...string) *TenderMeetingUpsertOne {
+	tmc.conflict = append(tmc.conflict, sql.ConflictColumns(columns...))
+	return &TenderMeetingUpsertOne{
+		create: tmc,
+	}
+}
+
+type (
+	// TenderMeetingUpsertOne is the builder for "upsert"-ing
+	//  one TenderMeeting node.
+	TenderMeetingUpsertOne struct {
+		create *TenderMeetingCreate
+	}
+
+	// TenderMeetingUpsert is the "OnConflict" setter.
+	TenderMeetingUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetTenderID sets the "tender_id" field.
+func (u *TenderMeetingUpsert) SetTenderID(v uuid.UUID) *TenderMeetingUpsert {
+	u.Set(tendermeeting.FieldTenderID, v)
+	return u
+}
+
+// UpdateTenderID sets the "tender_id" field to the value that was provided on create.
+func (u *TenderMeetingUpsert) UpdateTenderID() *TenderMeetingUpsert {
+	u.SetExcluded(tendermeeting.FieldTenderID)
+	return u
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderMeetingUpsert) SetTenantID(v uuid.UUID) *TenderMeetingUpsert {
+	u.Set(tendermeeting.FieldTenantID, v)
+	return u
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderMeetingUpsert) UpdateTenantID() *TenderMeetingUpsert {
+	u.SetExcluded(tendermeeting.FieldTenantID)
+	return u
+}
+
+// SetTitle sets the "title" field.
+func (u *TenderMeetingUpsert) SetTitle(v string) *TenderMeetingUpsert {
+	u.Set(tendermeeting.FieldTitle, v)
+	return u
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *TenderMeetingUpsert) UpdateTitle() *TenderMeetingUpsert {
+	u.SetExcluded(tendermeeting.FieldTitle)
+	return u
+}
+
+// SetScheduledAt sets the "scheduled_at" field.
+func (u *TenderMeetingUpsert) SetScheduledAt(v time.Time) *TenderMeetingUpsert {
+	u.Set(tendermeeting.FieldScheduledAt, v)
+	return u
+}
+
+// UpdateScheduledAt sets the "scheduled_at" field to the value that was provided on create.
+func (u *TenderMeetingUpsert) UpdateScheduledAt() *TenderMeetingUpsert {
+	u.SetExcluded(tendermeeting.FieldScheduledAt)
+	return u
+}
+
+// SetPlatform sets the "platform" field.
+func (u *TenderMeetingUpsert) SetPlatform(v string) *TenderMeetingUpsert {
+	u.Set(tendermeeting.FieldPlatform, v)
+	return u
+}
+
+// UpdatePlatform sets the "platform" field to the value that was provided on create.
+func (u *TenderMeetingUpsert) UpdatePlatform() *TenderMeetingUpsert {
+	u.SetExcluded(tendermeeting.FieldPlatform)
+	return u
+}
+
+// SetMeetingURL sets the "meeting_url" field.
+func (u *TenderMeetingUpsert) SetMeetingURL(v string) *TenderMeetingUpsert {
+	u.Set(tendermeeting.FieldMeetingURL, v)
+	return u
+}
+
+// UpdateMeetingURL sets the "meeting_url" field to the value that was provided on create.
+func (u *TenderMeetingUpsert) UpdateMeetingURL() *TenderMeetingUpsert {
+	u.SetExcluded(tendermeeting.FieldMeetingURL)
+	return u
+}
+
+// ClearMeetingURL clears the value of the "meeting_url" field.
+func (u *TenderMeetingUpsert) ClearMeetingURL() *TenderMeetingUpsert {
+	u.SetNull(tendermeeting.FieldMeetingURL)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *TenderMeetingUpsert) SetNotes(v string) *TenderMeetingUpsert {
+	u.Set(tendermeeting.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *TenderMeetingUpsert) UpdateNotes() *TenderMeetingUpsert {
+	u.SetExcluded(tendermeeting.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *TenderMeetingUpsert) ClearNotes() *TenderMeetingUpsert {
+	u.SetNull(tendermeeting.FieldNotes)
+	return u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *TenderMeetingUpsert) SetCreatedBy(v uuid.UUID) *TenderMeetingUpsert {
+	u.Set(tendermeeting.FieldCreatedBy, v)
+	return u
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *TenderMeetingUpsert) UpdateCreatedBy() *TenderMeetingUpsert {
+	u.SetExcluded(tendermeeting.FieldCreatedBy)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.TenderMeeting.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tendermeeting.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderMeetingUpsertOne) UpdateNewValues() *TenderMeetingUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(tendermeeting.FieldID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(tendermeeting.FieldCreatedAt)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.TenderMeeting.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *TenderMeetingUpsertOne) Ignore() *TenderMeetingUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderMeetingUpsertOne) DoNothing() *TenderMeetingUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderMeetingCreate.OnConflict
+// documentation for more info.
+func (u *TenderMeetingUpsertOne) Update(set func(*TenderMeetingUpsert)) *TenderMeetingUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderMeetingUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenderID sets the "tender_id" field.
+func (u *TenderMeetingUpsertOne) SetTenderID(v uuid.UUID) *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetTenderID(v)
+	})
+}
+
+// UpdateTenderID sets the "tender_id" field to the value that was provided on create.
+func (u *TenderMeetingUpsertOne) UpdateTenderID() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateTenderID()
+	})
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderMeetingUpsertOne) SetTenantID(v uuid.UUID) *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderMeetingUpsertOne) UpdateTenantID() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetTitle sets the "title" field.
+func (u *TenderMeetingUpsertOne) SetTitle(v string) *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *TenderMeetingUpsertOne) UpdateTitle() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetScheduledAt sets the "scheduled_at" field.
+func (u *TenderMeetingUpsertOne) SetScheduledAt(v time.Time) *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetScheduledAt(v)
+	})
+}
+
+// UpdateScheduledAt sets the "scheduled_at" field to the value that was provided on create.
+func (u *TenderMeetingUpsertOne) UpdateScheduledAt() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateScheduledAt()
+	})
+}
+
+// SetPlatform sets the "platform" field.
+func (u *TenderMeetingUpsertOne) SetPlatform(v string) *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetPlatform(v)
+	})
+}
+
+// UpdatePlatform sets the "platform" field to the value that was provided on create.
+func (u *TenderMeetingUpsertOne) UpdatePlatform() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdatePlatform()
+	})
+}
+
+// SetMeetingURL sets the "meeting_url" field.
+func (u *TenderMeetingUpsertOne) SetMeetingURL(v string) *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetMeetingURL(v)
+	})
+}
+
+// UpdateMeetingURL sets the "meeting_url" field to the value that was provided on create.
+func (u *TenderMeetingUpsertOne) UpdateMeetingURL() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateMeetingURL()
+	})
+}
+
+// ClearMeetingURL clears the value of the "meeting_url" field.
+func (u *TenderMeetingUpsertOne) ClearMeetingURL() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.ClearMeetingURL()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *TenderMeetingUpsertOne) SetNotes(v string) *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *TenderMeetingUpsertOne) UpdateNotes() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *TenderMeetingUpsertOne) ClearNotes() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *TenderMeetingUpsertOne) SetCreatedBy(v uuid.UUID) *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *TenderMeetingUpsertOne) UpdateCreatedBy() *TenderMeetingUpsertOne {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderMeetingUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderMeetingCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderMeetingUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *TenderMeetingUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: TenderMeetingUpsertOne.ID is not supported by MySQL driver. Use TenderMeetingUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *TenderMeetingUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // TenderMeetingCreateBulk is the builder for creating many TenderMeeting entities in bulk.
 type TenderMeetingCreateBulk struct {
 	config
 	err      error
 	builders []*TenderMeetingCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the TenderMeeting entities in the database.
@@ -328,6 +705,7 @@ func (tmcb *TenderMeetingCreateBulk) Save(ctx context.Context) ([]*TenderMeeting
 					_, err = mutators[i+1].Mutate(root, tmcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = tmcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, tmcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -374,6 +752,249 @@ func (tmcb *TenderMeetingCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (tmcb *TenderMeetingCreateBulk) ExecX(ctx context.Context) {
 	if err := tmcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.TenderMeeting.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.TenderMeetingUpsert) {
+//			SetTenderID(v+v).
+//		}).
+//		Exec(ctx)
+func (tmcb *TenderMeetingCreateBulk) OnConflict(opts ...sql.ConflictOption) *TenderMeetingUpsertBulk {
+	tmcb.conflict = opts
+	return &TenderMeetingUpsertBulk{
+		create: tmcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.TenderMeeting.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (tmcb *TenderMeetingCreateBulk) OnConflictColumns(columns ...string) *TenderMeetingUpsertBulk {
+	tmcb.conflict = append(tmcb.conflict, sql.ConflictColumns(columns...))
+	return &TenderMeetingUpsertBulk{
+		create: tmcb,
+	}
+}
+
+// TenderMeetingUpsertBulk is the builder for "upsert"-ing
+// a bulk of TenderMeeting nodes.
+type TenderMeetingUpsertBulk struct {
+	create *TenderMeetingCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.TenderMeeting.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(tendermeeting.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *TenderMeetingUpsertBulk) UpdateNewValues() *TenderMeetingUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(tendermeeting.FieldID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(tendermeeting.FieldCreatedAt)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.TenderMeeting.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *TenderMeetingUpsertBulk) Ignore() *TenderMeetingUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *TenderMeetingUpsertBulk) DoNothing() *TenderMeetingUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the TenderMeetingCreateBulk.OnConflict
+// documentation for more info.
+func (u *TenderMeetingUpsertBulk) Update(set func(*TenderMeetingUpsert)) *TenderMeetingUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&TenderMeetingUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetTenderID sets the "tender_id" field.
+func (u *TenderMeetingUpsertBulk) SetTenderID(v uuid.UUID) *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetTenderID(v)
+	})
+}
+
+// UpdateTenderID sets the "tender_id" field to the value that was provided on create.
+func (u *TenderMeetingUpsertBulk) UpdateTenderID() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateTenderID()
+	})
+}
+
+// SetTenantID sets the "tenant_id" field.
+func (u *TenderMeetingUpsertBulk) SetTenantID(v uuid.UUID) *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetTenantID(v)
+	})
+}
+
+// UpdateTenantID sets the "tenant_id" field to the value that was provided on create.
+func (u *TenderMeetingUpsertBulk) UpdateTenantID() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateTenantID()
+	})
+}
+
+// SetTitle sets the "title" field.
+func (u *TenderMeetingUpsertBulk) SetTitle(v string) *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetTitle(v)
+	})
+}
+
+// UpdateTitle sets the "title" field to the value that was provided on create.
+func (u *TenderMeetingUpsertBulk) UpdateTitle() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateTitle()
+	})
+}
+
+// SetScheduledAt sets the "scheduled_at" field.
+func (u *TenderMeetingUpsertBulk) SetScheduledAt(v time.Time) *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetScheduledAt(v)
+	})
+}
+
+// UpdateScheduledAt sets the "scheduled_at" field to the value that was provided on create.
+func (u *TenderMeetingUpsertBulk) UpdateScheduledAt() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateScheduledAt()
+	})
+}
+
+// SetPlatform sets the "platform" field.
+func (u *TenderMeetingUpsertBulk) SetPlatform(v string) *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetPlatform(v)
+	})
+}
+
+// UpdatePlatform sets the "platform" field to the value that was provided on create.
+func (u *TenderMeetingUpsertBulk) UpdatePlatform() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdatePlatform()
+	})
+}
+
+// SetMeetingURL sets the "meeting_url" field.
+func (u *TenderMeetingUpsertBulk) SetMeetingURL(v string) *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetMeetingURL(v)
+	})
+}
+
+// UpdateMeetingURL sets the "meeting_url" field to the value that was provided on create.
+func (u *TenderMeetingUpsertBulk) UpdateMeetingURL() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateMeetingURL()
+	})
+}
+
+// ClearMeetingURL clears the value of the "meeting_url" field.
+func (u *TenderMeetingUpsertBulk) ClearMeetingURL() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.ClearMeetingURL()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *TenderMeetingUpsertBulk) SetNotes(v string) *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *TenderMeetingUpsertBulk) UpdateNotes() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *TenderMeetingUpsertBulk) ClearNotes() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *TenderMeetingUpsertBulk) SetCreatedBy(v uuid.UUID) *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *TenderMeetingUpsertBulk) UpdateCreatedBy() *TenderMeetingUpsertBulk {
+	return u.Update(func(s *TenderMeetingUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// Exec executes the query.
+func (u *TenderMeetingUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the TenderMeetingCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for TenderMeetingCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *TenderMeetingUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

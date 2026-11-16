@@ -4,7 +4,6 @@ package marketflow
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,22 +12,34 @@ import (
 	"strings"
 	"time"
 
+	serviceclient "github.com/Bengo-Hub/shared-service-client"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 var ErrNotConfigured = errors.New("marketflow: not configured")
 
+// Client calls marketflow-api through the shared service client.
 type Client struct {
-	baseURL string
-	apiKey  string
-	http    *http.Client
+	apiKey string
+	sc     *serviceclient.Client
 }
 
+// NewClient builds the client; an empty URL leaves it disabled.
 func NewClient(baseURL, apiKey string) *Client {
-	return &Client{baseURL: strings.TrimRight(baseURL, "/"), apiKey: apiKey, http: &http.Client{Timeout: 8 * time.Second}}
+	baseURL = strings.TrimRight(baseURL, "/")
+	if baseURL == "" {
+		return &Client{apiKey: apiKey}
+	}
+	cfg := serviceclient.DefaultConfig(baseURL, "marketflow-api", zap.L().Named("marketflow"))
+	cfg.Timeout = 8 * time.Second
+	cfg.MaxElapsedTime = 3 * time.Second
+	return &Client{apiKey: apiKey, sc: serviceclient.New(cfg)}
 }
 
-func (c *Client) Enabled() bool { return c != nil && c.baseURL != "" && c.apiKey != "" }
+func (c *Client) Enabled() bool { return c != nil && c.sc != nil && c.apiKey != "" }
+
+func (c *Client) headers() map[string]string { return map[string]string{"X-API-Key": c.apiKey} }
 
 // Contact is the minimal CRM profile marketflow returns to sibling services.
 type Contact struct {
@@ -54,23 +65,17 @@ func (c *Client) SearchContacts(ctx context.Context, tenantID uuid.UUID, q strin
 		limit = 20
 	}
 	v := url.Values{"tenant_id": {tenantID.String()}, "q": {q}, "limit": {strconv.Itoa(limit)}}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/api/v1/internal/contacts/search?"+v.Encode(), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("X-API-Key", c.apiKey)
-	resp, err := c.http.Do(req)
+	resp, err := c.sc.Get(ctx, "/api/v1/internal/contacts/search?"+v.Encode(), c.headers())
 	if err != nil {
 		return nil, fmt.Errorf("marketflow: contact search: %w", err)
 	}
-	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("marketflow: contact search: status %d", resp.StatusCode)
 	}
 	var body struct {
 		Data []Contact `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+	if err := resp.DecodeJSON(&body); err != nil {
 		return nil, fmt.Errorf("marketflow: contact search: %w", err)
 	}
 	return body.Data, nil
@@ -99,16 +104,10 @@ func (c *Client) GetContact(ctx context.Context, tenantID, contactID uuid.UUID) 
 		return Contact{}, ErrNotConfigured
 	}
 	v := url.Values{"tenant_id": {tenantID.String()}}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/api/v1/internal/contacts/"+contactID.String()+"?"+v.Encode(), nil)
-	if err != nil {
-		return Contact{}, err
-	}
-	req.Header.Set("X-API-Key", c.apiKey)
-	resp, err := c.http.Do(req)
+	resp, err := c.sc.Get(ctx, "/api/v1/internal/contacts/"+contactID.String()+"?"+v.Encode(), c.headers())
 	if err != nil {
 		return Contact{}, fmt.Errorf("marketflow: get contact: %w", err)
 	}
-	defer resp.Body.Close()
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusNotFound:
@@ -117,7 +116,7 @@ func (c *Client) GetContact(ctx context.Context, tenantID, contactID uuid.UUID) 
 		return Contact{}, fmt.Errorf("marketflow: get contact: status %d", resp.StatusCode)
 	}
 	var out Contact
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+	if err := resp.DecodeJSON(&out); err != nil {
 		return Contact{}, fmt.Errorf("marketflow: get contact: %w", err)
 	}
 	return out, nil

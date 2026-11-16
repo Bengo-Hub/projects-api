@@ -1,40 +1,68 @@
 package router
 
 import (
-	ratelimit "github.com/Bengo-Hub/shared-ratelimit"
 	"net/http"
 	"strconv"
 	"time"
 
+	ratelimit "github.com/Bengo-Hub/shared-ratelimit"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
 	httpware "github.com/Bengo-Hub/httpware"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
+
+	"github.com/bengobox/projects-service/internal/http/authz"
 	handlers "github.com/bengobox/projects-service/internal/http/handlers"
 )
 
-func New(
-	log *zap.Logger,
-	health *handlers.HealthHandler,
-	userHandler *handlers.UserHandler,
-	projectHandler *handlers.ProjectHandler,
-	taskHandler *handlers.TaskHandler,
-	milestoneHandler *handlers.MilestoneHandler,
-	memberHandler *handlers.MemberHandler,
-	commentHandler *handlers.CommentHandler,
-	activityHandler *handlers.ActivityHandler,
-	tenderHandler *handlers.TenderHandler,
-	financialsHandler *handlers.FinancialsHandler,
-	authMiddleware *authclient.AuthMiddleware,
-	allowedOrigins []string,
-	limiter *ratelimit.Limiter,
-	tenantExport http.Handler,
-	crmLinks http.Handler,
-	qaR QARoutes,
-	platformR PlatformRoutes,
-) http.Handler {
+// Handlers are the route groups of the tenant API.
+type Handlers struct {
+	Health     *handlers.HealthHandler
+	RBAC       *handlers.RBACHandler
+	Projects   *handlers.ProjectHandler
+	Tasks      *handlers.TaskHandler
+	Milestones *handlers.MilestoneHandler
+	Members    *handlers.MemberHandler
+	Comments   *handlers.CommentHandler
+	Activity   *handlers.ActivityHandler
+	Tenders    *handlers.TenderHandler
+	Financials *handlers.FinancialsHandler
+}
+
+// Deps is everything the router needs.
+type Deps struct {
+	Log      *zap.Logger
+	Service  ServiceInfo
+	Handlers Handlers
+	// Authenticate validates the bearer token or API key (auth-client RequireAuth) and puts the
+	// claims in the context. Nil leaves every authenticated route answering 401.
+	Authenticate   func(http.Handler) http.Handler
+	AllowedOrigins []string
+	Limiter        *ratelimit.Limiter
+	// Access is the Layer 3 resolver (local RBAC, JIT) and Members the membership checker.
+	Access  authz.RBAC
+	Members authz.Members
+	// Tenants resolves a slug in the path of a service call.
+	Tenants      TenantLookup
+	TenantExport http.Handler
+	CRMLinks     http.Handler
+	QA           QARoutes
+	Platform     PlatformRoutes
+}
+
+// ServiceInfo is what GET / reports.
+type ServiceInfo struct {
+	Name    string `json:"service"`
+	Version string `json:"version"`
+}
+
+// New builds the HTTP router. Middleware order on the tenant API: per-IP rate limit, auth (JWT
+// or API key), service entitlement, subscription (mutations only), tenant guard, access (JIT
+// provisioning and local permissions), outlet context, then each route's permission gate.
+func New(d Deps) http.Handler {
+	log := d.Log
 	r := chi.NewRouter()
 
 	// Never chi RealIP: it trusts client-sent True-Client-IP/X-Forwarded-For.
@@ -44,138 +72,140 @@ func New(
 	r.Use(httpware.Logging(log))
 	r.Use(httpware.Recover(log))
 	r.Use(httpware.BypassForStreaming(middleware.Timeout(30 * time.Second)))
-	r.Use(httpware.CORS(httpware.StandardCORS(allowedOrigins, "X-QA-Access")))
-	// Per-IP abuse limit (projects had none); after CORS so 429s carry CORS headers.
-	if limiter != nil {
-		r.Use(limiter.Middleware(ratelimit.IPKey, 300, time.Minute))
+	r.Use(httpware.CORS(httpware.StandardCORS(d.AllowedOrigins, "X-QA-Access")))
+	// Per-IP abuse limit; after CORS so 429s carry CORS headers.
+	if d.Limiter != nil {
+		r.Use(d.Limiter.Middleware(ratelimit.IPKey, 300, time.Minute))
 	}
 
-	r.Get("/healthz", health.Liveness)
-	// Tenant export for auth-api's SSO tenant backups; the handler checks INTERNAL_SERVICE_KEY
-	// itself (httpware/tenantexport, Options.InternalKey).
-	if tenantExport != nil {
-		r.Get("/api/v1/s2s/tenant-export", tenantExport.ServeHTTP)
-	}
-	// marketflow's "does projects still link this CRM contact" check before it deletes an erased
-	// person's contact. Outside the authenticated /api/v1 group: the handler checks the service key
-	// (X-API-Key = INTERNAL_SERVICE_KEY) itself. Not mounted when no key is configured.
-	if crmLinks != nil {
-		r.Get("/api/v1/s2s/{tenant}/crm-links/{contactID}", crmLinks.ServeHTTP)
-	}
-	r.Get("/readyz", health.Readiness)
-	r.Get("/metrics", health.Metrics)
-
-	// QA invitees: the people a session owner invited by email, who may hold no account in the
-	// tenant. Outside the tenant JWT group; each handler proves the invite itself (an access token
-	// bound to one session), and only the SSO hand-over route needs a signed-in user.
-	if qaR.Invitee != nil {
-		var requireAuth func(http.Handler) http.Handler
-		if authMiddleware != nil {
-			requireAuth = authMiddleware.RequireAuth
+	authenticate := d.Authenticate
+	if authenticate == nil {
+		authenticate = func(http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				authz.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized", "code": "unauthorized"})
+			})
 		}
-		// The invitee routes are public (share code, OTP, PDF render), so they get their own
-		// tighter per-IP bucket on top of the global one.
-		r.Group(func(g chi.Router) {
-			if limiter != nil {
-				g.Use(limiter.MiddlewareWith(ratelimit.IPKey, ratelimit.Options{Name: "qa-invitee", Limit: 60, Window: time.Minute}))
-			}
-			qaR.Invitee.RegisterRoutes(g, requireAuth)
-		})
 	}
 
-	// Redirect root path to Swagger documentation
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/v1/docs/", http.StatusMovedPermanently)
+	r.Get("/healthz", d.Handlers.Health.Liveness)
+	r.Get("/readyz", d.Handlers.Health.Readiness)
+	r.Get("/metrics", d.Handlers.Health.Metrics)
+	// No Swagger UI is mounted, so the root answers what this is.
+	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
+		authz.WriteJSON(w, http.StatusOK, map[string]any{
+			"service": d.Service.Name, "version": d.Service.Version, "status": "ok",
+			"health": "/healthz", "ready": "/readyz", "api": "/api/v1/{tenant}",
+		})
 	})
 
-	r.Route("/api/v1", func(api chi.Router) {
-		// Optional outlet context — extracts X-Outlet-ID if present
-		api.Use(func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if outletID := httpware.OutletHeader(r); outletID != "" {
-					r = r.WithContext(httpware.WithOutletID(r.Context(), outletID))
-				}
-				next.ServeHTTP(w, r)
-			})
-		})
+	// Tenant export for auth-api's SSO tenant backups; the handler checks INTERNAL_SERVICE_KEY
+	// itself (httpware/tenantexport, Options.InternalKey).
+	if d.TenantExport != nil {
+		r.Get("/api/v1/s2s/tenant-export", d.TenantExport.ServeHTTP)
+	}
+	// marketflow's "does projects still link this CRM contact" check. Outside the authenticated
+	// group: the handler checks the service key itself and takes the tenant from the path.
+	if d.CRMLinks != nil {
+		r.Get("/api/v1/s2s/{tenant}/crm-links/{contactID}", d.CRMLinks.ServeHTTP)
+	}
 
-		// Apply auth middleware to all v1 routes
-		if authMiddleware != nil {
-			api.Use(authMiddleware.RequireAuth)
-			// Layer 1.5: the whole projects module (reads included) is closed to a tenant whose plan
-			// has no projects entitlement at all.
-			api.Use(authclient.RequireServiceAccess("projects"))
-			// Layer 2: Subscription + feature enforcement — mutations only (GET/HEAD/OPTIONS
-			// pass through). Exemption funnels through claims.IsGatingExempt() (platform owner /
-			// demo / service-charge / sub-exempt), uniform with the rest of the fleet — note a
-			// tenant superuser is NOT exempt. A mutating tenant must have an active subscription
-			// AND the project_management feature (the projects module's base entitlement).
-			api.Use(func(next http.Handler) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
-						next.ServeHTTP(w, r)
-						return
-					}
-					claims, ok := authclient.ClaimsFromContext(r.Context())
-					if !ok {
-						next.ServeHTTP(w, r)
-						return
-					}
-					if claims.IsGatingExempt() {
-						next.ServeHTTP(w, r)
-						return
-					}
-					if !claims.IsSubscriptionActive() {
-						// Uniform fleet-wide 7-day post-expiry grace: an EXPIRED tenant may still
-						// mutate within the window (warned via X-Sub-Grace-Days-Left); beyond it → 403.
-						if left, inGrace := claims.GraceDaysLeft(7); inGrace {
-							w.Header().Set("X-Sub-Grace-Days-Left", strconv.Itoa(left))
-						} else {
-							w.Header().Set("Content-Type", "application/json")
-							w.WriteHeader(http.StatusForbidden)
-							_, _ = w.Write([]byte(`{"error":"Your subscription is not active. Please renew to continue.","code":"subscription_inactive","upgrade":true}`))
-							return
-						}
-					}
-					if !claims.HasFeature("project_management") {
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusForbidden)
-						_, _ = w.Write([]byte(`{"error":"feature_not_available","code":"feature_not_available","required_feature":"project_management","upgrade":true}`))
-						return
-					}
-					next.ServeHTTP(w, r)
-				})
-			})
-		}
+	// QA invitees: people a session owner invited by email, who may hold no account in the tenant.
+	// Outside the tenant group; each handler proves the invite itself, and only the SSO hand-over
+	// route needs a signed-in user.
+	if d.QA.Invitee != nil {
+		r.Group(func(g chi.Router) {
+			if d.Limiter != nil {
+				g.Use(d.Limiter.MiddlewareWith(ratelimit.IPKey, ratelimit.Options{Name: "qa-invitee", Limit: 60, Window: time.Minute}))
+			}
+			d.QA.Invitee.RegisterRoutes(g, authenticate)
+		})
+	}
+
+	r.Route("/api/v1", func(api chi.Router) {
+		api.Use(authenticate)
+		// Layer 1.5: the whole projects module (reads included) is closed to a tenant whose plan
+		// has no projects entitlement at all.
+		api.Use(authclient.RequireServiceAccess("projects"))
+		// Layer 2: subscription and the project_management feature, mutations only. Only
+		// claims.IsGatingExempt() (platform owner, demo, service-charge, sub-exempt) skips it; a
+		// tenant superuser does not.
+		api.Use(requireSubscriptionForMutations)
 
 		// Platform owner pages (not tenant scoped). A static segment, so chi matches it before
 		// /{tenantID}; each handler checks IsPlatformOwner itself.
-		if platformR.FieldKeys != nil {
+		if d.Platform.FieldKeys != nil {
 			api.Route("/platform", func(p chi.Router) {
-				platformR.FieldKeys.RegisterPlatformRoutes(p)
+				d.Platform.FieldKeys.RegisterPlatformRoutes(p)
 			})
 		}
 
 		api.Route("/{tenantID}", func(tenant chi.Router) {
-			tenant.Use(requireOwnTenant)
-			userHandler.RegisterRoutes(tenant)
-			projectHandler.RegisterRoutes(tenant)
-			taskHandler.RegisterRoutes(tenant)
-			milestoneHandler.RegisterRoutes(tenant)
-			memberHandler.RegisterRoutes(tenant)
-			commentHandler.RegisterRoutes(tenant)
-			activityHandler.RegisterRoutes(tenant)
-			tenderHandler.RegisterRoutes(tenant)
-			if financialsHandler != nil {
+			tenant.Use(tenantGuard(d.Tenants))
+			tenant.Use(authz.Resolve(d.Access, d.Members, log))
+			tenant.Use(outletContext)
+			h := d.Handlers
+			h.RBAC.RegisterRoutes(tenant)
+			h.Projects.RegisterRoutes(tenant)
+			h.Tasks.RegisterRoutes(tenant)
+			h.Milestones.RegisterRoutes(tenant)
+			h.Members.RegisterRoutes(tenant)
+			h.Comments.RegisterRoutes(tenant)
+			h.Activity.RegisterRoutes(tenant)
+			h.Tenders.RegisterRoutes(tenant)
+			if h.Financials != nil {
 				// Project financials, portfolio and project budgets: the budget_tracking feature.
-				financialsHandler.RegisterRoutes(tenant, requireFeature("budget_tracking"))
+				h.Financials.RegisterRoutes(tenant, requireFeature("budget_tracking"))
 			}
-			if qaR.Tenant != nil {
+			if d.QA.Tenant != nil {
 				// QA and acceptance; each route is gated on a projects.qa.* permission.
-				qaR.Tenant.RegisterRoutes(tenant)
+				d.QA.Tenant.RegisterRoutes(tenant)
 			}
 		})
 	})
 
 	return r
+}
+
+// outletContext stores an optional X-Outlet-ID in the context; absent is not an error.
+func outletContext(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if outletID := httpware.OutletHeader(r); outletID != "" {
+			r = r.WithContext(httpware.WithOutletID(r.Context(), outletID))
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// requireSubscriptionForMutations lets reads through and requires an active subscription (with
+// the fleet's 7-day post-expiry grace, warned through X-Sub-Grace-Days-Left) and the
+// project_management feature for every mutation. Both refusals carry upgrade:true.
+func requireSubscriptionForMutations(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+			return
+		}
+		claims, ok := authclient.ClaimsFromContext(r.Context())
+		if !ok || claims == nil || claims.IsGatingExempt() {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if !claims.IsSubscriptionActive() {
+			left, inGrace := claims.GraceDaysLeft(7)
+			if !inGrace {
+				authz.WriteJSON(w, http.StatusForbidden, map[string]any{
+					"error": "Your subscription is not active. Please renew to continue.", "code": "subscription_inactive", "upgrade": true,
+				})
+				return
+			}
+			w.Header().Set("X-Sub-Grace-Days-Left", strconv.Itoa(left))
+		}
+		if !claims.HasFeature("project_management") {
+			authz.WriteJSON(w, http.StatusForbidden, map[string]any{
+				"error": "feature_not_available", "code": "feature_not_available", "required_feature": "project_management", "upgrade": true,
+			})
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

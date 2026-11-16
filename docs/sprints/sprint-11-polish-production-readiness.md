@@ -1,6 +1,6 @@
 # Sprint 11: Polish & Production Readiness
 
-**Status**: Planned (verified against code 2026-09-27). Performance work on tender metrics, pagination caps, summary queries and the dependency check, plus the tenant header check against the JWT claim, are In progress (plan budgets-planning-projects-bi-2026-09-27, Phase 0). There are no tests and no swagger yet.
+**Status**: Partially done (verified against code 2026-11-16). Done: tender metrics, pagination caps, summary queries in SQL, the tenant header check, and 23 test files. The rest of the hardening moved to sprint 0b. Open here: coverage on new code, splitting `services/tenders/service.go`, `handlers/qa.go` and `handlers/tender.go`, swagger, and a security review of the new routes.
 
 **Duration**: 2 weeks  
 **Sprint Goal**: Finalize the system for production use, optimize performance, and ensure security compliance.  

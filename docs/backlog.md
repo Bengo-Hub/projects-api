@@ -1,6 +1,24 @@
 # Projects API Backlog
 
-**Last updated:** 2026-10-16. Built by checking `plan.md`, `docs/sprints/*.md`, `docs/erd.md` and `docs/integrations.md` against the code. Each item names the doc it came from. The budgets, planning, project costing and BI plan is complete here; its items are under Done. UI gaps live in `projects-service/projects-ui/docs/backlog.md`.
+**Last updated:** 2026-11-16. Built by checking `plan.md`, `docs/sprints/*.md`, `docs/erd.md` and `docs/integrations.md` against the code. Each item names the doc it came from. The budgets, planning, project costing and BI plan is complete here; its items are under Done. UI gaps live in `projects-service/projects-ui/docs/backlog.md`. Work order and gating: `plan.md` section 10.
+
+## Hardening, sprint 0b (found in the 2026-11-16 audit)
+
+- Only QA routes checked permission codes, and they read them from the JWT, which never carries service codes (shared-docs trinity pattern), so only admins passed. Every other route let any signed-in tenant user read and write. Fix: real local RBAC (registry, system roles, JIT default role, `auth/me`) checked on every route group, plus project membership scoping.
+- The activity feed had read routes but no writer, so it was always empty. Fix: one activity writer called inside every mutating transaction.
+- Outbox rows were written in their own transaction on a second database pool. Fix: write them in the domain transaction.
+- `checkCircular` loaded the whole tenant dependency graph on every new dependency. Fix: recursive CTE.
+- Tender numbers used COUNT+1 and could repeat. Fix: race-free counter.
+- Tasks had no index on `assignee_id` or `parent_id`; Gantt data and task comments were unbounded.
+- `task.go` and `tender.go` parsed paging by hand; some 500 responses returned raw error text.
+- S2S requests could set the tenant through a header. Fix: path tenant only.
+- `migrations.go` never used its embedded files, so a container without the folder fell back to auto-create.
+- Shared libs behind: auth-client (old replace), httpware, cache, pagination, shared-events, shared-service-client.
+- `GET /` redirected to Swagger, which is not mounted.
+
+## New sprints 12 to 16 (2026-11-16)
+
+See `docs/sprints/sprint-12-work-management-core.md` to `sprint-16-planning-depth.md`.
 
 ## Project finance, done 2026-09-29
 
@@ -38,12 +56,12 @@ Project finance (gated on `budget_tracking`, T3):
 
 ## Planning and collaboration
 
-- @mentions in comments. Source: sprint-4.
-- Attachment routes (the `attachment` table is unused) and document storage. Source: sprint-4, sprint-1.
-- WebSocket real-time updates. Source: sprint-4.
-- Task timers and signing sheets. Source: sprint-5.
-- Resource pool, allocation and capacity planning. Source: sprint-6.
-- Governance hierarchy, decision logs and change control. Source: sprint-7.
+- @mentions in comments. Source: sprint-4. Now sprint 12.
+- Attachment routes (the `attachment` table is unused) and document storage. Source: sprint-4, sprint-1. Now sprint 12.
+- Real-time updates, as SSE through the shared events fan-out hub rather than raw WebSocket (multi-pod rule). Source: sprint-4. Now sprint 12.
+- Task timers and signing sheets. Source: sprint-5. Now sprint 13, posting to ERP timesheets.
+- Resource pool, allocation and capacity planning. Source: sprint-6. Now sprint 16 (workload).
+- Governance hierarchy, decision logs and change control. Source: sprint-7. Risks and change requests now sprint 16.
 
 ## Integrations and later sprints
 
@@ -53,5 +71,6 @@ Project finance (gated on `budget_tracking`, T3):
 
 ## Quality
 
-- The repo has no `_test.go` files: unit and integration tests, Testcontainers setup. Source: sprint-1 Testing, sprint-11.
+- Tests: 23 `_test.go` files exist (handlers, router, financials, projects, QA, tasks, fieldcrypt, platform clients); the old "no tests" note was wrong. Still open: coverage on new code and DB-backed integration tests. Source: sprint-1 Testing, sprint-11.
 - Swagger or OpenAPI docs (was wrongly ticked in sprint-1). Source: sprint-1.
+- Files over 400 lines to split: `services/tenders/service.go`, `handlers/qa.go`, `handlers/tender.go`. Source: sprint-11.

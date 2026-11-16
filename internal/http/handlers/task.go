@@ -7,11 +7,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	httpware "github.com/Bengo-Hub/httpware"
+	"github.com/bengobox/projects-service/internal/http/authz"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/services/tasks"
 )
 
@@ -28,27 +30,40 @@ func NewTaskHandler(log *zap.Logger, svc *tasks.Service) *TaskHandler {
 
 // RegisterRoutes registers task routes nested under /projects/{projectID}.
 func (h *TaskHandler) RegisterRoutes(r chi.Router) {
+	view := authz.Require(rbac.PermTasksView, rbac.PermTasksViewOwn)
+	change := authz.Require(rbac.PermTasksChange, rbac.PermTasksChangeOwn)
 	r.Route("/projects/{projectID}/tasks", func(tr chi.Router) {
-		tr.Get("/", h.List)
-		tr.Post("/", h.Create)
+		tr.With(view).Get("/", h.List)
+		tr.With(authz.Require(rbac.PermTasksAdd)).Post("/", h.Create)
 		tr.Route("/{taskID}", func(t chi.Router) {
-			t.Get("/", h.Get)
-			t.Put("/", h.Update)
-			t.Delete("/", h.Delete)
-			t.Post("/dependencies", h.AddDependency)
-			t.Delete("/dependencies/{depID}", h.RemoveDependency)
+			t.With(view).Get("/", h.Get)
+			t.With(change).Put("/", h.Update)
+			t.With(authz.Require(rbac.PermTasksDelete)).Delete("/", h.Delete)
+			t.With(authz.Require(rbac.PermTasksChange)).Post("/dependencies", h.AddDependency)
+			t.With(authz.Require(rbac.PermTasksChange)).Delete("/dependencies/{depID}", h.RemoveDependency)
 		})
 	})
-	r.Get("/projects/{projectID}/gantt", h.Gantt)
-	r.Get("/tasks/trend", h.Trend)
+	r.With(authz.Require(rbac.PermTasksView)).Get("/projects/{projectID}/gantt", h.Gantt)
+	r.With(authz.Require(rbac.PermTasksView)).Get("/tasks/trend", h.Trend)
 }
 
-// Trend returns monthly task flow (created, completed, overdue at month end) for the tenant or
-// one project (?project_id=), over the last ?months= (1..24, default 6).
+// ownOnly returns the caller when they may only see or change tasks assigned to them (they hold
+// the _own code but not the full one), nil otherwise.
+func ownOnly(r *http.Request, full string) *uuid.UUID {
+	a := accessOf(r)
+	if a.Has(full) {
+		return nil
+	}
+	id := a.AuthUserID
+	return &id
+}
+
+// Trend returns monthly task flow (created, completed, overdue at month end) for one project
+// (?project_id=) or, for callers who see every project, the whole tenant; over the last ?months=
+// (1..24, default 6).
 func (h *TaskHandler) Trend(w http.ResponseWriter, r *http.Request) {
-	tenantID, err := uuid.Parse(httpware.GetTenantID(r.Context()))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid tenant id")
+	tenantID, ok := parseTenant(w, r)
+	if !ok {
 		return
 	}
 	q := r.URL.Query()
@@ -59,56 +74,98 @@ func (h *TaskHandler) Trend(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusBadRequest, "invalid project id")
 			return
 		}
+		visible, err := accessOf(r).CanSeeProject(r.Context(), id)
+		if err != nil {
+			serverError(w, h.log, "membership check failed", err)
+			return
+		}
+		if !visible {
+			respondError(w, http.StatusNotFound, "project not found")
+			return
+		}
 		projectID = &id
+	} else if accessOf(r).VisibleTo() != nil {
+		authz.Forbidden(w, rbac.PermProjectsManage)
+		return
 	}
 	months, _ := strconv.Atoi(q.Get("months"))
 	rows, err := h.svc.Trend(r.Context(), tenantID, projectID, months, time.Now())
 	if err != nil {
-		h.log.Error("task trend failed", zap.Error(err))
-		respondError(w, http.StatusInternalServerError, "failed to build the task trend")
+		serverError(w, h.log, "task trend failed", err)
 		return
 	}
 	respondJSON(w, http.StatusOK, map[string]any{"data": rows})
 }
 
-// List returns paginated tasks for a project.
+// List returns one page of a project's tasks (?limit, ?page or ?offset; ?status, ?priority,
+// ?assignee_id). A caller limited to their own tasks sees only those assigned to them.
 func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
+	p := pagination.Parse(r)
+	q := r.URL.Query()
 	filter := tasks.ListTasksFilter{
-		Status:   r.URL.Query().Get("status"),
-		Priority: r.URL.Query().Get("priority"),
+		Status:   q.Get("status"),
+		Priority: q.Get("priority"),
+		Limit:    p.Limit,
+		Offset:   p.Offset,
 	}
-	if p := r.URL.Query().Get("page"); p != "" {
-		filter.Page, _ = strconv.Atoi(p)
-	}
-	if ps := r.URL.Query().Get("page_size"); ps != "" {
-		filter.PageSize, _ = strconv.Atoi(ps)
-	}
-	if a := r.URL.Query().Get("assignee_id"); a != "" {
-		if id, err := uuid.Parse(a); err == nil {
-			filter.AssigneeID = &id
+	if a := q.Get("assignee_id"); a != "" {
+		id, err := uuid.Parse(a)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid assignee id")
+			return
 		}
+		filter.AssigneeID = &id
+	}
+	if own := ownOnly(r, rbac.PermTasksView); own != nil {
+		filter.AssigneeID = own
 	}
 	items, total, err := h.svc.ListTasks(r.Context(), tenantID, projectID, filter)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, h.log, "list tasks failed", err)
 		return
 	}
-	respondJSON(w, http.StatusOK, map[string]any{"data": items, "total": total})
+	respondJSON(w, http.StatusOK, pagination.NewResponse(items, total, p))
 }
 
-// Get returns a single task.
+func taskParam(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
+	id, err := uuid.Parse(chi.URLParam(r, "taskID"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid task id")
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
+// ensureOwn answers 404 when the caller is limited to their own tasks and this one is not theirs.
+func (h *TaskHandler) ensureOwn(w http.ResponseWriter, r *http.Request, full string, tenantID, projectID, taskID uuid.UUID) bool {
+	own := ownOnly(r, full)
+	if own == nil {
+		return true
+	}
+	mine, err := h.svc.IsAssignee(r.Context(), tenantID, projectID, taskID, *own)
+	if err != nil {
+		serverError(w, h.log, "task assignee check failed", err)
+		return false
+	}
+	if !mine {
+		respondError(w, http.StatusNotFound, "task not found")
+		return false
+	}
+	return true
+}
+
+// Get returns a task with its dependencies, its latest 50 comments and its comment count.
 func (h *TaskHandler) Get(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	taskID, err := uuid.Parse(chi.URLParam(r, "taskID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid task id")
+	taskID, ok := taskParam(w, r)
+	if !ok || !h.ensureOwn(w, r, rbac.PermTasksView, tenantID, projectID, taskID) {
 		return
 	}
 	t, err := h.svc.GetTask(r.Context(), tenantID, projectID, taskID)
@@ -117,15 +174,29 @@ func (h *TaskHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, h.log, "get task failed", err)
 		return
 	}
 	respondJSON(w, http.StatusOK, t)
 }
 
+func (h *TaskHandler) writeErr(w http.ResponseWriter, err error, notFound, msg string) {
+	var verr tasks.ValidationError
+	switch {
+	case errors.Is(err, tasks.ErrNotFound):
+		respondError(w, http.StatusNotFound, notFound)
+	case errors.Is(err, tasks.ErrCircularDependency):
+		respondError(w, http.StatusConflict, err.Error())
+	case errors.As(err, &verr):
+		respondError(w, http.StatusBadRequest, verr.Error())
+	default:
+		serverError(w, h.log, msg, err)
+	}
+}
+
 // Create creates a new task.
 func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
@@ -135,30 +206,21 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t, err := h.svc.CreateTask(r.Context(), tenantID, projectID, input)
-	if errors.Is(err, tasks.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "project not found")
-		return
-	}
 	if err != nil {
-		if _, ok := err.(tasks.ValidationError); ok {
-			respondError(w, http.StatusBadRequest, err.Error())
-			return
-		}
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "project not found", "create task failed")
 		return
 	}
 	respondJSON(w, http.StatusCreated, t)
 }
 
-// Update updates a task.
+// Update updates a task. A caller holding only change_own may update tasks assigned to them.
 func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	taskID, err := uuid.Parse(chi.URLParam(r, "taskID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid task id")
+	taskID, ok := taskParam(w, r)
+	if !ok || !h.ensureOwn(w, r, rbac.PermTasksChange, tenantID, projectID, taskID) {
 		return
 	}
 	var input tasks.UpdateTaskInput
@@ -167,12 +229,8 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t, err := h.svc.UpdateTask(r.Context(), tenantID, projectID, taskID, input)
-	if errors.Is(err, tasks.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "task not found")
-		return
-	}
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		h.writeErr(w, err, "task not found", "update task failed")
 		return
 	}
 	respondJSON(w, http.StatusOK, t)
@@ -180,20 +238,16 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 // Delete deletes a task.
 func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	taskID, err := uuid.Parse(chi.URLParam(r, "taskID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid task id")
+	taskID, ok := taskParam(w, r)
+	if !ok {
 		return
 	}
-	if err := h.svc.DeleteTask(r.Context(), tenantID, projectID, taskID); errors.Is(err, tasks.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "task not found")
-		return
-	} else if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+	if err := h.svc.DeleteTask(r.Context(), tenantID, projectID, taskID); err != nil {
+		h.writeErr(w, err, "task not found", "delete task failed")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -201,13 +255,12 @@ func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 // AddDependency adds a dependency between tasks.
 func (h *TaskHandler) AddDependency(w http.ResponseWriter, r *http.Request) {
-	tenantID, _, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	taskID, err := uuid.Parse(chi.URLParam(r, "taskID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid task id")
+	taskID, ok := taskParam(w, r)
+	if !ok {
 		return
 	}
 	var input tasks.AddDependencyInput
@@ -215,12 +268,8 @@ func (h *TaskHandler) AddDependency(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if err := h.svc.AddDependency(r.Context(), tenantID, taskID, input.DependsOnTaskID, input.DependencyType); err != nil {
-		if errors.Is(err, tasks.ErrCircularDependency) {
-			respondError(w, http.StatusConflict, err.Error())
-			return
-		}
-		respondError(w, http.StatusInternalServerError, err.Error())
+	if err := h.svc.AddDependency(r.Context(), tenantID, projectID, taskID, input.DependsOnTaskID, input.DependencyType); err != nil {
+		h.writeErr(w, err, "task not found", "add dependency failed")
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -228,13 +277,12 @@ func (h *TaskHandler) AddDependency(w http.ResponseWriter, r *http.Request) {
 
 // RemoveDependency removes a dependency between tasks.
 func (h *TaskHandler) RemoveDependency(w http.ResponseWriter, r *http.Request) {
-	tenantID, _, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	taskID, err := uuid.Parse(chi.URLParam(r, "taskID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid task id")
+	taskID, ok := taskParam(w, r)
+	if !ok {
 		return
 	}
 	depID, err := uuid.Parse(chi.URLParam(r, "depID"))
@@ -242,42 +290,24 @@ func (h *TaskHandler) RemoveDependency(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid dependency id")
 		return
 	}
-	if err := h.svc.RemoveDependency(r.Context(), tenantID, taskID, depID); errors.Is(err, tasks.ErrNotFound) {
-		respondError(w, http.StatusNotFound, "dependency not found")
-		return
-	} else if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+	if err := h.svc.RemoveDependency(r.Context(), tenantID, projectID, taskID, depID); err != nil {
+		h.writeErr(w, err, "dependency not found", "remove dependency failed")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// Gantt returns tasks with dependencies for Gantt chart rendering.
+// Gantt returns up to 2000 tasks with dependencies for the Gantt chart:
+// {"data": [...], "truncated": bool, "limit": 2000}.
 func (h *TaskHandler) Gantt(w http.ResponseWriter, r *http.Request) {
-	tenantID, projectID, ok := taskProjectParams(w, r)
+	tenantID, projectID, ok := projectScope(w, r)
 	if !ok {
 		return
 	}
-	taskData, err := h.svc.GetGanttData(r.Context(), tenantID, projectID)
+	data, err := h.svc.GetGanttData(r.Context(), tenantID, projectID)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, h.log, "gantt failed", err)
 		return
 	}
-	respondJSON(w, http.StatusOK, map[string]any{"data": taskData})
-}
-
-// taskProjectParams extracts tenantID and projectID from the request context/URL.
-func taskProjectParams(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
-	tenantIDStr := httpware.GetTenantID(r.Context())
-	tenantID, err := uuid.Parse(tenantIDStr)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid tenant id")
-		return uuid.Nil, uuid.Nil, false
-	}
-	projectID, err := uuid.Parse(chi.URLParam(r, "projectID"))
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid project id")
-		return uuid.Nil, uuid.Nil, false
-	}
-	return tenantID, projectID, true
+	respondJSON(w, http.StatusOK, data)
 }

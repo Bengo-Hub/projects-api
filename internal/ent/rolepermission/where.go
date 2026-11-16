@@ -3,8 +3,6 @@
 package rolepermission
 
 import (
-	"time"
-
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/bengobox/projects-service/internal/ent/predicate"
@@ -12,53 +10,53 @@ import (
 )
 
 // ID filters vertices based on their ID field.
-func ID(id uuid.UUID) predicate.RolePermission {
+func ID(id int) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id uuid.UUID) predicate.RolePermission {
+func IDEQ(id int) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id uuid.UUID) predicate.RolePermission {
+func IDNEQ(id int) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...uuid.UUID) predicate.RolePermission {
+func IDIn(ids ...int) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...uuid.UUID) predicate.RolePermission {
+func IDNotIn(ids ...int) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id uuid.UUID) predicate.RolePermission {
+func IDGT(id int) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id uuid.UUID) predicate.RolePermission {
+func IDGTE(id int) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id uuid.UUID) predicate.RolePermission {
+func IDLT(id int) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id uuid.UUID) predicate.RolePermission {
+func IDLTE(id int) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldLTE(FieldID, id))
 }
 
-// RoleCode applies equality check predicate on the "role_code" field. It's identical to RoleCodeEQ.
-func RoleCode(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldEQ(FieldRoleCode, v))
+// RoleID applies equality check predicate on the "role_id" field. It's identical to RoleIDEQ.
+func RoleID(v uuid.UUID) predicate.RolePermission {
+	return predicate.RolePermission(sql.FieldEQ(FieldRoleID, v))
 }
 
 // PermissionID applies equality check predicate on the "permission_id" field. It's identical to PermissionIDEQ.
@@ -66,74 +64,24 @@ func PermissionID(v uuid.UUID) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldEQ(FieldPermissionID, v))
 }
 
-// AssignedAt applies equality check predicate on the "assigned_at" field. It's identical to AssignedAtEQ.
-func AssignedAt(v time.Time) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldEQ(FieldAssignedAt, v))
+// RoleIDEQ applies the EQ predicate on the "role_id" field.
+func RoleIDEQ(v uuid.UUID) predicate.RolePermission {
+	return predicate.RolePermission(sql.FieldEQ(FieldRoleID, v))
 }
 
-// RoleCodeEQ applies the EQ predicate on the "role_code" field.
-func RoleCodeEQ(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldEQ(FieldRoleCode, v))
+// RoleIDNEQ applies the NEQ predicate on the "role_id" field.
+func RoleIDNEQ(v uuid.UUID) predicate.RolePermission {
+	return predicate.RolePermission(sql.FieldNEQ(FieldRoleID, v))
 }
 
-// RoleCodeNEQ applies the NEQ predicate on the "role_code" field.
-func RoleCodeNEQ(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldNEQ(FieldRoleCode, v))
+// RoleIDIn applies the In predicate on the "role_id" field.
+func RoleIDIn(vs ...uuid.UUID) predicate.RolePermission {
+	return predicate.RolePermission(sql.FieldIn(FieldRoleID, vs...))
 }
 
-// RoleCodeIn applies the In predicate on the "role_code" field.
-func RoleCodeIn(vs ...string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldIn(FieldRoleCode, vs...))
-}
-
-// RoleCodeNotIn applies the NotIn predicate on the "role_code" field.
-func RoleCodeNotIn(vs ...string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldNotIn(FieldRoleCode, vs...))
-}
-
-// RoleCodeGT applies the GT predicate on the "role_code" field.
-func RoleCodeGT(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldGT(FieldRoleCode, v))
-}
-
-// RoleCodeGTE applies the GTE predicate on the "role_code" field.
-func RoleCodeGTE(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldGTE(FieldRoleCode, v))
-}
-
-// RoleCodeLT applies the LT predicate on the "role_code" field.
-func RoleCodeLT(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldLT(FieldRoleCode, v))
-}
-
-// RoleCodeLTE applies the LTE predicate on the "role_code" field.
-func RoleCodeLTE(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldLTE(FieldRoleCode, v))
-}
-
-// RoleCodeContains applies the Contains predicate on the "role_code" field.
-func RoleCodeContains(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldContains(FieldRoleCode, v))
-}
-
-// RoleCodeHasPrefix applies the HasPrefix predicate on the "role_code" field.
-func RoleCodeHasPrefix(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldHasPrefix(FieldRoleCode, v))
-}
-
-// RoleCodeHasSuffix applies the HasSuffix predicate on the "role_code" field.
-func RoleCodeHasSuffix(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldHasSuffix(FieldRoleCode, v))
-}
-
-// RoleCodeEqualFold applies the EqualFold predicate on the "role_code" field.
-func RoleCodeEqualFold(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldEqualFold(FieldRoleCode, v))
-}
-
-// RoleCodeContainsFold applies the ContainsFold predicate on the "role_code" field.
-func RoleCodeContainsFold(v string) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldContainsFold(FieldRoleCode, v))
+// RoleIDNotIn applies the NotIn predicate on the "role_id" field.
+func RoleIDNotIn(vs ...uuid.UUID) predicate.RolePermission {
+	return predicate.RolePermission(sql.FieldNotIn(FieldRoleID, vs...))
 }
 
 // PermissionIDEQ applies the EQ predicate on the "permission_id" field.
@@ -156,52 +104,12 @@ func PermissionIDNotIn(vs ...uuid.UUID) predicate.RolePermission {
 	return predicate.RolePermission(sql.FieldNotIn(FieldPermissionID, vs...))
 }
 
-// AssignedAtEQ applies the EQ predicate on the "assigned_at" field.
-func AssignedAtEQ(v time.Time) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldEQ(FieldAssignedAt, v))
-}
-
-// AssignedAtNEQ applies the NEQ predicate on the "assigned_at" field.
-func AssignedAtNEQ(v time.Time) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldNEQ(FieldAssignedAt, v))
-}
-
-// AssignedAtIn applies the In predicate on the "assigned_at" field.
-func AssignedAtIn(vs ...time.Time) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldIn(FieldAssignedAt, vs...))
-}
-
-// AssignedAtNotIn applies the NotIn predicate on the "assigned_at" field.
-func AssignedAtNotIn(vs ...time.Time) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldNotIn(FieldAssignedAt, vs...))
-}
-
-// AssignedAtGT applies the GT predicate on the "assigned_at" field.
-func AssignedAtGT(v time.Time) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldGT(FieldAssignedAt, v))
-}
-
-// AssignedAtGTE applies the GTE predicate on the "assigned_at" field.
-func AssignedAtGTE(v time.Time) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldGTE(FieldAssignedAt, v))
-}
-
-// AssignedAtLT applies the LT predicate on the "assigned_at" field.
-func AssignedAtLT(v time.Time) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldLT(FieldAssignedAt, v))
-}
-
-// AssignedAtLTE applies the LTE predicate on the "assigned_at" field.
-func AssignedAtLTE(v time.Time) predicate.RolePermission {
-	return predicate.RolePermission(sql.FieldLTE(FieldAssignedAt, v))
-}
-
 // HasRole applies the HasEdge predicate on the "role" edge.
 func HasRole() predicate.RolePermission {
 	return predicate.RolePermission(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, RoleTable, RoleColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, RoleTable, RoleColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -224,7 +132,7 @@ func HasPermission() predicate.RolePermission {
 	return predicate.RolePermission(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, PermissionTable, PermissionColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, PermissionTable, PermissionColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

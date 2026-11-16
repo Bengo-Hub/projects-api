@@ -131,11 +131,12 @@ func (s *Service) openTicket(ctx context.Context, sess *ent.QASession, crit qamo
 
 	t, err := s.tickets.CreateTicket(ctx, ticketing.CreateTicketInput{
 		TenantID:    sess.TenantID,
-		Title:       clip(fmt.Sprintf("[QA S%d] %s: %s", d.Severity, sess.Title, crit.Title), 200),
+		Subject:     clip(fmt.Sprintf("[QA S%d] %s: %s", d.Severity, sess.Title, crit.Title), 200),
 		Description: clip(b.String(), 20000),
 		Priority:    ticketPriority(d.Severity),
 		Category:    "qa",
-		SessionID:   sess.ID.String(),
+		DefectID:    d.ID,
+		SessionID:   sess.ID,
 	})
 	if err != nil {
 		s.log.Warn("qa ticket not opened", zap.String("defect", d.ID.String()), zap.Error(err))

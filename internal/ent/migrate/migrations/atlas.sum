@@ -1,4 +1,4 @@
-h1:fJqgRdoo/mWpCpH1D4NFQyCjjV/bF7ER9iDvHoQyZLM=
+h1:AfTlrWaNA5Xnt5PdOwLUEPZU53K/eHMJFMpCW5Rf8A0=
 20260430183219_initial_schema.sql h1:8sjsHE8Suxx+lUikavjsqekFCMlU8CRSIpRdG8oTiDQ=
 20260522152854_add_tenders_budget_timelog.sql h1:sajU0BSc96mmGcYK9lTV9jAXMU7xyb7SnDlxhMFe55g=
 20260718120000_drop_tenant_sync_events.sql h1:yZFk9yNNGe/cfNno0xHH0faUDG8RiHsNx4rhH/fK5fg=
@@ -13,3 +13,4 @@ h1:fJqgRdoo/mWpCpH1D4NFQyCjjV/bF7ER9iDvHoQyZLM=
 20261116223706_sprint_12_comment_replay_index.sql h1:T/6kzV8bcQj64TtQvmvW1p3d0FieW/JaojXhDBXbCoY=
 20261117013734_sprint_15_milestone_metadata.sql h1:E/bJtuk+GdkFdmwj2poRSyvrHcNnrCRRSYOB0+AJvKU=
 20261117065829_sprint_16_planning_depth.sql h1:QDFUBeuQAFl2ceQls29BL6qpV1en7ODunOZU7G8kaH4=
+20261117130303_sprint_17_access_management.sql h1:GGqzWUv9+OzoncfsgA1rhkPeIhtex6CdIYxUc62iuW8=

@@ -208,6 +208,38 @@ func impliers(code string) []string {
 	return out
 }
 
+// PermissionView is a registry entry as GET /rbac/permissions lists it: with the registry codes
+// that also grant it, so the permission editor can show a code held through manage as locked.
+type PermissionView struct {
+	PermissionDef
+	ImpliedBy []string `json:"implied_by"`
+}
+
+// IsCode reports whether code is in the registry.
+func IsCode(code string) bool {
+	for _, p := range Catalogue {
+		if p.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
+// PermissionViews returns the registry with each code's implying registry codes.
+func PermissionViews() []PermissionView {
+	out := make([]PermissionView, 0, len(Catalogue))
+	for _, p := range Catalogue {
+		v := PermissionView{PermissionDef: p, ImpliedBy: []string{}}
+		for _, i := range impliers(p.Code) {
+			if IsCode(i) {
+				v.ImpliedBy = append(v.ImpliedBy, i)
+			}
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
 // Expand returns every registry code granted by held, directly or through an implying code.
 func Expand(held []string) []string {
 	set := make(map[string]bool, len(held))

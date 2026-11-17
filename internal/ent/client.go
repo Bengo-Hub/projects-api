@@ -38,6 +38,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/qaresult"
 	"github.com/bengobox/projects-service/internal/ent/qasession"
 	"github.com/bengobox/projects-service/internal/ent/qatemplate"
+	"github.com/bengobox/projects-service/internal/ent/rbacauditlog"
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/task"
@@ -104,6 +105,8 @@ type Client struct {
 	QASession *QASessionClient
 	// QATemplate is the client for interacting with the QATemplate builders.
 	QATemplate *QATemplateClient
+	// RBACAuditLog is the client for interacting with the RBACAuditLog builders.
+	RBACAuditLog *RBACAuditLogClient
 	// Role is the client for interacting with the Role builders.
 	Role *RoleClient
 	// RolePermission is the client for interacting with the RolePermission builders.
@@ -163,6 +166,7 @@ func (c *Client) init() {
 	c.QAResult = NewQAResultClient(c.config)
 	c.QASession = NewQASessionClient(c.config)
 	c.QATemplate = NewQATemplateClient(c.config)
+	c.RBACAuditLog = NewRBACAuditLogClient(c.config)
 	c.Role = NewRoleClient(c.config)
 	c.RolePermission = NewRolePermissionClient(c.config)
 	c.Task = NewTaskClient(c.config)
@@ -290,6 +294,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		QAResult:              NewQAResultClient(cfg),
 		QASession:             NewQASessionClient(cfg),
 		QATemplate:            NewQATemplateClient(cfg),
+		RBACAuditLog:          NewRBACAuditLogClient(cfg),
 		Role:                  NewRoleClient(cfg),
 		RolePermission:        NewRolePermissionClient(cfg),
 		Task:                  NewTaskClient(cfg),
@@ -344,6 +349,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		QAResult:              NewQAResultClient(cfg),
 		QASession:             NewQASessionClient(cfg),
 		QATemplate:            NewQATemplateClient(cfg),
+		RBACAuditLog:          NewRBACAuditLogClient(cfg),
 		Role:                  NewRoleClient(cfg),
 		RolePermission:        NewRolePermissionClient(cfg),
 		Task:                  NewTaskClient(cfg),
@@ -390,10 +396,10 @@ func (c *Client) Use(hooks ...Hook) {
 		c.FieldKeyAudit, c.Milestone, c.OutboxEvent, c.Permission, c.Project,
 		c.ProjectBaseline, c.ProjectChangeRequest, c.ProjectMember, c.ProjectRisk,
 		c.ProjectTemplate, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
-		c.QAResult, c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task,
-		c.TaskAssignee, c.TaskDependency, c.TenantSetting, c.Tender, c.TenderCommittee,
-		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
-		c.UserRoleAssignment,
+		c.QAResult, c.QASession, c.QATemplate, c.RBACAuditLog, c.Role,
+		c.RolePermission, c.Task, c.TaskAssignee, c.TaskDependency, c.TenantSetting,
+		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
+		c.TenderEvaluation, c.TenderMeeting, c.UserRoleAssignment,
 	} {
 		n.Use(hooks...)
 	}
@@ -407,10 +413,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.FieldKeyAudit, c.Milestone, c.OutboxEvent, c.Permission, c.Project,
 		c.ProjectBaseline, c.ProjectChangeRequest, c.ProjectMember, c.ProjectRisk,
 		c.ProjectTemplate, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
-		c.QAResult, c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task,
-		c.TaskAssignee, c.TaskDependency, c.TenantSetting, c.Tender, c.TenderCommittee,
-		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
-		c.UserRoleAssignment,
+		c.QAResult, c.QASession, c.QATemplate, c.RBACAuditLog, c.Role,
+		c.RolePermission, c.Task, c.TaskAssignee, c.TaskDependency, c.TenantSetting,
+		c.Tender, c.TenderCommittee, c.TenderCommitteeMember, c.TenderDocument,
+		c.TenderEvaluation, c.TenderMeeting, c.UserRoleAssignment,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -463,6 +469,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.QASession.mutate(ctx, m)
 	case *QATemplateMutation:
 		return c.QATemplate.mutate(ctx, m)
+	case *RBACAuditLogMutation:
+		return c.RBACAuditLog.mutate(ctx, m)
 	case *RoleMutation:
 		return c.Role.mutate(ctx, m)
 	case *RolePermissionMutation:
@@ -3724,6 +3732,139 @@ func (c *QATemplateClient) mutate(ctx context.Context, m *QATemplateMutation) (V
 	}
 }
 
+// RBACAuditLogClient is a client for the RBACAuditLog schema.
+type RBACAuditLogClient struct {
+	config
+}
+
+// NewRBACAuditLogClient returns a client for the RBACAuditLog from the given config.
+func NewRBACAuditLogClient(c config) *RBACAuditLogClient {
+	return &RBACAuditLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rbacauditlog.Hooks(f(g(h())))`.
+func (c *RBACAuditLogClient) Use(hooks ...Hook) {
+	c.hooks.RBACAuditLog = append(c.hooks.RBACAuditLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `rbacauditlog.Intercept(f(g(h())))`.
+func (c *RBACAuditLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RBACAuditLog = append(c.inters.RBACAuditLog, interceptors...)
+}
+
+// Create returns a builder for creating a RBACAuditLog entity.
+func (c *RBACAuditLogClient) Create() *RBACAuditLogCreate {
+	mutation := newRBACAuditLogMutation(c.config, OpCreate)
+	return &RBACAuditLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RBACAuditLog entities.
+func (c *RBACAuditLogClient) CreateBulk(builders ...*RBACAuditLogCreate) *RBACAuditLogCreateBulk {
+	return &RBACAuditLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RBACAuditLogClient) MapCreateBulk(slice any, setFunc func(*RBACAuditLogCreate, int)) *RBACAuditLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RBACAuditLogCreateBulk{err: fmt.Errorf("calling to RBACAuditLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RBACAuditLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RBACAuditLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RBACAuditLog.
+func (c *RBACAuditLogClient) Update() *RBACAuditLogUpdate {
+	mutation := newRBACAuditLogMutation(c.config, OpUpdate)
+	return &RBACAuditLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RBACAuditLogClient) UpdateOne(ral *RBACAuditLog) *RBACAuditLogUpdateOne {
+	mutation := newRBACAuditLogMutation(c.config, OpUpdateOne, withRBACAuditLog(ral))
+	return &RBACAuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RBACAuditLogClient) UpdateOneID(id uuid.UUID) *RBACAuditLogUpdateOne {
+	mutation := newRBACAuditLogMutation(c.config, OpUpdateOne, withRBACAuditLogID(id))
+	return &RBACAuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RBACAuditLog.
+func (c *RBACAuditLogClient) Delete() *RBACAuditLogDelete {
+	mutation := newRBACAuditLogMutation(c.config, OpDelete)
+	return &RBACAuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RBACAuditLogClient) DeleteOne(ral *RBACAuditLog) *RBACAuditLogDeleteOne {
+	return c.DeleteOneID(ral.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RBACAuditLogClient) DeleteOneID(id uuid.UUID) *RBACAuditLogDeleteOne {
+	builder := c.Delete().Where(rbacauditlog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RBACAuditLogDeleteOne{builder}
+}
+
+// Query returns a query builder for RBACAuditLog.
+func (c *RBACAuditLogClient) Query() *RBACAuditLogQuery {
+	return &RBACAuditLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRBACAuditLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RBACAuditLog entity by its id.
+func (c *RBACAuditLogClient) Get(ctx context.Context, id uuid.UUID) (*RBACAuditLog, error) {
+	return c.Query().Where(rbacauditlog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RBACAuditLogClient) GetX(ctx context.Context, id uuid.UUID) *RBACAuditLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RBACAuditLogClient) Hooks() []Hook {
+	return c.hooks.RBACAuditLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *RBACAuditLogClient) Interceptors() []Interceptor {
+	return c.inters.RBACAuditLog
+}
+
+func (c *RBACAuditLogClient) mutate(ctx context.Context, m *RBACAuditLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RBACAuditLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RBACAuditLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RBACAuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RBACAuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RBACAuditLog mutation op: %q", m.Op())
+	}
+}
+
 // RoleClient is a client for the Role schema.
 type RoleClient struct {
 	config
@@ -5860,8 +6001,8 @@ type (
 		Milestone, OutboxEvent, Permission, Project, ProjectBaseline,
 		ProjectChangeRequest, ProjectMember, ProjectRisk, ProjectTemplate,
 		ProjectsUser, QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate,
-		Role, RolePermission, Task, TaskAssignee, TaskDependency, TenantSetting,
-		Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
+		RBACAuditLog, Role, RolePermission, Task, TaskAssignee, TaskDependency,
+		TenantSetting, Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
 		TenderEvaluation, TenderMeeting, UserRoleAssignment []ent.Hook
 	}
 	inters struct {
@@ -5869,8 +6010,8 @@ type (
 		Milestone, OutboxEvent, Permission, Project, ProjectBaseline,
 		ProjectChangeRequest, ProjectMember, ProjectRisk, ProjectTemplate,
 		ProjectsUser, QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate,
-		Role, RolePermission, Task, TaskAssignee, TaskDependency, TenantSetting,
-		Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
+		RBACAuditLog, Role, RolePermission, Task, TaskAssignee, TaskDependency,
+		TenantSetting, Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
 		TenderEvaluation, TenderMeeting, UserRoleAssignment []ent.Interceptor
 	}
 )

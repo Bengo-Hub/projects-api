@@ -79,6 +79,34 @@ func (puc *ProjectsUserCreate) SetNillableStatus(s *string) *ProjectsUserCreate 
 	return puc
 }
 
+// SetDeactivatedAt sets the "deactivated_at" field.
+func (puc *ProjectsUserCreate) SetDeactivatedAt(t time.Time) *ProjectsUserCreate {
+	puc.mutation.SetDeactivatedAt(t)
+	return puc
+}
+
+// SetNillableDeactivatedAt sets the "deactivated_at" field if the given value is not nil.
+func (puc *ProjectsUserCreate) SetNillableDeactivatedAt(t *time.Time) *ProjectsUserCreate {
+	if t != nil {
+		puc.SetDeactivatedAt(*t)
+	}
+	return puc
+}
+
+// SetDeactivatedBy sets the "deactivated_by" field.
+func (puc *ProjectsUserCreate) SetDeactivatedBy(u uuid.UUID) *ProjectsUserCreate {
+	puc.mutation.SetDeactivatedBy(u)
+	return puc
+}
+
+// SetNillableDeactivatedBy sets the "deactivated_by" field if the given value is not nil.
+func (puc *ProjectsUserCreate) SetNillableDeactivatedBy(u *uuid.UUID) *ProjectsUserCreate {
+	if u != nil {
+		puc.SetDeactivatedBy(*u)
+	}
+	return puc
+}
+
 // SetSyncStatus sets the "sync_status" field.
 func (puc *ProjectsUserCreate) SetSyncStatus(s string) *ProjectsUserCreate {
 	puc.mutation.SetSyncStatus(s)
@@ -297,6 +325,14 @@ func (puc *ProjectsUserCreate) createSpec() (*ProjectsUser, *sqlgraph.CreateSpec
 		_spec.SetField(projectsuser.FieldStatus, field.TypeString, value)
 		_node.Status = value
 	}
+	if value, ok := puc.mutation.DeactivatedAt(); ok {
+		_spec.SetField(projectsuser.FieldDeactivatedAt, field.TypeTime, value)
+		_node.DeactivatedAt = &value
+	}
+	if value, ok := puc.mutation.DeactivatedBy(); ok {
+		_spec.SetField(projectsuser.FieldDeactivatedBy, field.TypeUUID, value)
+		_node.DeactivatedBy = &value
+	}
 	if value, ok := puc.mutation.SyncStatus(); ok {
 		_spec.SetField(projectsuser.FieldSyncStatus, field.TypeString, value)
 		_node.SyncStatus = value
@@ -450,6 +486,42 @@ func (u *ProjectsUserUpsert) SetStatus(v string) *ProjectsUserUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *ProjectsUserUpsert) UpdateStatus() *ProjectsUserUpsert {
 	u.SetExcluded(projectsuser.FieldStatus)
+	return u
+}
+
+// SetDeactivatedAt sets the "deactivated_at" field.
+func (u *ProjectsUserUpsert) SetDeactivatedAt(v time.Time) *ProjectsUserUpsert {
+	u.Set(projectsuser.FieldDeactivatedAt, v)
+	return u
+}
+
+// UpdateDeactivatedAt sets the "deactivated_at" field to the value that was provided on create.
+func (u *ProjectsUserUpsert) UpdateDeactivatedAt() *ProjectsUserUpsert {
+	u.SetExcluded(projectsuser.FieldDeactivatedAt)
+	return u
+}
+
+// ClearDeactivatedAt clears the value of the "deactivated_at" field.
+func (u *ProjectsUserUpsert) ClearDeactivatedAt() *ProjectsUserUpsert {
+	u.SetNull(projectsuser.FieldDeactivatedAt)
+	return u
+}
+
+// SetDeactivatedBy sets the "deactivated_by" field.
+func (u *ProjectsUserUpsert) SetDeactivatedBy(v uuid.UUID) *ProjectsUserUpsert {
+	u.Set(projectsuser.FieldDeactivatedBy, v)
+	return u
+}
+
+// UpdateDeactivatedBy sets the "deactivated_by" field to the value that was provided on create.
+func (u *ProjectsUserUpsert) UpdateDeactivatedBy() *ProjectsUserUpsert {
+	u.SetExcluded(projectsuser.FieldDeactivatedBy)
+	return u
+}
+
+// ClearDeactivatedBy clears the value of the "deactivated_by" field.
+func (u *ProjectsUserUpsert) ClearDeactivatedBy() *ProjectsUserUpsert {
+	u.SetNull(projectsuser.FieldDeactivatedBy)
 	return u
 }
 
@@ -627,6 +699,48 @@ func (u *ProjectsUserUpsertOne) SetStatus(v string) *ProjectsUserUpsertOne {
 func (u *ProjectsUserUpsertOne) UpdateStatus() *ProjectsUserUpsertOne {
 	return u.Update(func(s *ProjectsUserUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetDeactivatedAt sets the "deactivated_at" field.
+func (u *ProjectsUserUpsertOne) SetDeactivatedAt(v time.Time) *ProjectsUserUpsertOne {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.SetDeactivatedAt(v)
+	})
+}
+
+// UpdateDeactivatedAt sets the "deactivated_at" field to the value that was provided on create.
+func (u *ProjectsUserUpsertOne) UpdateDeactivatedAt() *ProjectsUserUpsertOne {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.UpdateDeactivatedAt()
+	})
+}
+
+// ClearDeactivatedAt clears the value of the "deactivated_at" field.
+func (u *ProjectsUserUpsertOne) ClearDeactivatedAt() *ProjectsUserUpsertOne {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.ClearDeactivatedAt()
+	})
+}
+
+// SetDeactivatedBy sets the "deactivated_by" field.
+func (u *ProjectsUserUpsertOne) SetDeactivatedBy(v uuid.UUID) *ProjectsUserUpsertOne {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.SetDeactivatedBy(v)
+	})
+}
+
+// UpdateDeactivatedBy sets the "deactivated_by" field to the value that was provided on create.
+func (u *ProjectsUserUpsertOne) UpdateDeactivatedBy() *ProjectsUserUpsertOne {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.UpdateDeactivatedBy()
+	})
+}
+
+// ClearDeactivatedBy clears the value of the "deactivated_by" field.
+func (u *ProjectsUserUpsertOne) ClearDeactivatedBy() *ProjectsUserUpsertOne {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.ClearDeactivatedBy()
 	})
 }
 
@@ -978,6 +1092,48 @@ func (u *ProjectsUserUpsertBulk) SetStatus(v string) *ProjectsUserUpsertBulk {
 func (u *ProjectsUserUpsertBulk) UpdateStatus() *ProjectsUserUpsertBulk {
 	return u.Update(func(s *ProjectsUserUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetDeactivatedAt sets the "deactivated_at" field.
+func (u *ProjectsUserUpsertBulk) SetDeactivatedAt(v time.Time) *ProjectsUserUpsertBulk {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.SetDeactivatedAt(v)
+	})
+}
+
+// UpdateDeactivatedAt sets the "deactivated_at" field to the value that was provided on create.
+func (u *ProjectsUserUpsertBulk) UpdateDeactivatedAt() *ProjectsUserUpsertBulk {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.UpdateDeactivatedAt()
+	})
+}
+
+// ClearDeactivatedAt clears the value of the "deactivated_at" field.
+func (u *ProjectsUserUpsertBulk) ClearDeactivatedAt() *ProjectsUserUpsertBulk {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.ClearDeactivatedAt()
+	})
+}
+
+// SetDeactivatedBy sets the "deactivated_by" field.
+func (u *ProjectsUserUpsertBulk) SetDeactivatedBy(v uuid.UUID) *ProjectsUserUpsertBulk {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.SetDeactivatedBy(v)
+	})
+}
+
+// UpdateDeactivatedBy sets the "deactivated_by" field to the value that was provided on create.
+func (u *ProjectsUserUpsertBulk) UpdateDeactivatedBy() *ProjectsUserUpsertBulk {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.UpdateDeactivatedBy()
+	})
+}
+
+// ClearDeactivatedBy clears the value of the "deactivated_by" field.
+func (u *ProjectsUserUpsertBulk) ClearDeactivatedBy() *ProjectsUserUpsertBulk {
+	return u.Update(func(s *ProjectsUserUpsert) {
+		s.ClearDeactivatedBy()
 	})
 }
 

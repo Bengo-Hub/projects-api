@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	sharedcache "github.com/Bengo-Hub/cache"
@@ -17,6 +18,7 @@ import (
 	entrole "github.com/bengobox/projects-service/internal/ent/role"
 	entroleperm "github.com/bengobox/projects-service/internal/ent/rolepermission"
 	entassign "github.com/bengobox/projects-service/internal/ent/userroleassignment"
+	"github.com/bengobox/projects-service/internal/services/txn"
 )
 
 // cacheTTL bounds how stale another pod's view of a user's permissions can be after a role
@@ -26,7 +28,7 @@ const cacheTTL = 60 * time.Second
 // ensureEvery throttles JIT writes per pod: a user is re-checked at most this often.
 const ensureEvery = 5 * time.Minute
 
-// Errors returned by role management.
+// Errors returned by role management (more in manage.go).
 var (
 	ErrRoleNotFound = errors.New("role not found")
 	ErrSelfChange   = errors.New("you cannot change your own roles")
@@ -171,7 +173,9 @@ func (s *Service) EnsureUserFromToken(ctx context.Context, id Identity) error {
 		}
 	}
 	if !hasMapped || len(autoOthers) > 0 {
-		role, err := s.systemRole(ctx, mapped)
+		// The tenant's own copy of a default role first: once a default role is customised, the
+		// copy is what this tenant's people hold, so JIT never adds the default back beside it.
+		role, err := roleByCode(ctx, s.client.Role, id.TenantID, mapped)
 		if err != nil {
 			return err
 		}
@@ -227,14 +231,6 @@ func (s *Service) upsertUser(ctx context.Context, tenantID, authUserID uuid.UUID
 		return uuid.Nil, fmt.Errorf("rbac upsert user: %w", err)
 	}
 	return id, nil
-}
-
-func (s *Service) systemRole(ctx context.Context, code string) (*ent.Role, error) {
-	r, err := s.client.Role.Query().Where(entrole.RoleCode(code), entrole.TenantIDIsNil()).Only(ctx)
-	if ent.IsNotFound(err) {
-		return nil, ErrRoleNotFound
-	}
-	return r, err
 }
 
 // Resolve returns the user's projects roles and effective permission codes in the tenant, cached.
@@ -327,54 +323,80 @@ func HoldersAmong(ctx context.Context, users *ent.ProjectsUserClient, tenantID u
 	return out, nil
 }
 
-// AssignRole gives a user a system role, granted by actor. The user's automatic default role is
-// dropped, so from now on only admin decisions apply. The user need not have signed in yet.
+// AssignRole gives a user a role with no end date, granted by actor. See AssignRoleUntil.
 func (s *Service) AssignRole(ctx context.Context, tenantID, authUserID uuid.UUID, roleCode string, actor uuid.UUID) error {
+	_, err := s.AssignRoleUntil(ctx, tenantID, authUserID, roleCode, actor, nil)
+	return err
+}
+
+// AssignRoleUntil gives a user a role by code (the tenant's own copy first, then the default role)
+// until expiresAt, or with no end when it is nil, granted by actor. Giving a role the user already
+// holds renews it with the new end date. The user's automatic default role is dropped, so from
+// now on only admin decisions apply. The user need not have signed in yet. The client portal role
+// is never given here: only the portal sign-in gives it.
+func (s *Service) AssignRoleUntil(ctx context.Context, tenantID, authUserID uuid.UUID, roleCode string, actor uuid.UUID, expiresAt *time.Time) (*ent.Role, error) {
 	if actor == authUserID {
-		return ErrSelfChange
+		return nil, ErrSelfChange
 	}
-	role, err := s.systemRole(ctx, roleCode)
+	if expiresAt != nil && !expiresAt.After(time.Now()) {
+		return nil, ErrInvalidExpiry
+	}
+	if roleCode == RoleClient {
+		return nil, ErrReservedRole
+	}
+	role, err := roleByCode(ctx, s.client.Role, tenantID, roleCode)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	userID, err := s.upsertUser(ctx, tenantID, authUserID, "", "")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	tx, err := s.client.Tx(ctx)
+	err = txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+		if _, err := tx.UserRoleAssignment.Delete().Where(entassign.TenantID(tenantID), entassign.UserID(userID),
+			entassign.AssignedBy(authUserID)).Exec(ctx); err != nil {
+			return err
+		}
+		create := tx.UserRoleAssignment.Create().SetTenantID(tenantID).SetUserID(userID).SetRoleID(role.ID).
+			SetAssignedBy(actor).SetNillableExpiresAt(expiresAt)
+		return create.OnConflictColumns(entassign.FieldTenantID, entassign.FieldUserID, entassign.FieldRoleID).
+			Update(func(u *ent.UserRoleAssignmentUpsert) {
+				u.UpdateAssignedBy()
+				if expiresAt != nil {
+					u.SetExpiresAt(*expiresAt)
+				} else {
+					u.ClearExpiresAt()
+				}
+			}).Exec(ctx)
+	})
 	if err != nil {
-		return err
-	}
-	if _, err := tx.UserRoleAssignment.Delete().Where(entassign.TenantID(tenantID), entassign.UserID(userID),
-		entassign.AssignedBy(authUserID)).Exec(ctx); err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-	if err := tx.UserRoleAssignment.Create().SetTenantID(tenantID).SetUserID(userID).SetRoleID(role.ID).
-		SetAssignedBy(actor).
-		OnConflictColumns(entassign.FieldTenantID, entassign.FieldUserID, entassign.FieldRoleID).
-		UpdateAssignedBy().Exec(ctx); err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return err
+		return nil, err
 	}
 	s.invalidate(ctx, tenantID, authUserID)
-	return nil
+	return role, nil
 }
 
-// RevokeRole removes one role from a user. A user left with no role gets their default role back
-// on their next request.
+// RevokeRole removes one role (by code: the tenant's copy or the default) from a user. Nobody
+// changes their own roles, and the last active projects administrator keeps the role. A user left
+// with no role gets their default role back on their next request.
 func (s *Service) RevokeRole(ctx context.Context, tenantID, authUserID uuid.UUID, roleCode string, actor uuid.UUID) error {
 	if actor == authUserID {
 		return ErrSelfChange
 	}
-	role, err := s.systemRole(ctx, roleCode)
-	if err != nil {
+	if _, err := roleByCode(ctx, s.client.Role, tenantID, roleCode); err != nil {
 		return err
 	}
-	n, err := s.client.UserRoleAssignment.Delete().Where(entassign.TenantID(tenantID), entassign.RoleID(role.ID),
+	if roleCode == RoleAdmin {
+		last, err := s.lastActiveAdmin(ctx, tenantID, authUserID)
+		if err != nil {
+			return err
+		}
+		if last {
+			return ErrLastAdmin
+		}
+	}
+	n, err := s.client.UserRoleAssignment.Delete().Where(entassign.TenantID(tenantID),
+		entassign.HasRoleWith(entrole.RoleCode(roleCode), entrole.Or(entrole.TenantIDIsNil(), entrole.TenantID(tenantID))),
 		entassign.HasUserWith(entprojectsuser.TenantID(tenantID), entprojectsuser.AuthServiceUserID(authUserID))).Exec(ctx)
 	if err != nil {
 		return err
@@ -386,19 +408,24 @@ func (s *Service) RevokeRole(ctx context.Context, tenantID, authUserID uuid.UUID
 	return nil
 }
 
-// RoleView is a role as the role screens show it.
+// RoleView is a role as the role screens show it. scope is global for a default role and tenant
+// for the tenant's own; is_customized marks a tenant copy of a default role (same code). holders
+// counts the tenant's active people whose assignment has not ended.
 type RoleView struct {
-	ID          uuid.UUID `json:"id"`
-	Code        string    `json:"code"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	System      bool      `json:"is_system_role"`
-	Permissions []string  `json:"permissions"`
-	Holders     int       `json:"holders"`
+	ID           uuid.UUID `json:"id"`
+	Code         string    `json:"code"`
+	Name         string    `json:"name"`
+	Description  string    `json:"description,omitempty"`
+	System       bool      `json:"is_system_role"`
+	Scope        string    `json:"scope"`
+	IsCustomized bool      `json:"is_customized"`
+	Permissions  []string  `json:"permissions"`
+	Holders      int       `json:"holders"`
 }
 
-// ListRoles returns the system roles in rank order with their permission codes and how many of
-// the tenant's users hold each.
+// ListRoles returns the roles the tenant sees, in rank order (default roles first, then the
+// tenant's own by name), with their permission codes and holder counts. A tenant copy of a default
+// role replaces the default in the list.
 func (s *Service) ListRoles(ctx context.Context, tenantID uuid.UUID) ([]RoleView, error) {
 	rows, err := s.client.Role.Query().Where(entrole.Or(entrole.TenantIDIsNil(), entrole.TenantID(tenantID))).
 		WithPermissions().All(ctx)
@@ -409,7 +436,8 @@ func (s *Service) ListRoles(ctx context.Context, tenantID uuid.UUID) ([]RoleView
 		RoleID uuid.UUID `json:"role_id"`
 		Count  int       `json:"count"`
 	}
-	if err := s.client.UserRoleAssignment.Query().Where(entassign.TenantID(tenantID)).
+	if err := s.client.UserRoleAssignment.Query().Where(entassign.TenantID(tenantID), notEnded(),
+		entassign.HasUserWith(entprojectsuser.Status(StatusActive))).
 		GroupBy(entassign.FieldRoleID).Aggregate(ent.Count()).Scan(ctx, &counts); err != nil {
 		return nil, err
 	}
@@ -417,9 +445,22 @@ func (s *Service) ListRoles(ctx context.Context, tenantID uuid.UUID) ([]RoleView
 	for _, c := range counts {
 		held[c.RoleID] = c.Count
 	}
+	global := map[string]bool{}
+	copied := map[string]bool{}
+	for _, r := range rows {
+		if r.TenantID == nil {
+			global[r.RoleCode] = true
+		} else {
+			copied[r.RoleCode] = true
+		}
+	}
 	out := make([]RoleView, 0, len(rows))
 	for _, r := range rows {
+		if r.TenantID == nil && copied[r.RoleCode] {
+			continue
+		}
 		v := RoleView{ID: r.ID, Code: r.RoleCode, Name: r.Name, Description: r.Description, System: r.IsSystemRole,
+			Scope: scopeOf(r), IsCustomized: r.TenantID != nil && global[r.RoleCode],
 			Holders: held[r.ID], Permissions: make([]string, 0, len(r.Edges.Permissions))}
 		for _, p := range r.Edges.Permissions {
 			v.Permissions = append(v.Permissions, p.PermissionCode)
@@ -427,41 +468,13 @@ func (s *Service) ListRoles(ctx context.Context, tenantID uuid.UUID) ([]RoleView
 		sort.Strings(v.Permissions)
 		out = append(out, v)
 	}
-	sort.Slice(out, func(i, j int) bool { return RoleRank(out[i].Code) < RoleRank(out[j].Code) })
-	return out, nil
-}
-
-// UserView is a local user with role codes for the role screens.
-type UserView struct {
-	AuthUserID uuid.UUID `json:"user_id"`
-	Email      string    `json:"email,omitempty"`
-	Name       string    `json:"name,omitempty"`
-	Status     string    `json:"status"`
-	Roles      []string  `json:"roles"`
-}
-
-// ListUsers returns the tenant's local users with their roles, at most limit (1 to 500).
-func (s *Service) ListUsers(ctx context.Context, tenantID uuid.UUID, limit int) ([]UserView, error) {
-	if limit <= 0 || limit > 500 {
-		limit = 200
-	}
-	users, err := s.client.ProjectsUser.Query().Where(entprojectsuser.TenantID(tenantID)).
-		WithRoleAssignments(func(q *ent.UserRoleAssignmentQuery) { q.WithRole() }).
-		Order(ent.Asc(entprojectsuser.FieldEmail)).Limit(limit).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]UserView, 0, len(users))
-	for _, u := range users {
-		v := UserView{AuthUserID: u.AuthServiceUserID, Email: u.Email, Name: u.Name, Status: u.Status, Roles: []string{}}
-		for _, a := range u.Edges.RoleAssignments {
-			if a.Edges.Role != nil {
-				v.Roles = append(v.Roles, a.Edges.Role.RoleCode)
-			}
+	sort.SliceStable(out, func(i, j int) bool {
+		ri, rj := RoleRank(out[i].Code), RoleRank(out[j].Code)
+		if ri != rj {
+			return ri < rj
 		}
-		sort.Slice(v.Roles, func(i, j int) bool { return RoleRank(v.Roles[i]) < RoleRank(v.Roles[j]) })
-		out = append(out, v)
-	}
+		return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name)
+	})
 	return out, nil
 }
 

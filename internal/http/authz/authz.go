@@ -43,7 +43,28 @@ type Access struct {
 	Bypass  bool
 	Service bool
 	Claims  *authclient.Claims
-	members Members
+	// ResolveErr is set when the caller's permissions could not be read: the request runs with
+	// none (fail closed) and GET /auth/me answers 503 instead of an empty profile.
+	ResolveErr error
+	members    Members
+}
+
+// AdminTier reports a caller who may change roles, revoke them and change people's status: a
+// platform owner, a superuser or admin of the organisation (global roles), or a holder of
+// projects_admin. Holding projects.rbac.manage alone is not enough. Service callers never are.
+func (a *Access) AdminTier() bool {
+	if a == nil || a.Service || a.AuthUserID == uuid.Nil {
+		return false
+	}
+	if a.Claims != nil && (a.Claims.IsPlatformOwner || a.Claims.IsSuperuser() || a.Claims.IsAdmin()) {
+		return true
+	}
+	for _, r := range a.Roles {
+		if r == rbac.RoleAdmin {
+			return true
+		}
+	}
+	return false
 }
 
 type accessKey struct{}
@@ -166,9 +187,10 @@ func Resolve(r RBAC, members Members, log *zap.Logger) func(http.Handler) http.H
 			a.AuthUserID = authUserID
 			a.Bypass = claims.IsPlatformOwner || claims.IsSuperuser()
 			if r != nil {
-				// Provision only in the user's own tenant: a platform owner looking at another
-				// tenant gets no local row there.
-				if strings.EqualFold(claims.TenantID, tenantID.String()) {
+				// Provision only in the user's own tenant (a platform owner looking at another
+				// tenant gets no local row there), and only when auth-api lets the user into
+				// projects (no user_services claim means every service).
+				if strings.EqualFold(claims.TenantID, tenantID.String()) && claims.AllowsUserService("projects") {
 					if err := r.EnsureUserFromToken(ctx, rbac.Identity{
 						TenantID: tenantID, AuthUserID: authUserID, Email: claims.Email, GlobalRoles: claims.Roles,
 					}); err != nil {
@@ -179,6 +201,7 @@ func Resolve(r RBAC, members Members, log *zap.Logger) func(http.Handler) http.H
 				if err != nil {
 					// Fail closed: no permissions rather than a guess.
 					log.Error("permission resolve failed", zap.String("user_id", authUserID.String()), zap.Error(err))
+					a.ResolveErr = err
 				}
 				a.Roles, a.Perms = res.Roles, res.Perms
 			}
@@ -201,6 +224,21 @@ func Require(codes ...string) func(http.Handler) http.Handler {
 			Forbidden(w, codes...)
 		})
 	}
+}
+
+// RequireAdminTier allows the request only for an admin tier caller (Access.AdminTier); otherwise
+// 403 with code admin_required. It sits on top of a permission gate, never instead of one.
+func RequireAdminTier(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if FromContext(r.Context()).AdminTier() {
+			next.ServeHTTP(w, r)
+			return
+		}
+		WriteJSON(w, http.StatusForbidden, map[string]string{
+			"error": "only an administrator of this organisation can do this",
+			"code":  "admin_required",
+		})
+	})
 }
 
 // Forbidden writes the permission 403.

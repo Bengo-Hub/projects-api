@@ -19,7 +19,8 @@ mutations, just-in-time user provisioning, then the route's permission check.
   role: superuser, admin or owner become projects_admin; manager or staff become member; anyone
   else becomes viewer. The automatic role follows later changes to the global role. A role an
   admin assigns replaces it and sticks. Superuser and platform owner skip permission checks, but
-  never plan gating.
+  never plan gating. Since sprint 17 a tenant may customise the default roles and add its own
+  (see "Team, roles and access" below).
 - **Membership.** Without `projects.projects.manage`, a user reaches only projects they own or
   belong to; any other project answers 404. With `tasks.view_own` only, a user sees only tasks
   assigned to them.
@@ -31,16 +32,72 @@ mutations, just-in-time user provisioning, then the route's permission check.
 - **CORS.** Allowed origins can read `X-QA-Access`, `X-Client-Invites` and the shared standard
   exposed headers (httpware `StandardCORS`).
 
-### Profile and roles
+### Team, roles and access (sprint 17, 2026-11-17)
+
+I manage a firm's team and roles inside projects, with treasury as the model (shared-docs trinity
+pattern). People are invited here through auth-api's tenant member route, not in the accounts site.
+There are no per person permission overrides and no idle logout.
+
+- **Admin tier.** Changing a role (create, copy, rename, permissions, delete), revoking a role and
+  changing a person's status need admin tier on top of `projects.rbac.manage`: a platform owner, a
+  superuser or admin of the organisation (global roles), or a holder of `projects_admin`. Anyone
+  else gets 403 `{"code": "admin_required"}`.
+- **Grant ceiling.** Giving a role (`POST /rbac/users/{id}/roles`, and the invite) is refused with
+  403 `{"code": "grant_refused"}` when the role holds a permission the caller does not (after
+  implication), when it is `projects_admin` or carries `projects.projects.manage` (which lifts
+  membership scoping) and the caller is not admin tier. The `client` role is never given here (409):
+  only the client portal sign-in gives it.
+- **Copy on write.** The default roles stay global. The first edit of one (permissions, name or
+  description) makes this tenant's copy with the same code and moves this tenant's holders to it in
+  the same transaction, so the change reaches them at once and nobody else. The copy has a new id;
+  the UI selects roles by code. Sign-in resolves a code to the tenant's copy first, so a customised
+  default role is never added back beside the copy. `projects_admin` and `client` are read only.
+- **Custom roles.** Codes match `^[a-z][a-z0-9_]{1,49}$` (made from the name when not given) and
+  never shadow an existing code. Every permission code must be in the registry (422 otherwise), and
+  `projects.portal.view` never sits beside a staff code (422). A role is deleted only when no active
+  person still holds it (409); assignments that ended go with it. A default role cannot be deleted
+  (409); deleting a tenant copy returns the tenant to the default.
+- **Guard rails.** Nobody changes their own roles (400) or status (409). A permission edit that would
+  leave the caller without `projects.rbac.manage` is refused (409). The last active holder of
+  `projects_admin` can be neither deactivated nor lose the role (409).
+- **Deactivation.** An inactive person keeps their roles but resolves to no permissions; sign-in
+  never reactivates them. Their permission cache key is cleared at once. Every role permission
+  change, copy or delete clears the tenant's whole cache (`projects:rbac:{tenant}:*`).
+- **Sign-in.** JIT provisioning runs only when the token allows the projects service
+  (`user_services`; no claim means every service). `GET /auth/me` answers 503
+  `{"code": "permissions_unavailable"}` when the permissions cannot be read, never an empty profile.
+- **Audit.** `rbac_audit_logs` records role.created, role.cloned, role.customized, role.updated,
+  role.deleted, role.permissions_updated (before and after), role.assigned, role.revoked,
+  user.invited, user.deactivated and user.reactivated, with the actor, their email and address.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/api/v1/{tenant}/auth/me` | signed in | `{user_id, email, name, tenant_id, global_roles[], service_role, roles[], permissions[], is_platform_owner}`. The UI calls it after SSO `/auth/me` and gates on `permissions`. |
-| GET | `/api/v1/{tenant}/rbac/roles` | `projects.rbac.manage` | System and tenant roles with their codes |
-| GET | `/api/v1/{tenant}/rbac/permissions` | `projects.rbac.manage` | The registry |
-| GET | `/api/v1/{tenant}/rbac/users` | `projects.rbac.manage` | Users and their roles |
-| POST | `/api/v1/{tenant}/rbac/users/{authUserID}/roles` | `projects.rbac.manage` | `{role_code}`. Nobody changes their own roles. |
-| DELETE | `/api/v1/{tenant}/rbac/users/{authUserID}/roles/{roleCode}` | `projects.rbac.manage` | Revoking the last assigned role returns the user to the automatic role |
+| GET | `/api/v1/{tenant}/auth/me` | signed in | `{user_id, email, name, tenant_id, global_roles[], service_role, roles[], permissions[], is_platform_owner}`. The UI calls it after SSO `/auth/me` and gates on `permissions`. 503 `permissions_unavailable` when they cannot be read. |
+| GET | `/api/v1/{tenant}/people` | `members.manage` or `rbac.manage` | Staff for pickers (never portal clients, never inactive people), `?search=` name or email, paged `{data: [{user_id, name, email}], total, limit, page, hasMore}` |
+| GET | `/rbac/roles` | `rbac.manage` | `{data: [{id, code, name, description, is_system_role, scope: global\|tenant, is_customized, permissions[], holders}]}`. Holders count active people whose role has not ended. A tenant copy replaces its default in the list. |
+| POST | `/rbac/roles` | admin tier | `{name, role_code?, description?, permission_codes[]}`, 201 with the role |
+| POST | `/rbac/roles/{id}/clone` | admin tier | `{name, role_code?, description?}`: a new tenant role with the source's permissions, 201 |
+| PATCH | `/rbac/roles/{id}` | admin tier | `{name?, description?}`; a default role is copied first |
+| GET | `/rbac/roles/{id}/permissions` | `rbac.manage` | `{permission_codes[]}` |
+| PUT | `/rbac/roles/{id}/permissions` | admin tier | `{permission_codes[]}` (required; `[]` empties the role). Answers the role holding them, a new id on the first edit of a default role. |
+| DELETE | `/rbac/roles/{id}` | admin tier | 204; 409 for a default role or one still held |
+| GET | `/rbac/permissions` | `rbac.manage` | The registry, each `{code, name, module, action, implied_by[]}` |
+| GET | `/rbac/users` | `rbac.manage` | `?search=&page=&limit=` (limit up to 500, 50 by default), paged `{data: [{user_id, email, name, status, deactivated_at, last_seen_at, roles: [code], assignments: [{role_id, role_code, name, assigned_at, expires_at, expired, automatic}]}], total, limit, page, hasMore}`. `roles` lists only roles that still grant access. |
+| GET | `/rbac/users/{authUserID}` | `rbac.manage` | One person as above plus `permissions[]` (effective) |
+| POST | `/rbac/users/{authUserID}/roles` | `rbac.manage` and the grant ceiling | `{role_code, expires_at?}` (RFC 3339, in the future, else 422). Giving a held role renews it with the new end date. 204. |
+| DELETE | `/rbac/users/{authUserID}/roles/{roleCode}` | admin tier | 204. A person left with no role gets their automatic role back on their next request. |
+| PATCH | `/rbac/users/{authUserID}` | admin tier | `{status: active\|inactive}`; answers the person |
+| GET | `/rbac/audit-logs` | `rbac.manage` | Paged, newest first: `{id, tenant_id, actor_user_id, actor_email, action, resource_type, resource_id, changes, ip_address, created_at}` |
+| POST | `/api/v1/{tenant}/users` | `rbac.manage` and admin tier | Invite `{email, role_code?}` (role default member, held to the grant ceiling). Calls auth-api `POST /api/v1/s2s/tenants/{tenant}/members` (a new account gets auth-api's temporary password), records the person locally and gives the role. Someone already known in this tenant is not sent to auth-api again, since that route replaces global roles. Optional `roles[]` (global) never admin-like (400). 201 `{user_id, email, tenant_id, created, role_code}`; 502 when auth-api fails. |
+
+Errors: 404 role or person not found; 409 code taken, role in use, default or reserved role, self
+lockout, last admin, own status; 422 invalid input, unknown permission code, portal mixed with staff
+codes, past end date, unknown status; 403 `admin_required` or `grant_refused`.
+
+Project team members (`/projects/{id}/members`) take `role_code` owner, manager, member or viewer
+(default member); anything else is 400 and `client` is refused there (clients come from the portal
+invite). Owner and manager hear about a client's milestone decision. What a person may do comes
+from their projects role above, not this label.
 
 ### Errors and paging
 

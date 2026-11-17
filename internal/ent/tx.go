@@ -58,6 +58,8 @@ type Tx struct {
 	QASession *QASessionClient
 	// QATemplate is the client for interacting with the QATemplate builders.
 	QATemplate *QATemplateClient
+	// RBACAuditLog is the client for interacting with the RBACAuditLog builders.
+	RBACAuditLog *RBACAuditLogClient
 	// Role is the client for interacting with the Role builders.
 	Role *RoleClient
 	// RolePermission is the client for interacting with the RolePermission builders.
@@ -237,6 +239,7 @@ func (tx *Tx) init() {
 	tx.QAResult = NewQAResultClient(tx.config)
 	tx.QASession = NewQASessionClient(tx.config)
 	tx.QATemplate = NewQATemplateClient(tx.config)
+	tx.RBACAuditLog = NewRBACAuditLogClient(tx.config)
 	tx.Role = NewRoleClient(tx.config)
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)

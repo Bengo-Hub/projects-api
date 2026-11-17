@@ -105,6 +105,50 @@ func TestClientRoleIsPortalOnly(t *testing.T) {
 	}
 }
 
+// implied_by lists only registry codes: the module's manage when there is one, the full form of an
+// _own code, QA run for QA view.
+func TestPermissionViewsImpliedBy(t *testing.T) {
+	got := map[string][]string{}
+	for _, v := range PermissionViews() {
+		got[v.Code] = v.ImpliedBy
+	}
+	if !slices.Equal(got[PermTasksViewOwn], []string{PermTasksManage, PermTasksView}) {
+		t.Errorf("tasks.view_own implied by %v", got[PermTasksViewOwn])
+	}
+	if len(got[PermMilestonesView]) != 0 {
+		t.Errorf("milestones has no manage, yet view is implied by %v", got[PermMilestonesView])
+	}
+	if !slices.Equal(got[PermQAView], []string{PermQAManage, PermQARun}) {
+		t.Errorf("qa.view implied by %v", got[PermQAView])
+	}
+	if len(got[PermProjectsManage]) != 0 {
+		t.Errorf("nothing implies a manage code: %v", got[PermProjectsManage])
+	}
+	if len(got) != len(Catalogue) {
+		t.Errorf("%d views for %d codes", len(got), len(Catalogue))
+	}
+}
+
+// A custom role's codes: duplicates dropped, unknown codes refused, the portal never mixed in.
+func TestCheckCodes(t *testing.T) {
+	codes, err := CheckCodes([]string{PermTasksView, " " + PermProjectsView, PermTasksView, ""})
+	if err != nil || !slices.Equal(codes, []string{PermProjectsView, PermTasksView}) {
+		t.Errorf("clean = %v %v", codes, err)
+	}
+	if _, err := CheckCodes([]string{"projects.tasks.fly"}); err == nil {
+		t.Error("an unknown code passed")
+	}
+	if _, err := CheckCodes([]string{PermPortalView, PermPortalManage}); err != ErrPortalMix {
+		t.Errorf("portal with a staff code: %v", err)
+	}
+	if codes, err := CheckCodes([]string{PermPortalView}); err != nil || len(codes) != 1 {
+		t.Errorf("portal alone: %v %v", codes, err)
+	}
+	if codes, err := CheckCodes(nil); err != nil || len(codes) != 0 {
+		t.Errorf("an empty role: %v %v", codes, err)
+	}
+}
+
 func TestRoleRankOrdersAdminFirst(t *testing.T) {
 	if RoleRank(RoleAdmin) >= RoleRank(RoleMember) || RoleRank(RoleMember) >= RoleRank(RoleViewer) {
 		t.Error("rank must be admin, manager, member, viewer")

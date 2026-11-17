@@ -273,6 +273,18 @@ func (f QATemplateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QATemplateMutation", m)
 }
 
+// The RBACAuditLogFunc type is an adapter to allow the use of ordinary
+// function as RBACAuditLog mutator.
+type RBACAuditLogFunc func(context.Context, *ent.RBACAuditLogMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RBACAuditLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RBACAuditLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RBACAuditLogMutation", m)
+}
+
 // The RoleFunc type is an adapter to allow the use of ordinary
 // function as Role mutator.
 type RoleFunc func(context.Context, *ent.RoleMutation) (ent.Value, error)

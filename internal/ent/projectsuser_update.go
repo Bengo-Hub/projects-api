@@ -112,6 +112,46 @@ func (puu *ProjectsUserUpdate) SetNillableStatus(s *string) *ProjectsUserUpdate 
 	return puu
 }
 
+// SetDeactivatedAt sets the "deactivated_at" field.
+func (puu *ProjectsUserUpdate) SetDeactivatedAt(t time.Time) *ProjectsUserUpdate {
+	puu.mutation.SetDeactivatedAt(t)
+	return puu
+}
+
+// SetNillableDeactivatedAt sets the "deactivated_at" field if the given value is not nil.
+func (puu *ProjectsUserUpdate) SetNillableDeactivatedAt(t *time.Time) *ProjectsUserUpdate {
+	if t != nil {
+		puu.SetDeactivatedAt(*t)
+	}
+	return puu
+}
+
+// ClearDeactivatedAt clears the value of the "deactivated_at" field.
+func (puu *ProjectsUserUpdate) ClearDeactivatedAt() *ProjectsUserUpdate {
+	puu.mutation.ClearDeactivatedAt()
+	return puu
+}
+
+// SetDeactivatedBy sets the "deactivated_by" field.
+func (puu *ProjectsUserUpdate) SetDeactivatedBy(u uuid.UUID) *ProjectsUserUpdate {
+	puu.mutation.SetDeactivatedBy(u)
+	return puu
+}
+
+// SetNillableDeactivatedBy sets the "deactivated_by" field if the given value is not nil.
+func (puu *ProjectsUserUpdate) SetNillableDeactivatedBy(u *uuid.UUID) *ProjectsUserUpdate {
+	if u != nil {
+		puu.SetDeactivatedBy(*u)
+	}
+	return puu
+}
+
+// ClearDeactivatedBy clears the value of the "deactivated_by" field.
+func (puu *ProjectsUserUpdate) ClearDeactivatedBy() *ProjectsUserUpdate {
+	puu.mutation.ClearDeactivatedBy()
+	return puu
+}
+
 // SetSyncStatus sets the "sync_status" field.
 func (puu *ProjectsUserUpdate) SetSyncStatus(s string) *ProjectsUserUpdate {
 	puu.mutation.SetSyncStatus(s)
@@ -258,6 +298,18 @@ func (puu *ProjectsUserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := puu.mutation.Status(); ok {
 		_spec.SetField(projectsuser.FieldStatus, field.TypeString, value)
+	}
+	if value, ok := puu.mutation.DeactivatedAt(); ok {
+		_spec.SetField(projectsuser.FieldDeactivatedAt, field.TypeTime, value)
+	}
+	if puu.mutation.DeactivatedAtCleared() {
+		_spec.ClearField(projectsuser.FieldDeactivatedAt, field.TypeTime)
+	}
+	if value, ok := puu.mutation.DeactivatedBy(); ok {
+		_spec.SetField(projectsuser.FieldDeactivatedBy, field.TypeUUID, value)
+	}
+	if puu.mutation.DeactivatedByCleared() {
+		_spec.ClearField(projectsuser.FieldDeactivatedBy, field.TypeUUID)
 	}
 	if value, ok := puu.mutation.SyncStatus(); ok {
 		_spec.SetField(projectsuser.FieldSyncStatus, field.TypeString, value)
@@ -415,6 +467,46 @@ func (puuo *ProjectsUserUpdateOne) SetNillableStatus(s *string) *ProjectsUserUpd
 	if s != nil {
 		puuo.SetStatus(*s)
 	}
+	return puuo
+}
+
+// SetDeactivatedAt sets the "deactivated_at" field.
+func (puuo *ProjectsUserUpdateOne) SetDeactivatedAt(t time.Time) *ProjectsUserUpdateOne {
+	puuo.mutation.SetDeactivatedAt(t)
+	return puuo
+}
+
+// SetNillableDeactivatedAt sets the "deactivated_at" field if the given value is not nil.
+func (puuo *ProjectsUserUpdateOne) SetNillableDeactivatedAt(t *time.Time) *ProjectsUserUpdateOne {
+	if t != nil {
+		puuo.SetDeactivatedAt(*t)
+	}
+	return puuo
+}
+
+// ClearDeactivatedAt clears the value of the "deactivated_at" field.
+func (puuo *ProjectsUserUpdateOne) ClearDeactivatedAt() *ProjectsUserUpdateOne {
+	puuo.mutation.ClearDeactivatedAt()
+	return puuo
+}
+
+// SetDeactivatedBy sets the "deactivated_by" field.
+func (puuo *ProjectsUserUpdateOne) SetDeactivatedBy(u uuid.UUID) *ProjectsUserUpdateOne {
+	puuo.mutation.SetDeactivatedBy(u)
+	return puuo
+}
+
+// SetNillableDeactivatedBy sets the "deactivated_by" field if the given value is not nil.
+func (puuo *ProjectsUserUpdateOne) SetNillableDeactivatedBy(u *uuid.UUID) *ProjectsUserUpdateOne {
+	if u != nil {
+		puuo.SetDeactivatedBy(*u)
+	}
+	return puuo
+}
+
+// ClearDeactivatedBy clears the value of the "deactivated_by" field.
+func (puuo *ProjectsUserUpdateOne) ClearDeactivatedBy() *ProjectsUserUpdateOne {
+	puuo.mutation.ClearDeactivatedBy()
 	return puuo
 }
 
@@ -594,6 +686,18 @@ func (puuo *ProjectsUserUpdateOne) sqlSave(ctx context.Context) (_node *Projects
 	}
 	if value, ok := puuo.mutation.Status(); ok {
 		_spec.SetField(projectsuser.FieldStatus, field.TypeString, value)
+	}
+	if value, ok := puuo.mutation.DeactivatedAt(); ok {
+		_spec.SetField(projectsuser.FieldDeactivatedAt, field.TypeTime, value)
+	}
+	if puuo.mutation.DeactivatedAtCleared() {
+		_spec.ClearField(projectsuser.FieldDeactivatedAt, field.TypeTime)
+	}
+	if value, ok := puuo.mutation.DeactivatedBy(); ok {
+		_spec.SetField(projectsuser.FieldDeactivatedBy, field.TypeUUID, value)
+	}
+	if puuo.mutation.DeactivatedByCleared() {
+		_spec.ClearField(projectsuser.FieldDeactivatedBy, field.TypeUUID)
 	}
 	if value, ok := puuo.mutation.SyncStatus(); ok {
 		_spec.SetField(projectsuser.FieldSyncStatus, field.TypeString, value)

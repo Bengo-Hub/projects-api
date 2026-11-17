@@ -72,6 +72,9 @@ type QASession func(*sql.Selector)
 // QATemplate is the predicate function for qatemplate builders.
 type QATemplate func(*sql.Selector)
 
+// RBACAuditLog is the predicate function for rbacauditlog builders.
+type RBACAuditLog func(*sql.Selector)
+
 // Role is the predicate function for role builders.
 type Role func(*sql.Selector)
 

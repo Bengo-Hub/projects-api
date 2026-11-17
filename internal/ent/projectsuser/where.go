@@ -81,6 +81,16 @@ func Status(v string) predicate.ProjectsUser {
 	return predicate.ProjectsUser(sql.FieldEQ(FieldStatus, v))
 }
 
+// DeactivatedAt applies equality check predicate on the "deactivated_at" field. It's identical to DeactivatedAtEQ.
+func DeactivatedAt(v time.Time) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldEQ(FieldDeactivatedAt, v))
+}
+
+// DeactivatedBy applies equality check predicate on the "deactivated_by" field. It's identical to DeactivatedByEQ.
+func DeactivatedBy(v uuid.UUID) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldEQ(FieldDeactivatedBy, v))
+}
+
 // SyncStatus applies equality check predicate on the "sync_status" field. It's identical to SyncStatusEQ.
 func SyncStatus(v string) predicate.ProjectsUser {
 	return predicate.ProjectsUser(sql.FieldEQ(FieldSyncStatus, v))
@@ -394,6 +404,106 @@ func StatusEqualFold(v string) predicate.ProjectsUser {
 // StatusContainsFold applies the ContainsFold predicate on the "status" field.
 func StatusContainsFold(v string) predicate.ProjectsUser {
 	return predicate.ProjectsUser(sql.FieldContainsFold(FieldStatus, v))
+}
+
+// DeactivatedAtEQ applies the EQ predicate on the "deactivated_at" field.
+func DeactivatedAtEQ(v time.Time) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldEQ(FieldDeactivatedAt, v))
+}
+
+// DeactivatedAtNEQ applies the NEQ predicate on the "deactivated_at" field.
+func DeactivatedAtNEQ(v time.Time) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldNEQ(FieldDeactivatedAt, v))
+}
+
+// DeactivatedAtIn applies the In predicate on the "deactivated_at" field.
+func DeactivatedAtIn(vs ...time.Time) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldIn(FieldDeactivatedAt, vs...))
+}
+
+// DeactivatedAtNotIn applies the NotIn predicate on the "deactivated_at" field.
+func DeactivatedAtNotIn(vs ...time.Time) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldNotIn(FieldDeactivatedAt, vs...))
+}
+
+// DeactivatedAtGT applies the GT predicate on the "deactivated_at" field.
+func DeactivatedAtGT(v time.Time) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldGT(FieldDeactivatedAt, v))
+}
+
+// DeactivatedAtGTE applies the GTE predicate on the "deactivated_at" field.
+func DeactivatedAtGTE(v time.Time) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldGTE(FieldDeactivatedAt, v))
+}
+
+// DeactivatedAtLT applies the LT predicate on the "deactivated_at" field.
+func DeactivatedAtLT(v time.Time) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldLT(FieldDeactivatedAt, v))
+}
+
+// DeactivatedAtLTE applies the LTE predicate on the "deactivated_at" field.
+func DeactivatedAtLTE(v time.Time) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldLTE(FieldDeactivatedAt, v))
+}
+
+// DeactivatedAtIsNil applies the IsNil predicate on the "deactivated_at" field.
+func DeactivatedAtIsNil() predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldIsNull(FieldDeactivatedAt))
+}
+
+// DeactivatedAtNotNil applies the NotNil predicate on the "deactivated_at" field.
+func DeactivatedAtNotNil() predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldNotNull(FieldDeactivatedAt))
+}
+
+// DeactivatedByEQ applies the EQ predicate on the "deactivated_by" field.
+func DeactivatedByEQ(v uuid.UUID) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldEQ(FieldDeactivatedBy, v))
+}
+
+// DeactivatedByNEQ applies the NEQ predicate on the "deactivated_by" field.
+func DeactivatedByNEQ(v uuid.UUID) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldNEQ(FieldDeactivatedBy, v))
+}
+
+// DeactivatedByIn applies the In predicate on the "deactivated_by" field.
+func DeactivatedByIn(vs ...uuid.UUID) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldIn(FieldDeactivatedBy, vs...))
+}
+
+// DeactivatedByNotIn applies the NotIn predicate on the "deactivated_by" field.
+func DeactivatedByNotIn(vs ...uuid.UUID) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldNotIn(FieldDeactivatedBy, vs...))
+}
+
+// DeactivatedByGT applies the GT predicate on the "deactivated_by" field.
+func DeactivatedByGT(v uuid.UUID) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldGT(FieldDeactivatedBy, v))
+}
+
+// DeactivatedByGTE applies the GTE predicate on the "deactivated_by" field.
+func DeactivatedByGTE(v uuid.UUID) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldGTE(FieldDeactivatedBy, v))
+}
+
+// DeactivatedByLT applies the LT predicate on the "deactivated_by" field.
+func DeactivatedByLT(v uuid.UUID) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldLT(FieldDeactivatedBy, v))
+}
+
+// DeactivatedByLTE applies the LTE predicate on the "deactivated_by" field.
+func DeactivatedByLTE(v uuid.UUID) predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldLTE(FieldDeactivatedBy, v))
+}
+
+// DeactivatedByIsNil applies the IsNil predicate on the "deactivated_by" field.
+func DeactivatedByIsNil() predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldIsNull(FieldDeactivatedBy))
+}
+
+// DeactivatedByNotNil applies the NotNil predicate on the "deactivated_by" field.
+func DeactivatedByNotNil() predicate.ProjectsUser {
+	return predicate.ProjectsUser(sql.FieldNotNull(FieldDeactivatedBy))
 }
 
 // SyncStatusEQ applies the EQ predicate on the "sync_status" field.

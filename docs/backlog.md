@@ -16,6 +16,15 @@
 - Shared libs behind: auth-client (old replace), httpware, cache, pagination, shared-events, shared-service-client.
 - `GET /` redirected to Swagger, which is not mounted.
 
+## Access management, sprint 17 (built 2026-11-17)
+
+Done: team and role management inside projects (`docs/api.md`, "Team, roles and access";
+`docs/sprints/sprint-17-access-management.md`). Still open:
+
+- The client portal callback's PKCE `state` check (projects-ui; the portal sign-in stayed as is).
+- Tender committees still take a raw user id; they should use `GET /people`.
+- No screen yet for one person's effective permissions (`GET /rbac/users/{id}` exists).
+
 ## New sprints 12 to 16 (2026-11-16)
 
 See `docs/sprints/sprint-12-work-management-core.md` to `sprint-16-planning-depth.md`.

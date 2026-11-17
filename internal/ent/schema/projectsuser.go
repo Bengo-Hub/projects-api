@@ -25,7 +25,11 @@ func (ProjectsUser) Fields() []ent.Field {
 		field.UUID("auth_service_user_id", uuid.UUID{}).Comment("auth-api user id, unique per tenant"),
 		field.String("email").Optional(),
 		field.String("name").Optional(),
+		// status: active or inactive. Only an admin's deactivation sets inactive; sign-in never
+		// changes it back.
 		field.String("status").Default("active"),
+		field.Time("deactivated_at").Optional().Nillable(),
+		field.UUID("deactivated_by", uuid.UUID{}).Optional().Nillable().Comment("auth-api user id of whoever deactivated them"),
 		field.String("sync_status").Default("synced"),
 		field.Time("last_sync_at").Optional().Nillable(),
 		field.Time("created_at").Default(time.Now).Immutable(),

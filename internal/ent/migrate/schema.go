@@ -516,6 +516,8 @@ var (
 		{Name: "email", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeString, Default: "active"},
+		{Name: "deactivated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "deactivated_by", Type: field.TypeUUID, Nullable: true},
 		{Name: "sync_status", Type: field.TypeString, Default: "synced"},
 		{Name: "last_sync_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
@@ -752,6 +754,32 @@ var (
 				Name:    "qatemplate_service_tag",
 				Unique:  false,
 				Columns: []*schema.Column{QaTemplatesColumns[4]},
+			},
+		},
+	}
+	// RbacAuditLogsColumns holds the columns for the "rbac_audit_logs" table.
+	RbacAuditLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "actor_user_id", Type: field.TypeUUID},
+		{Name: "actor_email", Type: field.TypeString, Nullable: true, Size: 254},
+		{Name: "action", Type: field.TypeString, Size: 64},
+		{Name: "resource_type", Type: field.TypeString, Size: 16},
+		{Name: "resource_id", Type: field.TypeString, Size: 64},
+		{Name: "changes", Type: field.TypeJSON, Nullable: true},
+		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// RbacAuditLogsTable holds the schema information for the "rbac_audit_logs" table.
+	RbacAuditLogsTable = &schema.Table{
+		Name:       "rbac_audit_logs",
+		Columns:    RbacAuditLogsColumns,
+		PrimaryKey: []*schema.Column{RbacAuditLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "rbacauditlog_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{RbacAuditLogsColumns[1], RbacAuditLogsColumns[9]},
 			},
 		},
 	}
@@ -1265,6 +1293,7 @@ var (
 		QaResultsTable,
 		QaSessionsTable,
 		QaTemplatesTable,
+		RbacAuditLogsTable,
 		RolesTable,
 		RolePermissionsTable,
 		TasksTable,
@@ -1326,6 +1355,9 @@ func init() {
 	}
 	QaTemplatesTable.Annotation = &entsql.Annotation{
 		Table: "qa_templates",
+	}
+	RbacAuditLogsTable.Annotation = &entsql.Annotation{
+		Table: "rbac_audit_logs",
 	}
 	RolePermissionsTable.ForeignKeys[0].RefTable = RolesTable
 	RolePermissionsTable.ForeignKeys[1].RefTable = PermissionsTable

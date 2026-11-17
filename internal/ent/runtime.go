@@ -27,6 +27,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/qaresult"
 	"github.com/bengobox/projects-service/internal/ent/qasession"
 	"github.com/bengobox/projects-service/internal/ent/qatemplate"
+	"github.com/bengobox/projects-service/internal/ent/rbacauditlog"
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/schema"
 	"github.com/bengobox/projects-service/internal/ent/task"
@@ -412,15 +413,15 @@ func init() {
 	// projectsuser.DefaultStatus holds the default value on creation for the status field.
 	projectsuser.DefaultStatus = projectsuserDescStatus.Default.(string)
 	// projectsuserDescSyncStatus is the schema descriptor for sync_status field.
-	projectsuserDescSyncStatus := projectsuserFields[6].Descriptor()
+	projectsuserDescSyncStatus := projectsuserFields[8].Descriptor()
 	// projectsuser.DefaultSyncStatus holds the default value on creation for the sync_status field.
 	projectsuser.DefaultSyncStatus = projectsuserDescSyncStatus.Default.(string)
 	// projectsuserDescCreatedAt is the schema descriptor for created_at field.
-	projectsuserDescCreatedAt := projectsuserFields[8].Descriptor()
+	projectsuserDescCreatedAt := projectsuserFields[10].Descriptor()
 	// projectsuser.DefaultCreatedAt holds the default value on creation for the created_at field.
 	projectsuser.DefaultCreatedAt = projectsuserDescCreatedAt.Default.(func() time.Time)
 	// projectsuserDescUpdatedAt is the schema descriptor for updated_at field.
-	projectsuserDescUpdatedAt := projectsuserFields[9].Descriptor()
+	projectsuserDescUpdatedAt := projectsuserFields[11].Descriptor()
 	// projectsuser.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	projectsuser.DefaultUpdatedAt = projectsuserDescUpdatedAt.Default.(func() time.Time)
 	// projectsuser.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -729,6 +730,36 @@ func init() {
 	qatemplateDescID := qatemplateFields[0].Descriptor()
 	// qatemplate.DefaultID holds the default value on creation for the id field.
 	qatemplate.DefaultID = qatemplateDescID.Default.(func() uuid.UUID)
+	rbacauditlogFields := schema.RBACAuditLog{}.Fields()
+	_ = rbacauditlogFields
+	// rbacauditlogDescActorEmail is the schema descriptor for actor_email field.
+	rbacauditlogDescActorEmail := rbacauditlogFields[3].Descriptor()
+	// rbacauditlog.ActorEmailValidator is a validator for the "actor_email" field. It is called by the builders before save.
+	rbacauditlog.ActorEmailValidator = rbacauditlogDescActorEmail.Validators[0].(func(string) error)
+	// rbacauditlogDescAction is the schema descriptor for action field.
+	rbacauditlogDescAction := rbacauditlogFields[4].Descriptor()
+	// rbacauditlog.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	rbacauditlog.ActionValidator = rbacauditlogDescAction.Validators[0].(func(string) error)
+	// rbacauditlogDescResourceType is the schema descriptor for resource_type field.
+	rbacauditlogDescResourceType := rbacauditlogFields[5].Descriptor()
+	// rbacauditlog.ResourceTypeValidator is a validator for the "resource_type" field. It is called by the builders before save.
+	rbacauditlog.ResourceTypeValidator = rbacauditlogDescResourceType.Validators[0].(func(string) error)
+	// rbacauditlogDescResourceID is the schema descriptor for resource_id field.
+	rbacauditlogDescResourceID := rbacauditlogFields[6].Descriptor()
+	// rbacauditlog.ResourceIDValidator is a validator for the "resource_id" field. It is called by the builders before save.
+	rbacauditlog.ResourceIDValidator = rbacauditlogDescResourceID.Validators[0].(func(string) error)
+	// rbacauditlogDescIPAddress is the schema descriptor for ip_address field.
+	rbacauditlogDescIPAddress := rbacauditlogFields[8].Descriptor()
+	// rbacauditlog.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
+	rbacauditlog.IPAddressValidator = rbacauditlogDescIPAddress.Validators[0].(func(string) error)
+	// rbacauditlogDescCreatedAt is the schema descriptor for created_at field.
+	rbacauditlogDescCreatedAt := rbacauditlogFields[9].Descriptor()
+	// rbacauditlog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	rbacauditlog.DefaultCreatedAt = rbacauditlogDescCreatedAt.Default.(func() time.Time)
+	// rbacauditlogDescID is the schema descriptor for id field.
+	rbacauditlogDescID := rbacauditlogFields[0].Descriptor()
+	// rbacauditlog.DefaultID holds the default value on creation for the id field.
+	rbacauditlog.DefaultID = rbacauditlogDescID.Default.(func() uuid.UUID)
 	roleFields := schema.Role{}.Fields()
 	_ = roleFields
 	// roleDescRoleCode is the schema descriptor for role_code field.

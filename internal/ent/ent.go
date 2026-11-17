@@ -34,6 +34,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/qaresult"
 	"github.com/bengobox/projects-service/internal/ent/qasession"
 	"github.com/bengobox/projects-service/internal/ent/qatemplate"
+	"github.com/bengobox/projects-service/internal/ent/rbacauditlog"
 	"github.com/bengobox/projects-service/internal/ent/role"
 	"github.com/bengobox/projects-service/internal/ent/rolepermission"
 	"github.com/bengobox/projects-service/internal/ent/task"
@@ -129,6 +130,7 @@ func checkColumn(table, column string) error {
 			qaresult.Table:              qaresult.ValidColumn,
 			qasession.Table:             qasession.ValidColumn,
 			qatemplate.Table:            qatemplate.ValidColumn,
+			rbacauditlog.Table:          rbacauditlog.ValidColumn,
 			role.Table:                  role.ValidColumn,
 			rolepermission.Table:        rolepermission.ValidColumn,
 			task.Table:                  task.ValidColumn,

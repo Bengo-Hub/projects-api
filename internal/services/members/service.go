@@ -142,6 +142,24 @@ func staffRow() predicate.ProjectMember { return entmember.RoleCodeNEQ(rbac.Role
 // errClientRole refuses the client role on the team routes.
 var errClientRole = ValidationError("clients are invited from the project's client portal settings, not added as team members")
 
+// Roles are a project team member's roles: owner and manager lead the project (they hear about a
+// client's milestone decision, notify.ProjectLeads), member works on it, viewer follows it. What a
+// person may do comes from their projects role (rbac), not from this label.
+var Roles = []string{"owner", "manager", "member", "viewer"}
+
+// checkRole refuses the client role (portal only) and anything outside Roles.
+func checkRole(code string) error {
+	if code == rbac.RoleClient {
+		return errClientRole
+	}
+	for _, r := range Roles {
+		if r == code {
+			return nil
+		}
+	}
+	return ValidationError("role_code must be owner, manager, member or viewer")
+}
+
 // AddMember adds a user to a project of the tenant.
 func (s *Service) AddMember(ctx context.Context, tenantID, projectID uuid.UUID, input AddMemberInput) (*ent.ProjectMember, error) {
 	if input.UserID == uuid.Nil {
@@ -151,8 +169,8 @@ func (s *Service) AddMember(ctx context.Context, tenantID, projectID uuid.UUID, 
 	if roleCode == "" {
 		roleCode = "member"
 	}
-	if roleCode == rbac.RoleClient {
-		return nil, errClientRole
+	if err := checkRole(roleCode); err != nil {
+		return nil, err
 	}
 	var m *ent.ProjectMember
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
@@ -192,8 +210,8 @@ func (s *Service) UpdateMemberRole(ctx context.Context, tenantID, projectID, use
 	if input.RoleCode == "" {
 		return nil, ValidationError("role_code is required")
 	}
-	if input.RoleCode == rbac.RoleClient {
-		return nil, errClientRole
+	if err := checkRole(input.RoleCode); err != nil {
+		return nil, err
 	}
 	var updated *ent.ProjectMember
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {

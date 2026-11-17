@@ -28,6 +28,10 @@ type ProjectsUser struct {
 	Name string `json:"name,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
+	// DeactivatedAt holds the value of the "deactivated_at" field.
+	DeactivatedAt *time.Time `json:"deactivated_at,omitempty"`
+	// auth-api user id of whoever deactivated them
+	DeactivatedBy *uuid.UUID `json:"deactivated_by,omitempty"`
 	// SyncStatus holds the value of the "sync_status" field.
 	SyncStatus string `json:"sync_status,omitempty"`
 	// LastSyncAt holds the value of the "last_sync_at" field.
@@ -65,9 +69,11 @@ func (*ProjectsUser) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case projectsuser.FieldDeactivatedBy:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case projectsuser.FieldEmail, projectsuser.FieldName, projectsuser.FieldStatus, projectsuser.FieldSyncStatus:
 			values[i] = new(sql.NullString)
-		case projectsuser.FieldLastSyncAt, projectsuser.FieldCreatedAt, projectsuser.FieldUpdatedAt:
+		case projectsuser.FieldDeactivatedAt, projectsuser.FieldLastSyncAt, projectsuser.FieldCreatedAt, projectsuser.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case projectsuser.FieldID, projectsuser.FieldTenantID, projectsuser.FieldAuthServiceUserID:
 			values[i] = new(uuid.UUID)
@@ -121,6 +127,20 @@ func (pu *ProjectsUser) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				pu.Status = value.String
+			}
+		case projectsuser.FieldDeactivatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deactivated_at", values[i])
+			} else if value.Valid {
+				pu.DeactivatedAt = new(time.Time)
+				*pu.DeactivatedAt = value.Time
+			}
+		case projectsuser.FieldDeactivatedBy:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field deactivated_by", values[i])
+			} else if value.Valid {
+				pu.DeactivatedBy = new(uuid.UUID)
+				*pu.DeactivatedBy = *value.S.(*uuid.UUID)
 			}
 		case projectsuser.FieldSyncStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -202,6 +222,16 @@ func (pu *ProjectsUser) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(pu.Status)
+	builder.WriteString(", ")
+	if v := pu.DeactivatedAt; v != nil {
+		builder.WriteString("deactivated_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := pu.DeactivatedBy; v != nil {
+		builder.WriteString("deactivated_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("sync_status=")
 	builder.WriteString(pu.SyncStatus)

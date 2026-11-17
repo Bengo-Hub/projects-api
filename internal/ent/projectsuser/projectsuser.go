@@ -25,6 +25,10 @@ const (
 	FieldName = "name"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldDeactivatedAt holds the string denoting the deactivated_at field in the database.
+	FieldDeactivatedAt = "deactivated_at"
+	// FieldDeactivatedBy holds the string denoting the deactivated_by field in the database.
+	FieldDeactivatedBy = "deactivated_by"
 	// FieldSyncStatus holds the string denoting the sync_status field in the database.
 	FieldSyncStatus = "sync_status"
 	// FieldLastSyncAt holds the string denoting the last_sync_at field in the database.
@@ -54,6 +58,8 @@ var Columns = []string{
 	FieldEmail,
 	FieldName,
 	FieldStatus,
+	FieldDeactivatedAt,
+	FieldDeactivatedBy,
 	FieldSyncStatus,
 	FieldLastSyncAt,
 	FieldCreatedAt,
@@ -116,6 +122,16 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByDeactivatedAt orders the results by the deactivated_at field.
+func ByDeactivatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeactivatedAt, opts...).ToFunc()
+}
+
+// ByDeactivatedBy orders the results by the deactivated_by field.
+func ByDeactivatedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeactivatedBy, opts...).ToFunc()
 }
 
 // BySyncStatus orders the results by the sync_status field.

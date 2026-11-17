@@ -251,12 +251,14 @@ func (h *PortalHandler) thread(w http.ResponseWriter, r *http.Request, tenantID,
 	respondJSON(w, http.StatusOK, pagination.NewResponse(items, total, p))
 }
 
-func (h *PortalHandler) post(w http.ResponseWriter, r *http.Request, tenantID, projectID uuid.UUID) {
+// post adds to the client thread, written as kind (comments.AuthorClient from the portal route,
+// comments.AuthorTeam from the team route).
+func (h *PortalHandler) post(w http.ResponseWriter, r *http.Request, tenantID, projectID uuid.UUID, kind string) {
 	input, ok := decodeComment(w, r)
 	if !ok {
 		return
 	}
-	c, replayed, err := h.comments.CreateClientThreadComment(r.Context(), tenantID, projectID, input)
+	c, replayed, err := h.comments.CreateClientThreadComment(r.Context(), tenantID, projectID, input, kind)
 	if err != nil {
 		h.writeErr(w, err, "post to client thread failed")
 		return
@@ -279,7 +281,7 @@ func (h *PortalHandler) TeamThread(w http.ResponseWriter, r *http.Request) {
 // TeamPost posts to the client thread as a teammate (comments.add).
 func (h *PortalHandler) TeamPost(w http.ResponseWriter, r *http.Request) {
 	if tenantID, projectID, ok := projectScope(w, r); ok {
-		h.post(w, r, tenantID, projectID)
+		h.post(w, r, tenantID, projectID, comments.AuthorTeam)
 	}
 }
 
@@ -417,6 +419,6 @@ func (h *PortalHandler) ClientThread(w http.ResponseWriter, r *http.Request) {
 
 func (h *PortalHandler) ClientPost(w http.ResponseWriter, r *http.Request) {
 	if tenantID, projectID, ok := h.clientScope(w, r); ok {
-		h.post(w, r, tenantID, projectID)
+		h.post(w, r, tenantID, projectID, comments.AuthorClient)
 	}
 }

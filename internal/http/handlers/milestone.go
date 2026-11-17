@@ -65,7 +65,7 @@ func (h *MilestoneHandler) List(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	items, err := h.svc.ListMilestones(r.Context(), tenantID, projectID)
+	items, err := h.svc.ListReviewed(r.Context(), tenantID, projectID)
 	if err != nil {
 		serverError(w, h.log, "list milestones failed", err)
 		return
@@ -82,7 +82,7 @@ func (h *MilestoneHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	m, err := h.svc.GetMilestone(r.Context(), tenantID, projectID, id)
+	m, err := h.svc.GetReviewed(r.Context(), tenantID, projectID, id)
 	if err != nil {
 		h.writeErr(w, err, "milestone not found", "get milestone failed")
 		return

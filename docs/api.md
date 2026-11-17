@@ -24,6 +24,12 @@ mutations, just-in-time user provisioning, then the route's permission check.
   belong to; any other project answers 404. With `tasks.view_own` only, a user sees only tasks
   assigned to them.
 - **S2S.** Service-key calls take the tenant from the path. `X-Tenant-ID` is ignored.
+- **Lookups.** `GET /lookups/contacts` (marketflow contact search over S2S, `?q=` and `?limit=` up
+  to 50, `{data: [{id, name, detail}]}`) needs `projects.add`, `projects.change` or `portal.manage`,
+  since it feeds both the project form and the client invite. `GET /lookups/cost-centers` needs
+  `projects.add` or `projects.change`. 502 when the other service cannot be reached.
+- **CORS.** Allowed origins can read `X-QA-Access`, `X-Client-Invites` and the shared standard
+  exposed headers (httpware `StandardCORS`).
 
 ### Profile and roles
 
@@ -372,12 +378,14 @@ Every route here needs the `client_portal` plan feature (every Projects tier has
 | DELETE | `/projects/{id}/clients/{memberID}` | `portal.manage` | Revokes an invite or an active client at once. 204 |
 | PATCH | `/projects/{id}/tasks/{taskID}/sharing` | `portal.manage` | `{client_visible: bool}`. `{id, client_visible}`. `tasks.metadata.client_visible` is server owned: a task update never sets it |
 | PATCH | `/projects/{id}/attachments/{attachmentID}/sharing` | `portal.manage` | `{client_visible: bool}`. Answers the attachment with its link |
-| GET | `/projects/{id}/client-thread` | `comments.view` | The client thread, paged, oldest first |
+| GET | `/projects/{id}/client-thread` | `comments.view` | The client thread, paged, oldest first, each entry with `author_kind` and `author_name` (see Client thread) |
 | POST | `/projects/{id}/client-thread` | `comments.add` | `{content}` (rich text, sanitised), optional `Idempotency-Key` |
 
 project_manager now holds `portal.manage` (it held `portal.view`), so a project manager invites
 their own clients. Marking a milestone ready for review is the existing milestone update with
-`status: "ready_for_review"`.
+`status: "ready_for_review"`. The team's `GET /projects/{id}/milestones` and
+`GET /projects/{id}/milestones/{milestoneID}` answer each milestone with `last_decision` (see
+Milestone review), so the team reads the client's change request in place.
 
 ### Client routes (`projects.portal.view`)
 
@@ -387,14 +395,14 @@ assignees, metadata or internal comments: the answers are built field by field.
 
 | Method | Path | Answer |
 |---|---|---|
-| GET | `/portal/projects` | Paged `[{id, name, status, start_date, end_date}]`; attaches pending invites first |
+| GET | `/portal/projects` | Paged `[{id, name, status, start_date, end_date, progress: {tasks_total, tasks_done, percent, milestones_total, milestones_done, awaiting_review}}]`; attaches pending invites first. The progress counts the same way as the project page (all tasks, milestones completed or approved, `awaiting_review` the ones up for the client's decision), computed for the whole page in two grouped queries |
 | GET | `/portal/projects/{id}` | `{id, name, status, start_date, end_date, progress, total_tasks, completed_tasks, total_milestones, completed_milestones, awaiting_review, next_milestone: {id, name, status, target_date} \| null}`. Progress is done tasks over all tasks |
-| GET | `/portal/projects/{id}/milestones` | `{data: [{id, name, description, status, target_date, completed_at, can_decide, last_decision: {decision, comment, decided_at, decided_by_name} \| null}]}` |
+| GET | `/portal/projects/{id}/milestones` | `{data: [{id, name, description, status, target_date, completed_at, can_decide, last_decision: {decision: approved \| changes_requested, comment, decided_at, decided_by_name} \| null}]}` |
 | POST | `/portal/projects/{id}/milestones/{milestoneID}/decision` | `{decision: approve \| request_changes, comment}` (comment required for request_changes, at most 2000 characters). `{id, status, decision}`. 409 `milestone_not_ready` unless the milestone is `ready_for_review` |
 | GET | `/portal/projects/{id}/tasks` | Paged shared tasks `[{id, title, description, status, status_label, start_date, due_date, progress, completed_at}]` |
 | GET | `/portal/projects/{id}/files` | Paged shared files `[{id, file_name, file_size, mime_type, uploaded_at, task_id, url}]`, signed links for 15 minutes |
 | GET | `/portal/projects/{id}/invoices` | `{data: [], available: false, note}` until treasury lists a project's invoices over S2S |
-| GET | `/portal/projects/{id}/thread` | The client thread, paged: `[{id, content, author_id, author_name, created_at, updated_at}]` |
+| GET | `/portal/projects/{id}/thread` | The client thread, paged: `[{id, content, author_id, author_name, author_kind: client \| team, created_at, updated_at}]` |
 | POST | `/portal/projects/{id}/thread` | `{content}`, optional `Idempotency-Key` (a key used on an internal comment answers 409 `idempotency_key_reused`) |
 
 ### Milestone review
@@ -405,11 +413,23 @@ update answers 400). The decision's who, when and comment are kept in the milest
 entry (`changes.client_decision`, `comment`, `decided_by`, `decided_at`); milestones have no
 metadata column. Two clients deciding at once apply one decision (row lock).
 
+`last_decision` on the team's and the portal's milestone lists is read back from those entries:
+`{decision, comment, decided_by_name, decided_at}`, where `decision` is the outcome (`approved` or
+`changes_requested`), the newest decision per milestone, `null` when no client decided. One query
+serves the whole list (`DISTINCT ON` the milestone over the project's rows of the
+`(tenant_id, project_id, occurred_at)` activities index) plus one batched name lookup.
+
 ### Client thread
 
 Comments with `task_id` empty and server-owned `metadata.thread = "client"`. The project comment
 list leaves them out; the portal shows nothing else. A comment's `thread` key never comes from a
 client. Mentions on the thread notify nobody.
+
+Each entry, on the list and on the POST answer of both routes, carries `author_name` and
+`author_kind`: `client` for a post made on the portal route, `team` for one made on the team
+route. The kind is stored on the comment when it is posted (server-owned `metadata.author_kind`),
+so revoking a client later never turns what they said into the team's words, and reading the
+thread needs no lookup.
 
 ### Events (outbox, `project.>`)
 

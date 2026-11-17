@@ -237,7 +237,7 @@ func TestSharedTasksAndThreads(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := cs.CreateClientThreadComment(ctx, w.tenant, w.project.ID, comments.CreateCommentInput{UserID: user, Content: "<p>Looks good</p>"}); err != nil {
+	if _, _, err := cs.CreateClientThreadComment(ctx, w.tenant, w.project.ID, comments.CreateCommentInput{UserID: user, Content: "<p>Looks good</p>"}, comments.AuthorClient); err != nil {
 		t.Fatal(err)
 	}
 	thread, n, err := cs.ListClientThread(ctx, w.tenant, w.project.ID, 50, 0)

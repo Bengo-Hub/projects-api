@@ -1,6 +1,6 @@
 # Sprint 14: Client portal
 
-**Status**: Server side built (2026-11-17), portal screens pending. Planned 2026-11-16. Gated on the existing `client_portal` code, which every Projects tier has (decided 2026-11-16). Decision: clients sign in through auth-api, and their contact record stays in marketflow.
+**Status**: Server side built (2026-11-17), portal screens built in projects-ui (2026-11-17, waiting on its type check and Playwright run). Planned 2026-11-16. Gated on the existing `client_portal` code, which every Projects tier has (decided 2026-11-16). Decision: clients sign in through auth-api, and their contact record stays in marketflow.
 
 **Sprint goal**: let a firm's client follow and approve the work without emails back and forth. Zoho charges extra for client users; ours comes with every Projects plan.
 
@@ -23,6 +23,39 @@ Server side built; the portal screens in projects-ui come next, from the contrac
 | US-14.3 | API done | `POST /portal/projects/{id}/milestones/{mid}/decision`; statuses `ready_for_review`, `approved`, `changes_requested` |
 | US-14.4 | API done | client thread on the comments table (`metadata.thread = client`) |
 | US-14.5 | API and notices done | email and WhatsApp `_btn` templates in notifications-api; the four WhatsApp templates wait for the Meta sync. A shared status report notice is not built (no status report feature yet) |
+
+### UI (projects-ui, 2026-11-17)
+
+- [x] US-14.1: portal sign-in with the `projects-portal` client at `/{org}/portal`, a session kept
+  apart from the staff one; Clients tab to invite from a marketflow contact, see resent invites
+  and remove a client.
+- [x] US-14.2: branded portal landing with progress cards and the `email_not_verified` banner;
+  project page with summary, milestones, shared tasks, files with signed links and the invoices
+  placeholder; "Visible to client" switches in the task drawer and on file rows.
+- [x] US-14.3: approve or request changes with a comment, the 409 `milestone_not_ready` message;
+  Ready for review on the team's milestones page.
+- [x] US-14.4: the client thread in the portal and as a Client thread tab for the team.
+
+### API follow-ups for the screens (2026-11-17)
+
+- [x] `X-Client-Invites` in the CORS exposed headers, so the portal reads `email_not_verified`
+  from another origin (router test `TestCORSExposesClientInvites`).
+- [x] `GET /lookups/contacts` also opens to `portal.manage`, so someone who only manages clients
+  can pick the contact to invite; the cost centre lookup keeps its gate
+  (`TestContactLookupOpensToPortalManage`).
+- [x] `last_decision` on the team's milestone list and on one milestone, the same reader as the
+  portal's, in one query for the list. The milestones page shows the client's change request in
+  place.
+- [x] `author_kind` (client or team) and `author_name` on every client thread entry, both routes,
+  one query per page.
+- [x] `progress` on each `GET /portal/projects` card in two grouped queries for the page, counted
+  the same way as the project page (the summary now reads the same counts), so the landing no
+  longer asks for a summary per card. I added `awaiting_review` to it so the card still says when
+  a milestone waits for the client.
+- Indexes: none added. The progress counts read `tasks (tenant_id, project_id, status)` and
+  `milestones (tenant_id, project_id, target_date)`, the decisions `activities (tenant_id,
+  project_id, occurred_at)` and the thread authors `project_members (tenant_id, project_id,
+  user_id)`.
 
 Schema: none. Client rows, sharing flags and the thread all live in existing metadata columns;
 the review lives in the milestone status and its activity entry.

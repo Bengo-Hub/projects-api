@@ -76,7 +76,10 @@ func New(d Deps) http.Handler {
 	r.Use(httpware.Logging(log))
 	r.Use(httpware.Recover(log))
 	r.Use(httpware.BypassForStreaming(middleware.Timeout(30 * time.Second)))
-	r.Use(httpware.CORS(httpware.StandardCORS(d.AllowedOrigins, "X-QA-Access")))
+	cors := httpware.StandardCORS(d.AllowedOrigins, "X-QA-Access")
+	// The client portal reads X-Client-Invites (email_not_verified) from another origin.
+	cors.ExposedHeaders = append(cors.ExposedHeaders, "X-Client-Invites")
+	r.Use(httpware.CORS(cors))
 	// Per-IP abuse limit; after CORS so 429s carry CORS headers.
 	if d.Limiter != nil {
 		r.Use(d.Limiter.Middleware(ratelimit.IPKey, 300, time.Minute))

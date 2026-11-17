@@ -34,9 +34,11 @@ func (h *ProjectHandler) WithLookups(contacts contactSearcher, costCenters costC
 }
 
 func (h *ProjectHandler) registerLookups(r chi.Router) {
-	// The pickers serve the project form, so they need the right to create or edit a project.
+	// The pickers serve the project form, so they need the right to create or edit a project. The
+	// contact picker also serves the client invite (sprint 14), so portal.manage opens it too.
 	form := authz.Require(rbac.PermProjectsAdd, rbac.PermProjectsChange)
-	r.With(form).Get("/lookups/contacts", h.LookupContacts)
+	r.With(authz.Require(rbac.PermProjectsAdd, rbac.PermProjectsChange, rbac.PermPortalManage)).
+		Get("/lookups/contacts", h.LookupContacts)
 	r.With(form).Get("/lookups/cost-centers", h.LookupCostCenters)
 }
 
@@ -47,7 +49,7 @@ type lookupOption struct {
 }
 
 // LookupContacts searches the tenant's CRM contacts (?q= name, email or phone; ?limit= up to 50)
-// for the project client picker.
+// for the project client picker and the client invite.
 func (h *ProjectHandler) LookupContacts(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := uuid.Parse(httpware.GetTenantID(r.Context()))
 	if err != nil {

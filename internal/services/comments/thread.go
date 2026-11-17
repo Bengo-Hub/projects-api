@@ -55,22 +55,43 @@ func internalThread() predicate.Comment {
 	})
 }
 
-// ThreadComment is what the client thread shows of a comment: the text, who wrote it and when.
-// No metadata, so mention lists and idempotency keys stay internal.
+// Author kinds on the client thread. MetaAuthorKind holds it on the comment: server owned, written
+// when the comment is posted from the client or the team side, so a later change to who is a
+// client (an invite revoked) never rewrites who said what.
+const (
+	AuthorClient   = "client"
+	AuthorTeam     = "team"
+	MetaAuthorKind = "author_kind"
+)
+
+// ThreadComment is what the client thread shows of a comment: the text, who wrote it (name, and
+// whether a client or the team) and when. No metadata, so mention lists and idempotency keys stay
+// internal.
 type ThreadComment struct {
 	ID         uuid.UUID `json:"id"`
 	Content    string    `json:"content"`
 	AuthorID   uuid.UUID `json:"author_id"`
 	AuthorName string    `json:"author_name"`
+	AuthorKind string    `json:"author_kind"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
-func threadView(a Authored) ThreadComment {
-	return ThreadComment{
-		ID: a.ID, Content: a.Content, AuthorID: a.UserID, AuthorName: a.AuthorName,
-		CreatedAt: a.CreatedAt, UpdatedAt: a.UpdatedAt,
+// threadViews builds the thread entries of one page. The author kind is the one stored on each
+// comment when it was posted (MetaAuthorKind), so no lookup is needed.
+func threadViews(items []Authored) []ThreadComment {
+	out := make([]ThreadComment, len(items))
+	for i, a := range items {
+		kind, _ := a.Metadata[MetaAuthorKind].(string)
+		if kind != AuthorClient {
+			kind = AuthorTeam
+		}
+		out[i] = ThreadComment{
+			ID: a.ID, Content: a.Content, AuthorID: a.UserID, AuthorName: a.AuthorName, AuthorKind: kind,
+			CreatedAt: a.CreatedAt, UpdatedAt: a.UpdatedAt,
+		}
 	}
+	return out
 }
 
 // ListClientThread returns one page of the project's client thread, oldest first, with the total.
@@ -81,20 +102,20 @@ func (s *Service) ListClientThread(ctx context.Context, tenantID, projectID uuid
 	if err != nil {
 		return nil, 0, fmt.Errorf("list client thread: %w", err)
 	}
-	out := make([]ThreadComment, len(items))
-	for i, a := range items {
-		out[i] = threadView(a)
-	}
-	return out, total, nil
+	return threadViews(items), total, nil
 }
 
-// CreateClientThreadComment posts to the project's client thread as input.UserID (a staff member
-// or one of the project's clients; the caller has checked which). The body is sanitised like any
-// comment. Mentions notify nobody here: a client must never be able to page a teammate with text
+// CreateClientThreadComment posts to the project's client thread as input.UserID, who writes as
+// authorKind: AuthorClient from the portal route, AuthorTeam from the team route (the caller has
+// checked which the user may do). The kind is stored on the comment. The body is sanitised like
+// any comment. Mentions notify nobody here: a client must never be able to page a teammate with text
 // that lands in an internal notice, and staff reach clients through the thread itself. An
 // Idempotency-Key replays only a comment of this same thread; the key on an internal comment
 // answers ErrKeyReused.
-func (s *Service) CreateClientThreadComment(ctx context.Context, tenantID, projectID uuid.UUID, input CreateCommentInput) (*ThreadComment, bool, error) {
+func (s *Service) CreateClientThreadComment(ctx context.Context, tenantID, projectID uuid.UUID, input CreateCommentInput, authorKind string) (*ThreadComment, bool, error) {
+	if authorKind != AuthorClient && authorKind != AuthorTeam {
+		return nil, false, fmt.Errorf("client thread: unknown author kind %q", authorKind)
+	}
 	content, err := clean(input.Content)
 	if err != nil {
 		return nil, false, err
@@ -113,7 +134,7 @@ func (s *Service) CreateClientThreadComment(ctx context.Context, tenantID, proje
 		if !ok {
 			return ErrNotFound
 		}
-		meta := map[string]any{MetaThread: ThreadClient}
+		meta := map[string]any{MetaThread: ThreadClient, MetaAuthorKind: authorKind}
 		if key != "" {
 			prior, err := priorComment(ctx, tx, tenantID, input.UserID, key)
 			if err != nil {
@@ -147,6 +168,6 @@ func (s *Service) CreateClientThreadComment(ctx context.Context, tenantID, proje
 	if err != nil {
 		return nil, false, err
 	}
-	v := threadView(*a)
-	return &v, replayed, nil
+	views := threadViews([]Authored{*a})
+	return &views[0], replayed, nil
 }

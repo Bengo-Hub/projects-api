@@ -10,14 +10,12 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/bengobox/projects-service/internal/ent"
-	entactivity "github.com/bengobox/projects-service/internal/ent/activity"
 	entmilestone "github.com/bengobox/projects-service/internal/ent/milestone"
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	entmember "github.com/bengobox/projects-service/internal/ent/projectmember"
 	enttask "github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/services/milestones"
-	"github.com/bengobox/projects-service/internal/services/people"
 	"github.com/bengobox/projects-service/internal/services/tasks"
 )
 
@@ -50,9 +48,103 @@ func clientOf(tenantID, userID uuid.UUID) predicate.Project {
 	return entproject.HasMembersWith(clientRow(tenantID), entmember.UserID(userID))
 }
 
+// Progress is how far a project is, the same counts on the landing card and the project page:
+// every task counts, shared or not (only the counts leave), and a milestone is done when it is
+// completed or the client approved it. AwaitingReview counts the milestones waiting for the
+// client's decision, so the landing card can say so without a summary per card.
+type Progress struct {
+	TasksTotal      int `json:"tasks_total"`
+	TasksDone       int `json:"tasks_done"`
+	Percent         int `json:"percent"`
+	MilestonesTotal int `json:"milestones_total"`
+	MilestonesDone  int `json:"milestones_done"`
+	AwaitingReview  int `json:"awaiting_review"`
+}
+
+// ProjectListItem is a project in the client's list with its progress.
+type ProjectListItem struct {
+	ProjectCard
+	Progress Progress `json:"progress"`
+}
+
+// Two grouped queries for a whole page of projects. tasks is read through its
+// (tenant_id, project_id, status) index alone; milestones through (tenant_id, project_id,
+// target_date).
+const (
+	taskProgressSQL = `
+SELECT project_id, COUNT(*), COUNT(*) FILTER (WHERE status = $3)
+  FROM tasks
+ WHERE tenant_id = $1 AND project_id = ANY($2::uuid[])
+ GROUP BY project_id`
+	milestoneProgressSQL = `
+SELECT project_id, COUNT(*), COUNT(*) FILTER (WHERE status = ANY($3::text[])), COUNT(*) FILTER (WHERE status = $4)
+  FROM milestones
+ WHERE tenant_id = $1 AND project_id = ANY($2::uuid[])
+ GROUP BY project_id`
+)
+
+// progressOf computes the progress of each project in ids in two grouped queries, never one per
+// project. A project with no tasks or milestones answers zeros.
+func (s *Service) progressOf(ctx context.Context, tenantID uuid.UUID, ids []uuid.UUID) (map[uuid.UUID]Progress, error) {
+	out := make(map[uuid.UUID]Progress, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	list := make([]string, len(ids))
+	for i, id := range ids {
+		list[i] = id.String()
+		out[id] = Progress{}
+	}
+	// run executes one grouped query (tenant and project ids first, then args) and hands each row's
+	// scan to row.
+	run := func(query string, args []any, row func(scan func(dest ...any) error) error) error {
+		rows, err := s.client.QueryContext(ctx, query, append([]any{tenantID, list}, args...)...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			if err := row(rows.Scan); err != nil {
+				return err
+			}
+		}
+		return rows.Err()
+	}
+	if err := run(taskProgressSQL, []any{tasks.StatusDone}, func(scan func(...any) error) error {
+		var id uuid.UUID
+		var total, done int
+		if err := scan(&id, &total, &done); err != nil {
+			return err
+		}
+		p := out[id]
+		p.TasksTotal, p.TasksDone = total, done
+		if total > 0 {
+			p.Percent = done * 100 / total
+		}
+		out[id] = p
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("count tasks: %w", err)
+	}
+	if err := run(milestoneProgressSQL, []any{doneMilestoneStatuses, milestones.StatusReadyForReview}, func(scan func(...any) error) error {
+		var id uuid.UUID
+		var total, done, awaiting int
+		if err := scan(&id, &total, &done, &awaiting); err != nil {
+			return err
+		}
+		p := out[id]
+		p.MilestonesTotal, p.MilestonesDone, p.AwaitingReview = total, done, awaiting
+		out[id] = p
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("count milestones: %w", err)
+	}
+	return out, nil
+}
+
 // ListProjects returns one page of the tenant's projects where userID is an active client, newest
-// first, with the total.
-func (s *Service) ListProjects(ctx context.Context, tenantID, userID uuid.UUID, limit, offset int) ([]ProjectCard, int, error) {
+// first, each with its progress, and the total.
+func (s *Service) ListProjects(ctx context.Context, tenantID, userID uuid.UUID, limit, offset int) ([]ProjectListItem, int, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -65,9 +157,17 @@ func (s *Service) ListProjects(ctx context.Context, tenantID, userID uuid.UUID, 
 	if err != nil {
 		return nil, 0, fmt.Errorf("list client projects: %w", err)
 	}
-	out := make([]ProjectCard, len(rows))
+	ids := make([]uuid.UUID, len(rows))
 	for i, p := range rows {
-		out[i] = card(p)
+		ids[i] = p.ID
+	}
+	progress, err := s.progressOf(ctx, tenantID, ids)
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]ProjectListItem, len(rows))
+	for i, p := range rows {
+		out[i] = ProjectListItem{ProjectCard: card(p), Progress: progress[p.ID]}
 	}
 	return out, total, nil
 }
@@ -92,14 +192,13 @@ type Summary struct {
 	NextMilestone       *MilestoneBrief `json:"next_milestone"`
 }
 
-// milestoneDone reports a milestone that needs nothing more: completed, or approved by the client.
-func milestoneDone(status string) bool {
-	return status == "completed" || status == milestones.StatusApproved
-}
+// doneMilestoneStatuses are the statuses of a milestone that needs nothing more: completed, or
+// approved by the client.
+var doneMilestoneStatuses = []string{"completed", milestones.StatusApproved}
 
-// ProjectSummary is the progress of a project the caller is a client of: status, dates, percent
-// of tasks done (every task counts, shared or not; only the counts leave), milestone counts and
-// the next open milestone.
+// ProjectSummary is the progress of a project the caller is a client of: status, dates, the same
+// counts as its card in ListProjects (progressOf), how many milestones wait for review and the
+// next open milestone.
 func (s *Service) ProjectSummary(ctx context.Context, tenantID, projectID uuid.UUID) (Summary, error) {
 	p, err := s.client.Project.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).Only(ctx)
 	if ent.IsNotFound(err) {
@@ -108,43 +207,25 @@ func (s *Service) ProjectSummary(ctx context.Context, tenantID, projectID uuid.U
 	if err != nil {
 		return Summary{}, fmt.Errorf("load project: %w", err)
 	}
-	out := Summary{ProjectCard: card(p)}
-	taskQ := s.client.Task.Query().Where(enttask.TenantID(tenantID), enttask.ProjectID(projectID))
-	if out.TotalTasks, err = taskQ.Clone().Count(ctx); err != nil {
-		return Summary{}, fmt.Errorf("count tasks: %w", err)
-	}
-	if out.CompletedTasks, err = taskQ.Where(enttask.Status(tasks.StatusDone)).Count(ctx); err != nil {
-		return Summary{}, fmt.Errorf("count done tasks: %w", err)
-	}
-	if out.TotalTasks > 0 {
-		out.Progress = out.CompletedTasks * 100 / out.TotalTasks
-	}
-	ms, err := s.client.Milestone.Query().Where(entmilestone.TenantID(tenantID), entmilestone.ProjectID(projectID)).
-		Order(ent.Asc(entmilestone.FieldTargetDate)).All(ctx)
+	progress, err := s.progressOf(ctx, tenantID, []uuid.UUID{projectID})
 	if err != nil {
-		return Summary{}, fmt.Errorf("load milestones: %w", err)
+		return Summary{}, err
 	}
-	out.TotalMilestones = len(ms)
-	for _, m := range ms {
-		switch {
-		case milestoneDone(m.Status):
-			out.CompletedMilestones++
-		case m.Status == milestones.StatusReadyForReview:
-			out.AwaitingReview++
-		}
-		if out.NextMilestone == nil && !milestoneDone(m.Status) {
-			out.NextMilestone = &MilestoneBrief{ID: m.ID, Name: m.Name, Status: m.Status, TargetDate: datePtr(m.TargetDate)}
-		}
+	pr := progress[projectID]
+	out := Summary{
+		ProjectCard: card(p), Progress: pr.Percent, TotalTasks: pr.TasksTotal, CompletedTasks: pr.TasksDone,
+		TotalMilestones: pr.MilestonesTotal, CompletedMilestones: pr.MilestonesDone, AwaitingReview: pr.AwaitingReview,
+	}
+	next, err := s.client.Milestone.Query().
+		Where(entmilestone.TenantID(tenantID), entmilestone.ProjectID(projectID), entmilestone.StatusNotIn(doneMilestoneStatuses...)).
+		Order(ent.Asc(entmilestone.FieldTargetDate), ent.Asc(entmilestone.FieldID)).First(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return Summary{}, fmt.Errorf("load next milestone: %w", err)
+	}
+	if next != nil {
+		out.NextMilestone = &MilestoneBrief{ID: next.ID, Name: next.Name, Status: next.Status, TargetDate: datePtr(next.TargetDate)}
 	}
 	return out, nil
-}
-
-// Decision is a client's latest verdict on a milestone.
-type Decision struct {
-	Decision      string `json:"decision"`
-	Comment       string `json:"comment"`
-	DecidedAt     string `json:"decided_at"`
-	DecidedByName string `json:"decided_by_name"`
 }
 
 // MilestoneView is a milestone as a client sees it.
@@ -156,19 +237,19 @@ type MilestoneView struct {
 	TargetDate  *time.Time `json:"target_date"`
 	CompletedAt *time.Time `json:"completed_at"`
 	// CanDecide is true while the milestone waits for the client's review.
-	CanDecide    bool      `json:"can_decide"`
-	LastDecision *Decision `json:"last_decision"`
+	CanDecide    bool                 `json:"can_decide"`
+	LastDecision *milestones.Decision `json:"last_decision"`
 }
 
 // Milestones returns the project's milestones by target date, each with the client's latest
-// decision (from the activity entries Decide writes).
+// decision (milestones.LatestDecisions, the same reader as the team's milestone list).
 func (s *Service) Milestones(ctx context.Context, tenantID, projectID uuid.UUID) ([]MilestoneView, error) {
 	ms, err := s.client.Milestone.Query().Where(entmilestone.TenantID(tenantID), entmilestone.ProjectID(projectID)).
 		Order(ent.Asc(entmilestone.FieldTargetDate), ent.Asc(entmilestone.FieldID)).Limit(500).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("list milestones: %w", err)
 	}
-	decisions, err := s.latestDecisions(ctx, tenantID, projectID)
+	decisions, err := milestones.LatestDecisions(ctx, s.client, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,42 +259,6 @@ func (s *Service) Milestones(ctx context.Context, tenantID, projectID uuid.UUID)
 			ID: m.ID, Name: m.Name, Description: m.Description, Status: m.Status,
 			TargetDate: datePtr(m.TargetDate), CompletedAt: datePtr(m.CompletedAt),
 			CanDecide: m.Status == milestones.StatusReadyForReview, LastDecision: decisions[m.ID],
-		}
-	}
-	return out, nil
-}
-
-// latestDecisions reads the project's client decision entries (milestone.updated with a
-// client_decision change), newest first, and keeps the newest per milestone. Served by the
-// (tenant_id, project_id, occurred_at) index.
-func (s *Service) latestDecisions(ctx context.Context, tenantID, projectID uuid.UUID) (map[uuid.UUID]*Decision, error) {
-	rows, err := s.client.Activity.Query().
-		Where(entactivity.TenantID(tenantID), entactivity.ProjectID(projectID), entactivity.ActivityType("milestone.updated"),
-			predicate.Activity(func(s *sql.Selector) {
-				s.Where(sqljson.HasKey(s.C(entactivity.FieldPayload), sqljson.DotPath("changes."+milestones.ChangeClientDecision)))
-			})).
-		Order(ent.Desc(entactivity.FieldOccurredAt)).Limit(1000).All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("load decisions: %w", err)
-	}
-	ids := make([]uuid.UUID, 0, len(rows))
-	for _, a := range rows {
-		ids = append(ids, a.UserID)
-	}
-	who, err := people.Lookup(ctx, s.client.ProjectsUser, tenantID, ids)
-	if err != nil {
-		return nil, err
-	}
-	out := map[uuid.UUID]*Decision{}
-	for _, a := range rows {
-		id, err := uuid.Parse(str(a.Payload, "entity_id"))
-		if err != nil || out[id] != nil {
-			continue
-		}
-		changes, _ := a.Payload["changes"].(map[string]any)
-		out[id] = &Decision{
-			Decision: str(changes, milestones.ChangeClientDecision), Comment: str(changes, "comment"),
-			DecidedAt: str(changes, "decided_at"), DecidedByName: who[a.UserID].Label(),
 		}
 	}
 	return out, nil

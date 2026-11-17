@@ -75,11 +75,30 @@ check. Projects keeps what it already does better: the Redis permission cache, i
 - Deleting a customised default role (once nobody holds it) returns the firm to the default.
 - `projects_admin` can be given only by admin tier; the last active holder keeps it.
 
+## Follow ups (2026-11-17)
+
+I closed the three items the sprint left open the same day:
+
+- **Client portal callback.** The portal callback checks the PKCE `state` from its own `portal_`
+  namespace, as the staff callback does: a mismatch spends the portal's verifier, never reaches
+  the token exchange and shows shared-ui-lib's `SSOCallbackError`. The projects-portal client and
+  the portal's storage keys are unchanged.
+- **Committees.** A committee member is picked by name or email from `GET /people`; the member add
+  keeps its contract (`{user_id, role}`). The committee routes need `projects.tenders.manage`, which
+  `project_manager` does not hold and a firm's own bid role may hold without `members.manage` or
+  `rbac.manage`, so `/people` now also takes `projects.tenders.manage`. It still lists staff only.
+  The committee list now names each member (`user_name`, `email` from projects_users, one lookup
+  for the whole list, the existing fields kept), so someone who can only view a tender never sees
+  a raw id.
+- **Person screen.** projects-ui opens a person from Team (`/{org}/settings/team/{userId}`) with
+  their roles and end dates, status, last seen and effective permissions by module, from
+  `GET /rbac/users/{id}`, with the Team page's actions and guards.
+- **Tests.** A router test for the widened `/people` gate and a DB test for the named committee
+  list (names from this tenant only, the JSON keeping every existing field).
+
 ## Still open
 
-- The client portal callback's `state` check (the portal sign-in stayed untouched).
-- Committees still take a raw user id.
-- A person detail screen with effective permissions.
+Nothing from this sprint.
 
 ## Not in scope
 - Per user permission overrides (neither treasury nor pos has them).

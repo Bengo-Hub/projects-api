@@ -19,11 +19,11 @@
 ## Access management, sprint 17 (built 2026-11-17)
 
 Done: team and role management inside projects (`docs/api.md`, "Team, roles and access";
-`docs/sprints/sprint-17-access-management.md`). Still open:
-
-- The client portal callback's PKCE `state` check (projects-ui; the portal sign-in stayed as is).
-- Tender committees still take a raw user id; they should use `GET /people`.
-- No screen yet for one person's effective permissions (`GET /rbac/users/{id}` exists).
+`docs/sprints/sprint-17-access-management.md`). The follow ups of the same day closed what it
+left open: the client portal callback checks the PKCE `state`, tender committees pick people from
+`GET /people` (which now also takes `projects.tenders.manage`), and projects-ui has a person
+screen with effective permissions, and the committee list names its members (`user_name`,
+`email`) from one batched lookup. Nothing from it is still open.
 
 ## New sprints 12 to 16 (2026-11-16)
 

@@ -73,7 +73,7 @@ There are no per person permission overrides and no idle logout.
 | Method | Path | Permission | Notes |
 |---|---|---|---|
 | GET | `/api/v1/{tenant}/auth/me` | signed in | `{user_id, email, name, tenant_id, global_roles[], service_role, roles[], permissions[], is_platform_owner}`. The UI calls it after SSO `/auth/me` and gates on `permissions`. 503 `permissions_unavailable` when they cannot be read. |
-| GET | `/api/v1/{tenant}/people` | `members.manage` or `rbac.manage` | Staff for pickers (never portal clients, never inactive people), `?search=` name or email, paged `{data: [{user_id, name, email}], total, limit, page, hasMore}` |
+| GET | `/api/v1/{tenant}/people` | `members.manage`, `rbac.manage` or `tenders.manage` | Staff for pickers (never portal clients, never inactive people), `?search=` name or email, paged `{data: [{user_id, name, email}], total, limit, page, hasMore}`. `tenders.manage` is there for the tender committee picker: the committee routes need it and `project_manager` does not hold it. |
 | GET | `/rbac/roles` | `rbac.manage` | `{data: [{id, code, name, description, is_system_role, scope: global\|tenant, is_customized, permissions[], holders}]}`. Holders count active people whose role has not ended. A tenant copy replaces its default in the list. |
 | POST | `/rbac/roles` | admin tier | `{name, role_code?, description?, permission_codes[]}`, 201 with the role |
 | POST | `/rbac/roles/{id}/clone` | admin tier | `{name, role_code?, description?}`: a new tenant role with the source's permissions, 201 |
@@ -117,6 +117,12 @@ from their projects role above, not this label.
 - **Tender numbers:** come from a per-tenant counter (`document_sequences`, kind `tender`), moved by
   one `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` inside the tender's transaction. They are
   unique per tenant, and a deleted tender never frees its number.
+- **Tender committees:** `GET /tenders/{id}/committees` (`tenders.view`) answers `{data: [{id,
+  tender_id, tenant_id, name, created_at, edges: {members: [{id, committee_id, tenant_id, user_id,
+  role, joined_at, user_name, email}]}}]}`. `user_name` and `email` come from projects_users in one
+  lookup for the whole list (empty for someone who never signed in), so a reader without the people
+  search still sees who sits on a committee. Adding a member (`tenders.manage`) takes
+  `{user_id, role}` as before.
 - **Outbox:** events are written in the same transaction as the domain change. Every create,
   update and delete on projects, tasks, milestones, members, comments and tenders also writes an
   `activities` row in that transaction (`services/activity`).

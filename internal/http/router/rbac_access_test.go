@@ -103,16 +103,18 @@ func TestRoleManagementNeedsAdminTier(t *testing.T) {
 	}
 }
 
-// GET /people (pickers) needs projects.members.manage or projects.rbac.manage.
+// GET /people (pickers) needs projects.members.manage, projects.rbac.manage or
+// projects.tenders.manage (the tender committee picker).
 func TestPeoplePickerGate(t *testing.T) {
 	staff := userClaims("staff")
-	for _, perms := range [][]string{{rbac.PermMembersManage}, {rbac.PermRBACManage}} {
+	for _, perms := range [][]string{{rbac.PermMembersManage}, {rbac.PermRBACManage}, {rbac.PermTendersManage}} {
 		h := codesRouter(t, &codesRBAC{perms: perms, roles: []string{"x"}})
 		if w := call(h, staff, http.MethodGet, "/api/v1/acme/people?search=an"); w.Code == http.StatusForbidden || w.Code == http.StatusNotFound {
 			t.Errorf("people with %v: %d", perms, w.Code)
 		}
 	}
-	h := codesRouter(t, &codesRBAC{perms: []string{rbac.PermMembersView, rbac.PermTimeView}, roles: []string{rbac.RoleMember}})
+	// Viewing a team or a tender is not enough.
+	h := codesRouter(t, &codesRBAC{perms: []string{rbac.PermMembersView, rbac.PermTimeView, rbac.PermTendersView}, roles: []string{rbac.RoleMember}})
 	if w := call(h, staff, http.MethodGet, "/api/v1/acme/people"); w.Code != http.StatusForbidden {
 		t.Errorf("people with members.view only: %d, want 403", w.Code)
 	}

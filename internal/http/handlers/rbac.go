@@ -39,7 +39,10 @@ func NewRBACHandler(log *zap.Logger, svc *rbac.Service, sync *usersync.Service) 
 func (h *RBACHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/auth/me", h.Me)
 	manage := authz.Require(rbac.PermRBACManage)
-	r.With(authz.Require(rbac.PermMembersManage, rbac.PermRBACManage)).Get("/people", h.People)
+	// The people picker serves every screen that adds a person: the project team
+	// (members.manage), the invite and roles (rbac.manage) and tender committees
+	// (tenders.manage, which the committee routes need and project_manager does not hold).
+	r.With(authz.Require(rbac.PermMembersManage, rbac.PermRBACManage, rbac.PermTendersManage)).Get("/people", h.People)
 	r.Route("/rbac", func(g chi.Router) {
 		g.Use(manage)
 		g.Get("/roles", h.ListRoles)
@@ -188,9 +191,10 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, into any) bool {
 	return true
 }
 
-// People lists the tenant's staff for pickers (the project team's add member, the invite): active
-// people who have signed in or were invited, never portal clients. ?search= (or q) matches name or
-// email; paged with limit and page. Needs projects.members.manage or projects.rbac.manage.
+// People lists the tenant's staff for pickers (the project team's add member, the invite, tender
+// committee members): active people who have signed in or were invited, never portal clients.
+// ?search= (or q) matches name or email; paged with limit and page. Needs projects.members.manage,
+// projects.rbac.manage or projects.tenders.manage.
 func (h *RBACHandler) People(w http.ResponseWriter, r *http.Request) {
 	tenantID, ok := parseTenant(w, r)
 	if !ok || !h.ready(w) {

@@ -18,6 +18,7 @@ import (
 	enttendereval "github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	enttendermeeting "github.com/bengobox/projects-service/internal/ent/tendermeeting"
 	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/people"
 	"github.com/bengobox/projects-service/internal/services/sequence"
 	"github.com/bengobox/projects-service/internal/services/txn"
 )
@@ -457,8 +458,30 @@ func (s *Service) CreateCommittee(ctx context.Context, tenantID, tenderID uuid.U
 	return c, nil
 }
 
-// ListCommittees lists committees for a tender.
-func (s *Service) ListCommittees(ctx context.Context, tenantID, tenderID uuid.UUID) ([]*ent.TenderCommittee, error) {
+// CommitteeMember is a committee member row with the person's name and email from projects_users
+// (empty for someone who has never signed in to projects), so a reader never needs the people
+// search to tell who sits on a committee.
+type CommitteeMember struct {
+	*ent.TenderCommitteeMember
+	UserName string `json:"user_name"`
+	Email    string `json:"email"`
+}
+
+// CommitteeEdges replaces the ent edges in the committee list: the members with their names.
+type CommitteeEdges struct {
+	Members []CommitteeMember `json:"members,omitempty"`
+}
+
+// Committee is a committee as the list answers it: every ent field as before, and edges.members
+// carrying user_name and email beside the existing member fields.
+type Committee struct {
+	*ent.TenderCommittee
+	Edges CommitteeEdges `json:"edges"`
+}
+
+// ListCommittees lists committees for a tender with their members. The names and emails of every
+// member of every committee come from projects_users in one batched lookup, never one per row.
+func (s *Service) ListCommittees(ctx context.Context, tenantID, tenderID uuid.UUID) ([]Committee, error) {
 	items, err := s.client.TenderCommittee.Query().
 		Where(enttendercommittee.TenderID(tenderID), enttendercommittee.TenantID(tenantID)).
 		WithMembers().
@@ -466,7 +489,26 @@ func (s *Service) ListCommittees(ctx context.Context, tenantID, tenderID uuid.UU
 	if err != nil {
 		return nil, fmt.Errorf("list committees: %w", err)
 	}
-	return items, nil
+	var ids []uuid.UUID
+	for _, c := range items {
+		for _, m := range c.Edges.Members {
+			ids = append(ids, m.UserID)
+		}
+	}
+	known, err := people.Lookup(ctx, s.client.ProjectsUser, tenantID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Committee, len(items))
+	for i, c := range items {
+		members := make([]CommitteeMember, len(c.Edges.Members))
+		for j, m := range c.Edges.Members {
+			p := known[m.UserID]
+			members[j] = CommitteeMember{TenderCommitteeMember: m, UserName: p.Name, Email: p.Email}
+		}
+		out[i] = Committee{TenderCommittee: c, Edges: CommitteeEdges{Members: members}}
+	}
+	return out, nil
 }
 
 // AddCommitteeMember adds a user to a committee of the tender.

@@ -722,7 +722,7 @@ rules and automations stay dormant (kept, not enforced).
 Stored in project metadata (`automations`, written only by its route), at most 25 per project and 5
 actions each: `{id, name, enabled, trigger: {to, from?}, actions: [...]}`. Actions: `assign`
 (`user_ids`, `mode: add|replace`, default add), `notify` (`user_ids` and/or `recipients: ["assignees"]`,
-`message?`, at most 20 people), `set_field` (`field: priority` with low, medium, high or urgent, or
+`message?`, at most 20 people), `set_field` (`field: priority` with low, medium, high or critical, or
 `metadata.<key>` for any key that is not server-owned and not `repeat`; `value`). People named must be
 on the project's staff team when the rules are saved; anyone who has left by the time a rule runs is
 skipped. When a status change matches a rule, its actions run in the same transaction as the change

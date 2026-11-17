@@ -44,7 +44,7 @@ const EventAutomationNotice = "task.automation_notice"
 var metaKeyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]{0,59}$`)
 
 // Priorities a set_field action may set.
-var priorities = []string{"low", "medium", "high", "urgent"}
+var priorities = []string{"low", "medium", "high", "critical"}
 
 // Trigger fires a rule when a task moves to To (from From, or from anywhere when empty).
 type Trigger struct {
@@ -191,7 +191,7 @@ func validateAction(name string, a AutomationAction, isMember func(uuid.UUID) bo
 		case a.Field == "priority":
 			s, _ := a.Value.(string)
 			if !slices.Contains(priorities, s) {
-				return a, ErrValidation(fmt.Sprintf("automation %q: priority must be low, medium, high or urgent", name))
+				return a, ErrValidation(fmt.Sprintf("automation %q: priority must be low, medium, high or critical", name))
 			}
 		case strings.HasPrefix(a.Field, fieldMetadataPrefix):
 			key := strings.TrimPrefix(a.Field, fieldMetadataPrefix)

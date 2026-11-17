@@ -859,8 +859,9 @@ See `docs/sprints/` for detailed sprint planning.
 | 14 Client portal (new) | Done 2026-11-17 | Clients sign in through auth-api (verified email only), see progress, approve milestones, shared tasks and files, client thread |
 | 15 Billing and profitability (new) | Built 2026-11-17 | Milestone, time and retainer draft invoices in treasury (idempotent, void safe), labour cost in margins, margin by client, portal invoices. Open: retainer overage and monthly usage |
 | 16 Planning depth (new) | API built 2026-11-17 | Workload against capacity, baselines and slips, risk register and heat map, change requests (local sign-off, date shifts, budget to treasury), templates with three system ones, recurring tasks, status rules and automations. Open: ERP capacity read, UI |
+| 17 Access management (new) | Planned 2026-11-17 | Team page, custom roles with copy on write, permission editor, guard rails, audit, sign in and sign out hardening (adopting treasury and pos). See `docs/sprints/sprint-17-access-management.md` |
 
-**Priority order I am building in:** 0b, 12, 13, 14, 15, 16, then the open parts of 1 and 2, then 7 reports, 11, 10 and 9. Sprint 8 stays deferred.
+**Priority order I am building in:** 0b, 12, 13, 14, 15, 16, 17 (owner request), then the open parts of 1 and 2, then 7 reports, 11, 10 and 9. Sprint 8 stays deferred.
 
 **Plan gating (decided 2026-11-16):** I reuse the Projects feature codes that already exist in subscriptions-api (`psProjectsBlock`) and add only two. Every Projects tier: `project_management` (projects), `task_tracking` (board, drawer, list, calendar, My Work), `team_collaboration` (comments, mentions, attachments), `time_tracking` (timer, timesheets) and `client_portal` (the client portal, so it is never a paid add-on). Tier 3: `gantt_chart` (Gantt chart and baselines), `milestone_billing` (milestone and time invoicing, profitability), `budget_tracking` (financials, as today), and the new `workload_planning` and `project_automation` (status rules and automations). Templates, recurring tasks, risks and change requests sit under `project_management`. The platform tenant is exempt through the shared gating helper.
 

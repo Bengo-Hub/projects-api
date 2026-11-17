@@ -214,7 +214,12 @@ func New(ctx context.Context) (*App, error) {
 	liveHub := realtime.NewHub(log, natsConn)
 	projectService := projectssvc.NewService(entClient, cacheClient, log)
 	taskService := tasks.NewService(entClient, cacheClient, log).WithRealtime(liveHub)
+	// A milestone up for review also reaches clients still at the invite stage, at their marketflow
+	// contact read after commit (best effort; see milestones.notifyInvitedClients).
 	milestoneService := milestones.NewService(entClient, cacheClient, log)
+	if crm := marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey); crm.Enabled() {
+		milestoneService.WithContacts(crm)
+	}
 	memberService := members.NewService(entClient, cacheClient, log)
 	memberService.OnChange(memberships.Forget)
 	commentService := comments.NewService(entClient, cacheClient, log).WithRealtime(liveHub)

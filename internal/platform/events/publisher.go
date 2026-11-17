@@ -23,6 +23,14 @@ func Write(ctx context.Context, tx *ent.Tx, aggregateType, eventType string, agg
 	return insert(ctx, tx.OutboxEvent, aggregateType, eventType, aggregateID, tenantID, payload)
 }
 
+// WriteAfter adds a domain event to the outbox on its own, after the caller's change committed. It
+// is for a notice that needs a network read first (an invited client's address from marketflow),
+// which must never sit inside the change's transaction or fail it. A crash between the commit and
+// this write loses that notice; the change itself stands.
+func WriteAfter(ctx context.Context, client *ent.Client, aggregateType, eventType string, aggregateID, tenantID uuid.UUID, payload map[string]any) error {
+	return insert(ctx, client.OutboxEvent, aggregateType, eventType, aggregateID, tenantID, payload)
+}
+
 func insert(ctx context.Context, c *ent.OutboxEventClient, aggregateType, eventType string, aggregateID, tenantID uuid.UUID, payload map[string]any) error {
 	ev := eventslib.NewEvent(eventType, aggregateType, aggregateID, tenantID, payload)
 	body, err := json.Marshal(ev)

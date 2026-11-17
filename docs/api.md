@@ -432,13 +432,33 @@ route. The kind is stored on the comment when it is posted (server-owned `metada
 so revoking a client later never turns what they said into the team's words, and reading the
 thread needs no lookup.
 
+A post tells the other side, in the post's transaction, one event per person and never the
+poster: a client's post goes to the project's owner and its owner and manager members
+(`project.client_thread.posted`), a teammate's to each signed-in client
+(`project.client_thread.replied`). A client still at the invite stage gets no reply notice; the
+invite is their way in, and the reply is waiting in the thread once they sign in.
+
 ### Events (outbox, `project.>`)
+
+"The task notice fields" are `project_id, project_name, task_id (""), task_title (""), actor_id,
+actor_name, recipient_user_id, recipient_email, recipient_name, comment_excerpt, action_path`,
+the recipient read from `projects_users`.
 
 | Subject | To | Payload |
 |---|---|---|
 | `project.client.invited` | the contact | `project_id, project_name, member_id, tenant_slug, portal_path (/{org}/portal), action_path (/{org}/portal/projects/{id}), actor_id, actor_name, recipient_name, recipient_email, recipient_phone, resent` |
-| `project.milestone.ready_for_review` | each signed-in client, one event each | the task notice fields (recipient from `projects_users`) plus `milestone_id, milestone_name, target_date`; `action_path` `/{org}/portal/projects/{id}?milestone={mid}` |
+| `project.milestone.ready_for_review` | each signed-in client, one event each, in the milestone's transaction; then each client still at the invite stage, after commit | the task notice fields plus `milestone_id, milestone_name, target_date`; `action_path` `/{org}/portal/projects/{id}?milestone={mid}`. For an invited client `recipient_user_id` is "", `recipient_email`, `recipient_phone` and `recipient_name` are the CRM contact's as marketflow holds them at send time, and `member_id` is the client row |
 | `project.milestone.approved`, `project.milestone.changes_requested` | the project owner and owner or manager members, one each, never the client | plus `milestone_id, milestone_name, decision, comment_excerpt, decided_at`; `action_path` `/{org}/projects/{id}/milestones?milestone={mid}` |
+| `project.client_thread.posted` | the project owner and owner or manager members, one each, never the poster and never a client | the task notice fields plus `comment_id, author_kind (client)`; `comment_excerpt` is the post as plain text, at most 200 characters; `action_path` `/{org}/projects/{id}/client-thread` |
+| `project.client_thread.replied` | each signed-in client, one each, never the poster | as posted, `author_kind` team; `action_path` `/{org}/portal/projects/{id}?tab=messages` (the portal project's Messages tab) |
+
+The invited client's review notice is the one notice that needs a network read: projects keeps no
+copy of a client's address (only its keyed hash), so the address comes from marketflow. I write
+it after the milestone commits, outside the transaction, with a 5 second timeout per contact, so
+a marketflow outage never fails or holds up the team's update. A contact marketflow cannot read,
+an erased one, or one with neither an email nor a phone is skipped with a warning in the log. A
+crash between the commit and that write loses the invited clients' notices only; the signed-in
+clients' notices were written with the milestone.
 
 ## Billing and profitability (sprint 15, 2026-11-17)
 
@@ -728,13 +748,15 @@ Every payload carries the ids named; `actor_id` is the signed-in user ("" for th
 | `project.risk.created`, `.updated`, `.deleted` | `{project_id, risk_id, title, likelihood, impact, score, status, owner_id, due_date?}`; updated adds `changes` |
 | `project.change_request.submitted`, `.updated`, `.withdrawn`, `.approved`, `.rejected` | `{project_id, change_request_id, title, kind, status, requested_by, date_shift_count, has_budget_change, decided_by?, decision_comment?}`; approved adds `shifted_task_ids` |
 | `project.change_request.budget_pushed` | the above plus `{treasury_status (submitted or failed), budget_id, error}` |
+| `project.change_request.review_requested` | Written with `submitted`, one event per approver candidate: the project owner and its owner and manager members who hold `projects.change_approvals.manage` (one batched RBAC query in the transaction), never the requester. The task notice fields (see Client portal, Events) plus `{change_request_id, title, kind, date_shift_count, has_budget_change}`; `actor_name` is the requester, `comment_excerpt` the description as plain text (at most 200 characters), `action_path` `/{org}/projects/{id}/change-requests?request={crId}` |
+| `project.change_request.decided` | Written with `approved` or `rejected`, one event to the requester. As `review_requested` plus `{decision (approved or rejected), decided_at}`; `actor_name` is the decider and `comment_excerpt` the decision comment |
 | `project.template.saved` | `{template_id, name, source_project_id, task_count, phase_count, actor_id}` |
 | `project.template.deleted` | `{template_id, name, actor_id}` |
 | `project.template.applied` | `{project_id, template_id, template_name, task_count, milestone_count, start_date, actor_id}` |
 | `project.task.recurred` | `{project_id, task_id, task_title, previous_task_id, series_id, occurrence, due_date, assignee_ids}` |
 | `project.status_rules.updated` | `{project_id, rules, actor_id}` |
 | `project.automations.updated` | `{project_id, count, actor_id}` |
-| `project.task.automation_notice` | `{project_id, project_name, task_id, task_title, rule_id, rule_name, from_status, to_status, to_status_label, message, recipient_ids: [...], action_path}`. One event per rule run with every recipient id. notifications-api has no consumer for it yet |
+| `project.task.automation_notice` | `{project_id, project_name, task_id, task_title, rule_id, rule_name, from_status, to_status, to_status_label, message, recipient_ids: [...], action_path}`. One event per rule run with every recipient id. notifications-api fans it out: one email per recipient id it finds in its user table, with an idempotency key per event and recipient |
 
 ### Tables
 

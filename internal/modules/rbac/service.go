@@ -300,6 +300,33 @@ func (s *Service) HasPermission(ctx context.Context, tenantID, authUserID uuid.U
 	return false, nil
 }
 
+// HoldersAmong returns which of ids (auth-api user ids) hold code in the tenant, directly or
+// through an implying code, in one query: active local users with an unexpired assignment of a role
+// that carries the code. users is client.ProjectsUser or tx.ProjectsUser; unlike HasPermission it
+// reads no cache, so it fits inside a transaction and sees roles changed a moment ago.
+func HoldersAmong(ctx context.Context, users *ent.ProjectsUserClient, tenantID uuid.UUID, ids []uuid.UUID, code string) (map[uuid.UUID]bool, error) {
+	out := map[uuid.UUID]bool{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	codes := append([]string{code}, impliers(code)...)
+	rows, err := users.Query().
+		Where(entprojectsuser.TenantID(tenantID), entprojectsuser.AuthServiceUserIDIn(ids...), entprojectsuser.Status("active"),
+			entprojectsuser.HasRoleAssignmentsWith(
+				entassign.TenantID(tenantID),
+				entassign.Or(entassign.ExpiresAtIsNil(), entassign.ExpiresAtGT(time.Now())),
+				entassign.HasRoleWith(entrole.HasPermissionsWith(entpermission.PermissionCodeIn(codes...))),
+			)).
+		Select(entprojectsuser.FieldAuthServiceUserID).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("rbac holders of %s: %w", code, err)
+	}
+	for _, u := range rows {
+		out[u.AuthServiceUserID] = true
+	}
+	return out, nil
+}
+
 // AssignRole gives a user a system role, granted by actor. The user's automatic default role is
 // dropped, so from now on only admin decisions apply. The user need not have signed in yet.
 func (s *Service) AssignRole(ctx context.Context, tenantID, authUserID uuid.UUID, roleCode string, actor uuid.UUID) error {

@@ -50,6 +50,12 @@
 ## Still open
 - An ERP capacity read (working hours and leave per employee).
 - `actual_hours` requirements read the task's `metadata.actual_hours`, not ERP logged hours.
-- notifications-api consumer for `project.task.automation_notice` and the change request events.
+- Notices done 2026-11-17: `project.change_request.review_requested` (one per approver candidate
+  holding change approvals, never the requester) and `project.change_request.decided` (to the
+  requester) beside the recipient-free events, and notifications-api now consumes them and
+  `project.task.automation_notice` (email only). Left: the WhatsApp templates for these three
+  (a Meta approval, so mine to submit), the risk events, and the
+  `/{org}/projects/{id}/change-requests?request={id}` page the notice links to, which comes with
+  the UI below.
 - Recurring copies start without the checklist; workload ignores public holidays.
 - The UI for all eight stories.

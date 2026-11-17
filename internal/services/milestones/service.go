@@ -35,11 +35,19 @@ type Service struct {
 	client *ent.Client
 	cache  *sharedcache.Aside
 	log    *zap.Logger
+	crm    Contacts
 }
 
 // NewService creates a new milestones service.
 func NewService(client *ent.Client, cache *sharedcache.Aside, log *zap.Logger) *Service {
 	return &Service{client: client, cache: cache, log: log.Named("milestones.svc")}
+}
+
+// WithContacts sets the CRM reader the review notice uses for clients still at the invite stage.
+// Without it only signed-in clients hear that a milestone is ready for review.
+func (s *Service) WithContacts(c Contacts) *Service {
+	s.crm = c
+	return s
 }
 
 // CreateMilestoneInput holds data for creating a milestone.
@@ -135,15 +143,20 @@ func (s *Service) CreateMilestone(ctx context.Context, tenantID, projectID uuid.
 	if err != nil {
 		return nil, err
 	}
+	if m.Status == StatusReadyForReview {
+		s.notifyInvitedClients(ctx, m)
+	}
 	return m, nil
 }
 
 // UpdateMilestone updates an existing milestone. Completing it writes project.milestone.reached in
 // the same transaction; moving it to ready_for_review writes project.milestone.ready_for_review to
-// each of the project's clients. approved and changes_requested are the client's decision (Decide)
+// each signed-in client in the same transaction, then to each client still at the invite stage
+// after commit (notifyInvitedClients). approved and changes_requested are the client's decision (Decide)
 // and are refused here.
 func (s *Service) UpdateMilestone(ctx context.Context, tenantID, projectID, id uuid.UUID, input UpdateMilestoneInput) (*ent.Milestone, error) {
 	var updated *ent.Milestone
+	readyForReview := false
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
 		m, err := tx.Milestone.Query().
 			Where(entmilestone.ID(id), entmilestone.TenantID(tenantID), entmilestone.ProjectID(projectID)).Only(ctx)
@@ -163,7 +176,8 @@ func (s *Service) UpdateMilestone(ctx context.Context, tenantID, projectID, id u
 			u = u.SetDescription(*input.Description)
 			changes["description"] = "changed"
 		}
-		completed, readyForReview := false, false
+		completed := false
+		readyForReview = false // a retried transaction starts over
 		if input.Status != nil {
 			if *input.Status != m.Status && clientDecided(*input.Status) {
 				return errClientStatus
@@ -208,6 +222,9 @@ func (s *Service) UpdateMilestone(ctx context.Context, tenantID, projectID, id u
 	})
 	if err != nil {
 		return nil, err
+	}
+	if readyForReview {
+		s.notifyInvitedClients(ctx, updated)
 	}
 	return updated, nil
 }

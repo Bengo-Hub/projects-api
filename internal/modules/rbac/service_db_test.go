@@ -124,3 +124,28 @@ func TestAssignAndRevokeRole(t *testing.T) {
 		t.Error("a role leaked into another tenant")
 	}
 }
+
+// HoldersAmong answers for a whole list in one query: a project manager and an admin hold change
+// approvals, a member does not, nor does anyone in another tenant or someone never seen here.
+func TestHoldersAmong(t *testing.T) {
+	svc := seeded(t)
+	ctx := context.Background()
+	tenant, admin, manager, member, nobody := uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()
+	for _, u := range []uuid.UUID{manager, member} {
+		_ = svc.EnsureUserFromToken(ctx, Identity{TenantID: tenant, AuthUserID: u, GlobalRoles: []string{"staff"}})
+	}
+	_ = svc.EnsureUserFromToken(ctx, Identity{TenantID: tenant, AuthUserID: admin, GlobalRoles: []string{"admin"}})
+	if err := svc.AssignRole(ctx, tenant, manager, RoleProjectManager, admin); err != nil {
+		t.Fatal(err)
+	}
+	got, err := HoldersAmong(ctx, svc.client.ProjectsUser, tenant, []uuid.UUID{admin, manager, member, nobody}, PermChangeApprovals)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || !got[admin] || !got[manager] {
+		t.Fatalf("holders = %v, want the admin and the manager", got)
+	}
+	if other, _ := HoldersAmong(ctx, svc.client.ProjectsUser, uuid.New(), []uuid.UUID{admin, manager}, PermChangeApprovals); len(other) != 0 {
+		t.Fatalf("another tenant's holders = %v", other)
+	}
+}

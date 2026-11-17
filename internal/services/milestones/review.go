@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	"github.com/bengobox/projects-service/internal/ent"
 	entmilestone "github.com/bengobox/projects-service/internal/ent/milestone"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
+	"github.com/bengobox/projects-service/internal/platform/marketflow"
 	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/notify"
 	"github.com/bengobox/projects-service/internal/services/txn"
@@ -48,8 +50,9 @@ func clientDecided(status string) bool {
 	return status == StatusApproved || status == StatusChangesRequested
 }
 
-func projectName(ctx context.Context, tx *ent.Tx, tenantID, projectID uuid.UUID) (string, error) {
-	p, err := tx.Project.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).
+// projects is client.Project or tx.Project.
+func projectName(ctx context.Context, projects *ent.ProjectClient, tenantID, projectID uuid.UUID) (string, error) {
+	p, err := projects.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).
 		Select(entproject.FieldName).Only(ctx)
 	if err != nil {
 		return "", fmt.Errorf("load project: %w", err)
@@ -57,29 +60,102 @@ func projectName(ctx context.Context, tx *ent.Tx, tenantID, projectID uuid.UUID)
 	return p.Name, nil
 }
 
-// notifyReadyForReview writes project.milestone.ready_for_review to each signed-in client of the
-// project, linking to the milestone in the portal.
-func notifyReadyForReview(ctx context.Context, tx *ent.Tx, m *ent.Milestone) error {
-	clients, err := notify.ProjectClients(ctx, tx, m.TenantID, m.ProjectID)
-	if err != nil || len(clients) == 0 {
-		return err
-	}
-	name, err := projectName(ctx, tx, m.TenantID, m.ProjectID)
+// Contacts reads one CRM contact; *marketflow.Client implements it.
+type Contacts interface {
+	GetContact(ctx context.Context, tenantID, contactID uuid.UUID) (marketflow.Contact, error)
+}
+
+// contactTimeout bounds the CRM read for one invited client's review notice.
+const contactTimeout = 5 * time.Second
+
+// reviewNotice is the project.milestone.ready_for_review notice of m, linking to the milestone in
+// the portal. projects and users are the client's or the transaction's.
+func reviewNotice(ctx context.Context, projects *ent.ProjectClient, users *ent.ProjectsUserClient, m *ent.Milestone) (notify.Notice, error) {
+	name, err := projectName(ctx, projects, m.TenantID, m.ProjectID)
 	if err != nil {
-		return err
+		return notify.Notice{}, err
 	}
-	actor, err := notify.Actor(ctx, tx, m.TenantID, activity.ActorFrom(ctx))
+	actor, err := notify.ActorOf(ctx, users, m.TenantID, activity.ActorFrom(ctx))
 	if err != nil {
-		return err
+		return notify.Notice{}, err
 	}
 	extra := map[string]any{"milestone_id": m.ID.String(), "milestone_name": m.Name, "target_date": ""}
 	if !m.TargetDate.IsZero() {
 		extra["target_date"] = m.TargetDate.Format(time.DateOnly)
 	}
-	return notify.Write(ctx, tx, notify.EventMilestoneReadyForReview, notify.Notice{
+	return notify.Notice{
 		TenantID: m.TenantID, ProjectID: m.ProjectID, ProjectName: name, Actor: actor,
 		ActionPath: notify.PortalPath(ctx, m.ProjectID, m.ID), Extra: extra,
-	}, clients)
+	}, nil
+}
+
+// notifyReadyForReview writes project.milestone.ready_for_review to each signed-in client of the
+// project, in the milestone's transaction.
+func notifyReadyForReview(ctx context.Context, tx *ent.Tx, m *ent.Milestone) error {
+	clients, err := notify.ProjectClients(ctx, tx, m.TenantID, m.ProjectID)
+	if err != nil || len(clients) == 0 {
+		return err
+	}
+	n, err := reviewNotice(ctx, tx.Project, tx.ProjectsUser, m)
+	if err != nil {
+		return err
+	}
+	return notify.Write(ctx, tx, notify.EventMilestoneReadyForReview, n, clients)
+}
+
+// notifyInvitedClients writes project.milestone.ready_for_review to each client still at the
+// invite stage (no account yet), at the email and phone marketflow holds for their CRM contact now:
+// projects keeps no copy of a client's address, only its keyed hash. recipient_user_id is empty and
+// the link opens the project in the portal, where they sign in first.
+//
+// It runs after the milestone committed, best effort: marketflow must never fail or slow down the
+// team's update, so the read sits outside the transaction, each contact read has its own timeout,
+// and a client whose contact cannot be read (marketflow down or not configured), was erased or has
+// neither an email nor a phone is skipped with a warning. A crash between the commit and these
+// writes loses these notices only; the signed-in clients' notices were written with the milestone.
+func (s *Service) notifyInvitedClients(ctx context.Context, m *ent.Milestone) {
+	if s.crm == nil || m == nil {
+		return
+	}
+	log := s.log.With(zap.String("milestone_id", m.ID.String()))
+	invited, err := notify.InvitedClients(ctx, s.client.ProjectMember, m.TenantID, m.ProjectID)
+	if err != nil {
+		log.Warn("review notice: invited clients not read", zap.Error(err))
+		return
+	}
+	if len(invited) == 0 {
+		return
+	}
+	n, err := reviewNotice(ctx, s.client.Project, s.client.ProjectsUser, m)
+	if err != nil {
+		log.Warn("review notice: not built for invited clients", zap.Error(err))
+		return
+	}
+	for _, c := range invited {
+		cctx, cancel := context.WithTimeout(ctx, contactTimeout)
+		contact, err := s.crm.GetContact(cctx, m.TenantID, c.ContactID)
+		cancel()
+		if err != nil {
+			log.Warn("review notice: CRM contact not read, invited client skipped",
+				zap.String("member_id", c.MemberID.String()), zap.Error(err))
+			continue
+		}
+		email, phone := strings.TrimSpace(contact.Email), strings.TrimSpace(contact.Phone)
+		if contact.Erased() || (email == "" && phone == "") {
+			log.Warn("review notice: CRM contact has no email or phone, invited client skipped",
+				zap.String("member_id", c.MemberID.String()))
+			continue
+		}
+		name := contact.Name()
+		if strings.TrimSpace(name) == "" {
+			name = c.Name
+		}
+		if err := notify.WriteExternal(ctx, s.client, notify.EventMilestoneReadyForReview, n, notify.External{
+			MemberID: c.MemberID, Email: email, Phone: phone, Name: name,
+		}); err != nil {
+			log.Warn("review notice: not written for invited client", zap.String("member_id", c.MemberID.String()), zap.Error(err))
+		}
+	}
 }
 
 // DecisionInput is a client's verdict on a milestone up for review.
@@ -150,7 +226,7 @@ func (s *Service) Decide(ctx context.Context, tenantID, projectID, id, clientID 
 		if err != nil {
 			return err
 		}
-		name, err := projectName(ctx, tx, tenantID, projectID)
+		name, err := projectName(ctx, tx.Project, tenantID, projectID)
 		if err != nil {
 			return err
 		}

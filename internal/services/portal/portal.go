@@ -43,8 +43,8 @@ import (
 // Client member metadata keys.
 const (
 	MetaStatus       = "portal_status"
-	MetaCRMContactID = "crm_contact_id"
-	MetaContactName  = "contact_name"
+	MetaCRMContactID = notify.MetaCRMContactID
+	MetaContactName  = notify.MetaContactName
 	MetaEmailHash    = "email_hash"
 	MetaEmailHint    = "email_hint"
 	MetaInvitedBy    = "invited_by"

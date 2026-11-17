@@ -33,8 +33,11 @@ push, project templates (three system ones seeded), recurring tasks, status rule
 - `actual_hours` in a status rule reads the task's `metadata.actual_hours`, not the hours logged in
   ERP timesheets. Reading ERP inside a status change would put a network call in the transaction; a
   cached per-task logged hours figure is the follow-up.
-- notifications-api has no consumer for `project.task.automation_notice` yet (one event per rule run
-  carrying every recipient id), nor for the change request and risk events.
+- Notices (2026-11-17): notifications-api now sends `project.task.automation_notice` (fanned out
+  per recipient id), `project.change_request.review_requested` and `project.change_request.decided`
+  by email, and the client thread and invited client review notices of sprint 14. Still open:
+  WhatsApp templates for the five new notice types (Meta approval), a consumer for the risk
+  events, and the change request page the review notice links to.
 - Recurring copies do not carry the checklist; a new occurrence starts without one.
 - Holidays are not working days aware: workload spreads over Monday to Friday only.
 - The UI for all eight stories (projects-ui).

@@ -303,3 +303,112 @@ func TestMilestoneReviewAndDecision(t *testing.T) {
 		t.Errorf("a second decision: %v", err)
 	}
 }
+
+// downCRM is marketflow out of service.
+type downCRM struct{}
+
+func (downCRM) GetContact(context.Context, uuid.UUID, uuid.UUID) (marketflow.Contact, error) {
+	return marketflow.Contact{}, errors.New("marketflow: 503")
+}
+
+// A client still at the invite stage hears that a milestone is ready for review too, at the address
+// and phone the CRM holds now, with no user id; a contact the CRM cannot answer for is skipped, and
+// a CRM outage never fails the team's update.
+func TestReviewReachesInvitedClients(t *testing.T) {
+	ctx, w := setup(t)
+	if _, _, err := w.svc.Invite(ctx, w.tenant, w.project.ID, w.contact, w.owner); err != nil {
+		t.Fatal(err)
+	}
+	// An invite whose contact the CRM no longer knows.
+	w.client.ProjectMember.Create().SetTenantID(w.tenant).SetProjectID(w.project.ID).SetUserID(uuid.Nil).SetRoleCode(rbac.RoleClient).
+		SetMetadata(map[string]any{MetaStatus: StatusInvited, MetaCRMContactID: uuid.NewString(), MetaContactName: "Gone"}).SaveX(ctx)
+	signedIn := uuid.New()
+	w.client.ProjectMember.Create().SetTenantID(w.tenant).SetProjectID(w.project.ID).SetUserID(signedIn).SetRoleCode(rbac.RoleClient).SaveX(ctx)
+
+	ms := milestones.NewService(w.client, nil, zap.NewNop()).WithContacts(w.svc.crm)
+	teamCtx := activity.WithActor(ctx, w.owner)
+	m, err := ms.CreateMilestone(teamCtx, w.tenant, w.project.ID, milestones.CreateMilestoneInput{Name: "Roof", Status: milestones.StatusReadyForReview})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rev := payloads(t, w.client.OutboxEvent.Query().Where(entoutbox.EventType(notify.EventMilestoneReadyForReview)).AllX(ctx))
+	var invited, member map[string]any
+	for _, e := range rev {
+		if e["recipient_user_id"] == "" {
+			invited = e
+		} else {
+			member = e
+		}
+	}
+	link := "/acme/portal/projects/" + w.project.ID.String() + "?milestone=" + m.ID.String()
+	if len(rev) != 2 || member == nil || member["recipient_user_id"] != signedIn.String() || invited == nil {
+		t.Fatalf("ready_for_review events = %v", rev)
+	}
+	if invited["recipient_email"] != "Joan.Client@Example.com" || invited["recipient_phone"] != "+254700000001" ||
+		invited["recipient_name"] != "Joan Client" || invited["action_path"] != link || invited["milestone_name"] != "Roof" {
+		t.Fatalf("invited client's event = %v", invited)
+	}
+
+	// Marketflow down: the update still succeeds, the signed-in client is still told.
+	down := milestones.NewService(w.client, nil, zap.NewNop()).WithContacts(downCRM{})
+	other, err := down.CreateMilestone(teamCtx, w.tenant, w.project.ID, milestones.CreateMilestoneInput{Name: "Walls"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ready := milestones.StatusReadyForReview
+	if _, err := down.UpdateMilestone(teamCtx, w.tenant, w.project.ID, other.ID, milestones.UpdateMilestoneInput{Status: &ready}); err != nil {
+		t.Fatalf("a CRM outage failed the update: %v", err)
+	}
+	if n := len(payloads(t, w.client.OutboxEvent.Query().Where(entoutbox.EventType(notify.EventMilestoneReadyForReview)).AllX(ctx))); n != 3 {
+		t.Fatalf("ready_for_review events after the outage = %d, want 3", n)
+	}
+}
+
+// A client's post on the client thread tells the project's leads, never the client; a teammate's
+// post tells each signed-in client, never the poster and never a client still at the invite stage.
+// Mentions on the thread still notify nobody.
+func TestClientThreadNotices(t *testing.T) {
+	ctx, w := setup(t)
+	manager, member, user := uuid.New(), uuid.New(), uuid.New()
+	w.client.ProjectMember.Create().SetTenantID(w.tenant).SetProjectID(w.project.ID).SetUserID(manager).SetRoleCode("manager").SaveX(ctx)
+	w.client.ProjectMember.Create().SetTenantID(w.tenant).SetProjectID(w.project.ID).SetUserID(member).SetRoleCode("member").SaveX(ctx)
+	w.client.ProjectMember.Create().SetTenantID(w.tenant).SetProjectID(w.project.ID).SetUserID(user).SetRoleCode(rbac.RoleClient).SaveX(ctx)
+	w.client.ProjectsUser.Create().SetTenantID(w.tenant).SetAuthServiceUserID(user).SetName("Joan Client").SetEmail("joan@example.com").SaveX(ctx)
+	w.client.ProjectsUser.Create().SetTenantID(w.tenant).SetAuthServiceUserID(manager).SetName("Amina").SetEmail("amina@example.com").SaveX(ctx)
+	if _, _, err := w.svc.Invite(ctx, w.tenant, w.project.ID, w.contact, w.owner); err != nil {
+		t.Fatal(err)
+	}
+	cs := comments.NewService(w.client, nil, zap.NewNop())
+
+	if _, _, err := cs.CreateClientThreadComment(ctx, w.tenant, w.project.ID, comments.CreateCommentInput{
+		UserID: user, Content: "<p>Can we move the <b>handover</b>?</p>",
+	}, comments.AuthorClient); err != nil {
+		t.Fatal(err)
+	}
+	posted := payloads(t, w.client.OutboxEvent.Query().Where(entoutbox.EventType(notify.EventClientThreadPosted)).AllX(ctx))
+	to := map[string]bool{}
+	for _, e := range posted {
+		to[e["recipient_user_id"].(string)] = true
+		if e["actor_name"] != "Joan Client" || e["comment_excerpt"] != "Can we move the handover?" ||
+			e["action_path"] != "/acme/projects/"+w.project.ID.String()+"/client-thread" || e["author_kind"] != comments.AuthorClient {
+			t.Errorf("posted payload %v", e)
+		}
+	}
+	if len(posted) != 2 || !to[w.owner.String()] || !to[manager.String()] {
+		t.Fatalf("posted to %v, want the owner and the manager", to)
+	}
+
+	if _, _, err := cs.CreateClientThreadComment(ctx, w.tenant, w.project.ID, comments.CreateCommentInput{
+		UserID: manager, Content: `<p>Yes, <span data-type="mention" data-id="` + member.String() + `" data-label="Ben">@Ben</span> will confirm</p>`,
+	}, comments.AuthorTeam); err != nil {
+		t.Fatal(err)
+	}
+	replied := payloads(t, w.client.OutboxEvent.Query().Where(entoutbox.EventType(notify.EventClientThreadReplied)).AllX(ctx))
+	if len(replied) != 1 || replied[0]["recipient_user_id"] != user.String() || replied[0]["recipient_email"] != "joan@example.com" ||
+		replied[0]["actor_name"] != "Amina" || replied[0]["action_path"] != "/acme/portal/projects/"+w.project.ID.String()+"?tab=messages" {
+		t.Fatalf("replied events = %v", replied)
+	}
+	if n := w.client.OutboxEvent.Query().Where(entoutbox.EventType(notify.EventTaskMentioned)).CountX(ctx); n != 0 {
+		t.Fatalf("a thread mention notified %d people", n)
+	}
+}

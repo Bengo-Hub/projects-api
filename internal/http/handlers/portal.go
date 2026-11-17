@@ -267,7 +267,7 @@ func (h *PortalHandler) post(w http.ResponseWriter, r *http.Request, tenantID, p
 	if !ok {
 		return
 	}
-	c, replayed, err := h.comments.CreateClientThreadComment(r.Context(), tenantID, projectID, input, kind)
+	c, replayed, err := h.comments.CreateClientThreadComment(noticeCtx(r), tenantID, projectID, input, kind)
 	if err != nil {
 		h.writeErr(w, err, "post to client thread failed")
 		return

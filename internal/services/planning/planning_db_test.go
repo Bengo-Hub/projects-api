@@ -16,10 +16,13 @@ import (
 
 	"github.com/bengobox/projects-service/internal/ent"
 	entoutbox "github.com/bengobox/projects-service/internal/ent/outboxevent"
+	entmember "github.com/bengobox/projects-service/internal/ent/projectmember"
 	enttask "github.com/bengobox/projects-service/internal/ent/task"
 	enttaskdep "github.com/bengobox/projects-service/internal/ent/taskdependency"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/notify"
 	"github.com/bengobox/projects-service/internal/services/tasks"
 	"github.com/bengobox/projects-service/internal/testutil"
 )
@@ -350,6 +353,62 @@ func TestChangeRequestFlow(t *testing.T) {
 	}
 	if _, total, _ := f.svc.ListChangeRequests(f.ctx, tenant, nil, CRFilter{VisibleTo: &f.ana}); total != 2 {
 		t.Fatalf("ana's queue: %d", total)
+	}
+}
+
+// A raised request asks each approver candidate who holds change approvals (the owner and a
+// manager here, never the requester or a manager without the permission); a decision goes to the
+// requester alone with the comment. The recipient-free events stay one per change.
+func TestChangeRequestNotices(t *testing.T) {
+	f := newFx(t, nil)
+	ctx := notify.WithOrgSlug(f.ctx, "acme")
+	roles := rbac.NewService(f.client, nil, zap.NewNop())
+	if err := roles.Seed(ctx); err != nil {
+		t.Fatal(err)
+	}
+	admin, manager, idle := uuid.New(), uuid.New(), uuid.New()
+	for _, u := range []uuid.UUID{manager, idle} {
+		f.client.ProjectMember.Create().SetTenantID(f.tenant).SetProjectID(f.project.ID).SetUserID(u).SetRoleCode("manager").SaveX(ctx)
+	}
+	for _, u := range []uuid.UUID{f.owner, manager, f.ana} {
+		if err := roles.AssignRole(ctx, f.tenant, u, rbac.RoleProjectManager, admin); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := roles.AssignRole(ctx, f.tenant, idle, rbac.RoleViewer, admin); err != nil {
+		t.Fatal(err)
+	}
+	// Ana is a manager who holds approvals too; as the requester she is never asked. The idle
+	// manager is a lead without the permission.
+	f.client.ProjectMember.Update().Where(entmember.ProjectID(f.project.ID), entmember.UserID(f.ana)).SetRoleCode("manager").ExecX(ctx)
+	asAna := notify.WithOrgSlug(activity.WithActor(context.Background(), f.ana), "acme")
+	title, desc := "Add a site visit", "<p>One more <b>visit</b> before handover</p>"
+	cr, err := f.svc.CreateChangeRequest(asAna, f.tenant, f.project.ID, ChangeRequestInput{Title: &title, Description: &desc})
+	if err != nil {
+		t.Fatal(err)
+	}
+	asked := f.events(t, EventCRReviewRequested)
+	to := map[string]bool{}
+	for _, e := range asked {
+		to[e["recipient_user_id"].(string)] = true
+		if e["action_path"] != "/acme/projects/"+f.project.ID.String()+"/change-requests?request="+cr.ID.String() ||
+			e["comment_excerpt"] != "One more visit before handover" || e["actor_name"] != "Ana" || e["title"] != title {
+			t.Errorf("review_requested payload %v", e)
+		}
+	}
+	if len(asked) != 2 || !to[f.owner.String()] || !to[manager.String()] {
+		t.Fatalf("review_requested to %v, want the owner and the manager", to)
+	}
+	if _, err := f.svc.Decide(ctx, f.tenant, f.project.ID, cr.ID, false, "Not in the budget"); err != nil {
+		t.Fatal(err)
+	}
+	decided := f.events(t, EventCRDecided)
+	if len(decided) != 1 || decided[0]["recipient_user_id"] != f.ana.String() || decided[0]["recipient_email"] != "ana@acme.test" ||
+		decided[0]["decision"] != CRRejected || decided[0]["comment_excerpt"] != "Not in the budget" {
+		t.Fatalf("decided events = %v", decided)
+	}
+	if len(f.events(t, EventCRSubmitted)) != 1 || len(f.events(t, EventCRRejected)) != 1 {
+		t.Fatal("the recipient-free change request events changed")
 	}
 }
 

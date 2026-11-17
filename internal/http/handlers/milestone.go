@@ -100,7 +100,7 @@ func (h *MilestoneHandler) Create(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	m, err := h.svc.CreateMilestone(r.Context(), tenantID, projectID, input)
+	m, err := h.svc.CreateMilestone(noticeCtx(r), tenantID, projectID, input)
 	if err != nil {
 		h.writeErr(w, err, "project not found", "create milestone failed")
 		return
@@ -122,7 +122,7 @@ func (h *MilestoneHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	m, err := h.svc.UpdateMilestone(r.Context(), tenantID, projectID, id, input)
+	m, err := h.svc.UpdateMilestone(noticeCtx(r), tenantID, projectID, id, input)
 	if err != nil {
 		h.writeErr(w, err, "milestone not found", "update milestone failed")
 		return

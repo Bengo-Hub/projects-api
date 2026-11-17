@@ -20,8 +20,54 @@ const (
 	EventMilestoneChangesRequested = "milestone.changes_requested"
 )
 
+// Client thread notices: a client's post goes to the project's leads, a teammate's to the
+// project's signed-in clients.
+const (
+	EventClientThreadPosted  = "client_thread.posted"
+	EventClientThreadReplied = "client_thread.replied"
+)
+
+// Client member metadata keys shared with the portal package (portal.MetaCRMContactID and
+// portal.MetaContactName are these), so a notice can read an invited client's CRM contact.
+const (
+	MetaCRMContactID = "crm_contact_id"
+	MetaContactName  = "contact_name"
+)
+
 // leadRoles are the project member roles told about a client's decision, beside the owner.
 var leadRoles = []string{"owner", "manager"}
+
+// Invited is a client still at the invite stage: no account yet, so a notice reaches them through
+// their CRM contact.
+type Invited struct {
+	MemberID  uuid.UUID
+	ContactID uuid.UUID
+	Name      string // the name snapshot taken at invite time
+}
+
+// InvitedClients returns the project's clients still at the invite stage (live client rows with no
+// user yet). A row without a readable contact id is left out. members is client.ProjectMember or
+// tx.ProjectMember.
+func InvitedClients(ctx context.Context, members *ent.ProjectMemberClient, tenantID, projectID uuid.UUID) ([]Invited, error) {
+	rows, err := members.Query().
+		Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID), entmember.RoleCode(rbac.RoleClient),
+			entmember.LeftAtIsNil(), entmember.UserID(uuid.Nil)).
+		Select(entmember.FieldID, entmember.FieldMetadata).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load invited clients: %w", err)
+	}
+	out := make([]Invited, 0, len(rows))
+	for _, m := range rows {
+		raw, _ := m.Metadata[MetaCRMContactID].(string)
+		contact, err := uuid.Parse(raw)
+		if err != nil || contact == uuid.Nil {
+			continue
+		}
+		name, _ := m.Metadata[MetaContactName].(string)
+		out = append(out, Invited{MemberID: m.ID, ContactID: contact, Name: name})
+	}
+	return out, nil
+}
 
 // ProjectClients returns the auth user ids of the project's signed-in clients: active client
 // rows that have been matched to an account. A client still at the invite stage has no account
@@ -77,6 +123,55 @@ func PortalPath(ctx context.Context, projectID, milestoneID uuid.UUID) string {
 		p += "?milestone=" + milestoneID.String()
 	}
 	return p
+}
+
+// orgPath prefixes p with /{org} when ctx carries the slug.
+func orgPath(ctx context.Context, p string) string {
+	if org := OrgSlug(ctx); org != "" {
+		return "/" + org + p
+	}
+	return p
+}
+
+// ClientThreadPath is the team's client thread of a project: /{org}/projects/{id}/client-thread.
+func ClientThreadPath(ctx context.Context, projectID uuid.UUID) string {
+	return orgPath(ctx, "/projects/"+projectID.String()+"/client-thread")
+}
+
+// PortalThreadPath is the client thread in the portal, the project page's Messages tab:
+// /{org}/portal/projects/{id}?tab=messages.
+func PortalThreadPath(ctx context.Context, projectID uuid.UUID) string {
+	return PortalPath(ctx, projectID, uuid.Nil) + "?tab=messages"
+}
+
+// ChangeRequestPath is the team's link to a change request:
+// /{org}/projects/{id}/change-requests?request={id}.
+func ChangeRequestPath(ctx context.Context, projectID, requestID uuid.UUID) string {
+	return orgPath(ctx, "/projects/"+projectID.String()+"/change-requests?request="+requestID.String())
+}
+
+// ProjectLeadsNotClients is ProjectLeads without anyone who is also a client of the project, so a
+// notice meant for the team never reaches a client.
+func ProjectLeadsNotClients(ctx context.Context, tx *ent.Tx, tenantID, projectID uuid.UUID) ([]uuid.UUID, error) {
+	leads, err := ProjectLeads(ctx, tx, tenantID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	clients, err := ProjectClients(ctx, tx, tenantID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	isClient := make(map[uuid.UUID]bool, len(clients))
+	for _, c := range clients {
+		isClient[c] = true
+	}
+	out := make([]uuid.UUID, 0, len(leads))
+	for _, id := range leads {
+		if !isClient[id] {
+			out = append(out, id)
+		}
+	}
+	return out, nil
 }
 
 // MilestonePath is the team's link to a milestone: /{org}/projects/{id}/milestones?milestone={id}.

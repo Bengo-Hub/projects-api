@@ -341,7 +341,7 @@ func runAutomations(ctx context.Context, tx *ent.Tx, p *ent.Project, t *ent.Task
 }
 
 // writeAutomationNotice writes one project.task.automation_notice with every recipient id;
-// notifications-api turns it into notices (its consumer is a follow-up).
+// notifications-api fans it out to one email per recipient, looked up in its own user table.
 func writeAutomationNotice(ctx context.Context, tx *ent.Tx, p *ent.Project, t *ent.Task, from string, rule Automation, recipients []uuid.UUID, message string) error {
 	ids, err := normalizeAssignees(recipients)
 	if err != nil {

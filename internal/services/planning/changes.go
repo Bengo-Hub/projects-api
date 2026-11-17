@@ -13,13 +13,17 @@ import (
 	"go.uber.org/zap"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/Bengo-Hub/httpware/richtext"
 
 	"github.com/bengobox/projects-service/internal/ent"
 	"github.com/bengobox/projects-service/internal/ent/predicate"
+	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	entchange "github.com/bengobox/projects-service/internal/ent/projectchangerequest"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/platform/events"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/notify"
 	"github.com/bengobox/projects-service/internal/services/people"
 	"github.com/bengobox/projects-service/internal/services/tasks"
 	"github.com/bengobox/projects-service/internal/services/txn"
@@ -63,6 +67,82 @@ const (
 	EventCRRejected     = "change_request.rejected"
 	EventCRBudgetPushed = "change_request.budget_pushed"
 )
+
+// Person-addressed change request notices, one event per recipient (notify payload). They are
+// written beside the events above, which carry no recipient and stay as they are for other
+// consumers.
+const (
+	// EventCRReviewRequested goes to each approver candidate when a request is raised.
+	EventCRReviewRequested = "change_request.review_requested"
+	// EventCRDecided goes to the requester when a request is approved or rejected.
+	EventCRDecided = "change_request.decided"
+)
+
+// crNotice is the notice of request r by actorID, linking to the request in Projects.
+func crNotice(ctx context.Context, tx *ent.Tx, r *ent.ProjectChangeRequest, actorID uuid.UUID) (notify.Notice, error) {
+	p, err := tx.Project.Query().Where(entproject.ID(r.ProjectID), entproject.TenantID(r.TenantID)).
+		Select(entproject.FieldName).Only(ctx)
+	if err != nil {
+		return notify.Notice{}, fmt.Errorf("load project: %w", err)
+	}
+	actor, err := notify.Actor(ctx, tx, r.TenantID, actorID)
+	if err != nil {
+		return notify.Notice{}, err
+	}
+	shifts, _ := r.Metadata[crMetaShifts].([]any)
+	return notify.Notice{
+		TenantID: r.TenantID, ProjectID: r.ProjectID, ProjectName: p.Name, Actor: actor,
+		ActionPath: notify.ChangeRequestPath(ctx, r.ProjectID, r.ID),
+		Extra: map[string]any{
+			"change_request_id": r.ID.String(), "title": r.Title, "kind": r.Kind,
+			"date_shift_count": len(shifts), "has_budget_change": needsBudgetPush(r.Metadata),
+		},
+	}, nil
+}
+
+// notifyApprovers writes project.change_request.review_requested to each approver candidate: the
+// project's owner and its owner and manager members who hold projects.change_approvals.manage
+// (one batched RBAC query), never the requester. comment_excerpt is the description as plain text.
+func notifyApprovers(ctx context.Context, tx *ent.Tx, r *ent.ProjectChangeRequest) error {
+	leads, err := notify.ProjectLeadsNotClients(ctx, tx, r.TenantID, r.ProjectID)
+	if err != nil {
+		return err
+	}
+	holders, err := rbac.HoldersAmong(ctx, tx.ProjectsUser, r.TenantID, leads, rbac.PermChangeApprovals)
+	if err != nil {
+		return err
+	}
+	approvers := make([]uuid.UUID, 0, len(leads))
+	for _, id := range leads {
+		if holders[id] && id != r.RequestedBy {
+			approvers = append(approvers, id)
+		}
+	}
+	if len(approvers) == 0 {
+		return nil
+	}
+	n, err := crNotice(ctx, tx, r, r.RequestedBy)
+	if err != nil {
+		return err
+	}
+	n.CommentExcerpt = richtext.Excerpt(r.Description, notify.ExcerptLength)
+	return notify.Write(ctx, tx, EventCRReviewRequested, n, approvers)
+}
+
+// notifyRequester writes project.change_request.decided to the requester: decision approved or
+// rejected, and the decider's comment as plain text.
+func notifyRequester(ctx context.Context, tx *ent.Tx, r *ent.ProjectChangeRequest, decider uuid.UUID) error {
+	n, err := crNotice(ctx, tx, r, decider)
+	if err != nil {
+		return err
+	}
+	n.CommentExcerpt = richtext.Excerpt(r.DecisionComment, notify.ExcerptLength)
+	n.Extra["decision"] = r.Status
+	if r.DecidedAt != nil {
+		n.Extra["decided_at"] = r.DecidedAt.UTC().Format(time.RFC3339)
+	}
+	return notify.Write(ctx, tx, EventCRDecided, n, []uuid.UUID{r.RequestedBy})
+}
 
 // Metadata keys of a change request.
 const (
@@ -210,7 +290,8 @@ func checkKind(kind string, meta map[string]any) error {
 	return nil
 }
 
-// CreateChangeRequest raises a request (status pending) as the signed-in user.
+// CreateChangeRequest raises a request (status pending) as the signed-in user. The approver
+// candidates are told in the same transaction (notifyApprovers).
 func (s *Service) CreateChangeRequest(ctx context.Context, tenantID, projectID uuid.UUID, in ChangeRequestInput) (ChangeRequest, error) {
 	requester := activity.ActorFrom(ctx)
 	if requester == uuid.Nil {
@@ -248,7 +329,10 @@ func (s *Service) CreateChangeRequest(ctx context.Context, tenantID, projectID u
 			map[string]any{"title": r.Title, "kind": kind}); err != nil {
 			return err
 		}
-		return events.Write(ctx, tx, events.AggregateProject, EventCRSubmitted, projectID, tenantID, crPayload(r))
+		if err := events.Write(ctx, tx, events.AggregateProject, EventCRSubmitted, projectID, tenantID, crPayload(r)); err != nil {
+			return err
+		}
+		return notifyApprovers(ctx, tx, r)
 	})
 	if err != nil {
 		return ChangeRequest{}, err
@@ -370,7 +454,8 @@ func needsBudgetPush(meta map[string]any) bool {
 
 // Decide approves or rejects a pending request as the signed-in user, never the requester. An
 // approval applies the date shifts in the same transaction (a broken finish-to-start link is
-// *tasks.ScheduleConflict and nothing changes) and then pushes any budget change to treasury.
+// *tasks.ScheduleConflict and nothing changes) and then pushes any budget change to treasury. The
+// requester is told the decision in the same transaction (notifyRequester).
 func (s *Service) Decide(ctx context.Context, tenantID, projectID, id uuid.UUID, approve bool, comment string) (ChangeRequest, error) {
 	decider := activity.ActorFrom(ctx)
 	comment = strings.TrimSpace(comment)
@@ -430,7 +515,10 @@ func (s *Service) Decide(ctx context.Context, tenantID, projectID, id uuid.UUID,
 		if ids, ok := meta[crMetaApplied]; ok {
 			payload["shifted_task_ids"] = ids
 		}
-		return events.Write(ctx, tx, events.AggregateProject, event, projectID, tenantID, payload)
+		if err := events.Write(ctx, tx, events.AggregateProject, event, projectID, tenantID, payload); err != nil {
+			return err
+		}
+		return notifyRequester(ctx, tx, r, decider)
 	})
 	if err != nil {
 		return ChangeRequest{}, err

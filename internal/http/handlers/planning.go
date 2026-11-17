@@ -620,7 +620,7 @@ func (h *PlanningHandler) CreateChangeRequest(w http.ResponseWriter, r *http.Req
 	if !decode(w, r, &in) {
 		return
 	}
-	out, err := h.svc.CreateChangeRequest(r.Context(), tenantID, projectID, in)
+	out, err := h.svc.CreateChangeRequest(noticeCtx(r), tenantID, projectID, in)
 	if err != nil {
 		h.fail(w, err, "create change request failed")
 		return
@@ -691,7 +691,7 @@ func (h *PlanningHandler) decide(w http.ResponseWriter, r *http.Request, approve
 	if r.ContentLength != 0 && !decode(w, r, &in) {
 		return
 	}
-	out, err := h.svc.Decide(r.Context(), tenantID, projectID, id, approve, in.Comment)
+	out, err := h.svc.Decide(noticeCtx(r), tenantID, projectID, id, approve, in.Comment)
 	if err != nil {
 		h.fail(w, err, "decide change request failed")
 		return

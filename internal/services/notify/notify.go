@@ -2,7 +2,8 @@
 // WhatsApp notices: project.task.assigned, project.task.mentioned and project.task.status_changed.
 // Each event is written to the outbox inside the caller's transaction (one event per recipient),
 // so a notice exists if and only if the change committed. Recipient email and name come from
-// projects_users, the just-in-time copy of the SSO identity.
+// projects_users, the just-in-time copy of the SSO identity. The client portal, client thread and
+// change request notices (recipients.go) use the same payload.
 package notify
 
 import (
@@ -114,10 +115,6 @@ func Write(ctx context.Context, tx *ent.Tx, eventType string, n Notice, recipien
 	if err != nil {
 		return err
 	}
-	aggregate := n.TaskID
-	if aggregate == uuid.Nil {
-		aggregate = n.ProjectID
-	}
 	seen := map[uuid.UUID]bool{}
 	for _, id := range recipients {
 		if id == uuid.Nil || id == n.Actor.ID || seen[id] {
@@ -125,38 +122,76 @@ func Write(ctx context.Context, tx *ent.Tx, eventType string, n Notice, recipien
 		}
 		seen[id] = true
 		who := known[id]
-		payload := map[string]any{
-			"project_id":        n.ProjectID.String(),
-			"project_name":      n.ProjectName,
-			"task_id":           "",
-			"task_title":        n.TaskTitle,
-			"actor_id":          n.Actor.ID.String(),
-			"actor_name":        n.Actor.DisplayName(),
-			"recipient_user_id": id.String(),
-			"recipient_email":   who.Email,
-			"recipient_name":    who.Name,
-			"comment_excerpt":   n.CommentExcerpt,
-			"action_path":       n.ActionPath,
-		}
-		if n.TaskID != uuid.Nil {
-			payload["task_id"] = n.TaskID.String()
-		}
-		for k, v := range n.Extra {
-			payload[k] = v
-		}
-		if err := events.Write(ctx, tx, events.AggregateProject, eventType, aggregate, n.TenantID, payload); err != nil {
+		if err := events.Write(ctx, tx, events.AggregateProject, eventType, n.aggregate(), n.TenantID,
+			n.payload(id.String(), who.Email, who.Name)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
+// aggregate is the event's aggregate: the task, else the project.
+func (n Notice) aggregate() uuid.UUID {
+	if n.TaskID != uuid.Nil {
+		return n.TaskID
+	}
+	return n.ProjectID
+}
+
+// payload is what every person-addressed notice carries; recipientUserID is "" for someone with
+// no account yet (an invited client).
+func (n Notice) payload(recipientUserID, email, name string) map[string]any {
+	out := map[string]any{
+		"project_id":        n.ProjectID.String(),
+		"project_name":      n.ProjectName,
+		"task_id":           "",
+		"task_title":        n.TaskTitle,
+		"actor_id":          n.Actor.ID.String(),
+		"actor_name":        n.Actor.DisplayName(),
+		"recipient_user_id": recipientUserID,
+		"recipient_email":   email,
+		"recipient_name":    name,
+		"comment_excerpt":   n.CommentExcerpt,
+		"action_path":       n.ActionPath,
+	}
+	if n.TaskID != uuid.Nil {
+		out["task_id"] = n.TaskID.String()
+	}
+	for k, v := range n.Extra {
+		out[k] = v
+	}
+	return out
+}
+
+// External is a recipient with no account: an invited client, reached at the address and phone
+// marketflow holds for their CRM contact at send time.
+type External struct {
+	MemberID uuid.UUID
+	Email    string
+	Phone    string
+	Name     string
+}
+
+// WriteExternal writes one eventType event to an External recipient, after the caller's change
+// committed (events.WriteAfter): recipient_user_id is empty and recipient_phone is set.
+func WriteExternal(ctx context.Context, client *ent.Client, eventType string, n Notice, to External) error {
+	payload := n.payload("", to.Email, to.Name)
+	payload["recipient_phone"] = to.Phone
+	payload["member_id"] = to.MemberID.String()
+	return events.WriteAfter(ctx, client, events.AggregateProject, eventType, n.aggregate(), n.TenantID, payload)
+}
+
 // Actor loads the acting user's local copy (empty name and email when they have no row).
 func Actor(ctx context.Context, tx *ent.Tx, tenantID, actorID uuid.UUID) (people.Person, error) {
+	return ActorOf(ctx, tx.ProjectsUser, tenantID, actorID)
+}
+
+// ActorOf is Actor for a caller outside a transaction (users is client.ProjectsUser).
+func ActorOf(ctx context.Context, users *ent.ProjectsUserClient, tenantID, actorID uuid.UUID) (people.Person, error) {
 	if actorID == uuid.Nil {
 		return people.Person{}, nil
 	}
-	known, err := people.Lookup(ctx, tx.ProjectsUser, tenantID, []uuid.UUID{actorID})
+	known, err := people.Lookup(ctx, users, tenantID, []uuid.UUID{actorID})
 	if err != nil {
 		return people.Person{}, err
 	}

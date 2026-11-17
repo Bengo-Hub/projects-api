@@ -57,6 +57,19 @@ Server side built; the portal screens in projects-ui come next, from the contrac
   project_id, occurred_at)` and the thread authors `project_members (tenant_id, project_id,
   user_id)`.
 
+### Notices added (2026-11-17)
+
+- [x] Client thread: a client's post tells the project's leads (`project.client_thread.posted`),
+  a teammate's post tells each signed-in client (`project.client_thread.replied`), one event per
+  person in the post's transaction (`TestClientThreadNotices`).
+- [x] A milestone up for review also reaches clients still at the invite stage, at the address and
+  phone marketflow holds for their contact, read after commit so a marketflow outage never fails
+  the update (`TestReviewReachesInvitedClients`).
+- [x] Milestone create and update now pass the tenant slug, so the review links start with
+  `/{org}` like the other notices.
+- Still open: WhatsApp for the two thread notices (email only until I submit the templates to
+  Meta), and the shared status report notice of US-14.5.
+
 Schema: none. Client rows, sharing flags and the thread all live in existing metadata columns;
 the review lives in the milestone status and its activity entry.
 

@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqljson"
+	"github.com/Bengo-Hub/httpware/richtext"
 	"github.com/google/uuid"
 
 	"github.com/bengobox/projects-service/internal/ent"
@@ -14,6 +15,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	"github.com/bengobox/projects-service/internal/services/activity"
+	"github.com/bengobox/projects-service/internal/services/notify"
 	"github.com/bengobox/projects-service/internal/services/txn"
 )
 
@@ -108,8 +110,9 @@ func (s *Service) ListClientThread(ctx context.Context, tenantID, projectID uuid
 // CreateClientThreadComment posts to the project's client thread as input.UserID, who writes as
 // authorKind: AuthorClient from the portal route, AuthorTeam from the team route (the caller has
 // checked which the user may do). The kind is stored on the comment. The body is sanitised like
-// any comment. Mentions notify nobody here: a client must never be able to page a teammate with text
-// that lands in an internal notice, and staff reach clients through the thread itself. An
+// any comment. The post's notices to the other side (notifyThread) are written in the same
+// transaction. Mentions notify nobody here: a client must never be able to page a teammate with
+// text that lands in an internal notice, and staff reach clients through the thread itself. An
 // Idempotency-Key replays only a comment of this same thread; the key on an internal comment
 // answers ErrKeyReused.
 func (s *Service) CreateClientThreadComment(ctx context.Context, tenantID, projectID uuid.UUID, input CreateCommentInput, authorKind string) (*ThreadComment, bool, error) {
@@ -127,12 +130,13 @@ func (s *Service) CreateClientThreadComment(ctx context.Context, tenantID, proje
 	var out *ent.Comment
 	replayed := false
 	err = txn.Run(ctx, s.client, func(tx *ent.Tx) error {
-		ok, err := tx.Project.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).Exist(ctx)
+		p, err := tx.Project.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).
+			Select(entproject.FieldID, entproject.FieldTenantID, entproject.FieldName).Only(ctx)
+		if ent.IsNotFound(err) {
+			return ErrNotFound
+		}
 		if err != nil {
 			return fmt.Errorf("validate project: %w", err)
-		}
-		if !ok {
-			return ErrNotFound
 		}
 		meta := map[string]any{MetaThread: ThreadClient, MetaAuthorKind: authorKind}
 		if key != "" {
@@ -153,10 +157,13 @@ func (s *Service) CreateClientThreadComment(ctx context.Context, tenantID, proje
 			SetUserID(input.UserID).SetContent(content).SetMetadata(meta).Save(ctx); err != nil {
 			return fmt.Errorf("create client thread comment: %w", err)
 		}
-		return activity.Record(ctx, tx, activity.Entry{
+		if err := activity.Record(ctx, tx, activity.Entry{
 			TenantID: tenantID, ProjectID: activity.Ref(projectID), EntityType: "comment", EntityID: out.ID,
 			Action: activity.ActionCreated, Changes: map[string]any{"thread": ThreadClient, "length": len([]rune(content))},
-		})
+		}); err != nil {
+			return err
+		}
+		return notifyThread(ctx, tx, p, out, authorKind)
 	})
 	if err != nil {
 		return nil, false, err
@@ -170,4 +177,51 @@ func (s *Service) CreateClientThreadComment(ctx context.Context, tenantID, proje
 	}
 	views := threadViews([]Authored{*a})
 	return &views[0], replayed, nil
+}
+
+// notifyThread tells the other side of the client thread about a new post, in the post's
+// transaction, one event per recipient (never the poster):
+//
+//   - a client's post: project.client_thread.posted to the project's owner and its owner and
+//     manager members, never a client; the link opens the team's Client thread tab.
+//   - a teammate's post: project.client_thread.replied to each signed-in client of the project; the
+//     link opens the portal project's Messages tab. A client still at the invite stage has no
+//     portal account to read the reply with, so the invite stays their way in.
+//
+// The notice carries the post as plain text (comment_excerpt, at most notify.ExcerptLength runes).
+// Mentions in the post still notify nobody.
+func notifyThread(ctx context.Context, tx *ent.Tx, p *ent.Project, c *ent.Comment, authorKind string) error {
+	var (
+		event, path string
+		recipients  []uuid.UUID
+		err         error
+	)
+	if authorKind == AuthorClient {
+		event, path = notify.EventClientThreadPosted, notify.ClientThreadPath(ctx, p.ID)
+		recipients, err = notify.ProjectLeadsNotClients(ctx, tx, p.TenantID, p.ID)
+	} else {
+		event, path = notify.EventClientThreadReplied, notify.PortalThreadPath(ctx, p.ID)
+		recipients, err = notify.ProjectClients(ctx, tx, p.TenantID, p.ID)
+	}
+	if err != nil || len(recipients) == 0 {
+		return err
+	}
+	actor, err := notify.Actor(ctx, tx, p.TenantID, c.UserID)
+	if err != nil {
+		return err
+	}
+	if actor.Label() == "" {
+		// DisplayName's own fallback says "A teammate", which is wrong for a client and vague for
+		// the team as a client sees it.
+		actor.Name = "Your project team"
+		if authorKind == AuthorClient {
+			actor.Name = "Your client"
+		}
+	}
+	return notify.Write(ctx, tx, event, notify.Notice{
+		TenantID: p.TenantID, ProjectID: p.ID, ProjectName: p.Name, Actor: actor,
+		CommentExcerpt: richtext.Excerpt(c.Content, notify.ExcerptLength),
+		ActionPath:     path,
+		Extra:          map[string]any{"comment_id": c.ID.String(), "author_kind": authorKind},
+	}, recipients)
 }

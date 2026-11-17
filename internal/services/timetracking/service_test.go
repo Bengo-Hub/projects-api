@@ -226,7 +226,7 @@ func TestStopTimerValidation(t *testing.T) {
 		"too long":  {StartedAt: now.Add(-25 * time.Hour), StoppedAt: now},
 		"in future": {StartedAt: now, StoppedAt: now.Add(time.Hour)},
 	} {
-		_, err := svc.StopTimer(context.Background(), uuid.New(), uuid.New(), in, time.UTC)
+		_, err := svc.StopTimer(context.Background(), uuid.New(), uuid.New(), in, time.UTC, "")
 		var verr ValidationError
 		if !errors.As(err, &verr) {
 			t.Errorf("%s: %v, want a validation error", name, err)

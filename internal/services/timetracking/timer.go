@@ -116,9 +116,11 @@ func (s *Service) StartTimer(ctx context.Context, tenantID, userID, taskID uuid.
 			out.Timer = t
 			continue
 		}
+		// The key is fixed per timer run, so a retried start never logs the stopped run twice.
+		autoKey := "auto-stop:" + t.TaskID.String() + ":" + t.StartedAt.UTC().Format(time.RFC3339Nano)
 		stopped, err := s.StopTimer(ctx, tenantID, userID, StopInput{
 			ProjectID: t.ProjectID, TaskID: &t.TaskID, StartedAt: t.StartedAt, StoppedAt: now,
-		}, loc)
+		}, loc, autoKey)
 		if err != nil {
 			return nil, fmt.Errorf("stop the timer on %q: %w", t.TaskTitle, err)
 		}

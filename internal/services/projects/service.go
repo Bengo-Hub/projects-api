@@ -11,7 +11,9 @@ import (
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
+	entmember "github.com/bengobox/projects-service/internal/ent/projectmember"
 	enttask "github.com/bengobox/projects-service/internal/ent/task"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/membership"
 	"github.com/bengobox/projects-service/internal/services/txn"
@@ -306,7 +308,8 @@ func (s *Service) GetProjectSummary(ctx context.Context, tenantID, id uuid.UUID)
 	if err != nil {
 		return nil, fmt.Errorf("overdue tasks: %w", err)
 	}
-	members, err := p.QueryMembers().Count(ctx)
+	// The team only: client portal rows are not members of the team.
+	members, err := p.QueryMembers().Where(entmember.RoleCodeNEQ(rbac.RoleClient)).Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("member count: %w", err)
 	}

@@ -56,6 +56,11 @@ func TestMapGlobalRoles(t *testing.T) {
 		{[]string{"manager"}, RoleMember},
 		{[]string{"member"}, RoleViewer},
 		{nil, RoleViewer},
+		// The portal sign-in role maps to client only; a staff role beside it wins.
+		{[]string{"client"}, RoleClient},
+		{[]string{"client", "staff"}, RoleMember},
+		{[]string{"staff", "client"}, RoleMember},
+		{[]string{"client", "admin"}, RoleAdmin},
 	} {
 		if got := MapGlobalRoles(c.roles); got != c.want {
 			t.Errorf("%v -> %s, want %s", c.roles, got, c.want)
@@ -82,6 +87,21 @@ func TestExpandQASemantics(t *testing.T) {
 	tasks := Expand([]string{PermTasksChange})
 	if !slices.Contains(tasks, PermTasksChangeOwn) || slices.Contains(tasks, PermTasksDelete) {
 		t.Errorf("tasks.change expands to %v", tasks)
+	}
+}
+
+// The client role reaches the portal only: no staff module code, directly or by implication.
+func TestClientRoleIsPortalOnly(t *testing.T) {
+	var client RoleDef
+	for _, r := range Roles {
+		if r.Code == RoleClient {
+			client = r
+		}
+	}
+	for _, code := range Expand(client.Permissions) {
+		if code != PermPortalView {
+			t.Errorf("client holds %s", code)
+		}
 	}
 }
 

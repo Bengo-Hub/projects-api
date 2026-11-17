@@ -34,3 +34,11 @@ ERP owns timesheets. Its attendance module has a weekly timesheet per employee (
 - **Plans.** ERP gates timesheets on `attendance`. Every plan that grants `time_tracking` also grants it: standalone ERP tiers 2 to 4 (`erpFeatures`), and PowerSuite tier 3 (`psSuiteProjectsBlock` and `psSuiteERPBlock` both open at tier 3).
 - **US-13.4.** EVM and utilisation already read `project-hours`; the new entries carry `project_id`, so they count once submitted or approved. No change there.
 - **Open.** US-13.5 (offline queue) is UI work: the stop route takes the browser's own start and stop for it. Deploy erp-api first. Sprint 15 invoicing reads the billable entries.
+
+### 2026-11-17: UI side (projects-ui), built, waiting on its checks
+- [x] US-13.1 timer: start and stop in the task drawer and on board cards, discard after a confirm, and a header pill on every page that reads `GET /time/timer` and keeps a browser copy for offline.
+- [x] US-13.2 week: `/{org}/time` grid by project, task and day (a day list on phones), notes, add a row, week navigation, status, submit after a confirm, and another person's week with `time.view`.
+- [x] US-13.3 billable: the switch shows only on time and materials projects.
+- [x] US-13.5 offline: week edits and timer stops queue offline. The stop route has no Idempotency-Key, so the UI checks the task's timer before replaying a stop and uses `logged_segments` to send only the rest of a partial one.
+- [x] `no_employee_record` shows an empty state telling the user to ask HR.
+- Waiting on the main session: type check, lint, `pnpm test` and Playwright in projects-ui. Details in projects-ui `docs/plan.md`, Sprint 13.

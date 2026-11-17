@@ -327,11 +327,13 @@ func applyStatus(ctx context.Context, tx *ent.Tx, p *ent.Project, t *ent.Task, u
 	if err != nil {
 		return err
 	}
-	n.Extra = map[string]any{"from_status": t.Status, "to_status": status, "to_status_label": statusLabel(p, status)}
+	n.Extra = map[string]any{"from_status": t.Status, "to_status": status, "to_status_label": StatusLabel(p, status)}
 	return notify.Write(ctx, tx, notify.EventTaskStatusChanged, n, assigneeIDs(assignees))
 }
 
-func statusLabel(p *ent.Project, key string) string {
+// StatusLabel is the project's label for a status key (the key itself when the project has no
+// such status).
+func StatusLabel(p *ent.Project, key string) string {
 	for _, st := range statusesOf(p.Metadata) {
 		if st.Key == key {
 			return st.Label

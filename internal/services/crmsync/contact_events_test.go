@@ -194,7 +194,7 @@ func TestContactEventsLogIdsOnly(t *testing.T) {
 	for _, e := range logs.All() {
 		for k, v := range e.ContextMap() {
 			switch k {
-			case "tenant_id", "contact_id", "projects":
+			case "tenant_id", "contact_id", "projects", "portal_clients":
 			default:
 				t.Errorf("unexpected log field %q=%v (ids only)", k, v)
 			}

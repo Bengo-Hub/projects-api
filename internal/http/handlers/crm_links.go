@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent"
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	"github.com/bengobox/projects-service/internal/ent/project"
+	"github.com/bengobox/projects-service/internal/ent/projectmember"
 )
 
 // TenantLookup resolves a tenant slug to auth-api's tenant; *TenantResolver implements it.
@@ -70,12 +71,22 @@ func NewCRMLinksHandler(db *ent.Client, tenants TenantLookup, key string, log *z
 	}
 }
 
-// ProjectReferencesContact reports whether any project, in any tenant, keeps the CRM contact id in
-// its metadata (the crm_contact_id key). It is the only place projects stores a CRM contact id:
-// tenders keep a client name only, and task, member, comment and attachment metadata never hold
-// one. The id is matched case-insensitively because the metadata keeps the text as the caller sent it.
+// ProjectReferencesContact reports whether any project, in any tenant, keeps the CRM contact id:
+// in the project metadata (crm_contact_id, the project's client) or on a client portal member row
+// (project_members metadata crm_contact_id, sprint 14). Those are the only places projects stores
+// a CRM contact id: tenders keep a client name only, and task, comment and attachment metadata
+// never hold one. The id is matched case-insensitively because the metadata keeps the text as the
+// caller sent it.
 func ProjectReferencesContact(ctx context.Context, db *ent.Client, contactID uuid.UUID) (bool, error) {
-	return db.Project.Query().Where(metadataContact(contactID)).Exist(ctx)
+	linked, err := db.Project.Query().Where(metadataContact(contactID)).Exist(ctx)
+	if err != nil || linked {
+		return linked, err
+	}
+	return db.ProjectMember.Query().Where(predicate.ProjectMember(func(s *sql.Selector) {
+		s.Where(sql.P(func(b *sql.Builder) {
+			b.WriteString("lower(").Ident(s.C(projectmember.FieldMetadata)).WriteString(" ->> 'crm_contact_id') = ").Arg(contactID.String())
+		}))
+	})).Exist(ctx)
 }
 
 // metadataContact is a JSON-path predicate on the project metadata: lower(metadata ->> 'crm_contact_id') = $1.

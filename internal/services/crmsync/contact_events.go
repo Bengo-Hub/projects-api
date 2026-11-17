@@ -1,6 +1,8 @@
 // Package crmsync keeps projects' copies of CRM contact details in step with marketflow, the
-// customer master. Projects copies one thing: a project's client, kept in the project metadata as
-// crm_contact_id plus crm_contact_name (the display name, so lists need no CRM call).
+// customer master. Projects copies two things: a project's client, kept in the project metadata as
+// crm_contact_id plus crm_contact_name (the display name, so lists need no CRM call), and a client
+// portal member, kept on a project_members row with role client as crm_contact_id plus a
+// contact_name and email_hint snapshot (see clients.go).
 package crmsync
 
 import (
@@ -188,7 +190,8 @@ func payloadContactID(evt *eventslib.Event) uuid.UUID {
 }
 
 // ContactDeleted removes crm_contact_id and crm_contact_name from every project, in any tenant,
-// that names the contact. It answers how many projects changed (0 on a repeat delivery).
+// that names the contact, and unlinks its portal client rows (unlinkClients). It answers how many
+// projects and client rows changed (0 on a repeat delivery).
 func (c *ContactEventsConsumer) ContactDeleted(ctx context.Context, contactID uuid.UUID) (int, error) {
 	n, err := c.rewrite(ctx, contactID, func(meta map[string]any) bool {
 		delete(meta, metaContactID)
@@ -198,14 +201,20 @@ func (c *ContactEventsConsumer) ContactDeleted(ctx context.Context, contactID uu
 	if err != nil {
 		return 0, fmt.Errorf("unlink deleted contact: %w", err)
 	}
-	if n > 0 {
-		c.log.Info("crm contact deleted: projects unlinked", zap.String("contact_id", contactID.String()), zap.Int("projects", n))
+	clients, err := c.unlinkClients(ctx, contactID)
+	if err != nil {
+		return 0, fmt.Errorf("unlink deleted contact from portal clients: %w", err)
 	}
-	return n, nil
+	if n > 0 || clients > 0 {
+		c.log.Info("crm contact deleted: projects unlinked", zap.String("contact_id", contactID.String()),
+			zap.Int("projects", n), zap.Int("portal_clients", clients))
+	}
+	return n + clients, nil
 }
 
-// ContactUpdated removes the copied crm_contact_name from every project naming the contact when
-// the CRM now holds it as erased. A contact no project names with a name, a contact the CRM no
+// ContactUpdated removes the copied crm_contact_name from every project naming the contact, and the
+// name and email hint from its portal client rows, when the CRM now holds it as erased. A contact
+// nothing names with a name, a contact the CRM no
 // longer knows (its delete event unlinks it) and a contact that is not erased change nothing. An
 // error means the CRM or the database could not answer and the event should be retried.
 func (c *ContactEventsConsumer) ContactUpdated(ctx context.Context, tenantID, contactID uuid.UUID) (int, error) {
@@ -213,7 +222,11 @@ func (c *ContactEventsConsumer) ContactUpdated(ctx context.Context, tenantID, co
 	if err != nil {
 		return 0, fmt.Errorf("find projects: %w", err)
 	}
-	if !anyHasName(named) {
+	clientsNamed, err := c.clientsNamed(ctx, contactID)
+	if err != nil {
+		return 0, fmt.Errorf("find portal clients: %w", err)
+	}
+	if !anyHasName(named) && !clientsNamed {
 		return 0, nil
 	}
 	contact, err := c.crm.GetContact(ctx, tenantID, contactID)
@@ -236,11 +249,16 @@ func (c *ContactEventsConsumer) ContactUpdated(ctx context.Context, tenantID, co
 	if err != nil {
 		return 0, fmt.Errorf("blank erased contact name: %w", err)
 	}
-	if n > 0 {
-		c.log.Info("crm contact erased: copied name removed from projects",
-			zap.String("tenant_id", tenantID.String()), zap.String("contact_id", contactID.String()), zap.Int("projects", n))
+	clients, err := c.blankClients(ctx, contactID)
+	if err != nil {
+		return 0, fmt.Errorf("blank erased contact on portal clients: %w", err)
 	}
-	return n, nil
+	if n > 0 || clients > 0 {
+		c.log.Info("crm contact erased: copied name removed from projects",
+			zap.String("tenant_id", tenantID.String()), zap.String("contact_id", contactID.String()),
+			zap.Int("projects", n), zap.Int("portal_clients", clients))
+	}
+	return n + clients, nil
 }
 
 func anyHasName(ps []*ent.Project) bool {

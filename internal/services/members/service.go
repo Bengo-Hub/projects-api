@@ -15,6 +15,7 @@ import (
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	entmember "github.com/bengobox/projects-service/internal/ent/projectmember"
 	entuser "github.com/bengobox/projects-service/internal/ent/projectsuser"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/people"
 	"github.com/bengobox/projects-service/internal/services/txn"
@@ -97,7 +98,7 @@ func (s *Service) ListMembers(ctx context.Context, tenantID, projectID uuid.UUID
 	if filter.Limit <= 0 || filter.Limit > subListLimit {
 		filter.Limit = subListLimit
 	}
-	q := s.client.ProjectMember.Query().Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID))
+	q := s.client.ProjectMember.Query().Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID), staffRow())
 	if filter.Search != "" {
 		q = q.Where(matching(filter.Search))
 	}
@@ -133,6 +134,14 @@ func record(ctx context.Context, tx *ent.Tx, tenantID, projectID, userID uuid.UU
 	})
 }
 
+// staffRow keeps the team rows of a project. Client rows (role client) belong to the client
+// portal: they are invited, listed and revoked through the portal service only, so the team
+// routes neither show nor change them.
+func staffRow() predicate.ProjectMember { return entmember.RoleCodeNEQ(rbac.RoleClient) }
+
+// errClientRole refuses the client role on the team routes.
+var errClientRole = ValidationError("clients are invited from the project's client portal settings, not added as team members")
+
 // AddMember adds a user to a project of the tenant.
 func (s *Service) AddMember(ctx context.Context, tenantID, projectID uuid.UUID, input AddMemberInput) (*ent.ProjectMember, error) {
 	if input.UserID == uuid.Nil {
@@ -141,6 +150,9 @@ func (s *Service) AddMember(ctx context.Context, tenantID, projectID uuid.UUID, 
 	roleCode := input.RoleCode
 	if roleCode == "" {
 		roleCode = "member"
+	}
+	if roleCode == rbac.RoleClient {
+		return nil, errClientRole
 	}
 	var m *ent.ProjectMember
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
@@ -180,10 +192,13 @@ func (s *Service) UpdateMemberRole(ctx context.Context, tenantID, projectID, use
 	if input.RoleCode == "" {
 		return nil, ValidationError("role_code is required")
 	}
+	if input.RoleCode == rbac.RoleClient {
+		return nil, errClientRole
+	}
 	var updated *ent.ProjectMember
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
 		m, err := tx.ProjectMember.Query().
-			Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID), entmember.UserID(userID)).
+			Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID), entmember.UserID(userID), staffRow()).
 			Only(ctx)
 		if err != nil {
 			if ent.IsNotFound(err) {
@@ -207,7 +222,7 @@ func (s *Service) UpdateMemberRole(ctx context.Context, tenantID, projectID, use
 func (s *Service) RemoveMember(ctx context.Context, tenantID, projectID, userID uuid.UUID) error {
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
 		n, err := tx.ProjectMember.Delete().
-			Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID), entmember.UserID(userID)).Exec(ctx)
+			Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID), entmember.UserID(userID), staffRow()).Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("remove member: %w", err)
 		}

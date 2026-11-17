@@ -14,12 +14,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	enttask "github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/platform/erp"
+	"github.com/bengobox/projects-service/internal/services/people"
 	"github.com/bengobox/projects-service/internal/services/projects"
 )
 
@@ -56,11 +58,17 @@ type Service struct {
 	erp    ERP
 	log    *zap.Logger
 	now    func() time.Time
+	rdb    redis.UniversalClient // timer stop guard (stopguard.go); nil disables it
 }
 
 // NewService builds the service.
 func NewService(client *ent.Client, e ERP, log *zap.Logger) *Service {
 	return &Service{client: client, erp: e, log: log.Named("timetracking.svc"), now: time.Now}
+}
+
+// People lists the tenant's staff for the week page's person picker (people.Search).
+func (s *Service) People(ctx context.Context, tenantID uuid.UUID, q string, limit, offset int) ([]people.Person, int, error) {
+	return people.Search(ctx, s.client.ProjectsUser, tenantID, q, limit, offset)
 }
 
 // erpErr maps the erp client's no-employee answer to ErrNoEmployee; other errors pass through.
@@ -409,15 +417,17 @@ type PartialStop struct {
 func (e *PartialStop) Error() string { return "timer stop logged part of the run: " + e.Err.Error() }
 func (e *PartialStop) Unwrap() error { return e.Err }
 
-// Stopped is what a timer stop logged: one ERP entry per local date the run covered.
+// Stopped is what a timer stop logged: one ERP entry per local date the run covered. Replayed
+// marks a stop already logged under the same Idempotency-Key (nothing was logged this time).
 type Stopped struct {
 	Segments []Segment    `json:"segments"`
 	Entries  []erp.Logged `json:"entries"`
+	Replayed bool         `json:"replayed,omitempty"`
 }
 
 // StopTimer adds a timer run to the user's ERP entries, split at local midnight in loc, and
-// clears the user's running timer on the task.
-func (s *Service) StopTimer(ctx context.Context, tenantID, userID uuid.UUID, in StopInput, loc *time.Location) (*Stopped, error) {
+// clears the user's running timer on the task. key is the optional Idempotency-Key.
+func (s *Service) StopTimer(ctx context.Context, tenantID, userID uuid.UUID, in StopInput, loc *time.Location, key string) (*Stopped, error) {
 	if in.StartedAt.IsZero() || in.StoppedAt.IsZero() || !in.StoppedAt.After(in.StartedAt) {
 		return nil, ValidationError("stopped_at must be after started_at")
 	}
@@ -439,9 +449,17 @@ func (s *Service) StopTimer(ctx context.Context, tenantID, userID uuid.UUID, in 
 	if err != nil {
 		return nil, err
 	}
-	out, err := s.logRun(ctx, tenantID, userID, tg, in, billable, note, loc)
+	var out *Stopped
+	replayed, err := s.guardedStop(ctx, tenantID, userID, key, func() error {
+		var lerr error
+		out, lerr = s.logRun(ctx, tenantID, userID, tg, in, billable, note, loc)
+		return lerr
+	})
 	if err != nil {
 		return nil, err
+	}
+	if replayed {
+		out = &Stopped{Segments: []Segment{}, Entries: []erp.Logged{}, Replayed: true}
 	}
 	if tg.taskID != nil {
 		if err := s.clearTimer(ctx, tenantID, userID, *tg.taskID); err != nil {

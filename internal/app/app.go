@@ -44,6 +44,7 @@ import (
 	"github.com/bengobox/projects-service/internal/services/members"
 	"github.com/bengobox/projects-service/internal/services/membership"
 	"github.com/bengobox/projects-service/internal/services/milestones"
+	"github.com/bengobox/projects-service/internal/services/portal"
 	projectssvc "github.com/bengobox/projects-service/internal/services/projects"
 	"github.com/bengobox/projects-service/internal/services/qa"
 	"github.com/bengobox/projects-service/internal/services/tasks"
@@ -213,7 +214,7 @@ func New(ctx context.Context) (*App, error) {
 	erpClient := erp.NewClient(cfg.Services.ERPURL, cfg.Auth.APIKey)
 	financialsHandler := handlers.NewFinancialsHandler(log, financials.NewService(entClient, treasuryClient, log).WithERP(erpClient))
 	// Time tracking logs the signed-in user's hours on their ERP timesheet (ERP owns them).
-	timeHandler := handlers.NewTimeHandler(log, timetracking.NewService(entClient, erpClient, log))
+	timeHandler := handlers.NewTimeHandler(log, timetracking.NewService(entClient, erpClient, log).WithStopGuard(redisClient))
 	// Project form pickers: the client from the CRM (marketflow), the cost centre from treasury.
 	projectHandler.WithLookups(marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey), treasuryClient)
 
@@ -259,6 +260,16 @@ func New(ctx context.Context) (*App, error) {
 		// Values under a data key stay closed until a reload works; the ring retries on demand.
 		log.Error("field encryption data keys not loaded", zap.Error(err))
 	}
+	// Client portal (sprint 14): invites resolve the client from marketflow and match by the keyed
+	// email hash (the QA keys, QA_HASH_KEY), so no address is stored.
+	portalService := portal.NewService(entClient, marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey), qaKeys, log).
+		WithEmailVerifier(authusers.New(cfg.Auth.ServiceURL, cfg.Auth.APIKey, cacheClient, log))
+	portalService.OnChange(memberships.Forget)
+	var portalFiles *attachments.Service
+	if attachmentStore != nil {
+		portalFiles = attachmentService
+	}
+	portalHandler := handlers.NewPortalHandler(log, portalService, milestoneService, taskService, commentService, portalFiles)
 	qaRoutes := router.QARoutes{
 		Tenant:  handlers.NewQAHandler(log, qaService),
 		Invitee: handlers.NewQAInviteeHandler(log, qaService, cfg.QA.CookieSecure),
@@ -316,7 +327,8 @@ func New(ctx context.Context) (*App, error) {
 			Attachments: handlers.NewAttachmentHandler(log, attachmentService),
 			Stream:      handlers.NewStreamHandler(log, liveHub),
 			Activity:    activityHandler, Tenders: tenderHandler, Financials: financialsHandler,
-			Time:        timeHandler,
+			Time:   timeHandler,
+			Portal: portalHandler,
 		},
 		Authenticate:   authMiddleware.RequireAuth,
 		AllowedOrigins: cfg.HTTP.AllowedOrigins,

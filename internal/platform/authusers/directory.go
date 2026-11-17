@@ -76,6 +76,34 @@ func (d *Directory) members(ctx context.Context, tenantID uuid.UUID) ([]member, 
 	})
 }
 
+// EmailState is auth-api's view of a user's email (GET /api/v1/s2s/users/{id}/email-verification).
+type EmailState struct {
+	Verified      bool   `json:"verified"`
+	Email         string `json:"email"`
+	IsPlaceholder bool   `json:"is_placeholder"`
+}
+
+// VerifiedEmail returns the user's email and whether auth-api has proven it. A placeholder address
+// is never verified. Not cached: it guards a client claiming an invite, so it must be current, and
+// it is only asked when such an invite is pending.
+func (d *Directory) VerifiedEmail(ctx context.Context, userID uuid.UUID) (string, bool, error) {
+	if d == nil || d.sc == nil || d.apiKey == "" {
+		return "", false, ErrNotConfigured
+	}
+	resp, err := d.sc.Get(ctx, "/api/v1/s2s/users/"+userID.String()+"/email-verification", map[string]string{"X-API-Key": d.apiKey})
+	if err != nil {
+		return "", false, fmt.Errorf("authusers: email verification: %w", err)
+	}
+	if !resp.IsSuccess() {
+		return "", false, fmt.Errorf("authusers: email verification: status %d", resp.StatusCode)
+	}
+	var st EmailState
+	if err := resp.DecodeJSON(&st); err != nil {
+		return "", false, fmt.Errorf("authusers: email verification: decode: %w", err)
+	}
+	return st.Email, st.Verified && !st.IsPlaceholder, nil
+}
+
 // UserName returns the display name of an active member of the tenant.
 func (d *Directory) UserName(ctx context.Context, tenantID, userID uuid.UUID) (string, error) {
 	if userID == uuid.Nil {

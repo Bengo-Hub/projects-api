@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -39,6 +40,7 @@ func (h *TimeHandler) RegisterRoutes(r chi.Router, gates ...func(http.Handler) h
 		viewOwn := authz.Require(rbac.PermTimeViewOwn)
 		add := authz.Require(rbac.PermTimeAdd)
 		g.With(viewOwn).Get("/time/week", h.Week)
+		g.With(authz.Require(rbac.PermTimeView)).Get("/time/people", h.People)
 		g.With(add).Put("/time/entries", h.PutEntry)
 		g.With(add).Post("/time/week/submit", h.SubmitWeek)
 		g.With(viewOwn).Get("/time/timer", h.RunningTimer)
@@ -47,6 +49,40 @@ func (h *TimeHandler) RegisterRoutes(r chi.Router, gates ...func(http.Handler) h
 		g.With(add).Post("/tasks/{taskID}/timer", h.StartTimer)
 		g.With(add).Delete("/tasks/{taskID}/timer", h.ClearTimer)
 	})
+}
+
+// PersonItem is one person a manager can pick on the week page.
+type PersonItem struct {
+	UserID uuid.UUID `json:"user_id"`
+	Name   string    `json:"name"`
+	Email  string    `json:"email,omitempty"`
+}
+
+// People godoc
+// @Summary People whose time I can see
+// @Description The tenant's staff who have signed in to projects (never portal clients), for the week page's person picker. ?q= searches name or email; paged with limit and page. Needs projects.time.view.
+// @Tags time
+// @Produce json
+// @Param tenantID path string true "Tenant"
+// @Param q query string false "Name or email contains"
+// @Success 200 {object} map[string]any
+// @Router /api/v1/{tenantID}/time/people [get]
+func (h *TimeHandler) People(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := parseTenant(w, r)
+	if !ok {
+		return
+	}
+	p := pagination.Parse(r)
+	list, total, err := h.svc.People(r.Context(), tenantID, r.URL.Query().Get("q"), p.Limit, p.Offset)
+	if err != nil {
+		serverError(w, h.log, "list people failed", err)
+		return
+	}
+	items := make([]PersonItem, 0, len(list))
+	for _, person := range list {
+		items = append(items, PersonItem{UserID: person.ID, Name: person.Label(), Email: person.Email})
+	}
+	respondJSON(w, http.StatusOK, pagination.NewResponse(items, total, p))
 }
 
 // timeLocation reads ?tz= (IANA); Africa/Nairobi when absent.
@@ -118,6 +154,10 @@ func (h *TimeHandler) errorBody(err error) (int, map[string]any) {
 	switch {
 	case errors.Is(err, timetracking.ErrNoEmployee):
 		return http.StatusConflict, map[string]any{"error": err.Error(), "code": "no_employee_record"}
+	case errors.Is(err, timetracking.ErrStopInProgress):
+		return http.StatusConflict, map[string]any{"error": err.Error(), "code": "stop_in_progress"}
+	case errors.Is(err, timetracking.ErrGuardUnavailable):
+		return http.StatusServiceUnavailable, map[string]any{"error": err.Error(), "code": "stop_guard_unavailable"}
 	case errors.Is(err, timetracking.ErrNotFound):
 		return http.StatusNotFound, map[string]any{"error": "project or task not found", "code": "not_found"}
 	case errors.As(err, &verr):
@@ -290,10 +330,13 @@ func (h *TimeHandler) StopTimer(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	out, err := h.svc.StopTimer(r.Context(), tenantID, user, in, loc)
+	out, err := h.svc.StopTimer(r.Context(), tenantID, user, in, loc, r.Header.Get("Idempotency-Key"))
 	if err != nil {
 		h.writeErr(w, err)
 		return
+	}
+	if out.Replayed {
+		w.Header().Set("Idempotent-Replayed", "true")
 	}
 	respondJSON(w, http.StatusOK, out)
 }

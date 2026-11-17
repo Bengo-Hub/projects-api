@@ -7,11 +7,16 @@ package people
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/bengobox/projects-service/internal/ent"
+	"github.com/bengobox/projects-service/internal/ent/predicate"
 	entuser "github.com/bengobox/projects-service/internal/ent/projectsuser"
+	entrole "github.com/bengobox/projects-service/internal/ent/role"
+	entassign "github.com/bengobox/projects-service/internal/ent/userroleassignment"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 )
 
 // Person is a local copy of an SSO user.
@@ -63,4 +68,35 @@ func Lookup(ctx context.Context, users *ent.ProjectsUserClient, tenantID uuid.UU
 		out[u.AuthServiceUserID] = Person{ID: u.AuthServiceUserID, Email: u.Email, Name: u.Name}
 	}
 	return out, nil
+}
+
+// Search lists the tenant's staff who have signed in to projects: active local users, without
+// anyone holding the client portal role, whose name or email contains q (any case), ordered by
+// name, one page at a time. A tenant's staff list is small, so the filter runs within the tenant's
+// rows of the (tenant_id, auth_service_user_id) index.
+func Search(ctx context.Context, users *ent.ProjectsUserClient, tenantID uuid.UUID, q string, limit, offset int) ([]Person, int, error) {
+	where := []predicate.ProjectsUser{
+		entuser.TenantID(tenantID),
+		entuser.Status("active"),
+		entuser.Not(entuser.HasRoleAssignmentsWith(entassign.HasRoleWith(entrole.RoleCode(rbac.RoleClient)))),
+	}
+	if q = strings.TrimSpace(q); q != "" {
+		where = append(where, entuser.Or(entuser.NameContainsFold(q), entuser.EmailContainsFold(q)))
+	}
+	query := users.Query().Where(where...)
+	total, err := query.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count people: %w", err)
+	}
+	rows, err := query.Order(ent.Asc(entuser.FieldName), ent.Asc(entuser.FieldEmail)).
+		Limit(limit).Offset(offset).
+		Select(entuser.FieldAuthServiceUserID, entuser.FieldEmail, entuser.FieldName).All(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("search people: %w", err)
+	}
+	out := make([]Person, 0, len(rows))
+	for _, u := range rows {
+		out = append(out, Person{ID: u.AuthServiceUserID, Email: u.Email, Name: u.Name})
+	}
+	return out, total, nil
 }

@@ -167,7 +167,8 @@ Africa/Nairobi; it decides where a day starts.
 | PUT | `/time/entries` | `time.add` | `{project_id, task_id?, date, hours, note?, billable?}` sets the day's hours (0 to 24, two places) for that project and task, opening the Monday to Sunday timesheet on ERP when none covers the date. `user_id` in the body logs for someone else and needs `time.manage`. Answers ERP's `{employee_id, timesheet, entry}` |
 | POST | `/time/week/submit` | `time.add` | `{week_start?}` sends ERP's submit for the user's timesheets over that week. `{data: [timesheet]}`. Approval and rejection stay in ERP |
 | GET | `/time/timer` | `time.view_own` | The user's running timer anywhere: `{data: {project_id, task_id, task_title, started_at} \| null}` |
-| POST | `/time/timer/stop` | `time.add` | `{project_id, task_id?, started_at, stopped_at, note?, billable?}` (RFC 3339 from the browser, so an offline stop logs the real run; at most 24 h; not in the future). Adds the time to the entries, split at midnight in `?tz=` (one ERP add per date, each in its own week), then clears the user's timer on the task. `{segments: [{date, hours}], entries: [...]}` |
+| POST | `/time/timer/stop` | `time.add` | `{project_id, task_id?, started_at, stopped_at, note?, billable?}` (RFC 3339 from the browser, so an offline stop logs the real run; at most 24 h; not in the future). Adds the time to the entries, split at midnight in `?tz=` (one ERP add per date, each in its own week), then clears the user's timer on the task. `{segments: [{date, hours}], entries: [...]}`. Send `Idempotency-Key` (projects-ui uses `stop:{task or project}:{started_at}`): see Timer stops below |
+| GET | `/time/people` | `time.view` | The tenant's staff who have signed in to projects, never portal clients, for the week page's person picker. `?q=` matches name or email (any case); paged with `limit` and `page`. `{data: [{user_id, name, email}], total, ...}` |
 | GET | `/tasks/{taskID}/timer` | `time.view_own` | The user's timer on the task, `{data: timer \| null}` |
 | POST | `/tasks/{taskID}/timer` | `time.add` | Starts the user's timer on the task. One timer per user: one running on another task is stopped first (logged as above, `?tz=`), listed in `stopped`. Starting the running timer again keeps its start. `{timer, stopped: [...]}` |
 | DELETE | `/tasks/{taskID}/timer` | `time.add` | Discards the user's timer on the task without logging. 204 |
@@ -193,6 +194,15 @@ membership scoping (404).
   `nothing_to_submit` pass through; 422 `validation_error`; 503 `erp_unavailable` without ERP;
   502 `erp_unavailable` when ERP does not answer. A timer stop across midnight that fails after
   its first date adds `logged_segments` to the error so a retry sends only the rest.
+- **Timer stops:** a stop adds hours (it is not a set), so with an `Idempotency-Key` it logs once
+  across every pod (`internal/services/timetracking/stopguard.go`, shared Redis). A key already
+  done within 24 h answers 200 with `replayed: true`, header `Idempotent-Replayed: true`, and logs
+  nothing. While the first request with the key is still logging, a duplicate gets 409
+  `stop_in_progress` (retry shortly; it is never told "done" early). The done marker is written only
+  after every date logged, and a failed or partial stop leaves none, so a retry with the same key
+  goes through. With Redis unreachable a keyed stop is refused with 503 `stop_guard_unavailable`
+  rather than risk the same hours twice. Starting a timer that stops another one uses a fixed key
+  per run (`auto-stop:{task}:{start}`).
 - **Figures:** EVM and utilisation read the same ERP hours (`project-hours`: approved and
   submitted regular plus overtime), so a logged and submitted hour shows there with no change.
 
@@ -323,6 +333,91 @@ template with a criterion on that feature as `needs_review`.
 | `QA_UI_BASE_URL` | `https://projects.codevertexafrica.com` | Invite and session links |
 | `TICKETING_SERVICE_URL` | in-cluster ticketing-api | Defect tickets |
 | `SUBSCRIPTIONS_SERVICE_URL` | in-cluster subscriptions-api | Feature catalogue |
+
+## Client portal (sprint 14, 2026-11-17)
+
+Every route here needs the `client_portal` plan feature (every Projects tier has it); without it
+403 `feature_not_available`. Code: `internal/services/portal`, `internal/http/handlers/portal.go`.
+
+### Who is a client
+
+- A client signs in through auth-api's OAuth client `projects-portal` (public PKCE, callback
+  `https://projects.codevertexafrica.com/{orgSlug}/portal/auth/callback`, `tenant={orgSlug}` on the
+  authorize call). Its `self_signup_role` is `client`, so signing in joins the firm's tenant with
+  the global role client (scope projects). JIT maps it to the projects role `client`, which holds
+  `projects.portal.view` only; a staff global role beside it wins.
+- A client is a `project_members` row with `role_code` client. Its metadata: `portal_status`
+  (invited or active), `crm_contact_id`, `contact_name` (snapshot), `email_hash` (keyed with
+  `QA_HASH_KEY`), `email_hint` (`j***@example.com`), `invited_by`, `invited_at`, `activated_at`. No
+  address is stored; marketflow owns the contact. An invited row has `user_id` 00000000-...; the
+  first `GET /portal/projects` of a signed-in client attaches every pending invite whose hash
+  matches their SSO email (any case), in the request's tenant only and only when the token belongs
+  to that tenant.
+- An invite attaches only to a proven address: when one is waiting, projects-api asks auth-api
+  (`GET /api/v1/s2s/users/{id}/email-verification`) and attaches it only if the email is verified,
+  not a placeholder and the same as the token's. Otherwise nothing is attached, the call still lists
+  the client's current projects, and the answer carries `X-Client-Invites: email_not_verified` so
+  the portal asks them to verify their email first. A self-registered account typing a client's
+  address therefore cannot claim the invite. auth-api is asked only when an invite is waiting.
+- Client rows are never team membership: staff scoping, the team list and its routes, mentions and
+  assignees all leave them out. `POST /members` and `PUT /members/{userID}` refuse `role_code`
+  client.
+
+### Team routes (membership scoping, 404 outside it)
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{id}/clients` | `portal.manage` | `{data: [{id, project_id, user_id, crm_contact_id, name, email_hint, status, invited_at, activated_at}]}` |
+| POST | `/projects/{id}/clients` | `portal.manage` | `{crm_contact_id}`. Reads the contact from marketflow; 201 `{client, resent: false}`, or 200 `{client, resent: true}` when the contact is still at the invite stage (the invite goes again). 404 `contact_not_found` (unknown or erased), 422 `validation_error` (no or bad email in the CRM), 409 `already_client`, 503 `crm_unavailable` |
+| DELETE | `/projects/{id}/clients/{memberID}` | `portal.manage` | Revokes an invite or an active client at once. 204 |
+| PATCH | `/projects/{id}/tasks/{taskID}/sharing` | `portal.manage` | `{client_visible: bool}`. `{id, client_visible}`. `tasks.metadata.client_visible` is server owned: a task update never sets it |
+| PATCH | `/projects/{id}/attachments/{attachmentID}/sharing` | `portal.manage` | `{client_visible: bool}`. Answers the attachment with its link |
+| GET | `/projects/{id}/client-thread` | `comments.view` | The client thread, paged, oldest first |
+| POST | `/projects/{id}/client-thread` | `comments.add` | `{content}` (rich text, sanitised), optional `Idempotency-Key` |
+
+project_manager now holds `portal.manage` (it held `portal.view`), so a project manager invites
+their own clients. Marking a milestone ready for review is the existing milestone update with
+`status: "ready_for_review"`.
+
+### Client routes (`projects.portal.view`)
+
+Every route with a project answers 404 unless the caller is an active client of that project,
+whatever else they hold. Nothing here returns budgets, costs, hours, estimates, EVM, margins,
+assignees, metadata or internal comments: the answers are built field by field.
+
+| Method | Path | Answer |
+|---|---|---|
+| GET | `/portal/projects` | Paged `[{id, name, status, start_date, end_date}]`; attaches pending invites first |
+| GET | `/portal/projects/{id}` | `{id, name, status, start_date, end_date, progress, total_tasks, completed_tasks, total_milestones, completed_milestones, awaiting_review, next_milestone: {id, name, status, target_date} \| null}`. Progress is done tasks over all tasks |
+| GET | `/portal/projects/{id}/milestones` | `{data: [{id, name, description, status, target_date, completed_at, can_decide, last_decision: {decision, comment, decided_at, decided_by_name} \| null}]}` |
+| POST | `/portal/projects/{id}/milestones/{milestoneID}/decision` | `{decision: approve \| request_changes, comment}` (comment required for request_changes, at most 2000 characters). `{id, status, decision}`. 409 `milestone_not_ready` unless the milestone is `ready_for_review` |
+| GET | `/portal/projects/{id}/tasks` | Paged shared tasks `[{id, title, description, status, status_label, start_date, due_date, progress, completed_at}]` |
+| GET | `/portal/projects/{id}/files` | Paged shared files `[{id, file_name, file_size, mime_type, uploaded_at, task_id, url}]`, signed links for 15 minutes |
+| GET | `/portal/projects/{id}/invoices` | `{data: [], available: false, note}` until treasury lists a project's invoices over S2S |
+| GET | `/portal/projects/{id}/thread` | The client thread, paged: `[{id, content, author_id, author_name, created_at, updated_at}]` |
+| POST | `/portal/projects/{id}/thread` | `{content}`, optional `Idempotency-Key` (a key used on an internal comment answers 409 `idempotency_key_reused`) |
+
+### Milestone review
+
+Milestone statuses gain `ready_for_review`, `approved` and `changes_requested`. The team sets
+`ready_for_review`; only a client's decision sets `approved` or `changes_requested` (the team's
+update answers 400). The decision's who, when and comment are kept in the milestone's activity
+entry (`changes.client_decision`, `comment`, `decided_by`, `decided_at`); milestones have no
+metadata column. Two clients deciding at once apply one decision (row lock).
+
+### Client thread
+
+Comments with `task_id` empty and server-owned `metadata.thread = "client"`. The project comment
+list leaves them out; the portal shows nothing else. A comment's `thread` key never comes from a
+client. Mentions on the thread notify nobody.
+
+### Events (outbox, `project.>`)
+
+| Subject | To | Payload |
+|---|---|---|
+| `project.client.invited` | the contact | `project_id, project_name, member_id, tenant_slug, portal_path (/{org}/portal), action_path (/{org}/portal/projects/{id}), actor_id, actor_name, recipient_name, recipient_email, recipient_phone, resent` |
+| `project.milestone.ready_for_review` | each signed-in client, one event each | the task notice fields (recipient from `projects_users`) plus `milestone_id, milestone_name, target_date`; `action_path` `/{org}/portal/projects/{id}?milestone={mid}` |
+| `project.milestone.approved`, `project.milestone.changes_requested` | the project owner and owner or manager members, one each, never the client | plus `milestone_id, milestone_name, decision, comment_excerpt, decided_at`; `action_path` `/{org}/projects/{id}/milestones?milestone={mid}` |
 
 ## Platform: field keys
 

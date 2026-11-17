@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/predicate"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	entmember "github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 )
 
 // cacheTTL bounds how long another pod may serve a membership that just changed; this pod drops
@@ -31,11 +32,13 @@ func New(client *ent.Client) *Checker {
 	return &Checker{client: client, cache: sharedcache.NewLocal[string, bool](20000, cacheTTL)}
 }
 
-// Visible is the project predicate for a user limited to their own projects.
+// Visible is the project predicate for a user limited to their own projects. A client membership
+// (role client, the portal) never counts: it opens the portal routes only, which scope on it
+// themselves, so it can never lift a staff route's membership check.
 func Visible(userID uuid.UUID) predicate.Project {
 	return entproject.Or(
 		entproject.OwnerID(userID),
-		entproject.HasMembersWith(entmember.UserID(userID), entmember.LeftAtIsNil()),
+		entproject.HasMembersWith(entmember.UserID(userID), entmember.LeftAtIsNil(), entmember.RoleCodeNEQ(rbac.RoleClient)),
 	)
 }
 

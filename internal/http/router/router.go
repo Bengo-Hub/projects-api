@@ -32,6 +32,7 @@ type Handlers struct {
 	Tenders     *handlers.TenderHandler
 	Financials  *handlers.FinancialsHandler
 	Time        *handlers.TimeHandler
+	Portal      *handlers.PortalHandler
 }
 
 // Deps is everything the router needs.
@@ -174,6 +175,10 @@ func New(d Deps) http.Handler {
 				// hours go to ERP timesheets. erp-api lets the service key through its own gate, so
 				// the tenant's ERP entitlement is checked here on the user's token.
 				h.Time.RegisterRoutes(tenant, requireFeature("time_tracking"), requireFeature("attendance"))
+			}
+			if h.Portal != nil {
+				// Client portal (sprint 14): the client_portal feature, which every Projects tier has.
+				h.Portal.RegisterRoutes(tenant, requireFeature("client_portal"))
 			}
 			if d.QA.Tenant != nil {
 				// QA and acceptance; each route is gated on a projects.qa.* permission.

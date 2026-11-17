@@ -69,7 +69,7 @@ func TestTimersAndEntriesDB(t *testing.T) {
 	}
 
 	// A stop clears the timer; a discard clears without logging.
-	if _, err := svc.StopTimer(ctx, tenant, ana, StopInput{ProjectID: fixed.ID, TaskID: &build.ID, StartedAt: now.Add(-time.Hour), StoppedAt: now}, time.UTC); err != nil {
+	if _, err := svc.StopTimer(ctx, tenant, ana, StopInput{ProjectID: fixed.ID, TaskID: &build.ID, StartedAt: now.Add(-time.Hour), StoppedAt: now}, time.UTC, ""); err != nil {
 		t.Fatal(err)
 	}
 	if f.logged[1].Billable {

@@ -100,6 +100,9 @@ func (s *Service) CreateMilestone(ctx context.Context, tenantID, projectID uuid.
 	if status == "" {
 		status = "pending"
 	}
+	if clientDecided(status) {
+		return nil, errClientStatus
+	}
 	var m *ent.Milestone
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
 		ok, err := tx.Project.Query().Where(entproject.ID(projectID), entproject.TenantID(tenantID)).Exist(ctx)
@@ -121,7 +124,13 @@ func (s *Service) CreateMilestone(ctx context.Context, tenantID, projectID uuid.
 		if m, err = c.Save(ctx); err != nil {
 			return fmt.Errorf("create milestone: %w", err)
 		}
-		return record(ctx, tx, m, activity.ActionCreated, map[string]any{"name": m.Name, "status": m.Status})
+		if err := record(ctx, tx, m, activity.ActionCreated, map[string]any{"name": m.Name, "status": m.Status}); err != nil {
+			return err
+		}
+		if m.Status == StatusReadyForReview {
+			return notifyReadyForReview(ctx, tx, m)
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -130,7 +139,9 @@ func (s *Service) CreateMilestone(ctx context.Context, tenantID, projectID uuid.
 }
 
 // UpdateMilestone updates an existing milestone. Completing it writes project.milestone.reached in
-// the same transaction.
+// the same transaction; moving it to ready_for_review writes project.milestone.ready_for_review to
+// each of the project's clients. approved and changes_requested are the client's decision (Decide)
+// and are refused here.
 func (s *Service) UpdateMilestone(ctx context.Context, tenantID, projectID, id uuid.UUID, input UpdateMilestoneInput) (*ent.Milestone, error) {
 	var updated *ent.Milestone
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
@@ -152,8 +163,12 @@ func (s *Service) UpdateMilestone(ctx context.Context, tenantID, projectID, id u
 			u = u.SetDescription(*input.Description)
 			changes["description"] = "changed"
 		}
-		completed := false
+		completed, readyForReview := false, false
 		if input.Status != nil {
+			if *input.Status != m.Status && clientDecided(*input.Status) {
+				return errClientStatus
+			}
+			readyForReview = *input.Status == StatusReadyForReview && m.Status != StatusReadyForReview
 			u = u.SetStatus(*input.Status)
 			changes["status"] = map[string]any{"from": m.Status, "to": *input.Status}
 			if *input.Status == "completed" {
@@ -170,6 +185,11 @@ func (s *Service) UpdateMilestone(ctx context.Context, tenantID, projectID, id u
 		}
 		if err := record(ctx, tx, updated, activity.ActionUpdated, changes); err != nil {
 			return err
+		}
+		if readyForReview {
+			if err := notifyReadyForReview(ctx, tx, updated); err != nil {
+				return err
+			}
 		}
 		if !completed {
 			return nil

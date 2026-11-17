@@ -41,9 +41,15 @@ const metaStatusMutations = "status_mutations"
 // written only by the timer routes.
 const metaTimers = "timers"
 
+// MetaClientVisible is the task metadata key that shares a task with the project's clients in the
+// portal (true shares it). It changes only through SetClientVisible (the sharing route, gated on
+// projects.portal.manage), never through a task update, so tasks.change alone cannot publish work
+// to a client.
+const MetaClientVisible = "client_visible"
+
 // serverOwnedMeta are the task metadata keys clients never write. The checklist and its
 // idempotency keys change only through the checklist operations (see ApplyChecklist).
-var serverOwnedMeta = []string{metaStatusMutations, metaTimers, MetaChecklist, metaChecklistMutations}
+var serverOwnedMeta = []string{metaStatusMutations, metaTimers, MetaChecklist, metaChecklistMutations, MetaClientVisible}
 
 // clientMetadata is the metadata a client update leaves on a task: the client's map, with the
 // server-owned keys kept from current and never taken from the client.

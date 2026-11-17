@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	entmember "github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/platform/events"
 	"github.com/bengobox/projects-service/internal/services/people"
 )
@@ -28,8 +29,9 @@ const (
 // ExcerptLength is the most characters of a comment a mention notice carries.
 const ExcerptLength = 200
 
-// Members returns which of ids own or actively belong to the project (the same rule as
-// membership scoping): only they may be assigned or mentioned.
+// Members returns which of ids own or actively belong to the project as staff (the same rule as
+// membership scoping): only they may be assigned or mentioned. A client member never is, so an
+// internal comment or task never reaches the client through a notice.
 func Members(ctx context.Context, tx *ent.Tx, tenantID, projectID uuid.UUID, ids []uuid.UUID) (map[uuid.UUID]bool, error) {
 	out := make(map[uuid.UUID]bool, len(ids))
 	if len(ids) == 0 {
@@ -46,7 +48,8 @@ func Members(ctx context.Context, tx *ent.Tx, tenantID, projectID uuid.UUID, ids
 		}
 	}
 	members, err := tx.ProjectMember.Query().
-		Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID), entmember.UserIDIn(ids...), entmember.LeftAtIsNil()).
+		Where(entmember.TenantID(tenantID), entmember.ProjectID(projectID), entmember.UserIDIn(ids...), entmember.LeftAtIsNil(),
+			entmember.RoleCodeNEQ(rbac.RoleClient)).
 		Select(entmember.FieldUserID).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("load project members: %w", err)

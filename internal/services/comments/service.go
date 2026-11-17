@@ -129,10 +129,11 @@ func (s *Service) page(ctx context.Context, tenantID uuid.UUID, q *ent.CommentQu
 	return out, total, err
 }
 
-// ListCommentsByProject returns one page of a project's own comments, oldest first, with the total.
+// ListCommentsByProject returns one page of a project's own internal comments, oldest first, with
+// the total. The client thread is never part of it (see ListClientThread).
 func (s *Service) ListCommentsByProject(ctx context.Context, tenantID, projectID uuid.UUID, limit, offset int) ([]Authored, int, error) {
 	items, total, err := s.page(ctx, tenantID, s.client.Comment.Query().
-		Where(entcomment.TenantID(tenantID), entcomment.ProjectID(projectID)), limit, offset)
+		Where(entcomment.TenantID(tenantID), entcomment.ProjectID(projectID), internalThread()), limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list comments by project: %w", err)
 	}
@@ -180,7 +181,7 @@ func clientMetadata(in map[string]any) map[string]any {
 	}
 	out := make(map[string]any, len(in))
 	for k, v := range in {
-		if k != metaMentions && k != metaIdempotencyKey {
+		if k != metaMentions && k != metaIdempotencyKey && k != MetaThread {
 			out[k] = v
 		}
 	}
@@ -450,9 +451,12 @@ func (s *Service) UpdateComment(ctx context.Context, tenantID, projectID, id uui
 		if err != nil {
 			return err
 		}
-		ids, err := mentioned(ctx, tx, tenantID, projectID, c.UserID, content)
-		if err != nil {
-			return err
+		var ids []uuid.UUID
+		if !IsClientThread(c.Metadata) {
+			// The client thread notifies nobody by mention (see CreateClientThreadComment).
+			if ids, err = mentioned(ctx, tx, tenantID, projectID, c.UserID, content); err != nil {
+				return err
+			}
 		}
 		before := map[uuid.UUID]bool{}
 		for _, m := range mentionsOf(c.Metadata) {

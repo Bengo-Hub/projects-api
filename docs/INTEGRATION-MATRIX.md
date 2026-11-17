@@ -41,6 +41,15 @@ ERP answers 404 `no_employee_record` for a user without an employee (projects-ap
 with the same code), 409 `timesheet_locked` and `nothing_to_submit`. erp-api's ingress
 NetworkPolicy already admits the projects namespace.
 
+### Client portal (sprint 14, 2026-11-17)
+
+| Service | Direction | What |
+|---|---|---|
+| auth-api | sign-in | OAuth client `projects-portal` (public PKCE, `self_signup_role` client, callbacks `https://projects.codevertexafrica.com/{slug}/portal/auth/callback`). A client signs in to the firm's tenant and gets the global role client (scope projects), which JIT maps to the projects role client (`projects.portal.view` only) |
+| marketflow-api | S2S read | `GET /api/v1/internal/contacts/{id}?tenant_id=` on invite: the contact's name, email and phone go into the invite event only. Projects keeps `crm_contact_id` plus a name snapshot and a masked email hint on the client row. `crm.contact.deleted` and erasures follow the client rows too (`services/crmsync/clients.go`), and the crm-links check counts them |
+| notifications-api | events | `project.client.invited` (to the contact's email and phone), `project.milestone.ready_for_review` (to each signed-in client), `project.milestone.approved` and `project.milestone.changes_requested` (to the owner and owner or manager members) |
+| treasury-api | none yet | Gap: no S2S route lists a project's invoices with client-safe fields (invoices carry `project_id` in metadata only). `GET /portal/projects/{id}/invoices` answers `[]` with `available: false` until treasury adds `GET /api/v1/s2s/{tenant}/invoices?project_id=` |
+
 ---
 
 ## External Third-Party Platform Integration Matrix

@@ -29,7 +29,7 @@ var Roles = []RoleDef{
 		PermTasksManage, PermMilestonesView, PermMilestonesAdd, PermMilestonesChange, PermMilestonesDelete,
 		PermMembersView, PermMembersManage, PermCommentsView, PermCommentsAdd, PermCommentsManage,
 		PermTendersView, PermTendersAdd, PermTendersChange, PermFinancialsView,
-		PermTimeView, PermTimeAdd, PermTimeManage, PermPortalView, PermQAManage,
+		PermTimeView, PermTimeAdd, PermTimeManage, PermPortalManage, PermQAManage,
 	}},
 	{RoleMember, "Member", "Works on the projects they belong to: sees every task, edits their own", []string{
 		PermProjectsView, PermTasksView, PermTasksAdd, PermTasksChangeOwn,
@@ -53,8 +53,10 @@ func RoleRank(code string) int {
 }
 
 // MapGlobalRoles maps the global auth-api roles on a token to the default projects role:
-// superuser and admin-level roles to projects_admin, manager and staff to member, anyone else to
-// viewer. Explicit assignments made by a projects admin always win over this default.
+// superuser and admin-level roles to projects_admin, manager and staff to member, the client
+// portal role (auth-api's projects-portal sign-in) to client, anyone else to viewer. A staff role
+// wins over client, so a teammate who also signed in to a portal keeps their staff access.
+// Explicit assignments made by a projects admin always win over this default.
 func MapGlobalRoles(global []string) string {
 	best := RoleViewer
 	for _, g := range global {
@@ -63,6 +65,10 @@ func MapGlobalRoles(global []string) string {
 			return RoleAdmin
 		case "manager", "staff":
 			best = RoleMember
+		case RoleClient:
+			if best == RoleViewer {
+				best = RoleClient
+			}
 		}
 	}
 	return best

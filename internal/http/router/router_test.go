@@ -65,8 +65,14 @@ type claimsKey struct{}
 
 func testRouter(t *testing.T, r *fakeRBAC, members fakeMembers) http.Handler {
 	t.Helper()
+	return New(testDeps(t, r, members))
+}
+
+// testDeps is the router's dependencies with every handler on nil services.
+func testDeps(t *testing.T, r *fakeRBAC, members fakeMembers) Deps {
+	t.Helper()
 	log := zap.NewNop()
-	return New(Deps{
+	return Deps{
 		Log: log,
 		Handlers: Handlers{
 			Health:      handlers.NewHealthHandler(log, nil, nil, nil),
@@ -99,7 +105,7 @@ func testRouter(t *testing.T, r *fakeRBAC, members fakeMembers) http.Handler {
 		CRMLinks:       http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusTeapot) }),
 		QA:             QARoutes{Tenant: handlers.NewQAHandler(log, nil), Invitee: handlers.NewQAInviteeHandler(log, nil, true)},
 		Platform:       PlatformRoutes{FieldKeys: handlers.NewFieldKeyHandler(nil, log)},
-	})
+	}
 }
 
 func userClaims(roles ...string) *authclient.Claims {

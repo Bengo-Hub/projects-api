@@ -223,6 +223,11 @@ func (s *Service) DeleteMilestone(ctx context.Context, tenantID, projectID, id u
 		if err != nil {
 			return fmt.Errorf("fetch milestone: %w", err)
 		}
+		// An invoiced milestone is the invoice's source; it goes only once the invoice is voided in
+		// treasury and the milestone's price is cleared on the billing page (which drops the link).
+		if inv, _ := m.Metadata["invoice_id"].(string); inv != "" {
+			return ValidationError("this milestone has an invoice; void it in treasury and clear the milestone's price before deleting it")
+		}
 		if err := tx.Milestone.DeleteOne(m).Exec(ctx); err != nil {
 			return fmt.Errorf("delete milestone: %w", err)
 		}

@@ -30,6 +30,7 @@ var Roles = []RoleDef{
 		PermMembersView, PermMembersManage, PermCommentsView, PermCommentsAdd, PermCommentsManage,
 		PermTendersView, PermTendersAdd, PermTendersChange, PermFinancialsView,
 		PermTimeView, PermTimeAdd, PermTimeManage, PermPortalManage, PermQAManage,
+		PermBillingManage,
 	}},
 	{RoleMember, "Member", "Works on the projects they belong to: sees every task, edits their own", []string{
 		PermProjectsView, PermTasksView, PermTasksAdd, PermTasksChangeOwn,

@@ -99,6 +99,12 @@ func (mc *MilestoneCreate) SetNillableCompletedAt(t *time.Time) *MilestoneCreate
 	return mc
 }
 
+// SetMetadata sets the "metadata" field.
+func (mc *MilestoneCreate) SetMetadata(m map[string]interface{}) *MilestoneCreate {
+	mc.mutation.SetMetadata(m)
+	return mc
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (mc *MilestoneCreate) SetCreatedAt(t time.Time) *MilestoneCreate {
 	mc.mutation.SetCreatedAt(t)
@@ -287,6 +293,10 @@ func (mc *MilestoneCreate) createSpec() (*Milestone, *sqlgraph.CreateSpec) {
 		_spec.SetField(milestone.FieldCompletedAt, field.TypeTime, value)
 		_node.CompletedAt = value
 	}
+	if value, ok := mc.mutation.Metadata(); ok {
+		_spec.SetField(milestone.FieldMetadata, field.TypeJSON, value)
+		_node.Metadata = value
+	}
 	if value, ok := mc.mutation.CreatedAt(); ok {
 		_spec.SetField(milestone.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
@@ -463,6 +473,24 @@ func (u *MilestoneUpsert) UpdateCompletedAt() *MilestoneUpsert {
 // ClearCompletedAt clears the value of the "completed_at" field.
 func (u *MilestoneUpsert) ClearCompletedAt() *MilestoneUpsert {
 	u.SetNull(milestone.FieldCompletedAt)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *MilestoneUpsert) SetMetadata(v map[string]interface{}) *MilestoneUpsert {
+	u.Set(milestone.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *MilestoneUpsert) UpdateMetadata() *MilestoneUpsert {
+	u.SetExcluded(milestone.FieldMetadata)
+	return u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *MilestoneUpsert) ClearMetadata() *MilestoneUpsert {
+	u.SetNull(milestone.FieldMetadata)
 	return u
 }
 
@@ -645,6 +673,27 @@ func (u *MilestoneUpsertOne) UpdateCompletedAt() *MilestoneUpsertOne {
 func (u *MilestoneUpsertOne) ClearCompletedAt() *MilestoneUpsertOne {
 	return u.Update(func(s *MilestoneUpsert) {
 		s.ClearCompletedAt()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *MilestoneUpsertOne) SetMetadata(v map[string]interface{}) *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *MilestoneUpsertOne) UpdateMetadata() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *MilestoneUpsertOne) ClearMetadata() *MilestoneUpsertOne {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.ClearMetadata()
 	})
 }
 
@@ -996,6 +1045,27 @@ func (u *MilestoneUpsertBulk) UpdateCompletedAt() *MilestoneUpsertBulk {
 func (u *MilestoneUpsertBulk) ClearCompletedAt() *MilestoneUpsertBulk {
 	return u.Update(func(s *MilestoneUpsert) {
 		s.ClearCompletedAt()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *MilestoneUpsertBulk) SetMetadata(v map[string]interface{}) *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *MilestoneUpsertBulk) UpdateMetadata() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *MilestoneUpsertBulk) ClearMetadata() *MilestoneUpsertBulk {
+	return u.Update(func(s *MilestoneUpsert) {
+		s.ClearMetadata()
 	})
 }
 

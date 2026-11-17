@@ -63,3 +63,34 @@ func TestBillsHours(t *testing.T) {
 		}
 	}
 }
+
+// Retainer terms and the VAT code are validated and stored in their canonical forms.
+func TestNormalizeCommercialRetainerAndTax(t *testing.T) {
+	meta := map[string]any{"billing_type": "retainer", "retainer_amount": 150000.0, "retainer_hours": "40", "retainer_rollover": true, "tax_code": " vat-16 "}
+	if err := normalizeCommercial(meta); err != nil {
+		t.Fatal(err)
+	}
+	if meta["retainer_amount"] != "150000" || meta["retainer_hours"] != 40.0 || meta["tax_code"] != "VAT-16" {
+		t.Fatalf("normalised = %v", meta)
+	}
+	if BillsHours(meta) {
+		t.Fatal("a retainer does not bill its hours by default")
+	}
+	bad := []map[string]any{
+		{"billing_type": "hourly"},
+		{"retainer_amount": "0"},
+		{"retainer_amount": "12.345"},
+		{"retainer_hours": -1},
+		{"retainer_rollover": "yes"},
+		{"tax_code": "VAT-20"},
+	}
+	for _, m := range bad {
+		if err := normalizeCommercial(m); err == nil {
+			t.Errorf("%v accepted", m)
+		}
+	}
+	cleared := map[string]any{"tax_code": "", "retainer_amount": ""}
+	if err := normalizeCommercial(cleared); err != nil || cleared["tax_code"] != nil || cleared["retainer_amount"] != nil {
+		t.Fatalf("empty values = %v %v, want cleared", cleared, err)
+	}
+}

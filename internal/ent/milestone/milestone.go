@@ -29,6 +29,8 @@ const (
 	FieldStatus = "status"
 	// FieldCompletedAt holds the string denoting the completed_at field in the database.
 	FieldCompletedAt = "completed_at"
+	// FieldMetadata holds the string denoting the metadata field in the database.
+	FieldMetadata = "metadata"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -56,6 +58,7 @@ var Columns = []string{
 	FieldTargetDate,
 	FieldStatus,
 	FieldCompletedAt,
+	FieldMetadata,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }

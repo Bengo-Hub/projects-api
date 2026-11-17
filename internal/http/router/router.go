@@ -33,6 +33,7 @@ type Handlers struct {
 	Financials  *handlers.FinancialsHandler
 	Time        *handlers.TimeHandler
 	Portal      *handlers.PortalHandler
+	Billing     *handlers.BillingHandler
 }
 
 // Deps is everything the router needs.
@@ -182,6 +183,10 @@ func New(d Deps) http.Handler {
 			if h.Portal != nil {
 				// Client portal (sprint 14): the client_portal feature, which every Projects tier has.
 				h.Portal.RegisterRoutes(tenant, requireFeature("client_portal"))
+			}
+			if h.Billing != nil {
+				// Billing (sprint 15): draft invoices in treasury, the milestone_billing feature (tier 3).
+				h.Billing.RegisterRoutes(tenant, requireFeature("milestone_billing"))
 			}
 			if d.QA.Tenant != nil {
 				// QA and acceptance; each route is gated on a projects.qa.* permission.

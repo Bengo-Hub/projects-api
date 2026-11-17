@@ -20,6 +20,17 @@
 
 See `docs/sprints/sprint-12-work-management-core.md` to `sprint-16-planning-depth.md`.
 
+### Billing and profitability, sprint 15 (built 2026-11-17)
+
+Done: milestone prices and invoices, time invoices for a period, retainer month invoices, the
+billing overview, labour cost and margin to date, the per-client rollup and the portal's invoice
+list (`docs/api.md`, "Billing and profitability"). Still open:
+
+- Retainer overage and monthly usage: hours over the allowance are not billed automatically, and the
+  rollover rule is stored but not applied. Needs an ERP read of a project's hours by month.
+- A notice to the client when a project invoice is sent belongs to treasury's own send flow; check
+  that treasury's invoice email names the project once the first tenant bills from projects.
+
 ## Project finance, done 2026-09-29
 
 - Commercial terms in project metadata: `billing_type` (fixed, time_and_materials, non_billable), `contract_value`, `crm_contact_id`/`crm_contact_name` (a marketflow CRM contact) and `cost_center_id`/`cost_center_name` (a treasury cost centre), validated on create and update. Metadata updates merge (null removes a key). The financials response has a `commercial` block: fixed price margin at completion (contract value less EAC) and unbilled; time and materials margin to date (invoiced less cost). `GET /lookups/contacts?q=` (marketflow S2S search) and `GET /lookups/cost-centers` (treasury S2S list) feed the pickers. Commits `4c876f7`, projects-ui `4d46e68`, treasury `08cc2a8`. Source: sprint-3, sprint-5.

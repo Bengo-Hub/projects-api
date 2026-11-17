@@ -47,6 +47,11 @@ const (
 	PermFinancialsView   = "projects.financials.view"
 	PermFinancialsManage = "projects.financials.manage"
 
+	// Billing (sprint 15): view sees a project's billing terms, milestone amounts and invoices;
+	// manage sets amounts and creates invoices in treasury.
+	PermBillingView   = "projects.billing.view"
+	PermBillingManage = "projects.billing.manage"
+
 	PermTimeView    = "projects.time.view"
 	PermTimeViewOwn = "projects.time.view_own"
 	PermTimeAdd     = "projects.time.add"
@@ -107,6 +112,8 @@ var Catalogue = []PermissionDef{
 	def(PermTendersManage, "Manage tenders, committees and evaluations"),
 	def(PermFinancialsView, "View project financials"),
 	def(PermFinancialsManage, "Manage project budgets"),
+	def(PermBillingView, "View project billing and invoices"),
+	def(PermBillingManage, "Create project invoices"),
 	def(PermTimeView, "View all time entries"),
 	def(PermTimeViewOwn, "View my time entries"),
 	def(PermTimeAdd, "Log time"),

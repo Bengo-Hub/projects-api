@@ -15,6 +15,7 @@ import (
 	"github.com/bengobox/projects-service/internal/http/authz"
 	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/services/attachments"
+	"github.com/bengobox/projects-service/internal/services/billing"
 	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/milestones"
 	"github.com/bengobox/projects-service/internal/services/portal"
@@ -30,6 +31,7 @@ type PortalHandler struct {
 	tasks       *tasks.Service
 	comments    *comments.Service
 	attachments *attachments.Service
+	invoices    *billing.Service
 }
 
 // NewPortalHandler creates the portal handler. attachments may be nil (no object storage): file
@@ -37,6 +39,13 @@ type PortalHandler struct {
 func NewPortalHandler(log *zap.Logger, svc *portal.Service, ms *milestones.Service, ts *tasks.Service,
 	cs *comments.Service, as *attachments.Service) *PortalHandler {
 	return &PortalHandler{log: log.Named("portal.handler"), svc: svc, milestones: ms, tasks: ts, comments: cs, attachments: as}
+}
+
+// WithInvoices lets clients see their project's invoices (sprint 15). Without it the invoices
+// route answers an empty list marked unavailable.
+func (h *PortalHandler) WithInvoices(b *billing.Service) *PortalHandler {
+	h.invoices = b
+	return h
 }
 
 // RegisterRoutes registers every portal route behind the client_portal plan feature. Flat patterns
@@ -398,16 +407,33 @@ func (h *PortalHandler) SharedFiles(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, pagination.NewResponse(items, total, p))
 }
 
-// Invoices answers an empty list for now: treasury-api has no service route that lists a project's
-// invoices with client-safe fields (its invoices carry project_id in metadata, but the S2S routes
-// read one invoice by id or reference only). The portal screen shows the note.
+// Invoices lists the project's invoices for its client from treasury: sent and paid ones only
+// (never drafts, voids or cancellations), newest first, with the amount still due and a public
+// link to view and pay when treasury has one. When treasury is not reachable the list is empty
+// and marked unavailable, so the rest of the portal still works.
 func (h *PortalHandler) Invoices(w http.ResponseWriter, r *http.Request) {
-	if _, _, ok := h.clientScope(w, r); !ok {
+	tenantID, projectID, ok := h.clientScope(w, r)
+	if !ok {
 		return
 	}
+	p := pagination.Parse(r)
+	unavailable := map[string]any{
+		"data": []any{}, "total": 0, "available": false,
+		"note": "Invoices cannot be shown right now. Please try again later.",
+	}
+	if h.invoices == nil {
+		respondJSON(w, http.StatusOK, unavailable)
+		return
+	}
+	items, total, err := h.invoices.ClientInvoices(r.Context(), tenantID, projectID, p.Limit, p.Offset)
+	if err != nil {
+		h.log.Warn("portal invoices unavailable", zap.Error(err))
+		respondJSON(w, http.StatusOK, unavailable)
+		return
+	}
+	resp := pagination.NewResponse(items, total, p)
 	respondJSON(w, http.StatusOK, map[string]any{
-		"data": []any{}, "available": false,
-		"note": "Invoices will appear here once billing is connected to the portal.",
+		"data": resp.Data, "total": resp.Total, "page": resp.Page, "limit": resp.Limit, "hasMore": resp.HasMore, "available": true,
 	})
 }
 

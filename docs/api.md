@@ -401,7 +401,7 @@ assignees, metadata or internal comments: the answers are built field by field.
 | POST | `/portal/projects/{id}/milestones/{milestoneID}/decision` | `{decision: approve \| request_changes, comment}` (comment required for request_changes, at most 2000 characters). `{id, status, decision}`. 409 `milestone_not_ready` unless the milestone is `ready_for_review` |
 | GET | `/portal/projects/{id}/tasks` | Paged shared tasks `[{id, title, description, status, status_label, start_date, due_date, progress, completed_at}]` |
 | GET | `/portal/projects/{id}/files` | Paged shared files `[{id, file_name, file_size, mime_type, uploaded_at, task_id, url}]`, signed links for 15 minutes |
-| GET | `/portal/projects/{id}/invoices` | `{data: [], available: false, note}` until treasury lists a project's invoices over S2S |
+| GET | `/portal/projects/{id}/invoices` | Paged `{data: [Invoice], total, page, limit, hasMore, available: true}` from treasury: sent and paid invoices only (never drafts, voids or cancellations), newest first (see Billing for the Invoice shape). When treasury is not reachable: `{data: [], available: false, note}` |
 | GET | `/portal/projects/{id}/thread` | The client thread, paged: `[{id, content, author_id, author_name, author_kind: client \| team, created_at, updated_at}]` |
 | POST | `/portal/projects/{id}/thread` | `{content}`, optional `Idempotency-Key` (a key used on an internal comment answers 409 `idempotency_key_reused`) |
 
@@ -410,8 +410,9 @@ assignees, metadata or internal comments: the answers are built field by field.
 Milestone statuses gain `ready_for_review`, `approved` and `changes_requested`. The team sets
 `ready_for_review`; only a client's decision sets `approved` or `changes_requested` (the team's
 update answers 400). The decision's who, when and comment are kept in the milestone's activity
-entry (`changes.client_decision`, `comment`, `decided_by`, `decided_at`); milestones have no
-metadata column. Two clients deciding at once apply one decision (row lock).
+entry (`changes.client_decision`, `comment`, `decided_by`, `decided_at`); the milestone metadata
+column added in sprint 15 holds billing only. Two clients deciding at once apply one decision (row
+lock).
 
 `last_decision` on the team's and the portal's milestone lists is read back from those entries:
 `{decision, comment, decided_by_name, decided_at}`, where `decision` is the outcome (`approved` or
@@ -438,6 +439,85 @@ thread needs no lookup.
 | `project.client.invited` | the contact | `project_id, project_name, member_id, tenant_slug, portal_path (/{org}/portal), action_path (/{org}/portal/projects/{id}), actor_id, actor_name, recipient_name, recipient_email, recipient_phone, resent` |
 | `project.milestone.ready_for_review` | each signed-in client, one event each | the task notice fields (recipient from `projects_users`) plus `milestone_id, milestone_name, target_date`; `action_path` `/{org}/portal/projects/{id}?milestone={mid}` |
 | `project.milestone.approved`, `project.milestone.changes_requested` | the project owner and owner or manager members, one each, never the client | plus `milestone_id, milestone_name, decision, comment_excerpt, decided_at`; `action_path` `/{org}/projects/{id}/milestones?milestone={mid}` |
+
+## Billing and profitability (sprint 15, 2026-11-17)
+
+Treasury owns invoices, payments and eTIMS; ERP owns the hours. projects-api creates customer
+invoices in treasury over S2S and keeps only a milestone's invoice id, number and reference.
+Treasury approves a service's invoice on create (system origin): it comes back `approved`, not yet
+sent and not yet on eTIMS. The firm sends it from treasury, and that is when its revenue posts to
+the project (`metadata.project_id` on the revenue journal lines). Code:
+`internal/services/billing`, `internal/http/handlers/billing.go`,
+`internal/platform/treasury/invoices.go`, `internal/platform/erp/billing.go`.
+
+### Terms
+
+Project metadata, validated on the project update: `billing_type` (`fixed`, `time_and_materials`,
+`retainer`, `non_billable`), `contract_value` (number), `hourly_rate`, `retainer_amount` (decimal
+strings, above zero, two places), `retainer_hours` (number, zero or more), `retainer_rollover`
+(boolean), `tax_code` (`VAT-16`, `VAT-8`, `VAT-0` or `VAT-EXEMPT`, treasury's tax catalogue
+codes, sent with its rate on every line; unset sends no VAT, because treasury fills no tax on a line
+without an item), `crm_contact_id` (the client in marketflow, who the invoice is for; its name goes
+as `customer_name` because treasury keeps the CRM id only when the CRM confirms it) and
+`cost_center_id`. Nothing is invoiced for a non-billable project or one without a client (422).
+
+Milestone metadata (new column, read only, never filtered): `amount` (decimal string) or
+`amount_pct` (share of the contract value, 0 to 100), and once invoiced `invoice_id`,
+`invoice_number` and `invoice_ref`. A milestone with an invoice cannot be deleted (422); void the
+invoice in treasury, clear the price, then delete.
+
+### Routes (`milestone_billing` feature, membership scoping)
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{id}/billing` | `billing.view` | `{terms, milestones: [{id, name, status, amount, amount_pct, bill_amount, invoice_id, invoice_number, invoice}], invoices, invoices_total, unbilled_hours, unbilled_estimate, treasury_unavailable, erp_unavailable}`. One milestone query, one treasury by-references batch, one treasury by-project page (drafts included) and one ERP hours read. Treasury or ERP down sets the flag and leaves that part empty |
+| PUT | `/projects/{id}/billing/milestones/{mid}` | `billing.manage` | `{amount}` or `{amount_pct}`, both null clears. 422 while the milestone has a live invoice; once it is voided, cancelled or deleted the price can change and the link is dropped |
+| POST | `/projects/{id}/billing/milestones/{mid}/invoice` | `billing.manage` | Draft invoice for the client, one line "{project}: {milestone}" at `bill_amount`. Returns the existing invoice on a repeat |
+| POST | `/projects/{id}/billing/time-invoice` | `billing.manage` | `{from, to}` (dates, at most a year). `time_and_materials` with an `hourly_rate` only. Approved, billable, unbilled ERP hours dated in the period, one line per person (hours at the rate, sorted by name). `{invoice, entries, hours, warning}`. 422 `nothing_to_bill` when the period has none |
+| POST | `/projects/{id}/billing/retainer-invoice` | `billing.manage` | `{month: YYYY-MM}`. `retainer` with a `retainer_amount` only. One line "Retainer, {Month YYYY} ({n} hours included)" |
+| GET | `/financials/clients` | `financials.view` (`budget_tracking`) | Billable projects rolled up by client and currency: `{clients: [{client_id, client_name, currency, projects, contract_value, invoiced, unbilled, labour_cost, cost_to_date, margin_to_date, margin_pct}], truncated, money_unavailable}`, most profitable first. Reads the portfolio 100 projects a page (one project, task, treasury and ERP batch each), at most 2000 projects |
+
+Write errors carry a `code`: `validation_error`, `nothing_to_bill` (422), `invoice_in_progress`
+(409, another click is creating it), `billing_unavailable` (503, treasury, ERP or Redis not
+configured), `treasury_refused` and `erp_refused` (422 with the upstream reason), `upstream_unavailable`
+(502), `not_found` (404).
+
+`Invoice` (from treasury): `{id, invoice_number, status, payment_status, currency, total_amount,
+amount_paid, amount_due, balance_due, invoice_date, due_date, reference_type, reference_id,
+is_overdue, public_url}`. `amount_due` and `balance_due` are the same figure (what is still owed, net
+of credit notes); treasury's full invoice names it one way and its summary the other, so both are
+filled. `public_url` is treasury's view and pay link (`/i/{public_token}`).
+
+Permissions: `projects.billing.view` and `projects.billing.manage` (implies view). project_manager
+holds manage; projects_admin holds everything.
+
+### Idempotency and voids
+
+Every invoice carries a treasury reference: `project_milestone` with the milestone id,
+`project_time` with a UUIDv5 of the tenant, project and period, `project_retainer` with one of the
+tenant, project and month. Treasury's create does not dedupe on the reference, so projects-api reads
+it first (`GET /invoices/by-reference`) under a Redis lock per reference (two minutes,
+`sharedcache.TryLock`): a retry or a second click returns the first invoice and two clicks cannot
+both create one. Without Redis (local runs only) there is no lock. A voided or cancelled invoice would block its reference for good, so the next reference is
+derived from the dead invoice's id (a chain, the same on every pod and retry, at most 20 voids per
+item).
+
+Time billing runs in three steps keyed by the reference: ERP reserves the period's approved,
+billable, unbilled entries (`metadata.billing_ref`) and returns every entry carrying it; treasury
+creates the invoice; ERP confirms (`metadata.billed_invoice_id`, overwritten so a deleted draft's
+hours move to its replacement). A reserved entry is never reserved again, so no hour is billed twice.
+If the create fails the entries stay reserved and a retry bills the same set; if the confirm fails
+the answer carries a `warning` and running the period again finishes it. When the period's invoice
+is voided, its hours are released (`include_confirmed`) before the next reference reserves them.
+
+### Profitability
+
+`commercial` on project financials and the portfolio gains `labour_cost` (ERP: approved hours at
+each person's `salary_details.hourly_rate`), `cost_to_date` (treasury actual cost plus labour) and
+`margin_to_date` (invoiced minus cost to date, for every billable type). The fixed price margin at
+completion subtracts labour to date from the contract value on top of EAC; time and materials and
+retainer margins are to date. Payroll is not booked against projects in treasury, so labour is never
+counted twice. `hours` gains `unbilled_billable`.
 
 ## Platform: field keys
 

@@ -146,6 +146,18 @@ func (mu *MilestoneUpdate) ClearCompletedAt() *MilestoneUpdate {
 	return mu
 }
 
+// SetMetadata sets the "metadata" field.
+func (mu *MilestoneUpdate) SetMetadata(m map[string]interface{}) *MilestoneUpdate {
+	mu.mutation.SetMetadata(m)
+	return mu
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (mu *MilestoneUpdate) ClearMetadata() *MilestoneUpdate {
+	mu.mutation.ClearMetadata()
+	return mu
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (mu *MilestoneUpdate) SetUpdatedAt(t time.Time) *MilestoneUpdate {
 	mu.mutation.SetUpdatedAt(t)
@@ -255,6 +267,12 @@ func (mu *MilestoneUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if mu.mutation.CompletedAtCleared() {
 		_spec.ClearField(milestone.FieldCompletedAt, field.TypeTime)
+	}
+	if value, ok := mu.mutation.Metadata(); ok {
+		_spec.SetField(milestone.FieldMetadata, field.TypeJSON, value)
+	}
+	if mu.mutation.MetadataCleared() {
+		_spec.ClearField(milestone.FieldMetadata, field.TypeJSON)
 	}
 	if value, ok := mu.mutation.UpdatedAt(); ok {
 		_spec.SetField(milestone.FieldUpdatedAt, field.TypeTime, value)
@@ -424,6 +442,18 @@ func (muo *MilestoneUpdateOne) ClearCompletedAt() *MilestoneUpdateOne {
 	return muo
 }
 
+// SetMetadata sets the "metadata" field.
+func (muo *MilestoneUpdateOne) SetMetadata(m map[string]interface{}) *MilestoneUpdateOne {
+	muo.mutation.SetMetadata(m)
+	return muo
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (muo *MilestoneUpdateOne) ClearMetadata() *MilestoneUpdateOne {
+	muo.mutation.ClearMetadata()
+	return muo
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (muo *MilestoneUpdateOne) SetUpdatedAt(t time.Time) *MilestoneUpdateOne {
 	muo.mutation.SetUpdatedAt(t)
@@ -563,6 +593,12 @@ func (muo *MilestoneUpdateOne) sqlSave(ctx context.Context) (_node *Milestone, e
 	}
 	if muo.mutation.CompletedAtCleared() {
 		_spec.ClearField(milestone.FieldCompletedAt, field.TypeTime)
+	}
+	if value, ok := muo.mutation.Metadata(); ok {
+		_spec.SetField(milestone.FieldMetadata, field.TypeJSON, value)
+	}
+	if muo.mutation.MetadataCleared() {
+		_spec.ClearField(milestone.FieldMetadata, field.TypeJSON)
 	}
 	if value, ok := muo.mutation.UpdatedAt(); ok {
 		_spec.SetField(milestone.FieldUpdatedAt, field.TypeTime, value)

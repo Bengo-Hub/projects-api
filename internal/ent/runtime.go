@@ -203,11 +203,11 @@ func init() {
 	// milestone.DefaultStatus holds the default value on creation for the status field.
 	milestone.DefaultStatus = milestoneDescStatus.Default.(string)
 	// milestoneDescCreatedAt is the schema descriptor for created_at field.
-	milestoneDescCreatedAt := milestoneFields[8].Descriptor()
+	milestoneDescCreatedAt := milestoneFields[9].Descriptor()
 	// milestone.DefaultCreatedAt holds the default value on creation for the created_at field.
 	milestone.DefaultCreatedAt = milestoneDescCreatedAt.Default.(func() time.Time)
 	// milestoneDescUpdatedAt is the schema descriptor for updated_at field.
-	milestoneDescUpdatedAt := milestoneFields[9].Descriptor()
+	milestoneDescUpdatedAt := milestoneFields[10].Descriptor()
 	// milestone.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	milestone.DefaultUpdatedAt = milestoneDescUpdatedAt.Default.(func() time.Time)
 	// milestone.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

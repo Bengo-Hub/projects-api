@@ -35,6 +35,7 @@ func (h *FinancialsHandler) RegisterRoutes(r chi.Router, requireFeature func(htt
 		view := authz.Require(rbac.PermFinancialsView)
 		manage := authz.Require(rbac.PermFinancialsManage)
 		g.With(view).Get("/financials/portfolio", h.Portfolio)
+		g.With(view).Get("/financials/clients", h.Clients)
 		g.With(view).Get("/financials/projects/{projectID}", h.Project)
 		g.With(view).Get("/financials/projects/{projectID}/budgets", h.ListBudgets)
 		g.With(manage).Post("/financials/projects/{projectID}/budgets", h.CreateBudget)
@@ -93,6 +94,28 @@ func (h *FinancialsHandler) Portfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusOK, pagination.NewResponse(rows, total, p))
+}
+
+// Clients godoc
+// @Summary Profitability by client
+// @Description Billable projects rolled up by client (CRM contact) and currency: contract value, invoiced, unbilled, labour, cost and margin to date (?status).
+// @Tags financials
+// @Produce json
+// @Param tenantID path string true "Tenant"
+// @Success 200 {object} financials.ClientRollup
+// @Router /api/v1/{tenantID}/financials/clients [get]
+func (h *FinancialsHandler) Clients(w http.ResponseWriter, r *http.Request) {
+	tenantID, ok := parseTenant(w, r)
+	if !ok {
+		return
+	}
+	out, err := h.svc.Clients(r.Context(), tenantID, r.URL.Query().Get("status"), accessOf(r).VisibleTo())
+	if err != nil {
+		h.log.Error("client profitability failed", zap.Error(err))
+		respondError(w, http.StatusInternalServerError, "failed to load client profitability")
+		return
+	}
+	respondJSON(w, http.StatusOK, out)
 }
 
 // treasuryFailed maps a treasury error to a response (treasury's own 4xx body is passed on).

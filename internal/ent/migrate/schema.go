@@ -233,6 +233,7 @@ var (
 		{Name: "target_date", Type: field.TypeTime, Nullable: true},
 		{Name: "status", Type: field.TypeString, Default: "pending"},
 		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "project_id", Type: field.TypeUUID},
@@ -245,7 +246,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "milestones_projects_milestones",
-				Columns:    []*schema.Column{MilestonesColumns[9]},
+				Columns:    []*schema.Column{MilestonesColumns[10]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -254,7 +255,7 @@ var (
 			{
 				Name:    "milestone_tenant_id_project_id_target_date",
 				Unique:  false,
-				Columns: []*schema.Column{MilestonesColumns[1], MilestonesColumns[9], MilestonesColumns[4]},
+				Columns: []*schema.Column{MilestonesColumns[1], MilestonesColumns[10], MilestonesColumns[4]},
 			},
 		},
 	}

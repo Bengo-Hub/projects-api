@@ -42,6 +42,8 @@ type Hours struct {
 	Estimated float64 `json:"estimated"`
 	Logged    float64 `json:"logged"`  // approved timesheet hours
 	Pending   float64 `json:"pending"` // submitted, awaiting approval
+	// UnbilledBillable is approved billable time not yet on an invoice (sprint 15).
+	UnbilledBillable float64 `json:"unbilled_billable"`
 	// UtilisationPct is logged over estimated; nil without estimates.
 	UtilisationPct *float64 `json:"utilisation_pct"`
 }
@@ -66,7 +68,7 @@ func hoursSummary(estimated float64, logged *erp.Hours) *Hours {
 	if logged == nil {
 		return h
 	}
-	h.Logged, h.Pending = logged.ApprovedHours, logged.SubmittedHours
+	h.Logged, h.Pending, h.UnbilledBillable = logged.ApprovedHours, logged.SubmittedHours, logged.UnbilledBillableHours
 	if h.Estimated > 0 {
 		u := math.Round(h.Logged/h.Estimated*1000) / 10
 		h.UtilisationPct = &u
@@ -128,12 +130,16 @@ func (s *Service) build(p *ent.Project, stats taskStats, money *treasury.Project
 	if money != nil {
 		invoiced = float64(money.ActualRevenue)
 	}
-	pf.Commercial = commercialFrom(p.Metadata, invoiced, ac, pf.EVM.EAC)
+	var logged *erp.Hours
+	if h, ok := hours[p.ID]; ok {
+		logged = &h
+	}
+	labour := 0.0
+	if logged != nil {
+		labour = logged.LabourCost
+	}
+	pf.Commercial = commercialFrom(p.Metadata, invoiced, ac, pf.EVM.EAC, labour)
 	if hours != nil {
-		var logged *erp.Hours
-		if h, ok := hours[p.ID]; ok {
-			logged = &h
-		}
 		pf.Hours = hoursSummary(stats.EstSum, logged)
 	}
 	return pf

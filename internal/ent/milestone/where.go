@@ -466,6 +466,16 @@ func CompletedAtNotNil() predicate.Milestone {
 	return predicate.Milestone(sql.FieldNotNull(FieldCompletedAt))
 }
 
+// MetadataIsNil applies the IsNil predicate on the "metadata" field.
+func MetadataIsNil() predicate.Milestone {
+	return predicate.Milestone(sql.FieldIsNull(FieldMetadata))
+}
+
+// MetadataNotNil applies the NotNil predicate on the "metadata" field.
+func MetadataNotNil() predicate.Milestone {
+	return predicate.Milestone(sql.FieldNotNull(FieldMetadata))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Milestone {
 	return predicate.Milestone(sql.FieldEQ(FieldCreatedAt, v))

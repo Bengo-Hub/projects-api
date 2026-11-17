@@ -5215,6 +5215,7 @@ type MilestoneMutation struct {
 	target_date    *time.Time
 	status         *string
 	completed_at   *time.Time
+	metadata       *map[string]interface{}
 	created_at     *time.Time
 	updated_at     *time.Time
 	clearedFields  map[string]struct{}
@@ -5620,6 +5621,55 @@ func (m *MilestoneMutation) ResetCompletedAt() {
 	delete(m.clearedFields, milestone.FieldCompletedAt)
 }
 
+// SetMetadata sets the "metadata" field.
+func (m *MilestoneMutation) SetMetadata(value map[string]interface{}) {
+	m.metadata = &value
+}
+
+// Metadata returns the value of the "metadata" field in the mutation.
+func (m *MilestoneMutation) Metadata() (r map[string]interface{}, exists bool) {
+	v := m.metadata
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadata returns the old "metadata" field's value of the Milestone entity.
+// If the Milestone object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MilestoneMutation) OldMetadata(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadata is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadata requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadata: %w", err)
+	}
+	return oldValue.Metadata, nil
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (m *MilestoneMutation) ClearMetadata() {
+	m.metadata = nil
+	m.clearedFields[milestone.FieldMetadata] = struct{}{}
+}
+
+// MetadataCleared returns if the "metadata" field was cleared in this mutation.
+func (m *MilestoneMutation) MetadataCleared() bool {
+	_, ok := m.clearedFields[milestone.FieldMetadata]
+	return ok
+}
+
+// ResetMetadata resets all changes to the "metadata" field.
+func (m *MilestoneMutation) ResetMetadata() {
+	m.metadata = nil
+	delete(m.clearedFields, milestone.FieldMetadata)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *MilestoneMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -5753,7 +5803,7 @@ func (m *MilestoneMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MilestoneMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.tenant_id != nil {
 		fields = append(fields, milestone.FieldTenantID)
 	}
@@ -5774,6 +5824,9 @@ func (m *MilestoneMutation) Fields() []string {
 	}
 	if m.completed_at != nil {
 		fields = append(fields, milestone.FieldCompletedAt)
+	}
+	if m.metadata != nil {
+		fields = append(fields, milestone.FieldMetadata)
 	}
 	if m.created_at != nil {
 		fields = append(fields, milestone.FieldCreatedAt)
@@ -5803,6 +5856,8 @@ func (m *MilestoneMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case milestone.FieldCompletedAt:
 		return m.CompletedAt()
+	case milestone.FieldMetadata:
+		return m.Metadata()
 	case milestone.FieldCreatedAt:
 		return m.CreatedAt()
 	case milestone.FieldUpdatedAt:
@@ -5830,6 +5885,8 @@ func (m *MilestoneMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldStatus(ctx)
 	case milestone.FieldCompletedAt:
 		return m.OldCompletedAt(ctx)
+	case milestone.FieldMetadata:
+		return m.OldMetadata(ctx)
 	case milestone.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case milestone.FieldUpdatedAt:
@@ -5892,6 +5949,13 @@ func (m *MilestoneMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCompletedAt(v)
 		return nil
+	case milestone.FieldMetadata:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadata(v)
+		return nil
 	case milestone.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -5945,6 +6009,9 @@ func (m *MilestoneMutation) ClearedFields() []string {
 	if m.FieldCleared(milestone.FieldCompletedAt) {
 		fields = append(fields, milestone.FieldCompletedAt)
 	}
+	if m.FieldCleared(milestone.FieldMetadata) {
+		fields = append(fields, milestone.FieldMetadata)
+	}
 	return fields
 }
 
@@ -5967,6 +6034,9 @@ func (m *MilestoneMutation) ClearField(name string) error {
 		return nil
 	case milestone.FieldCompletedAt:
 		m.ClearCompletedAt()
+		return nil
+	case milestone.FieldMetadata:
+		m.ClearMetadata()
 		return nil
 	}
 	return fmt.Errorf("unknown Milestone nullable field %s", name)
@@ -5996,6 +6066,9 @@ func (m *MilestoneMutation) ResetField(name string) error {
 		return nil
 	case milestone.FieldCompletedAt:
 		m.ResetCompletedAt()
+		return nil
+	case milestone.FieldMetadata:
+		m.ResetMetadata()
 		return nil
 	case milestone.FieldCreatedAt:
 		m.ResetCreatedAt()

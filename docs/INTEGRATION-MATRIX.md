@@ -14,7 +14,7 @@ This document provides a comprehensive matrix of all services and platforms that
 |---------|----------|--------|------------------|-----------|---------------|
 | **Auth Service** | `auth-service/` | ✅ Production | REST API + Events | Bi-directional | • JWT validation (JWKS)<br>• User synchronization<br>• Tenant management<br>• SSO authentication |
 | **HRM (ERP)** | `erp/erp-api/` | ✅ Production; timesheets integrated (project hours 2026-09-28, time logging 2026-11-16) | REST API (S2S) | Projects reads project hours; logs, reads and submits the signed-in user's timesheet time | • Utilisation and earned value from timesheet hours<br>• Task timer and week grid on ERP timesheets<br>• Weekly submit (approval in ERP) |
-| **Treasury** | `treasury-api/` | Not integrated yet (verified 2026-09-27); in progress under plan budgets-planning-projects-bi-2026-09-27 | REST API (S2S) | Projects reads budgets and financials from treasury | • Budget approval<br>• Voucher processing<br>• Payment tracking<br>• Expense recording<br>• Cost center allocation |
+| **Treasury** | `treasury-api/` | ✅ Integrated: budgets and financials (2026-09-28), project invoices (sprint 15, 2026-11-17) | REST API (S2S) | Projects reads budgets and financials, and creates project invoices (approved, sent from treasury) | • Budget approval<br>• Voucher processing<br>• Payment tracking<br>• Expense recording<br>• Cost center allocation |
 | **Finance (ERP)** | `erp/erp-api/` | Not applicable: ERP is HR and payroll only, finance lives in treasury-api (verified 2026-09-27) | REST API | Projects → Finance (read) | • Invoice management<br>• Cost center lookup<br>• Financial reporting<br>• Budget integration |
 | **CRM (ERP)** | `erp/erp-api/` | ✅ Production | REST API + Events | Bi-directional | • Client information<br>• Opportunity tracking<br>• Contact management<br>• Client portal<br>• Feedback collection |
 | **Notifications** | `notifications-service/notifications-api/` | ✅ Production | Events (NATS) | Projects → Notifications | • Task assignments<br>• Deadline reminders<br>• Status changes<br>• Comment mentions<br>• Meeting reminders<br>• Budget alerts |
@@ -32,7 +32,10 @@ erp-api's own plan gate, so projects-api checks the user's token first: `time_tr
 
 | Call | Used by | Notes |
 |---|---|---|
-| `GET /api/v1/hrm/attendance/timesheets/project-hours?project_ids=` | financials (EVM, utilisation) | approved and submitted hours per project |
+| `GET /api/v1/hrm/attendance/timesheets/project-hours?project_ids=` | financials (EVM, utilisation, margins), billing overview | approved and submitted hours per project, plus `labour_cost` (approved hours at each person's hourly rate) and `unbilled_billable_hours` (sprint 15) |
+| `POST /api/v1/hrm/attendance/timesheets/billing/reserve` | `POST /projects/{id}/billing/time-invoice` | tags the period's approved, billable, unbilled entries with the invoice reference and returns every entry carrying it |
+| `POST /api/v1/hrm/attendance/timesheets/billing/confirm` | time invoice, after treasury created it | writes the invoice id on the reserved entries (overwrites) |
+| `POST /api/v1/hrm/attendance/timesheets/billing/release` | time invoice, when the period's invoice is void | `include_confirmed` frees a voided invoice's hours for the next reference |
 | `GET /api/v1/hrm/attendance/timesheets/for-user?auth_user_id=&from=&to=` | `GET /time/week` | the user's timesheets and entries for the week |
 | `POST /api/v1/hrm/attendance/timesheets/for-user/entries` | `PUT /time/entries` (mode set), timer stop and timer switch (mode add, one call per local date) | opens the Monday to Sunday timesheet when none covers the date; carries `task_id` and `billable`. POST so the shared client never retries an add |
 | `POST /api/v1/hrm/attendance/timesheets/for-user/submit` | `POST /time/week/submit` | ERP's submit transition; approve and reject stay in erp-ui |
@@ -48,7 +51,21 @@ NetworkPolicy already admits the projects namespace.
 | auth-api | sign-in | OAuth client `projects-portal` (public PKCE, `self_signup_role` client, callbacks `https://projects.codevertexafrica.com/{slug}/portal/auth/callback`). A client signs in to the firm's tenant and gets the global role client (scope projects), which JIT maps to the projects role client (`projects.portal.view` only) |
 | marketflow-api | S2S read | `GET /api/v1/internal/contacts/{id}?tenant_id=` on invite: the contact's name, email and phone go into the invite event only. Projects keeps `crm_contact_id` plus a name snapshot and a masked email hint on the client row. `crm.contact.deleted` and erasures follow the client rows too (`services/crmsync/clients.go`), and the crm-links check counts them |
 | notifications-api | events | `project.client.invited` (to the contact's email and phone), `project.milestone.ready_for_review` (to each signed-in client), `project.milestone.approved` and `project.milestone.changes_requested` (to the owner and owner or manager members) |
-| treasury-api | none yet | Gap: no S2S route lists a project's invoices with client-safe fields (invoices carry `project_id` in metadata only). `GET /portal/projects/{id}/invoices` answers `[]` with `available: false` until treasury adds `GET /api/v1/s2s/{tenant}/invoices?project_id=` |
+| treasury-api | S2S read | `GET /api/v1/s2s/{tenant}/invoices/by-project?project_id=&include_drafts=false` (sprint 15) for `GET /portal/projects/{id}/invoices`: sent and paid invoices only |
+
+### Billing (sprint 15, 2026-11-17)
+
+Client: `internal/platform/treasury` (shared-service-client, `X-API-Key: INTERNAL_SERVICE_KEY`,
+`X-User-ID` on creates). Treasury owns invoices, payments and eTIMS; projects-api keeps only a
+milestone's invoice id, number and reference.
+
+| Call | Used by | Notes |
+|---|---|---|
+| `POST /api/v1/s2s/{tenant}/invoices` | milestone, time and retainer invoices | for `crm_customer_id` plus `customer_name` (the project's CRM contact), `metadata.project_id` (puts the revenue on the project when sent) and `cost_center_id`, with `reference_type` `project_milestone`, `project_time` or `project_retainer`, no `invoice_type` (treasury's default, standard) and the project's `tax_code` on each line. Comes back `approved` (system origin), not sent. Treasury does not dedupe on the reference: projects-api reads by reference first under a Redis lock |
+| `GET /api/v1/s2s/{tenant}/invoices/by-reference` | every create, first | the live invoice for a reference; a void or cancelled one moves the item to the next reference in its chain |
+| `GET /api/v1/s2s/{tenant}/invoices/by-references` | billing overview | payment state of every invoiced milestone of a project in one call (up to 200) |
+| `GET /api/v1/s2s/{tenant}/invoices/by-project` | billing overview (drafts included), portal (sent and paid only) | through the invoice metadata GIN index |
+| `GET /api/v1/s2s/{tenant}/budgets/projects/financials` | financials, client rollup | unchanged; revenue includes these invoices because their metadata carries `project_id` |
 
 ---
 

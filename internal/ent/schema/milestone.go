@@ -33,6 +33,11 @@ func (Milestone) Fields() []ent.Field {
 			Default("pending"),
 		field.Time("completed_at").
 			Optional(),
+		// Billing (sprint 15), read and never filtered: amount (decimal string) or amount_pct (share
+		// of the project's contract value), and the treasury invoice once one is created
+		// (invoice_id, invoice_number). Treasury owns the invoice itself.
+		field.JSON("metadata", map[string]any{}).
+			Optional(),
 		field.Time("created_at").
 			Default(time.Now).
 			Immutable(),

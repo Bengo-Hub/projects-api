@@ -40,6 +40,7 @@ import (
 	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/crmsync"
 	"github.com/bengobox/projects-service/internal/services/fieldkeys"
+	"github.com/bengobox/projects-service/internal/services/billing"
 	"github.com/bengobox/projects-service/internal/services/financials"
 	"github.com/bengobox/projects-service/internal/services/members"
 	"github.com/bengobox/projects-service/internal/services/membership"
@@ -213,6 +214,9 @@ func New(ctx context.Context) (*App, error) {
 	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey)
 	erpClient := erp.NewClient(cfg.Services.ERPURL, cfg.Auth.APIKey)
 	financialsHandler := handlers.NewFinancialsHandler(log, financials.NewService(entClient, treasuryClient, log).WithERP(erpClient))
+	// Billing creates draft invoices in treasury from milestones, ERP hours and retainers.
+	billingService := billing.NewService(entClient, treasuryClient, erpClient, redisClient, log)
+	billingHandler := handlers.NewBillingHandler(log, billingService)
 	// Time tracking logs the signed-in user's hours on their ERP timesheet (ERP owns them).
 	timeHandler := handlers.NewTimeHandler(log, timetracking.NewService(entClient, erpClient, log).WithStopGuard(redisClient))
 	// Project form pickers: the client from the CRM (marketflow), the cost centre from treasury.
@@ -269,7 +273,8 @@ func New(ctx context.Context) (*App, error) {
 	if attachmentStore != nil {
 		portalFiles = attachmentService
 	}
-	portalHandler := handlers.NewPortalHandler(log, portalService, milestoneService, taskService, commentService, portalFiles)
+	portalHandler := handlers.NewPortalHandler(log, portalService, milestoneService, taskService, commentService, portalFiles).
+		WithInvoices(billingService)
 	qaRoutes := router.QARoutes{
 		Tenant:  handlers.NewQAHandler(log, qaService),
 		Invitee: handlers.NewQAInviteeHandler(log, qaService, cfg.QA.CookieSecure),
@@ -327,8 +332,9 @@ func New(ctx context.Context) (*App, error) {
 			Attachments: handlers.NewAttachmentHandler(log, attachmentService),
 			Stream:      handlers.NewStreamHandler(log, liveHub),
 			Activity:    activityHandler, Tenders: tenderHandler, Financials: financialsHandler,
-			Time:   timeHandler,
-			Portal: portalHandler,
+			Time:    timeHandler,
+			Portal:  portalHandler,
+			Billing: billingHandler,
 		},
 		Authenticate:   authMiddleware.RequireAuth,
 		AllowedOrigins: cfg.HTTP.AllowedOrigins,

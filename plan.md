@@ -854,10 +854,10 @@ See `docs/sprints/` for detailed sprint planning.
 | 10 AI | Planned | Prepaid AI credits only |
 | 11 Polish | Partial | 23 test files exist. Open: coverage on new code, file splits, security review |
 | QA and acceptance (built outside the old plan) | Done | Templates, criteria, sessions, invites, results, defects to ticketing, PDF report. See `docs/api.md` |
-| 12 Work management core (new) | Planned | Task drawer, mentions, attachments, multiple assignees, drag and drop board, calendar, Gantt chart, My Work, live updates |
-| 13 Time tracking (new) | Planned | Timer and timesheets posted to ERP |
-| 14 Client portal (new) | Planned | Clients sign in through auth-api, see progress, approve milestones |
-| 15 Billing and profitability (new) | Planned | Milestones and billable hours to treasury draft invoices, margin by client |
+| 12 Work management core (new) | Done 2026-11-16 | Task drawer, mentions, attachments, multiple assignees, drag and drop board, calendar, Gantt chart, My Work, live updates |
+| 13 Time tracking (new) | Done 2026-11-17 | Timer and timesheets posted to ERP, tenant people search, idempotent timer stop |
+| 14 Client portal (new) | Done 2026-11-17 | Clients sign in through auth-api (verified email only), see progress, approve milestones, shared tasks and files, client thread |
+| 15 Billing and profitability (new) | Built 2026-11-17 | Milestone, time and retainer draft invoices in treasury (idempotent, void safe), labour cost in margins, margin by client, portal invoices. Open: retainer overage and monthly usage |
 | 16 Planning depth (new) | Planned | Workload, baselines, risks, change requests, templates, recurring tasks, status rules, automations |
 
 **Priority order I am building in:** 0b, 12, 13, 14, 15, 16, then the open parts of 1 and 2, then 7 reports, 11, 10 and 9. Sprint 8 stays deferred.

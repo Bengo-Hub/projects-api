@@ -44,6 +44,10 @@ type Hours struct {
 	ProjectID      uuid.UUID `json:"project_id"`
 	ApprovedHours  float64   `json:"approved_hours,string"`
 	SubmittedHours float64   `json:"submitted_hours,string"`
+	// LabourCost is the approved hours priced at each employee's ERP hourly rate (sprint 15).
+	LabourCost float64 `json:"labour_cost,string"`
+	// UnbilledBillableHours is approved billable time not yet put on an invoice.
+	UnbilledBillableHours float64 `json:"unbilled_billable_hours,string"`
 }
 
 // ProjectHours returns approved and submitted timesheet hours per project (at most 100 ids).

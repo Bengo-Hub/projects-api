@@ -31,14 +31,20 @@ var Roles = []RoleDef{
 		PermTendersView, PermTendersAdd, PermTendersChange, PermFinancialsView,
 		PermTimeView, PermTimeAdd, PermTimeManage, PermPortalManage, PermQAManage,
 		PermBillingManage,
+		PermWorkloadView, PermBaselinesView, PermBaselinesAdd, PermBaselinesDelete,
+		PermRisksView, PermRisksAdd, PermRisksChange, PermRisksDelete,
+		PermChangeRequestsManage, PermChangeApprovals, PermTemplatesView, PermTemplatesAdd, PermAutomationManage,
 	}},
 	{RoleMember, "Member", "Works on the projects they belong to: sees every task, edits their own", []string{
 		PermProjectsView, PermTasksView, PermTasksAdd, PermTasksChangeOwn,
 		PermMilestonesView, PermMembersView, PermCommentsView, PermCommentsAdd, PermCommentsChangeOwn, PermCommentsDeleteOwn,
 		PermTendersView, PermTimeViewOwn, PermTimeAdd, PermQARun,
+		PermBaselinesView, PermRisksView, PermRisksAdd, PermChangeRequestsView, PermChangeRequestsAdd,
+		PermTemplatesView, PermAutomationView,
 	}},
 	{RoleViewer, "Viewer", "Read-only access to the projects they belong to", []string{
 		PermProjectsView, PermTasksView, PermMilestonesView, PermMembersView, PermCommentsView, PermTendersView, PermQAView,
+		PermBaselinesView, PermRisksView, PermChangeRequestsView,
 	}},
 	{RoleClient, "Client", "Client portal only", []string{PermPortalView}},
 }

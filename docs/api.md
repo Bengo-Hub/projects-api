@@ -519,6 +519,234 @@ completion subtracts labour to date from the contract value on top of EAC; time 
 retainer margins are to date. Payroll is not booked against projects in treasury, so labour is never
 counted twice. `hours` gains `unbilled_billable`.
 
+## Planning depth (sprint 16, 2026-11-17)
+
+Workload, baselines and slips, a risk register, change requests, project templates, recurring
+tasks, status rules and automations. Code: `internal/services/planning` (workload, baselines,
+risks, change requests, templates), `internal/services/tasks` (`rules.go`, `automations.go`,
+`recurrence.go`, `planning.go`), `internal/http/handlers/planning.go`. Every route under
+`/projects/{id}` goes through membership scoping (404 outside it). Every write records an activity
+entry and an outbox event (`project.>` stream) in its own transaction.
+
+### Gating and permissions
+
+| Area | Plan feature | Permissions |
+|---|---|---|
+| Workload | `workload_planning` | `workload.view`, `workload.manage` (capacity settings) |
+| Baselines, slips, Gantt baseline | `task_tracking` + `gantt_chart` | `baselines.view`, `baselines.add`, `baselines.delete` |
+| Status rules, task moves, automations | `task_tracking` + `project_automation` | read rules and moves: `tasks.view` or `tasks.view_own`; `automation.view`; `automation.manage` (rules and automations) |
+| Risks | module only | `risks.view`, `risks.add`, `risks.change`, `risks.delete` |
+| Change requests | module only | `change_requests.view`, `change_requests.add`, `change_requests.manage`; deciding: `change_approvals.manage` |
+| Templates | module only | `templates.view`, `templates.add`, `templates.delete`; starting a project also needs `projects.add` |
+
+All codes are `projects.{module}.{action}`; a module's `manage` implies its other actions. The fleet
+action vocabulary has no `approve`, so approving is its own module, `projects.change_approvals.manage`,
+which can be granted without the right to edit other people's requests.
+
+Roles: projects_admin holds everything. project_manager: `workload.view`, `baselines.*`, `risks.*`,
+`change_requests.manage`, `change_approvals.manage`, `templates.view`, `templates.add`,
+`automation.manage`. member: `baselines.view`, `risks.view`, `risks.add`, `change_requests.view`,
+`change_requests.add`, `templates.view`, `automation.view`. viewer: `baselines.view`, `risks.view`,
+`change_requests.view`. Only projects_admin holds `workload.manage` and `templates.delete`.
+
+Errors carry a `code`: `validation_error` (422), `not_found` (404), `status_rule_blocked` (422),
+`schedule_conflict` (409, `blocking_task_ids`), `change_request_not_pending`, `budget_push_in_progress`,
+`budget_push_done`, `budget_push_not_needed` (409), `own_change_request`, `not_requester`,
+`system_template` (403), plus the usual `permission_denied` and `feature_not_available`.
+
+### Workload (`/workload`)
+
+Demand is each open task's estimate spread evenly over its working days (Monday to Friday) from its
+start date to its due date, split equally between its assignees, summed per person and ISO week in
+one SQL statement. A task with only a due date is a one-day task; a task that spans only a weekend
+spreads over those days; tasks without an estimate or a due date add nothing; done tasks count only
+with `include_done=true`. Capacity: ERP has no per-employee working hours read (its shifts carry
+`total_hours_per_week` but are not assigned to employees), so capacity comes from the tenant's
+projects settings: `weekly_hours` (40 when unset) and per person overrides. A week over 100 percent
+is `overloaded`; zero capacity with any demand is overloaded too. A caller without
+`projects.manage` sees demand from the projects they belong to only. Reassigning from the view is the
+existing task update (`PUT /projects/{id}/tasks/{taskId}` with `assignee_ids`).
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/workload` | `workload.view` | `?from=YYYY-MM-DD` (default this week; moved to its Monday), `?weeks=1..26` (default 8), `?project_id` (people limited to that project's owner and staff, demand still across every visible project), `?include_done=true`. `{from, to, weeks: ["YYYY-MM-DD"...], default_weekly_hours, capacity_source: "settings", people: [{user_id, name, email, weekly_capacity, total_demand, overloaded_weeks, weeks: [{week_start, demand_hours, capacity_hours, load_pct, overloaded, task_count}]}], unassigned: [{week_start, demand_hours, task_count}], truncated}` (at most 500 people) |
+| GET | `/workload/tasks` | `workload.view` | `?user_id=` a user id or `unassigned`, `&week=YYYY-MM-DD`, optional `&include_done=true`: the tasks behind one cell, largest share first, at most 100. `{data: [{task_id, title, project_id, project_name, status, due_date, hours}]}` |
+| GET | `/workload/settings` | `workload.view` | `{weekly_hours, person_hours: {user_id: hours}, capacity_source}` |
+| PUT | `/workload/settings` | `workload.manage` | Same body; hours 0 to 168, at most 2000 overrides. Event `project.workload.settings_updated` |
+
+### Baselines and slips
+
+A baseline is a snapshot (one JSON document in `project_baselines`) of the project's dates, every task
+(at most 2000, oldest first, `truncated` beyond) with title, status, start, due, estimate and parent,
+and every milestone's target date. At most 50 per project.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{id}/baselines` | `baselines.view` | `{data: [{id, project_id, name, note, task_count, created_by, created_by_name, created_at}]}` newest first |
+| POST | `/projects/{id}/baselines` | `baselines.add` | `{name?, note?}` (name defaults to "Baseline {date time}"). 201 with the summary. Event `project.baseline.saved` |
+| GET | `/projects/{id}/baselines/{baselineId}` | `baselines.view` | The row with `snapshot: {project_start, project_end, tasks: [{id, title, status, start_date, due_date, estimated_hours, parent_id}], milestones: [{id, name, target_date}], truncated}` |
+| DELETE | `/projects/{id}/baselines/{baselineId}` | `baselines.delete` | 204. Event `project.baseline.deleted` |
+| GET | `/projects/{id}/slips` | `baselines.view` | `?baseline_id` (default the latest; 404 when there is none). `{baseline, slips: [{kind (task or milestone), id, title, status, baseline_start, current_start, baseline_finish, current_finish, start_slip_days, finish_slip_days, estimate_change_hours}], tasks_compared, slipped, pulled_in, max_slip_days, removed_since, added_since, milestones_slipped}`. Only items whose finish moved (or gained or lost a due date), latest slip first |
+| GET | `/projects/{id}/gantt` | unchanged | Gains `baseline` (`?baseline_id`, default the latest): `{id, name, created_at, tasks: {task_id: {id, title, status, start_date, due_date, estimated_hours, parent_id}}, milestones, truncated}`; `null` when there is none or the caller lacks `baselines.view`; 404 for an unknown `baseline_id` |
+
+### Risk register
+
+Likelihood and impact 1 to 5, `score` = likelihood x impact (stored). Status `open`, `monitoring`,
+`mitigated`, `occurred`, `closed`. The owner must be on the project's staff team. At most 1000 per
+project.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{id}/risks` | `risks.view` | Paged (`?page`, `?limit`), `?status`, `?min_score`, `?owner_id`; highest score first, then soonest due. Rows: `{id, project_id, title, description, category, likelihood, impact, score, owner_id, owner_name, mitigation, status, due_date, created_by, metadata, created_at, updated_at}` |
+| POST | `/projects/{id}/risks` | `risks.add` | `{title, likelihood, impact, description?, category?, owner_id?, mitigation?, status?, due_date? (YYYY-MM-DD)}`. 201. Event `project.risk.created` |
+| GET | `/projects/{id}/risks/heatmap` | `risks.view` | One grouped query. `{grid: [[n x5] x5] indexed [likelihood-1][impact-1], cells: [{likelihood, impact, count}], total}`; closed and occurred risks are left out unless `?status=all` |
+| GET | `/projects/{id}/risks/{riskId}` | `risks.view` | One risk |
+| PUT | `/projects/{id}/risks/{riskId}` | `risks.change` | Patch, any field of the create; `owner_id: ""` or `due_date: ""` clears. Rescored on change. Event `project.risk.updated` (with `changes`) |
+| DELETE | `/projects/{id}/risks/{riskId}` | `risks.delete` | 204. Event `project.risk.deleted` |
+
+### Change requests
+
+A scope, cost or schedule change raised by a requester and approved or rejected with a comment by
+someone holding `change_approvals.manage`, never the requester (403 `own_change_request`). This
+sign-off is local to projects; it is not a money decision. Status `pending`, then `approved`,
+`rejected` or `withdrawn`.
+
+On approval, in one transaction: the request's `date_shifts` move the listed tasks (each task
+locked, activity recorded with `change_request_id`), then every moved task's finish-to-start links
+are checked against the new plan as a whole, so moving a chain together is fine and a broken link
+refuses the approval with 409 `schedule_conflict` and changes nothing. After commit, a budget change
+goes to treasury acting as the approver: with `budget_id` the draft is checked to belong to the
+project and updated with `budget` when given; otherwise a project budget is created from `budget`;
+then it is submitted, which starts treasury's own budget approval. The budget id is saved before the
+submit, so a retry never creates a second budget. Projects never stores a money total of record; the
+proposed budget body waits on the request until treasury takes it.
+
+`metadata`: `date_shifts` (`[{task_id, shift_days}]` or `[{task_id, start_date?, due_date?}]`, at
+most 200, all in the project), `budget` (a treasury BudgetInput body: `name`, `fiscal_year`,
+`period_type`, `start_date`, `end_date`, `currency`, `lines: [{category, name, planned_amount, ...}]`;
+`budget_type` and `project_id` are always forced to this project), `budget_id` (an existing treasury
+draft), `applied_task_ids` (after approval), `treasury: {status: not_needed|pending|pushing|submitted|failed, budget_id, error, attempts, attempted_at}`.
+A `cost` change needs `budget` or `budget_id`; a `schedule` change needs `date_shifts`.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/change-requests` | `change_requests.view` or `change_approvals.manage` | The tenant's requests across the projects the caller may see (`?status=pending` is the approvals queue), paged, newest first |
+| GET | `/projects/{id}/change-requests` | same | Paged, `?status` |
+| POST | `/projects/{id}/change-requests` | `change_requests.add` | `{title, description?, kind (scope, cost or schedule; default scope), date_shifts?, budget?, budget_id?}`. 201, status pending. Event `project.change_request.submitted` |
+| GET | `/projects/{id}/change-requests/{crId}` | view | One request. Rows: `{id, project_id, title, description, kind, status, requested_by, requested_by_name, decided_by, decided_by_name, decided_at, decision_comment, metadata, created_at, updated_at}` |
+| PUT | `/projects/{id}/change-requests/{crId}` | `change_requests.add` (own) or `.manage` | Pending only (409 `change_request_not_pending`). Absent fields stay; `budget: null` removes it, `budget_id: ""` unlinks. 403 `not_requester` for someone else's without manage. Event `project.change_request.updated` |
+| POST | `/projects/{id}/change-requests/{crId}/withdraw` | same | Pending only. Event `project.change_request.withdrawn` |
+| POST | `/projects/{id}/change-requests/{crId}/approve` | `change_approvals.manage` | `{comment?}`. Applies the shifts, then pushes the budget; the answer carries `metadata.treasury`. Event `project.change_request.approved` |
+| POST | `/projects/{id}/change-requests/{crId}/reject` | `change_approvals.manage` | `{comment}` required. Event `project.change_request.rejected` |
+| POST | `/projects/{id}/change-requests/{crId}/push-budget` | `change_approvals.manage` | Retries a `failed` (or stuck `pushing` for two minutes) push. 409 `budget_push_done`, `budget_push_in_progress` or `budget_push_not_needed` otherwise. Event `project.change_request.budget_pushed` on every finished attempt |
+
+### Project templates
+
+A template is a plan without dates: phases (become milestones at `offset_days` from the start),
+tasks (`ref`, `title`, `offset_days`, `duration_days` at least 1, `estimated_hours`, `phase_ref`,
+`parent_ref`, `depends_on` refs as finish-to-start links, `role`, `wbs_code`, `priority`), roles
+(`{code, label, count}`) and the board statuses and status rules. At most 500 tasks, 50 phases, 30
+roles, 200 templates per tenant. Three system templates (tenant_id NULL, read-only, seeded and
+updated on every start and by projects-migrate): IT rollout, Website build, Consulting engagement.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/project-templates` | `templates.view` | Paged, `?q` on the name; system first, then by name. `{data: [{id, name, description, category, system, task_count, phase_count, duration_days, created_at}]...}` |
+| GET | `/project-templates/{templateId}` | `templates.view` | The summary plus `definition: {duration_days, phases, tasks, roles, statuses, status_rules}` |
+| DELETE | `/project-templates/{templateId}` | `templates.delete` | 204; 403 `system_template` for a system one. Event `project.template.deleted` |
+| POST | `/project-templates/{templateId}/projects` | `projects.add` and `templates.view` | `{start_date (required), name? (defaults to the template's), description?, currency?, metadata?}`. Creates the project owned by the caller (end date = start + duration), milestones, tasks (start + offset, due = start + offset + duration - 1, first board status, `metadata.template_role`), dependencies, statuses and status rules in one transaction. 201 `{project, task_count, milestone_count, roles}`. Events `project.created` and `project.template.applied` |
+| POST | `/projects/{id}/save-as-template` | `templates.add` | `{name, description?, category?}`. Offsets from the project start (else its earliest task date); a task's role is its primary assignee's project role; roles count the staff team (owner as project_manager). 201 with the template. Event `project.template.saved` |
+
+### Recurring tasks
+
+A task repeats when its metadata holds `repeat: {freq: daily|weekly|monthly, interval: 1..365,
+until?: YYYY-MM-DD}`, set on the normal task create and update (validated, 422 otherwise; `null`
+removes it). `recurrence` is server-owned (a client value is dropped): `{series_id, occurrence, key,
+previous_task_id, anchor_day, spawned, next_task_id, ended}`.
+
+One job runs every 10 minutes, claimed per period fleet-wide through the shared run-once helper
+(`sharedcache.ClaimPeriod`), started from app.Run and stopped with it. It creates the next copy once
+the current task is done or its due date has passed, whichever comes first: next due = the next
+occurrence after the current due date (or after the completion day when there is none), skipping
+rounds already missed so a long-overdue task makes one copy due today or later; the start keeps its
+distance from the due date; monthly keeps the series' day of the month (31st becomes 28th or 29th
+February, then 31st again). Past `until`, the series ends. The copy takes the title, description,
+priority, estimate, parent, WBS code, client metadata, the assignees still on the team (no assigned
+notice each round), and the project's first status. The source row is locked and marked spawned in
+the same transaction and the occurrence key is checked first, so a retry or a second pod never makes
+two. A partial index (`task_recurring_pending`) keeps the scan small. Event `project.task.recurred`.
+
+### Status rules
+
+Stored in project metadata (`status_rules`, written only by its route; a project update drops the
+key): `{transitions: [{from, to: [keys]}], requirements: [{to, from?, fields: [...]}]}`. A status
+with a transition entry may only move to the listed statuses; a status without one moves anywhere.
+Required field codes: `assignee`, `estimated_hours`, `actual_hours` (task `metadata.actual_hours` above
+zero), `start_date`, `due_date`, `description`, `comment` (the task has a comment), and
+`metadata.<key>` (non-empty). They are checked against the task as it will be after the change, so one
+update that fills a field and moves the task passes. Every status change goes through the same
+check: the board drag (`PATCH .../status`, idempotent), the drawer (`PUT .../tasks/{taskId}`).
+A refused move answers 422 `{error: "Before moving to Done, this task needs actual hours, a comment.",
+code: "status_rule_blocked", from, to, reason: transition_not_allowed|missing_fields, missing_fields: [codes]}`.
+A task's initial status on create is not a move. Without `project_automation` on the plan the stored
+rules and automations stay dormant (kept, not enforced).
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{id}/status-rules` | `tasks.view` or `tasks.view_own` | `{transitions, requirements}` |
+| PUT | `/projects/{id}/status-rules` | `automation.manage` | Same body; keys must be the project's statuses, at most 100 of each. Event `project.status_rules.updated` |
+| GET | `/projects/{id}/task-moves/{taskId}` | `tasks.view` or `tasks.view_own` (own tasks only) | Why a column is blocked before the drop: `{data: [{status, allowed, reason, missing_fields, message}]}` for every other status |
+
+### Automations
+
+Stored in project metadata (`automations`, written only by its route), at most 25 per project and 5
+actions each: `{id, name, enabled, trigger: {to, from?}, actions: [...]}`. Actions: `assign`
+(`user_ids`, `mode: add|replace`, default add), `notify` (`user_ids` and/or `recipients: ["assignees"]`,
+`message?`, at most 20 people), `set_field` (`field: priority` with low, medium, high or urgent, or
+`metadata.<key>` for any key that is not server-owned and not `repeat`; `value`). People named must be
+on the project's staff team when the rules are saved; anyone who has left by the time a rule runs is
+skipped. When a status change matches a rule, its actions run in the same transaction as the change
+(after the change itself, so an automation wins over a field set in the same request). Actions never
+change the status and write the task directly, so an automation's own change never fires rules again.
+Newly assigned people get `project.task.assigned`; the task's activity entry lists the rules that ran
+under `changes.automations`.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{id}/automations` | `automation.view` | `{data: [...], limit: 25}` |
+| PUT | `/projects/{id}/automations` | `automation.manage` | `{automations: [...]}` replaces the list; new rules get an id. Event `project.automations.updated` |
+
+### Events (outbox, `project.>`)
+
+Every payload carries the ids named; `actor_id` is the signed-in user ("" for the job).
+
+| Subject | Payload |
+|---|---|
+| `project.workload.settings_updated` | `{weekly_hours, person_overrides, actor_id}` (aggregate: the tenant) |
+| `project.baseline.saved` | `{project_id, baseline_id, name, task_count, milestone_count, truncated, actor_id}` |
+| `project.baseline.deleted` | `{project_id, baseline_id, actor_id}` |
+| `project.risk.created`, `.updated`, `.deleted` | `{project_id, risk_id, title, likelihood, impact, score, status, owner_id, due_date?}`; updated adds `changes` |
+| `project.change_request.submitted`, `.updated`, `.withdrawn`, `.approved`, `.rejected` | `{project_id, change_request_id, title, kind, status, requested_by, date_shift_count, has_budget_change, decided_by?, decision_comment?}`; approved adds `shifted_task_ids` |
+| `project.change_request.budget_pushed` | the above plus `{treasury_status (submitted or failed), budget_id, error}` |
+| `project.template.saved` | `{template_id, name, source_project_id, task_count, phase_count, actor_id}` |
+| `project.template.deleted` | `{template_id, name, actor_id}` |
+| `project.template.applied` | `{project_id, template_id, template_name, task_count, milestone_count, start_date, actor_id}` |
+| `project.task.recurred` | `{project_id, task_id, task_title, previous_task_id, series_id, occurrence, due_date, assignee_ids}` |
+| `project.status_rules.updated` | `{project_id, rules, actor_id}` |
+| `project.automations.updated` | `{project_id, count, actor_id}` |
+| `project.task.automation_notice` | `{project_id, project_name, task_id, task_title, rule_id, rule_name, from_status, to_status, to_status_label, message, recipient_ids: [...], action_path}`. One event per rule run with every recipient id. notifications-api has no consumer for it yet |
+
+### Tables
+
+`project_baselines`, `project_risks`, `project_change_requests`, `project_templates` and
+`tenant_settings` (migration `20261117065829_sprint_16_planning_depth.sql`), each indexed on its
+tenant (and project) columns. Change requests are a table rather than project metadata because they
+are listed by status per project and across the tenant (the approvals queue). Templates are a table
+because they belong to the tenant, not to a project, and system rows have no tenant. Status rules and
+automations live in project metadata: they are read only with their project and never queried across
+projects. Workload capacity lives in `tenant_settings` because projects had no tenant level row.
+Deleting a project deletes its baselines, risks and change requests.
+
 ## Platform: field keys
 
 These routes back the Security keys page in projects-ui. They sit under `/api/v1/platform`, outside

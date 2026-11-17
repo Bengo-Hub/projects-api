@@ -22,8 +22,12 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
 	"github.com/bengobox/projects-service/internal/ent/project"
+	"github.com/bengobox/projects-service/internal/ent/projectbaseline"
+	"github.com/bengobox/projects-service/internal/ent/projectchangerequest"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/ent/projectrisk"
 	"github.com/bengobox/projects-service/internal/ent/projectsuser"
+	"github.com/bengobox/projects-service/internal/ent/projecttemplate"
 	"github.com/bengobox/projects-service/internal/ent/qacriterion"
 	"github.com/bengobox/projects-service/internal/ent/qadefect"
 	"github.com/bengobox/projects-service/internal/ent/qainvite"
@@ -35,6 +39,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/ent/taskassignee"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
+	"github.com/bengobox/projects-service/internal/ent/tenantsetting"
 	"github.com/bengobox/projects-service/internal/ent/tender"
 	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
 	"github.com/bengobox/projects-service/internal/ent/tendercommitteemember"
@@ -112,7 +117,11 @@ func checkColumn(table, column string) error {
 			outboxevent.Table:           outboxevent.ValidColumn,
 			permission.Table:            permission.ValidColumn,
 			project.Table:               project.ValidColumn,
+			projectbaseline.Table:       projectbaseline.ValidColumn,
+			projectchangerequest.Table:  projectchangerequest.ValidColumn,
 			projectmember.Table:         projectmember.ValidColumn,
+			projectrisk.Table:           projectrisk.ValidColumn,
+			projecttemplate.Table:       projecttemplate.ValidColumn,
 			projectsuser.Table:          projectsuser.ValidColumn,
 			qacriterion.Table:           qacriterion.ValidColumn,
 			qadefect.Table:              qadefect.ValidColumn,
@@ -125,6 +134,7 @@ func checkColumn(table, column string) error {
 			task.Table:                  task.ValidColumn,
 			taskassignee.Table:          taskassignee.ValidColumn,
 			taskdependency.Table:        taskdependency.ValidColumn,
+			tenantsetting.Table:         tenantsetting.ValidColumn,
 			tender.Table:                tender.ValidColumn,
 			tendercommittee.Table:       tendercommittee.ValidColumn,
 			tendercommitteemember.Table: tendercommitteemember.ValidColumn,

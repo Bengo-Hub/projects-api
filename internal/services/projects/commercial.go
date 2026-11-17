@@ -42,6 +42,11 @@ const (
 // which validates them, writes it, so a project create or update drops it from its metadata.
 const metaStatuses = "statuses"
 
+// serverOwnedProjectMeta are the project metadata keys only their own routes write (sprint 16):
+// the status rules and the automations (tasks.MetaStatusRules, tasks.MetaAutomations), validated
+// there. A project create or update drops them.
+var serverOwnedProjectMeta = []string{"status_rules", "automations"}
+
 var billingTypes = map[string]bool{"fixed": true, "time_and_materials": true, "retainer": true, "non_billable": true}
 
 // Billing types that the billing service acts on.
@@ -151,6 +156,9 @@ func normalizeCommercial(meta map[string]any) error {
 		return nil
 	}
 	delete(meta, metaStatuses)
+	for _, k := range serverOwnedProjectMeta {
+		delete(meta, k)
+	}
 	if v, ok := meta[MetaBillingType]; ok && v != nil {
 		s, _ := v.(string)
 		if s == "" {

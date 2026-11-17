@@ -11,7 +11,10 @@ import (
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
+	entbaseline "github.com/bengobox/projects-service/internal/ent/projectbaseline"
+	entchange "github.com/bengobox/projects-service/internal/ent/projectchangerequest"
 	entmember "github.com/bengobox/projects-service/internal/ent/projectmember"
+	entrisk "github.com/bengobox/projects-service/internal/ent/projectrisk"
 	enttask "github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/services/activity"
@@ -112,6 +115,22 @@ func (s *Service) GetProject(ctx context.Context, tenantID, id uuid.UUID) (*ent.
 
 // CreateProject creates a new project for the tenant.
 func (s *Service) CreateProject(ctx context.Context, tenantID uuid.UUID, input CreateProjectInput) (*ent.Project, error) {
+	var p *ent.Project
+	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+		var err error
+		p, err = CreateProjectTx(ctx, tx, tenantID, input)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.log.Info("project created", zap.String("id", p.ID.String()), zap.String("tenant", tenantID.String()))
+	return p, nil
+}
+
+// CreateProjectTx creates a project with its activity entry and project.created event inside the
+// caller's transaction (a project started from a template adds its plan in the same one).
+func CreateProjectTx(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, input CreateProjectInput) (*ent.Project, error) {
 	if input.Name == "" {
 		return nil, ErrValidation("name is required")
 	}
@@ -129,7 +148,7 @@ func (s *Service) CreateProject(ctx context.Context, tenantID uuid.UUID, input C
 		}
 	}
 	var p *ent.Project
-	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+	err := func() error {
 		c := tx.Project.Create().
 			SetTenantID(tenantID).
 			SetName(input.Name).
@@ -160,11 +179,10 @@ func (s *Service) CreateProject(ctx context.Context, tenantID uuid.UUID, input C
 			return err
 		}
 		return emit(ctx, tx, tenantID, p.ID, EventCreated, projectPayload(p))
-	})
+	}()
 	if err != nil {
 		return nil, err
 	}
-	s.log.Info("project created", zap.String("id", p.ID.String()), zap.String("tenant", tenantID.String()))
 	return p, nil
 }
 
@@ -255,6 +273,16 @@ func (s *Service) DeleteProject(ctx context.Context, tenantID, id uuid.UUID) err
 		}
 		if err != nil {
 			return fmt.Errorf("fetch project: %w", err)
+		}
+		// The planning rows (sprint 16) carry no foreign key; they go with the project.
+		if _, err := tx.ProjectBaseline.Delete().Where(entbaseline.TenantID(tenantID), entbaseline.ProjectID(id)).Exec(ctx); err != nil {
+			return fmt.Errorf("delete baselines: %w", err)
+		}
+		if _, err := tx.ProjectRisk.Delete().Where(entrisk.TenantID(tenantID), entrisk.ProjectID(id)).Exec(ctx); err != nil {
+			return fmt.Errorf("delete risks: %w", err)
+		}
+		if _, err := tx.ProjectChangeRequest.Delete().Where(entchange.TenantID(tenantID), entchange.ProjectID(id)).Exec(ctx); err != nil {
+			return fmt.Errorf("delete change requests: %w", err)
 		}
 		if err := tx.Project.DeleteOne(p).Exec(ctx); err != nil {
 			return fmt.Errorf("delete project: %w", err)

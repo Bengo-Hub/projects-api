@@ -34,8 +34,16 @@ type Tx struct {
 	Permission *PermissionClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
+	// ProjectBaseline is the client for interacting with the ProjectBaseline builders.
+	ProjectBaseline *ProjectBaselineClient
+	// ProjectChangeRequest is the client for interacting with the ProjectChangeRequest builders.
+	ProjectChangeRequest *ProjectChangeRequestClient
 	// ProjectMember is the client for interacting with the ProjectMember builders.
 	ProjectMember *ProjectMemberClient
+	// ProjectRisk is the client for interacting with the ProjectRisk builders.
+	ProjectRisk *ProjectRiskClient
+	// ProjectTemplate is the client for interacting with the ProjectTemplate builders.
+	ProjectTemplate *ProjectTemplateClient
 	// ProjectsUser is the client for interacting with the ProjectsUser builders.
 	ProjectsUser *ProjectsUserClient
 	// QACriterion is the client for interacting with the QACriterion builders.
@@ -60,6 +68,8 @@ type Tx struct {
 	TaskAssignee *TaskAssigneeClient
 	// TaskDependency is the client for interacting with the TaskDependency builders.
 	TaskDependency *TaskDependencyClient
+	// TenantSetting is the client for interacting with the TenantSetting builders.
+	TenantSetting *TenantSettingClient
 	// Tender is the client for interacting with the Tender builders.
 	Tender *TenderClient
 	// TenderCommittee is the client for interacting with the TenderCommittee builders.
@@ -215,7 +225,11 @@ func (tx *Tx) init() {
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
 	tx.Permission = NewPermissionClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
+	tx.ProjectBaseline = NewProjectBaselineClient(tx.config)
+	tx.ProjectChangeRequest = NewProjectChangeRequestClient(tx.config)
 	tx.ProjectMember = NewProjectMemberClient(tx.config)
+	tx.ProjectRisk = NewProjectRiskClient(tx.config)
+	tx.ProjectTemplate = NewProjectTemplateClient(tx.config)
 	tx.ProjectsUser = NewProjectsUserClient(tx.config)
 	tx.QACriterion = NewQACriterionClient(tx.config)
 	tx.QADefect = NewQADefectClient(tx.config)
@@ -228,6 +242,7 @@ func (tx *Tx) init() {
 	tx.Task = NewTaskClient(tx.config)
 	tx.TaskAssignee = NewTaskAssigneeClient(tx.config)
 	tx.TaskDependency = NewTaskDependencyClient(tx.config)
+	tx.TenantSetting = NewTenantSettingClient(tx.config)
 	tx.Tender = NewTenderClient(tx.config)
 	tx.TenderCommittee = NewTenderCommitteeClient(tx.config)
 	tx.TenderCommitteeMember = NewTenderCommitteeMemberClient(tx.config)

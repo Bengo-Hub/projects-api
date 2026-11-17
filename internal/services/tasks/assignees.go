@@ -49,7 +49,7 @@ const MetaClientVisible = "client_visible"
 
 // serverOwnedMeta are the task metadata keys clients never write. The checklist and its
 // idempotency keys change only through the checklist operations (see ApplyChecklist).
-var serverOwnedMeta = []string{metaStatusMutations, metaTimers, MetaChecklist, metaChecklistMutations, MetaClientVisible}
+var serverOwnedMeta = []string{metaStatusMutations, metaTimers, MetaChecklist, metaChecklistMutations, MetaClientVisible, metaRecurrence}
 
 // clientMetadata is the metadata a client update leaves on a task: the client's map, with the
 // server-owned keys kept from current and never taken from the client.

@@ -20,6 +20,25 @@
 
 See `docs/sprints/sprint-12-work-management-core.md` to `sprint-16-planning-depth.md`.
 
+### Planning depth, sprint 16 (API built 2026-11-17)
+
+Done: workload against capacity, baselines with the slips report and the Gantt baseline, the risk
+register and heat map, change requests with local approval, date shifts and the treasury budget
+push, project templates (three system ones seeded), recurring tasks, status rules and automations
+(`docs/api.md`, "Planning depth"). Still open:
+
+- Capacity from ERP: erp-api has no per-employee working hours read, so capacity is a tenant
+  setting (40 hours by default, per person overrides). Add an ERP S2S read once shifts are assigned
+  to employees, and subtract leave.
+- `actual_hours` in a status rule reads the task's `metadata.actual_hours`, not the hours logged in
+  ERP timesheets. Reading ERP inside a status change would put a network call in the transaction; a
+  cached per-task logged hours figure is the follow-up.
+- notifications-api has no consumer for `project.task.automation_notice` yet (one event per rule run
+  carrying every recipient id), nor for the change request and risk events.
+- Recurring copies do not carry the checklist; a new occurrence starts without one.
+- Holidays are not working days aware: workload spreads over Monday to Friday only.
+- The UI for all eight stories (projects-ui).
+
 ### Billing and profitability, sprint 15 (built 2026-11-17)
 
 Done: milestone prices and invoices, time invoices for a period, retainer month invoices, the

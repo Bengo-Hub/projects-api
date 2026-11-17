@@ -215,6 +215,11 @@ func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID,
 		input.DueDate.Before(input.StartDate.Time) {
 		return nil, ErrValidation("due date cannot be before the start date")
 	}
+	if input.Metadata != nil {
+		if err := normalizeRepeat(input.Metadata); err != nil {
+			return nil, err
+		}
+	}
 	var task *ent.Task
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
 		p, err := projectForTask(ctx, tx, tenantID, projectID)
@@ -304,12 +309,18 @@ func (s *Service) CreateTask(ctx context.Context, tenantID, projectID uuid.UUID,
 // applyStatus moves t to status on u, keeping completion in step: entering done completes the task
 // (progress 100, completed_at), leaving it reopens it (completed_at cleared). It records the change
 // in changes and writes project.task.status_changed to the task's assignees.
-func applyStatus(ctx context.Context, tx *ent.Tx, p *ent.Project, t *ent.Task, u *ent.TaskUpdateOne, status string, changes map[string]any) error {
+//
+// facts is the task as it will be after the whole change (nil: as it is now); the project's
+// status rules are checked against it and a refused move is *StatusRuleBlocked.
+func applyStatus(ctx context.Context, tx *ent.Tx, p *ent.Project, t *ent.Task, u *ent.TaskUpdateOne, status string, changes map[string]any, facts *MoveFacts) error {
 	if err := checkStatus(p, status); err != nil {
 		return err
 	}
 	if status == t.Status {
 		return nil
+	}
+	if err := checkStatusRules(ctx, tx, p, t, status, facts); err != nil {
+		return err
 	}
 	u.SetStatus(status)
 	changes["status"] = map[string]any{"from": t.Status, "to": status}
@@ -331,6 +342,77 @@ func applyStatus(ctx context.Context, tx *ent.Tx, p *ent.Project, t *ent.Task, u
 	return notify.Write(ctx, tx, notify.EventTaskStatusChanged, n, assigneeIDs(assignees))
 }
 
+// updatedFacts is the move facts of t with an update's fields applied, so a request that fills a
+// required field and moves the task in one go passes.
+func updatedFacts(t *ent.Task, in UpdateTaskInput) MoveFacts {
+	f := factsOf(t)
+	if in.EstimatedHours != nil {
+		f.EstimatedHours = in.EstimatedHours
+	}
+	if in.StartDate != nil {
+		f.StartDate = nil
+		if !in.StartDate.IsZero() {
+			v := in.StartDate.Time
+			f.StartDate = &v
+		}
+	}
+	if in.DueDate != nil {
+		f.DueDate = in.DueDate.Time
+	}
+	if in.Description != nil {
+		f.Description = *in.Description
+	}
+	if in.Metadata != nil {
+		f.Metadata = in.Metadata
+	}
+	if in.AssigneeIDs != nil {
+		ids, _ := normalizeAssignees(*in.AssigneeIDs)
+		f.Assignees = len(ids)
+	}
+	return f
+}
+
+// factsOf is the move facts of a task as stored. Assignees is -1 (load when a rule needs it).
+func factsOf(t *ent.Task) MoveFacts {
+	return MoveFacts{Assignees: -1, EstimatedHours: t.EstimatedHours, StartDate: t.StartDate, DueDate: t.DueDate,
+		Description: t.Description, Metadata: t.Metadata}
+}
+
+// checkStatusRules refuses a move the project's status rules forbid (dormant without the
+// project_automation feature). Assignee and comment counts are read only when a requirement of
+// this move needs them.
+func checkStatusRules(ctx context.Context, tx *ent.Tx, p *ent.Project, t *ent.Task, to string, facts *MoveFacts) error {
+	if !planningRulesOn(ctx) {
+		return nil
+	}
+	rules := statusRulesOf(p.Metadata)
+	if rules.Empty() {
+		return nil
+	}
+	f := factsOf(t)
+	if facts != nil {
+		f = *facts
+	}
+	if rules.NeedsCounts(t.Status, to) {
+		if f.Assignees < 0 {
+			n, err := tx.TaskAssignee.Query().Where(entassignee.TenantID(t.TenantID), entassignee.TaskID(t.ID)).Count(ctx)
+			if err != nil {
+				return fmt.Errorf("count assignees: %w", err)
+			}
+			f.Assignees = n
+		}
+		n, err := tx.Comment.Query().Where(entcomment.TenantID(t.TenantID), entcomment.TaskID(t.ID)).Count(ctx)
+		if err != nil {
+			return fmt.Errorf("count comments: %w", err)
+		}
+		f.Comments = n
+	}
+	if blocked := EvaluateMove(rules, t.Status, to, f, statusLabels(statusesOf(p.Metadata))); blocked != nil {
+		return blocked
+	}
+	return nil
+}
+
 // StatusLabel is the project's label for a status key (the key itself when the project has no
 // such status).
 func StatusLabel(p *ent.Project, key string) string {
@@ -347,6 +429,11 @@ func StatusLabel(p *ent.Project, key string) string {
 func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uuid.UUID, input UpdateTaskInput) (*ent.Task, error) {
 	if input.ParentID != nil && *input.ParentID == taskID {
 		return nil, ErrValidation("a task cannot be its own parent")
+	}
+	if input.Metadata != nil {
+		if err := normalizeRepeat(input.Metadata); err != nil {
+			return nil, err
+		}
 	}
 	var updated *ent.Task
 	statusChanged := false
@@ -374,8 +461,10 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 			u = u.SetDescription(*input.Description)
 			changes["description"] = "changed"
 		}
+		fromStatus := t.Status
 		if input.Status != nil {
-			if err := applyStatus(ctx, tx, p, t, u, *input.Status, changes); err != nil {
+			facts := updatedFacts(t, input)
+			if err := applyStatus(ctx, tx, p, t, u, *input.Status, changes, &facts); err != nil {
 				return err
 			}
 			statusChanged = *input.Status != t.Status
@@ -442,6 +531,11 @@ func (s *Service) UpdateTask(ctx context.Context, tenantID, projectID, taskID uu
 		} else if updated.Edges.Assignees, err = tx.TaskAssignee.Query().
 			Where(entassignee.TenantID(tenantID), entassignee.TaskID(taskID)).Order(assigneeOrderBy()...).All(ctx); err != nil {
 			return fmt.Errorf("load assignees: %w", err)
+		}
+		if statusChanged {
+			if updated, err = runAutomations(ctx, tx, p, updated, fromStatus, changes); err != nil {
+				return err
+			}
 		}
 		return activity.Record(ctx, tx, activity.Entry{
 			TenantID: tenantID, ProjectID: activity.Ref(projectID), TaskID: activity.Ref(taskID),

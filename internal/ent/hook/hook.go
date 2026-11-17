@@ -129,6 +129,30 @@ func (f ProjectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectMutation", m)
 }
 
+// The ProjectBaselineFunc type is an adapter to allow the use of ordinary
+// function as ProjectBaseline mutator.
+type ProjectBaselineFunc func(context.Context, *ent.ProjectBaselineMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProjectBaselineFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProjectBaselineMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectBaselineMutation", m)
+}
+
+// The ProjectChangeRequestFunc type is an adapter to allow the use of ordinary
+// function as ProjectChangeRequest mutator.
+type ProjectChangeRequestFunc func(context.Context, *ent.ProjectChangeRequestMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProjectChangeRequestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProjectChangeRequestMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectChangeRequestMutation", m)
+}
+
 // The ProjectMemberFunc type is an adapter to allow the use of ordinary
 // function as ProjectMember mutator.
 type ProjectMemberFunc func(context.Context, *ent.ProjectMemberMutation) (ent.Value, error)
@@ -139,6 +163,30 @@ func (f ProjectMemberFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectMemberMutation", m)
+}
+
+// The ProjectRiskFunc type is an adapter to allow the use of ordinary
+// function as ProjectRisk mutator.
+type ProjectRiskFunc func(context.Context, *ent.ProjectRiskMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProjectRiskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProjectRiskMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectRiskMutation", m)
+}
+
+// The ProjectTemplateFunc type is an adapter to allow the use of ordinary
+// function as ProjectTemplate mutator.
+type ProjectTemplateFunc func(context.Context, *ent.ProjectTemplateMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProjectTemplateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProjectTemplateMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectTemplateMutation", m)
 }
 
 // The ProjectsUserFunc type is an adapter to allow the use of ordinary
@@ -283,6 +331,18 @@ func (f TaskDependencyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TaskDependencyMutation", m)
+}
+
+// The TenantSettingFunc type is an adapter to allow the use of ordinary
+// function as TenantSetting mutator.
+type TenantSettingFunc func(context.Context, *ent.TenantSettingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TenantSettingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TenantSettingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TenantSettingMutation", m)
 }
 
 // The TenderFunc type is an adapter to allow the use of ordinary

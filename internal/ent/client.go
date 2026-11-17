@@ -26,8 +26,12 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/outboxevent"
 	"github.com/bengobox/projects-service/internal/ent/permission"
 	"github.com/bengobox/projects-service/internal/ent/project"
+	"github.com/bengobox/projects-service/internal/ent/projectbaseline"
+	"github.com/bengobox/projects-service/internal/ent/projectchangerequest"
 	"github.com/bengobox/projects-service/internal/ent/projectmember"
+	"github.com/bengobox/projects-service/internal/ent/projectrisk"
 	"github.com/bengobox/projects-service/internal/ent/projectsuser"
+	"github.com/bengobox/projects-service/internal/ent/projecttemplate"
 	"github.com/bengobox/projects-service/internal/ent/qacriterion"
 	"github.com/bengobox/projects-service/internal/ent/qadefect"
 	"github.com/bengobox/projects-service/internal/ent/qainvite"
@@ -39,6 +43,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/task"
 	"github.com/bengobox/projects-service/internal/ent/taskassignee"
 	"github.com/bengobox/projects-service/internal/ent/taskdependency"
+	"github.com/bengobox/projects-service/internal/ent/tenantsetting"
 	"github.com/bengobox/projects-service/internal/ent/tender"
 	"github.com/bengobox/projects-service/internal/ent/tendercommittee"
 	"github.com/bengobox/projects-service/internal/ent/tendercommitteemember"
@@ -75,8 +80,16 @@ type Client struct {
 	Permission *PermissionClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
+	// ProjectBaseline is the client for interacting with the ProjectBaseline builders.
+	ProjectBaseline *ProjectBaselineClient
+	// ProjectChangeRequest is the client for interacting with the ProjectChangeRequest builders.
+	ProjectChangeRequest *ProjectChangeRequestClient
 	// ProjectMember is the client for interacting with the ProjectMember builders.
 	ProjectMember *ProjectMemberClient
+	// ProjectRisk is the client for interacting with the ProjectRisk builders.
+	ProjectRisk *ProjectRiskClient
+	// ProjectTemplate is the client for interacting with the ProjectTemplate builders.
+	ProjectTemplate *ProjectTemplateClient
 	// ProjectsUser is the client for interacting with the ProjectsUser builders.
 	ProjectsUser *ProjectsUserClient
 	// QACriterion is the client for interacting with the QACriterion builders.
@@ -101,6 +114,8 @@ type Client struct {
 	TaskAssignee *TaskAssigneeClient
 	// TaskDependency is the client for interacting with the TaskDependency builders.
 	TaskDependency *TaskDependencyClient
+	// TenantSetting is the client for interacting with the TenantSetting builders.
+	TenantSetting *TenantSettingClient
 	// Tender is the client for interacting with the Tender builders.
 	Tender *TenderClient
 	// TenderCommittee is the client for interacting with the TenderCommittee builders.
@@ -136,7 +151,11 @@ func (c *Client) init() {
 	c.OutboxEvent = NewOutboxEventClient(c.config)
 	c.Permission = NewPermissionClient(c.config)
 	c.Project = NewProjectClient(c.config)
+	c.ProjectBaseline = NewProjectBaselineClient(c.config)
+	c.ProjectChangeRequest = NewProjectChangeRequestClient(c.config)
 	c.ProjectMember = NewProjectMemberClient(c.config)
+	c.ProjectRisk = NewProjectRiskClient(c.config)
+	c.ProjectTemplate = NewProjectTemplateClient(c.config)
 	c.ProjectsUser = NewProjectsUserClient(c.config)
 	c.QACriterion = NewQACriterionClient(c.config)
 	c.QADefect = NewQADefectClient(c.config)
@@ -149,6 +168,7 @@ func (c *Client) init() {
 	c.Task = NewTaskClient(c.config)
 	c.TaskAssignee = NewTaskAssigneeClient(c.config)
 	c.TaskDependency = NewTaskDependencyClient(c.config)
+	c.TenantSetting = NewTenantSettingClient(c.config)
 	c.Tender = NewTenderClient(c.config)
 	c.TenderCommittee = NewTenderCommitteeClient(c.config)
 	c.TenderCommitteeMember = NewTenderCommitteeMemberClient(c.config)
@@ -258,7 +278,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		OutboxEvent:           NewOutboxEventClient(cfg),
 		Permission:            NewPermissionClient(cfg),
 		Project:               NewProjectClient(cfg),
+		ProjectBaseline:       NewProjectBaselineClient(cfg),
+		ProjectChangeRequest:  NewProjectChangeRequestClient(cfg),
 		ProjectMember:         NewProjectMemberClient(cfg),
+		ProjectRisk:           NewProjectRiskClient(cfg),
+		ProjectTemplate:       NewProjectTemplateClient(cfg),
 		ProjectsUser:          NewProjectsUserClient(cfg),
 		QACriterion:           NewQACriterionClient(cfg),
 		QADefect:              NewQADefectClient(cfg),
@@ -271,6 +295,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Task:                  NewTaskClient(cfg),
 		TaskAssignee:          NewTaskAssigneeClient(cfg),
 		TaskDependency:        NewTaskDependencyClient(cfg),
+		TenantSetting:         NewTenantSettingClient(cfg),
 		Tender:                NewTenderClient(cfg),
 		TenderCommittee:       NewTenderCommitteeClient(cfg),
 		TenderCommitteeMember: NewTenderCommitteeMemberClient(cfg),
@@ -307,7 +332,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		OutboxEvent:           NewOutboxEventClient(cfg),
 		Permission:            NewPermissionClient(cfg),
 		Project:               NewProjectClient(cfg),
+		ProjectBaseline:       NewProjectBaselineClient(cfg),
+		ProjectChangeRequest:  NewProjectChangeRequestClient(cfg),
 		ProjectMember:         NewProjectMemberClient(cfg),
+		ProjectRisk:           NewProjectRiskClient(cfg),
+		ProjectTemplate:       NewProjectTemplateClient(cfg),
 		ProjectsUser:          NewProjectsUserClient(cfg),
 		QACriterion:           NewQACriterionClient(cfg),
 		QADefect:              NewQADefectClient(cfg),
@@ -320,6 +349,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Task:                  NewTaskClient(cfg),
 		TaskAssignee:          NewTaskAssigneeClient(cfg),
 		TaskDependency:        NewTaskDependencyClient(cfg),
+		TenantSetting:         NewTenantSettingClient(cfg),
 		Tender:                NewTenderClient(cfg),
 		TenderCommittee:       NewTenderCommitteeClient(cfg),
 		TenderCommitteeMember: NewTenderCommitteeMemberClient(cfg),
@@ -358,9 +388,10 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Activity, c.Attachment, c.Comment, c.DocumentSequence, c.FieldKey,
 		c.FieldKeyAudit, c.Milestone, c.OutboxEvent, c.Permission, c.Project,
-		c.ProjectMember, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
+		c.ProjectBaseline, c.ProjectChangeRequest, c.ProjectMember, c.ProjectRisk,
+		c.ProjectTemplate, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
 		c.QAResult, c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task,
-		c.TaskAssignee, c.TaskDependency, c.Tender, c.TenderCommittee,
+		c.TaskAssignee, c.TaskDependency, c.TenantSetting, c.Tender, c.TenderCommittee,
 		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
 		c.UserRoleAssignment,
 	} {
@@ -374,9 +405,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Activity, c.Attachment, c.Comment, c.DocumentSequence, c.FieldKey,
 		c.FieldKeyAudit, c.Milestone, c.OutboxEvent, c.Permission, c.Project,
-		c.ProjectMember, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
+		c.ProjectBaseline, c.ProjectChangeRequest, c.ProjectMember, c.ProjectRisk,
+		c.ProjectTemplate, c.ProjectsUser, c.QACriterion, c.QADefect, c.QAInvite,
 		c.QAResult, c.QASession, c.QATemplate, c.Role, c.RolePermission, c.Task,
-		c.TaskAssignee, c.TaskDependency, c.Tender, c.TenderCommittee,
+		c.TaskAssignee, c.TaskDependency, c.TenantSetting, c.Tender, c.TenderCommittee,
 		c.TenderCommitteeMember, c.TenderDocument, c.TenderEvaluation, c.TenderMeeting,
 		c.UserRoleAssignment,
 	} {
@@ -407,8 +439,16 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Permission.mutate(ctx, m)
 	case *ProjectMutation:
 		return c.Project.mutate(ctx, m)
+	case *ProjectBaselineMutation:
+		return c.ProjectBaseline.mutate(ctx, m)
+	case *ProjectChangeRequestMutation:
+		return c.ProjectChangeRequest.mutate(ctx, m)
 	case *ProjectMemberMutation:
 		return c.ProjectMember.mutate(ctx, m)
+	case *ProjectRiskMutation:
+		return c.ProjectRisk.mutate(ctx, m)
+	case *ProjectTemplateMutation:
+		return c.ProjectTemplate.mutate(ctx, m)
 	case *ProjectsUserMutation:
 		return c.ProjectsUser.mutate(ctx, m)
 	case *QACriterionMutation:
@@ -433,6 +473,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.TaskAssignee.mutate(ctx, m)
 	case *TaskDependencyMutation:
 		return c.TaskDependency.mutate(ctx, m)
+	case *TenantSettingMutation:
+		return c.TenantSetting.mutate(ctx, m)
 	case *TenderMutation:
 		return c.Tender.mutate(ctx, m)
 	case *TenderCommitteeMutation:
@@ -2022,6 +2064,272 @@ func (c *ProjectClient) mutate(ctx context.Context, m *ProjectMutation) (Value, 
 	}
 }
 
+// ProjectBaselineClient is a client for the ProjectBaseline schema.
+type ProjectBaselineClient struct {
+	config
+}
+
+// NewProjectBaselineClient returns a client for the ProjectBaseline from the given config.
+func NewProjectBaselineClient(c config) *ProjectBaselineClient {
+	return &ProjectBaselineClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `projectbaseline.Hooks(f(g(h())))`.
+func (c *ProjectBaselineClient) Use(hooks ...Hook) {
+	c.hooks.ProjectBaseline = append(c.hooks.ProjectBaseline, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `projectbaseline.Intercept(f(g(h())))`.
+func (c *ProjectBaselineClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProjectBaseline = append(c.inters.ProjectBaseline, interceptors...)
+}
+
+// Create returns a builder for creating a ProjectBaseline entity.
+func (c *ProjectBaselineClient) Create() *ProjectBaselineCreate {
+	mutation := newProjectBaselineMutation(c.config, OpCreate)
+	return &ProjectBaselineCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProjectBaseline entities.
+func (c *ProjectBaselineClient) CreateBulk(builders ...*ProjectBaselineCreate) *ProjectBaselineCreateBulk {
+	return &ProjectBaselineCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProjectBaselineClient) MapCreateBulk(slice any, setFunc func(*ProjectBaselineCreate, int)) *ProjectBaselineCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProjectBaselineCreateBulk{err: fmt.Errorf("calling to ProjectBaselineClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProjectBaselineCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProjectBaselineCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProjectBaseline.
+func (c *ProjectBaselineClient) Update() *ProjectBaselineUpdate {
+	mutation := newProjectBaselineMutation(c.config, OpUpdate)
+	return &ProjectBaselineUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProjectBaselineClient) UpdateOne(pb *ProjectBaseline) *ProjectBaselineUpdateOne {
+	mutation := newProjectBaselineMutation(c.config, OpUpdateOne, withProjectBaseline(pb))
+	return &ProjectBaselineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProjectBaselineClient) UpdateOneID(id uuid.UUID) *ProjectBaselineUpdateOne {
+	mutation := newProjectBaselineMutation(c.config, OpUpdateOne, withProjectBaselineID(id))
+	return &ProjectBaselineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProjectBaseline.
+func (c *ProjectBaselineClient) Delete() *ProjectBaselineDelete {
+	mutation := newProjectBaselineMutation(c.config, OpDelete)
+	return &ProjectBaselineDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProjectBaselineClient) DeleteOne(pb *ProjectBaseline) *ProjectBaselineDeleteOne {
+	return c.DeleteOneID(pb.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProjectBaselineClient) DeleteOneID(id uuid.UUID) *ProjectBaselineDeleteOne {
+	builder := c.Delete().Where(projectbaseline.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProjectBaselineDeleteOne{builder}
+}
+
+// Query returns a query builder for ProjectBaseline.
+func (c *ProjectBaselineClient) Query() *ProjectBaselineQuery {
+	return &ProjectBaselineQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProjectBaseline},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProjectBaseline entity by its id.
+func (c *ProjectBaselineClient) Get(ctx context.Context, id uuid.UUID) (*ProjectBaseline, error) {
+	return c.Query().Where(projectbaseline.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProjectBaselineClient) GetX(ctx context.Context, id uuid.UUID) *ProjectBaseline {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ProjectBaselineClient) Hooks() []Hook {
+	return c.hooks.ProjectBaseline
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProjectBaselineClient) Interceptors() []Interceptor {
+	return c.inters.ProjectBaseline
+}
+
+func (c *ProjectBaselineClient) mutate(ctx context.Context, m *ProjectBaselineMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProjectBaselineCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProjectBaselineUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProjectBaselineUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProjectBaselineDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProjectBaseline mutation op: %q", m.Op())
+	}
+}
+
+// ProjectChangeRequestClient is a client for the ProjectChangeRequest schema.
+type ProjectChangeRequestClient struct {
+	config
+}
+
+// NewProjectChangeRequestClient returns a client for the ProjectChangeRequest from the given config.
+func NewProjectChangeRequestClient(c config) *ProjectChangeRequestClient {
+	return &ProjectChangeRequestClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `projectchangerequest.Hooks(f(g(h())))`.
+func (c *ProjectChangeRequestClient) Use(hooks ...Hook) {
+	c.hooks.ProjectChangeRequest = append(c.hooks.ProjectChangeRequest, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `projectchangerequest.Intercept(f(g(h())))`.
+func (c *ProjectChangeRequestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProjectChangeRequest = append(c.inters.ProjectChangeRequest, interceptors...)
+}
+
+// Create returns a builder for creating a ProjectChangeRequest entity.
+func (c *ProjectChangeRequestClient) Create() *ProjectChangeRequestCreate {
+	mutation := newProjectChangeRequestMutation(c.config, OpCreate)
+	return &ProjectChangeRequestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProjectChangeRequest entities.
+func (c *ProjectChangeRequestClient) CreateBulk(builders ...*ProjectChangeRequestCreate) *ProjectChangeRequestCreateBulk {
+	return &ProjectChangeRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProjectChangeRequestClient) MapCreateBulk(slice any, setFunc func(*ProjectChangeRequestCreate, int)) *ProjectChangeRequestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProjectChangeRequestCreateBulk{err: fmt.Errorf("calling to ProjectChangeRequestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProjectChangeRequestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProjectChangeRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProjectChangeRequest.
+func (c *ProjectChangeRequestClient) Update() *ProjectChangeRequestUpdate {
+	mutation := newProjectChangeRequestMutation(c.config, OpUpdate)
+	return &ProjectChangeRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProjectChangeRequestClient) UpdateOne(pcr *ProjectChangeRequest) *ProjectChangeRequestUpdateOne {
+	mutation := newProjectChangeRequestMutation(c.config, OpUpdateOne, withProjectChangeRequest(pcr))
+	return &ProjectChangeRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProjectChangeRequestClient) UpdateOneID(id uuid.UUID) *ProjectChangeRequestUpdateOne {
+	mutation := newProjectChangeRequestMutation(c.config, OpUpdateOne, withProjectChangeRequestID(id))
+	return &ProjectChangeRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProjectChangeRequest.
+func (c *ProjectChangeRequestClient) Delete() *ProjectChangeRequestDelete {
+	mutation := newProjectChangeRequestMutation(c.config, OpDelete)
+	return &ProjectChangeRequestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProjectChangeRequestClient) DeleteOne(pcr *ProjectChangeRequest) *ProjectChangeRequestDeleteOne {
+	return c.DeleteOneID(pcr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProjectChangeRequestClient) DeleteOneID(id uuid.UUID) *ProjectChangeRequestDeleteOne {
+	builder := c.Delete().Where(projectchangerequest.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProjectChangeRequestDeleteOne{builder}
+}
+
+// Query returns a query builder for ProjectChangeRequest.
+func (c *ProjectChangeRequestClient) Query() *ProjectChangeRequestQuery {
+	return &ProjectChangeRequestQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProjectChangeRequest},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProjectChangeRequest entity by its id.
+func (c *ProjectChangeRequestClient) Get(ctx context.Context, id uuid.UUID) (*ProjectChangeRequest, error) {
+	return c.Query().Where(projectchangerequest.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProjectChangeRequestClient) GetX(ctx context.Context, id uuid.UUID) *ProjectChangeRequest {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ProjectChangeRequestClient) Hooks() []Hook {
+	return c.hooks.ProjectChangeRequest
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProjectChangeRequestClient) Interceptors() []Interceptor {
+	return c.inters.ProjectChangeRequest
+}
+
+func (c *ProjectChangeRequestClient) mutate(ctx context.Context, m *ProjectChangeRequestMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProjectChangeRequestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProjectChangeRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProjectChangeRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProjectChangeRequestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProjectChangeRequest mutation op: %q", m.Op())
+	}
+}
+
 // ProjectMemberClient is a client for the ProjectMember schema.
 type ProjectMemberClient struct {
 	config
@@ -2168,6 +2476,272 @@ func (c *ProjectMemberClient) mutate(ctx context.Context, m *ProjectMemberMutati
 		return (&ProjectMemberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ProjectMember mutation op: %q", m.Op())
+	}
+}
+
+// ProjectRiskClient is a client for the ProjectRisk schema.
+type ProjectRiskClient struct {
+	config
+}
+
+// NewProjectRiskClient returns a client for the ProjectRisk from the given config.
+func NewProjectRiskClient(c config) *ProjectRiskClient {
+	return &ProjectRiskClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `projectrisk.Hooks(f(g(h())))`.
+func (c *ProjectRiskClient) Use(hooks ...Hook) {
+	c.hooks.ProjectRisk = append(c.hooks.ProjectRisk, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `projectrisk.Intercept(f(g(h())))`.
+func (c *ProjectRiskClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProjectRisk = append(c.inters.ProjectRisk, interceptors...)
+}
+
+// Create returns a builder for creating a ProjectRisk entity.
+func (c *ProjectRiskClient) Create() *ProjectRiskCreate {
+	mutation := newProjectRiskMutation(c.config, OpCreate)
+	return &ProjectRiskCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProjectRisk entities.
+func (c *ProjectRiskClient) CreateBulk(builders ...*ProjectRiskCreate) *ProjectRiskCreateBulk {
+	return &ProjectRiskCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProjectRiskClient) MapCreateBulk(slice any, setFunc func(*ProjectRiskCreate, int)) *ProjectRiskCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProjectRiskCreateBulk{err: fmt.Errorf("calling to ProjectRiskClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProjectRiskCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProjectRiskCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProjectRisk.
+func (c *ProjectRiskClient) Update() *ProjectRiskUpdate {
+	mutation := newProjectRiskMutation(c.config, OpUpdate)
+	return &ProjectRiskUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProjectRiskClient) UpdateOne(pr *ProjectRisk) *ProjectRiskUpdateOne {
+	mutation := newProjectRiskMutation(c.config, OpUpdateOne, withProjectRisk(pr))
+	return &ProjectRiskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProjectRiskClient) UpdateOneID(id uuid.UUID) *ProjectRiskUpdateOne {
+	mutation := newProjectRiskMutation(c.config, OpUpdateOne, withProjectRiskID(id))
+	return &ProjectRiskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProjectRisk.
+func (c *ProjectRiskClient) Delete() *ProjectRiskDelete {
+	mutation := newProjectRiskMutation(c.config, OpDelete)
+	return &ProjectRiskDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProjectRiskClient) DeleteOne(pr *ProjectRisk) *ProjectRiskDeleteOne {
+	return c.DeleteOneID(pr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProjectRiskClient) DeleteOneID(id uuid.UUID) *ProjectRiskDeleteOne {
+	builder := c.Delete().Where(projectrisk.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProjectRiskDeleteOne{builder}
+}
+
+// Query returns a query builder for ProjectRisk.
+func (c *ProjectRiskClient) Query() *ProjectRiskQuery {
+	return &ProjectRiskQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProjectRisk},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProjectRisk entity by its id.
+func (c *ProjectRiskClient) Get(ctx context.Context, id uuid.UUID) (*ProjectRisk, error) {
+	return c.Query().Where(projectrisk.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProjectRiskClient) GetX(ctx context.Context, id uuid.UUID) *ProjectRisk {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ProjectRiskClient) Hooks() []Hook {
+	return c.hooks.ProjectRisk
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProjectRiskClient) Interceptors() []Interceptor {
+	return c.inters.ProjectRisk
+}
+
+func (c *ProjectRiskClient) mutate(ctx context.Context, m *ProjectRiskMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProjectRiskCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProjectRiskUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProjectRiskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProjectRiskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProjectRisk mutation op: %q", m.Op())
+	}
+}
+
+// ProjectTemplateClient is a client for the ProjectTemplate schema.
+type ProjectTemplateClient struct {
+	config
+}
+
+// NewProjectTemplateClient returns a client for the ProjectTemplate from the given config.
+func NewProjectTemplateClient(c config) *ProjectTemplateClient {
+	return &ProjectTemplateClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `projecttemplate.Hooks(f(g(h())))`.
+func (c *ProjectTemplateClient) Use(hooks ...Hook) {
+	c.hooks.ProjectTemplate = append(c.hooks.ProjectTemplate, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `projecttemplate.Intercept(f(g(h())))`.
+func (c *ProjectTemplateClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProjectTemplate = append(c.inters.ProjectTemplate, interceptors...)
+}
+
+// Create returns a builder for creating a ProjectTemplate entity.
+func (c *ProjectTemplateClient) Create() *ProjectTemplateCreate {
+	mutation := newProjectTemplateMutation(c.config, OpCreate)
+	return &ProjectTemplateCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProjectTemplate entities.
+func (c *ProjectTemplateClient) CreateBulk(builders ...*ProjectTemplateCreate) *ProjectTemplateCreateBulk {
+	return &ProjectTemplateCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProjectTemplateClient) MapCreateBulk(slice any, setFunc func(*ProjectTemplateCreate, int)) *ProjectTemplateCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProjectTemplateCreateBulk{err: fmt.Errorf("calling to ProjectTemplateClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProjectTemplateCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProjectTemplateCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProjectTemplate.
+func (c *ProjectTemplateClient) Update() *ProjectTemplateUpdate {
+	mutation := newProjectTemplateMutation(c.config, OpUpdate)
+	return &ProjectTemplateUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProjectTemplateClient) UpdateOne(pt *ProjectTemplate) *ProjectTemplateUpdateOne {
+	mutation := newProjectTemplateMutation(c.config, OpUpdateOne, withProjectTemplate(pt))
+	return &ProjectTemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProjectTemplateClient) UpdateOneID(id uuid.UUID) *ProjectTemplateUpdateOne {
+	mutation := newProjectTemplateMutation(c.config, OpUpdateOne, withProjectTemplateID(id))
+	return &ProjectTemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProjectTemplate.
+func (c *ProjectTemplateClient) Delete() *ProjectTemplateDelete {
+	mutation := newProjectTemplateMutation(c.config, OpDelete)
+	return &ProjectTemplateDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProjectTemplateClient) DeleteOne(pt *ProjectTemplate) *ProjectTemplateDeleteOne {
+	return c.DeleteOneID(pt.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProjectTemplateClient) DeleteOneID(id uuid.UUID) *ProjectTemplateDeleteOne {
+	builder := c.Delete().Where(projecttemplate.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProjectTemplateDeleteOne{builder}
+}
+
+// Query returns a query builder for ProjectTemplate.
+func (c *ProjectTemplateClient) Query() *ProjectTemplateQuery {
+	return &ProjectTemplateQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProjectTemplate},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProjectTemplate entity by its id.
+func (c *ProjectTemplateClient) Get(ctx context.Context, id uuid.UUID) (*ProjectTemplate, error) {
+	return c.Query().Where(projecttemplate.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProjectTemplateClient) GetX(ctx context.Context, id uuid.UUID) *ProjectTemplate {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ProjectTemplateClient) Hooks() []Hook {
+	return c.hooks.ProjectTemplate
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProjectTemplateClient) Interceptors() []Interceptor {
+	return c.inters.ProjectTemplate
+}
+
+func (c *ProjectTemplateClient) mutate(ctx context.Context, m *ProjectTemplateMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProjectTemplateCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProjectTemplateUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProjectTemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProjectTemplateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProjectTemplate mutation op: %q", m.Op())
 	}
 }
 
@@ -4023,6 +4597,139 @@ func (c *TaskDependencyClient) mutate(ctx context.Context, m *TaskDependencyMuta
 	}
 }
 
+// TenantSettingClient is a client for the TenantSetting schema.
+type TenantSettingClient struct {
+	config
+}
+
+// NewTenantSettingClient returns a client for the TenantSetting from the given config.
+func NewTenantSettingClient(c config) *TenantSettingClient {
+	return &TenantSettingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tenantsetting.Hooks(f(g(h())))`.
+func (c *TenantSettingClient) Use(hooks ...Hook) {
+	c.hooks.TenantSetting = append(c.hooks.TenantSetting, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tenantsetting.Intercept(f(g(h())))`.
+func (c *TenantSettingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TenantSetting = append(c.inters.TenantSetting, interceptors...)
+}
+
+// Create returns a builder for creating a TenantSetting entity.
+func (c *TenantSettingClient) Create() *TenantSettingCreate {
+	mutation := newTenantSettingMutation(c.config, OpCreate)
+	return &TenantSettingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TenantSetting entities.
+func (c *TenantSettingClient) CreateBulk(builders ...*TenantSettingCreate) *TenantSettingCreateBulk {
+	return &TenantSettingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TenantSettingClient) MapCreateBulk(slice any, setFunc func(*TenantSettingCreate, int)) *TenantSettingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TenantSettingCreateBulk{err: fmt.Errorf("calling to TenantSettingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TenantSettingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TenantSettingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TenantSetting.
+func (c *TenantSettingClient) Update() *TenantSettingUpdate {
+	mutation := newTenantSettingMutation(c.config, OpUpdate)
+	return &TenantSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TenantSettingClient) UpdateOne(ts *TenantSetting) *TenantSettingUpdateOne {
+	mutation := newTenantSettingMutation(c.config, OpUpdateOne, withTenantSetting(ts))
+	return &TenantSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TenantSettingClient) UpdateOneID(id uuid.UUID) *TenantSettingUpdateOne {
+	mutation := newTenantSettingMutation(c.config, OpUpdateOne, withTenantSettingID(id))
+	return &TenantSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TenantSetting.
+func (c *TenantSettingClient) Delete() *TenantSettingDelete {
+	mutation := newTenantSettingMutation(c.config, OpDelete)
+	return &TenantSettingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TenantSettingClient) DeleteOne(ts *TenantSetting) *TenantSettingDeleteOne {
+	return c.DeleteOneID(ts.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TenantSettingClient) DeleteOneID(id uuid.UUID) *TenantSettingDeleteOne {
+	builder := c.Delete().Where(tenantsetting.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TenantSettingDeleteOne{builder}
+}
+
+// Query returns a query builder for TenantSetting.
+func (c *TenantSettingClient) Query() *TenantSettingQuery {
+	return &TenantSettingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTenantSetting},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TenantSetting entity by its id.
+func (c *TenantSettingClient) Get(ctx context.Context, id uuid.UUID) (*TenantSetting, error) {
+	return c.Query().Where(tenantsetting.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TenantSettingClient) GetX(ctx context.Context, id uuid.UUID) *TenantSetting {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TenantSettingClient) Hooks() []Hook {
+	return c.hooks.TenantSetting
+}
+
+// Interceptors returns the client interceptors.
+func (c *TenantSettingClient) Interceptors() []Interceptor {
+	return c.inters.TenantSetting
+}
+
+func (c *TenantSettingClient) mutate(ctx context.Context, m *TenantSettingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TenantSettingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TenantSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TenantSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TenantSettingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TenantSetting mutation op: %q", m.Op())
+	}
+}
+
 // TenderClient is a client for the Tender schema.
 type TenderClient struct {
 	config
@@ -5150,19 +5857,21 @@ func (c *UserRoleAssignmentClient) mutate(ctx context.Context, m *UserRoleAssign
 type (
 	hooks struct {
 		Activity, Attachment, Comment, DocumentSequence, FieldKey, FieldKeyAudit,
-		Milestone, OutboxEvent, Permission, Project, ProjectMember, ProjectsUser,
-		QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate, Role,
-		RolePermission, Task, TaskAssignee, TaskDependency, Tender, TenderCommittee,
-		TenderCommitteeMember, TenderDocument, TenderEvaluation, TenderMeeting,
-		UserRoleAssignment []ent.Hook
+		Milestone, OutboxEvent, Permission, Project, ProjectBaseline,
+		ProjectChangeRequest, ProjectMember, ProjectRisk, ProjectTemplate,
+		ProjectsUser, QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate,
+		Role, RolePermission, Task, TaskAssignee, TaskDependency, TenantSetting,
+		Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
+		TenderEvaluation, TenderMeeting, UserRoleAssignment []ent.Hook
 	}
 	inters struct {
 		Activity, Attachment, Comment, DocumentSequence, FieldKey, FieldKeyAudit,
-		Milestone, OutboxEvent, Permission, Project, ProjectMember, ProjectsUser,
-		QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate, Role,
-		RolePermission, Task, TaskAssignee, TaskDependency, Tender, TenderCommittee,
-		TenderCommitteeMember, TenderDocument, TenderEvaluation, TenderMeeting,
-		UserRoleAssignment []ent.Interceptor
+		Milestone, OutboxEvent, Permission, Project, ProjectBaseline,
+		ProjectChangeRequest, ProjectMember, ProjectRisk, ProjectTemplate,
+		ProjectsUser, QACriterion, QADefect, QAInvite, QAResult, QASession, QATemplate,
+		Role, RolePermission, Task, TaskAssignee, TaskDependency, TenantSetting,
+		Tender, TenderCommittee, TenderCommitteeMember, TenderDocument,
+		TenderEvaluation, TenderMeeting, UserRoleAssignment []ent.Interceptor
 	}
 )
 

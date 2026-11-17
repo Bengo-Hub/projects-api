@@ -67,6 +67,23 @@ milestone's invoice id, number and reference.
 | `GET /api/v1/s2s/{tenant}/invoices/by-project` | billing overview (drafts included), portal (sent and paid only) | through the invoice metadata GIN index |
 | `GET /api/v1/s2s/{tenant}/budgets/projects/financials` | financials, client rollup | unchanged; revenue includes these invoices because their metadata carries `project_id` |
 
+### Change requests (sprint 16, 2026-11-17)
+
+An approved cost change goes to treasury through the budget calls the financials budget proxy
+already uses, acting as the approver (`X-User-ID`). No new treasury or ERP route.
+
+| Call | Used by | Notes |
+|---|---|---|
+| `GET /api/v1/s2s/{tenant}/budgets/{id}` | approval with `budget_id` | confirms the draft belongs to the project |
+| `PUT /api/v1/s2s/{tenant}/budgets/{id}` | approval with `budget_id` and a `budget` body | replaces the draft |
+| `POST /api/v1/s2s/{tenant}/budgets` | approval with a `budget` body only | `budget_type` project, `project_id` forced; the new id is saved before the submit |
+| `POST /api/v1/s2s/{tenant}/budgets/{id}/submit` | every push | starts treasury's own budget approval; a failure is kept on the request and retried from `push-budget` |
+
+Workload capacity does not call ERP: erp-api has shifts with `total_hours_per_week` but no shift
+assigned per employee and no S2S read of a person's working hours, so capacity comes from the
+tenant's projects settings (40 hours a week by default, per person overrides). An ERP capacity read
+is a follow-up.
+
 ---
 
 ## External Third-Party Platform Integration Matrix

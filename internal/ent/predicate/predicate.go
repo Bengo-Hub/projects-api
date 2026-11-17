@@ -36,8 +36,20 @@ type Permission func(*sql.Selector)
 // Project is the predicate function for project builders.
 type Project func(*sql.Selector)
 
+// ProjectBaseline is the predicate function for projectbaseline builders.
+type ProjectBaseline func(*sql.Selector)
+
+// ProjectChangeRequest is the predicate function for projectchangerequest builders.
+type ProjectChangeRequest func(*sql.Selector)
+
 // ProjectMember is the predicate function for projectmember builders.
 type ProjectMember func(*sql.Selector)
+
+// ProjectRisk is the predicate function for projectrisk builders.
+type ProjectRisk func(*sql.Selector)
+
+// ProjectTemplate is the predicate function for projecttemplate builders.
+type ProjectTemplate func(*sql.Selector)
 
 // ProjectsUser is the predicate function for projectsuser builders.
 type ProjectsUser func(*sql.Selector)
@@ -74,6 +86,9 @@ type TaskAssignee func(*sql.Selector)
 
 // TaskDependency is the predicate function for taskdependency builders.
 type TaskDependency func(*sql.Selector)
+
+// TenantSetting is the predicate function for tenantsetting builders.
+type TenantSetting func(*sql.Selector)
 
 // Tender is the predicate function for tender builders.
 type Tender func(*sql.Selector)

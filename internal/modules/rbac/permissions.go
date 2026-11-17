@@ -65,6 +65,35 @@ const (
 	PermQAManage = "projects.qa.manage" // templates, sessions, invites, close and decide (implies all)
 
 	PermRBACManage = "projects.rbac.manage"
+
+	// Planning depth (sprint 16). Workload: view sees people's load; manage sets capacity.
+	PermWorkloadView   = "projects.workload.view"
+	PermWorkloadManage = "projects.workload.manage"
+	// Baselines: view reads them and the slips report; add saves one; delete removes one.
+	PermBaselinesView   = "projects.baselines.view"
+	PermBaselinesAdd    = "projects.baselines.add"
+	PermBaselinesDelete = "projects.baselines.delete"
+	// Risk register.
+	PermRisksView   = "projects.risks.view"
+	PermRisksAdd    = "projects.risks.add"
+	PermRisksChange = "projects.risks.change"
+	PermRisksDelete = "projects.risks.delete"
+	// Change requests: add raises one (and lets the requester edit or withdraw it while pending);
+	// manage edits or withdraws anyone's. Deciding is a separate module so it can be granted on its
+	// own: projects.change_approvals.manage approves or rejects (never one's own request).
+	PermChangeRequestsView   = "projects.change_requests.view"
+	PermChangeRequestsAdd    = "projects.change_requests.add"
+	PermChangeRequestsManage = "projects.change_requests.manage"
+	PermChangeApprovals      = "projects.change_approvals.manage"
+	// Project templates: view lists them (and, with projects.add, starts a project from one); add
+	// saves a project as a template; delete removes a tenant template (system ones never).
+	PermTemplatesView   = "projects.templates.view"
+	PermTemplatesAdd    = "projects.templates.add"
+	PermTemplatesDelete = "projects.templates.delete"
+	// Status rules and automations: view reads the automation rules; manage edits status rules and
+	// automations. The board reads status rules with tasks.view.
+	PermAutomationView   = "projects.automation.view"
+	PermAutomationManage = "projects.automation.manage"
 )
 
 // PermissionDef is one registry entry.
@@ -124,6 +153,24 @@ var Catalogue = []PermissionDef{
 	def(PermQARun, "Record QA results"),
 	def(PermQAManage, "Manage QA templates, sessions and decisions"),
 	def(PermRBACManage, "Manage roles and role assignments"),
+	def(PermWorkloadView, "View team workload"),
+	def(PermWorkloadManage, "Set team capacity"),
+	def(PermBaselinesView, "View baselines and slips"),
+	def(PermBaselinesAdd, "Save baselines"),
+	def(PermBaselinesDelete, "Delete baselines"),
+	def(PermRisksView, "View the risk register"),
+	def(PermRisksAdd, "Raise risks"),
+	def(PermRisksChange, "Edit risks"),
+	def(PermRisksDelete, "Delete risks"),
+	def(PermChangeRequestsView, "View change requests"),
+	def(PermChangeRequestsAdd, "Raise change requests"),
+	def(PermChangeRequestsManage, "Manage every change request"),
+	def(PermChangeApprovals, "Approve and reject change requests"),
+	def(PermTemplatesView, "View project templates"),
+	def(PermTemplatesAdd, "Save projects as templates"),
+	def(PermTemplatesDelete, "Delete project templates"),
+	def(PermAutomationView, "View automation rules"),
+	def(PermAutomationManage, "Manage status rules and automations"),
 }
 
 // AllCodes returns every registry code.

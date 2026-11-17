@@ -34,6 +34,7 @@ type Handlers struct {
 	Time        *handlers.TimeHandler
 	Portal      *handlers.PortalHandler
 	Billing     *handlers.BillingHandler
+	Planning    *handlers.PlanningHandler
 }
 
 // Deps is everything the router needs.
@@ -158,7 +159,8 @@ func New(d Deps) http.Handler {
 			tracking, collaboration := requireFeature("task_tracking"), requireFeature("team_collaboration")
 			h.RBAC.RegisterRoutes(tenant)
 			h.Projects.RegisterRoutes(tenant)
-			h.Tasks.RegisterRoutes(tenant, tracking, requireFeature("gantt_chart"))
+			gantt := requireFeature("gantt_chart")
+			h.Tasks.RegisterRoutes(tenant, tracking, gantt)
 			h.Milestones.RegisterRoutes(tenant)
 			h.Members.RegisterRoutes(tenant)
 			h.Comments.RegisterRoutes(tenant, collaboration)
@@ -187,6 +189,15 @@ func New(d Deps) http.Handler {
 			if h.Billing != nil {
 				// Billing (sprint 15): draft invoices in treasury, the milestone_billing feature (tier 3).
 				h.Billing.RegisterRoutes(tenant, requireFeature("milestone_billing"))
+			}
+			if h.Planning != nil {
+				// Planning depth (sprint 16): workload on workload_planning, baselines on gantt_chart,
+				// status rules and automations on project_automation; risks, change requests and
+				// templates on the module alone (project_management for mutations).
+				h.Planning.RegisterRoutes(tenant, handlers.PlanningGates{
+					Tracking: tracking, Gantt: gantt,
+					Workload: requireFeature("workload_planning"), Automation: requireFeature("project_automation"),
+				})
 			}
 			if d.QA.Tenant != nil {
 				// QA and acceptance; each route is gated on a projects.qa.* permission.

@@ -79,7 +79,7 @@ func (s *Service) ChangeStatus(ctx context.Context, tenantID, projectID, taskID 
 		}
 		changes := map[string]any{}
 		u := t.Update()
-		if err := applyStatus(ctx, tx, p, t, u, status, changes); err != nil {
+		if err := applyStatus(ctx, tx, p, t, u, status, changes, nil); err != nil {
 			return err
 		}
 		if key != "" {
@@ -101,6 +101,9 @@ func (s *Service) ChangeStatus(ctx context.Context, tenantID, projectID, taskID 
 			return nil // already in that status
 		}
 		moved = true
+		if task, err = runAutomations(ctx, tx, p, task, t.Status, changes); err != nil {
+			return err
+		}
 		return activity.Record(ctx, tx, activity.Entry{
 			TenantID: tenantID, ProjectID: activity.Ref(projectID), TaskID: activity.Ref(taskID),
 			EntityType: "task", EntityID: taskID, Action: activity.ActionUpdated, Changes: changes,

@@ -20,6 +20,7 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/migrate"
 	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/platform/database"
+	"github.com/bengobox/projects-service/internal/services/planning"
 )
 
 // migrationLockKey serializes migrations across pods: every replica's entrypoint runs this
@@ -97,6 +98,9 @@ func run(ctx context.Context, db *sql.DB, client *ent.Client) error {
 	}
 	if err := rbac.NewService(client, nil, zap.NewNop()).Seed(ctx); err != nil {
 		return fmt.Errorf("seed rbac: %w", err)
+	}
+	if err := planning.SeedSystemTemplates(ctx, client); err != nil {
+		return fmt.Errorf("seed project templates: %w", err)
 	}
 	return nil
 }

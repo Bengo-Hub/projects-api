@@ -345,6 +345,66 @@ var (
 			},
 		},
 	}
+	// ProjectBaselinesColumns holds the columns for the "project_baselines" table.
+	ProjectBaselinesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "project_id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "note", Type: field.TypeString, Nullable: true},
+		{Name: "snapshot", Type: field.TypeJSON},
+		{Name: "task_count", Type: field.TypeInt, Default: 0},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// ProjectBaselinesTable holds the schema information for the "project_baselines" table.
+	ProjectBaselinesTable = &schema.Table{
+		Name:       "project_baselines",
+		Columns:    ProjectBaselinesColumns,
+		PrimaryKey: []*schema.Column{ProjectBaselinesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "projectbaseline_tenant_id_project_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectBaselinesColumns[1], ProjectBaselinesColumns[2], ProjectBaselinesColumns[8]},
+			},
+		},
+	}
+	// ProjectChangeRequestsColumns holds the columns for the "project_change_requests" table.
+	ProjectChangeRequestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "project_id", Type: field.TypeUUID},
+		{Name: "title", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true},
+		{Name: "kind", Type: field.TypeString, Default: "scope"},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "requested_by", Type: field.TypeUUID},
+		{Name: "decided_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "decided_at", Type: field.TypeTime, Nullable: true},
+		{Name: "decision_comment", Type: field.TypeString, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ProjectChangeRequestsTable holds the schema information for the "project_change_requests" table.
+	ProjectChangeRequestsTable = &schema.Table{
+		Name:       "project_change_requests",
+		Columns:    ProjectChangeRequestsColumns,
+		PrimaryKey: []*schema.Column{ProjectChangeRequestsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "projectchangerequest_tenant_id_project_id_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectChangeRequestsColumns[1], ProjectChangeRequestsColumns[2], ProjectChangeRequestsColumns[6], ProjectChangeRequestsColumns[12]},
+			},
+			{
+				Name:    "projectchangerequest_tenant_id_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectChangeRequestsColumns[1], ProjectChangeRequestsColumns[6], ProjectChangeRequestsColumns[12]},
+			},
+		},
+	}
 	// ProjectMembersColumns holds the columns for the "project_members" table.
 	ProjectMembersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -374,6 +434,77 @@ var (
 				Name:    "projectmember_tenant_id_project_id_user_id",
 				Unique:  false,
 				Columns: []*schema.Column{ProjectMembersColumns[1], ProjectMembersColumns[7], ProjectMembersColumns[2]},
+			},
+		},
+	}
+	// ProjectRisksColumns holds the columns for the "project_risks" table.
+	ProjectRisksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "project_id", Type: field.TypeUUID},
+		{Name: "title", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true},
+		{Name: "category", Type: field.TypeString, Nullable: true},
+		{Name: "likelihood", Type: field.TypeInt},
+		{Name: "impact", Type: field.TypeInt},
+		{Name: "score", Type: field.TypeInt},
+		{Name: "owner_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "mitigation", Type: field.TypeString, Nullable: true},
+		{Name: "status", Type: field.TypeString, Default: "open"},
+		{Name: "due_date", Type: field.TypeTime, Nullable: true},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ProjectRisksTable holds the schema information for the "project_risks" table.
+	ProjectRisksTable = &schema.Table{
+		Name:       "project_risks",
+		Columns:    ProjectRisksColumns,
+		PrimaryKey: []*schema.Column{ProjectRisksColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "projectrisk_tenant_id_project_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectRisksColumns[1], ProjectRisksColumns[2], ProjectRisksColumns[11]},
+			},
+			{
+				Name:    "projectrisk_tenant_id_project_id_score",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectRisksColumns[1], ProjectRisksColumns[2], ProjectRisksColumns[8]},
+			},
+		},
+	}
+	// ProjectTemplatesColumns holds the columns for the "project_templates" table.
+	ProjectTemplatesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "system_key", Type: field.TypeString, Nullable: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true},
+		{Name: "category", Type: field.TypeString, Nullable: true},
+		{Name: "definition", Type: field.TypeJSON},
+		{Name: "task_count", Type: field.TypeInt, Default: 0},
+		{Name: "source_project_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// ProjectTemplatesTable holds the schema information for the "project_templates" table.
+	ProjectTemplatesTable = &schema.Table{
+		Name:       "project_templates",
+		Columns:    ProjectTemplatesColumns,
+		PrimaryKey: []*schema.Column{ProjectTemplatesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "projecttemplate_tenant_id_name",
+				Unique:  false,
+				Columns: []*schema.Column{ProjectTemplatesColumns[1], ProjectTemplatesColumns[3]},
+			},
+			{
+				Name:    "projecttemplate_system_key",
+				Unique:  true,
+				Columns: []*schema.Column{ProjectTemplatesColumns[2]},
 			},
 		},
 	}
@@ -766,6 +897,14 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{TasksColumns[1], TasksColumns[14]},
 			},
+			{
+				Name:    "task_recurring_pending",
+				Unique:  false,
+				Columns: []*schema.Column{TasksColumns[6]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "(metadata -> 'repeat') IS NOT NULL AND (metadata #>> '{recurrence,spawned}') IS NULL",
+				},
+			},
 		},
 	}
 	// TaskAssigneesColumns holds the columns for the "task_assignees" table.
@@ -834,6 +973,27 @@ var (
 				Name:    "taskdependency_depends_on_task_id",
 				Unique:  false,
 				Columns: []*schema.Column{TaskDependenciesColumns[1]},
+			},
+		},
+	}
+	// TenantSettingsColumns holds the columns for the "tenant_settings" table.
+	TenantSettingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "settings", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// TenantSettingsTable holds the schema information for the "tenant_settings" table.
+	TenantSettingsTable = &schema.Table{
+		Name:       "tenant_settings",
+		Columns:    TenantSettingsColumns,
+		PrimaryKey: []*schema.Column{TenantSettingsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tenantsetting_tenant_id",
+				Unique:  true,
+				Columns: []*schema.Column{TenantSettingsColumns[1]},
 			},
 		},
 	}
@@ -1093,7 +1253,11 @@ var (
 		OutboxEventsTable,
 		PermissionsTable,
 		ProjectsTable,
+		ProjectBaselinesTable,
+		ProjectChangeRequestsTable,
 		ProjectMembersTable,
+		ProjectRisksTable,
+		ProjectTemplatesTable,
 		ProjectsUsersTable,
 		QaCriteriaTable,
 		QaDefectsTable,
@@ -1106,6 +1270,7 @@ var (
 		TasksTable,
 		TaskAssigneesTable,
 		TaskDependenciesTable,
+		TenantSettingsTable,
 		TendersTable,
 		TenderCommitteesTable,
 		TenderCommitteeMembersTable,
@@ -1130,7 +1295,19 @@ func init() {
 		Table: "field_key_audits",
 	}
 	MilestonesTable.ForeignKeys[0].RefTable = ProjectsTable
+	ProjectBaselinesTable.Annotation = &entsql.Annotation{
+		Table: "project_baselines",
+	}
+	ProjectChangeRequestsTable.Annotation = &entsql.Annotation{
+		Table: "project_change_requests",
+	}
 	ProjectMembersTable.ForeignKeys[0].RefTable = ProjectsTable
+	ProjectRisksTable.Annotation = &entsql.Annotation{
+		Table: "project_risks",
+	}
+	ProjectTemplatesTable.Annotation = &entsql.Annotation{
+		Table: "project_templates",
+	}
 	QaCriteriaTable.ForeignKeys[0].RefTable = QaTemplatesTable
 	QaCriteriaTable.Annotation = &entsql.Annotation{
 		Table: "qa_criteria",
@@ -1155,6 +1332,9 @@ func init() {
 	TasksTable.ForeignKeys[0].RefTable = ProjectsTable
 	TaskAssigneesTable.ForeignKeys[0].RefTable = TasksTable
 	TaskDependenciesTable.ForeignKeys[0].RefTable = TasksTable
+	TenantSettingsTable.Annotation = &entsql.Annotation{
+		Table: "tenant_settings",
+	}
 	TenderCommitteesTable.ForeignKeys[0].RefTable = TendersTable
 	TenderCommitteeMembersTable.ForeignKeys[0].RefTable = TenderCommitteesTable
 	TenderDocumentsTable.ForeignKeys[0].RefTable = TendersTable

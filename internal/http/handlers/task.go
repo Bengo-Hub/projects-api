@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/bengobox/projects-service/internal/http/authz"
 	"github.com/bengobox/projects-service/internal/modules/rbac"
+	"github.com/bengobox/projects-service/internal/services/planning"
 	"github.com/bengobox/projects-service/internal/services/tasks"
 )
 
@@ -23,6 +25,20 @@ import (
 type TaskHandler struct {
 	log *zap.Logger
 	svc *tasks.Service
+	// baselines feeds the Gantt chart's baseline (sprint 16); nil leaves it out.
+	baselines BaselineSource
+}
+
+// BaselineSource returns the baseline the Gantt chart draws (nil id: the latest; nil result when
+// the project has none). planning.Service implements it.
+type BaselineSource interface {
+	ForGantt(ctx context.Context, tenantID, projectID uuid.UUID, id *uuid.UUID) (*planning.GanttBaseline, error)
+}
+
+// WithBaselines sets the baseline source of the Gantt chart.
+func (h *TaskHandler) WithBaselines(b BaselineSource) *TaskHandler {
+	h.baselines = b
+	return h
 }
 
 // NewTaskHandler creates a new task handler.
@@ -252,9 +268,16 @@ func (h *TaskHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *TaskHandler) writeErr(w http.ResponseWriter, err error, notFound, msg string) {
 	var verr tasks.ValidationError
 	var conflict *tasks.ScheduleConflict
+	var blocked *tasks.StatusRuleBlocked
 	switch {
 	case errors.Is(err, tasks.ErrNotFound):
 		respondError(w, http.StatusNotFound, notFound)
+	case errors.As(err, &blocked):
+		// The project's status rules refuse the move; the message names what is missing.
+		respondJSON(w, http.StatusUnprocessableEntity, map[string]any{
+			"error": blocked.Message, "code": "status_rule_blocked", "from": blocked.From, "to": blocked.To,
+			"reason": blocked.Reason, "missing_fields": blocked.Missing,
+		})
 	case errors.Is(err, tasks.ErrChecklistItemNotFound):
 		respondJSON(w, http.StatusNotFound, map[string]any{"error": err.Error(), "code": "checklist_item_not_found"})
 	case errors.Is(err, tasks.ErrCircularDependency):
@@ -308,7 +331,7 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	t, err := h.svc.UpdateTask(noticeCtx(r), tenantID, projectID, taskID, input)
+	t, err := h.svc.UpdateTask(taskWriteCtx(r), tenantID, projectID, taskID, input)
 	if err != nil {
 		h.writeErr(w, err, "task not found", "update task failed")
 		return
@@ -335,7 +358,7 @@ func (h *TaskHandler) ChangeStatus(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	t, replayed, err := h.svc.ChangeStatus(noticeCtx(r), tenantID, projectID, taskID, body.Status, r.Header.Get("Idempotency-Key"))
+	t, replayed, err := h.svc.ChangeStatus(taskWriteCtx(r), tenantID, projectID, taskID, body.Status, r.Header.Get("Idempotency-Key"))
 	if err != nil {
 		h.writeErr(w, err, "task not found", "change task status failed")
 		return
@@ -581,9 +604,15 @@ func (h *TaskHandler) RemoveDependency(w http.ResponseWriter, r *http.Request) {
 }
 
 // Gantt returns up to 2000 tasks with dependencies for the Gantt chart, each marked critical when
-// it lies on the critical path: {"data": [...], "truncated", "limit": 2000, "critical_days"}.
+// it lies on the critical path, and the baseline to draw under the bars (?baseline_id=, default
+// the latest; null when the project has none or the caller may not view baselines):
+// {"data": [...], "truncated", "limit": 2000, "critical_days", "baseline"}.
 func (h *TaskHandler) Gantt(w http.ResponseWriter, r *http.Request) {
 	tenantID, projectID, ok := projectScope(w, r)
+	if !ok {
+		return
+	}
+	baselineID, ok := optionalUUID(w, r, "baseline_id")
 	if !ok {
 		return
 	}
@@ -592,5 +621,20 @@ func (h *TaskHandler) Gantt(w http.ResponseWriter, r *http.Request) {
 		serverError(w, h.log, "gantt failed", err)
 		return
 	}
-	respondJSON(w, http.StatusOK, data)
+	var baseline *planning.GanttBaseline
+	if h.baselines != nil && accessOf(r).Has(rbac.PermBaselinesView) {
+		baseline, err = h.baselines.ForGantt(r.Context(), tenantID, projectID, baselineID)
+		if errors.Is(err, planning.ErrNotFound) {
+			respondJSON(w, http.StatusNotFound, map[string]any{"error": "baseline not found", "code": "not_found"})
+			return
+		}
+		if err != nil {
+			serverError(w, h.log, "gantt baseline failed", err)
+			return
+		}
+	}
+	respondJSON(w, http.StatusOK, struct {
+		tasks.GanttData
+		Baseline *planning.GanttBaseline `json:"baseline"`
+	}{data, baseline})
 }

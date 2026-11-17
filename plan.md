@@ -858,7 +858,7 @@ See `docs/sprints/` for detailed sprint planning.
 | 13 Time tracking (new) | Done 2026-11-17 | Timer and timesheets posted to ERP, tenant people search, idempotent timer stop |
 | 14 Client portal (new) | Done 2026-11-17 | Clients sign in through auth-api (verified email only), see progress, approve milestones, shared tasks and files, client thread |
 | 15 Billing and profitability (new) | Built 2026-11-17 | Milestone, time and retainer draft invoices in treasury (idempotent, void safe), labour cost in margins, margin by client, portal invoices. Open: retainer overage and monthly usage |
-| 16 Planning depth (new) | Planned | Workload, baselines, risks, change requests, templates, recurring tasks, status rules, automations |
+| 16 Planning depth (new) | API built 2026-11-17 | Workload against capacity, baselines and slips, risk register and heat map, change requests (local sign-off, date shifts, budget to treasury), templates with three system ones, recurring tasks, status rules and automations. Open: ERP capacity read, UI |
 
 **Priority order I am building in:** 0b, 12, 13, 14, 15, 16, then the open parts of 1 and 2, then 7 reports, 11, 10 and 9. Sprint 8 stays deferred.
 

@@ -88,6 +88,7 @@ func testDeps(t *testing.T, r *fakeRBAC, members fakeMembers) Deps {
 			Tenders:     handlers.NewTenderHandler(log, nil),
 			Financials:  handlers.NewFinancialsHandler(log, nil),
 			Time:        handlers.NewTimeHandler(log, nil),
+			Planning:    handlers.NewPlanningHandler(log, nil, nil),
 		},
 		Authenticate: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

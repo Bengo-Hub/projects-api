@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -75,6 +76,11 @@ func (Task) Indexes() []ent.Index {
 		index.Fields("tenant_id", "completed_at"),
 		index.Fields("tenant_id", "due_date"),
 		index.Fields("tenant_id", "parent_id"),
+		// Recurring tasks (sprint 16) whose next occurrence is not created yet: the job reads only
+		// this small partial index. The predicate must match tasks.recurringPendingWhere.
+		index.Fields("due_date").
+			Annotations(entsql.IndexWhere("(metadata -> 'repeat') IS NOT NULL AND (metadata #>> '{recurrence,spawned}') IS NULL")).
+			StorageKey("task_recurring_pending"),
 	}
 }
 

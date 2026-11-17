@@ -37,14 +37,15 @@ import (
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/attachments"
+	"github.com/bengobox/projects-service/internal/services/billing"
 	"github.com/bengobox/projects-service/internal/services/comments"
 	"github.com/bengobox/projects-service/internal/services/crmsync"
 	"github.com/bengobox/projects-service/internal/services/fieldkeys"
-	"github.com/bengobox/projects-service/internal/services/billing"
 	"github.com/bengobox/projects-service/internal/services/financials"
 	"github.com/bengobox/projects-service/internal/services/members"
 	"github.com/bengobox/projects-service/internal/services/membership"
 	"github.com/bengobox/projects-service/internal/services/milestones"
+	"github.com/bengobox/projects-service/internal/services/planning"
 	"github.com/bengobox/projects-service/internal/services/portal"
 	projectssvc "github.com/bengobox/projects-service/internal/services/projects"
 	"github.com/bengobox/projects-service/internal/services/qa"
@@ -78,6 +79,44 @@ type App struct {
 	qaFeatures *qa.FeatureEventsConsumer
 	// fieldKeys reloads the field key ring and continues a rotation the platform owner started.
 	fieldKeys *fieldkeys.Service
+	// tasks creates the next occurrence of recurring tasks (sprint 16) on a ticker.
+	tasks *tasks.Service
+}
+
+// recurringEvery is how often the recurring task job runs; one pod per period does the work.
+const recurringEvery = 10 * time.Minute
+
+// runRecurring creates the next occurrences of recurring tasks every recurringEvery until ctx
+// ends (shutdown). Each period is claimed fleet-wide through the shared run-once helper, so one
+// pod scans; the job itself is idempotent per occurrence, so an overlap is harmless.
+func (a *App) runRecurring(ctx context.Context) {
+	tick := time.NewTicker(recurringEvery)
+	defer tick.Stop()
+	run := func() {
+		if !sharedcache.ClaimPeriod(ctx, "projects:recurring-tasks", recurringEvery) {
+			return
+		}
+		// A few batches per period at most; anything left is picked up next period.
+		for range 10 {
+			n, err := a.tasks.SpawnRecurring(ctx, time.Now())
+			if err != nil {
+				a.log.Warn("recurring tasks scan failed", zap.Error(err))
+				return
+			}
+			if n == 0 || ctx.Err() != nil {
+				return
+			}
+		}
+	}
+	run()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+			run()
+		}
+	}
 }
 
 // tenantExportHandler serves auth-api's SSO tenant backups (httpware/tenantexport). Nil without an
@@ -217,6 +256,14 @@ func New(ctx context.Context) (*App, error) {
 	// Billing creates draft invoices in treasury from milestones, ERP hours and retainers.
 	billingService := billing.NewService(entClient, treasuryClient, erpClient, redisClient, log)
 	billingHandler := handlers.NewBillingHandler(log, billingService)
+	// Planning depth (sprint 16): workload, baselines, risks, change requests (cost changes go to
+	// treasury as project budgets), templates; the system templates are seeded like the RBAC seed.
+	planningService := planning.NewService(entClient, taskService, treasuryClient, log)
+	if err := planning.SeedSystemTemplates(ctx, entClient); err != nil {
+		log.Warn("system project templates seed at startup failed", zap.Error(err))
+	}
+	planningHandler := handlers.NewPlanningHandler(log, planningService, taskService)
+	taskHandler.WithBaselines(planningService)
 	// Time tracking logs the signed-in user's hours on their ERP timesheet (ERP owns them).
 	timeHandler := handlers.NewTimeHandler(log, timetracking.NewService(entClient, erpClient, log).WithStopGuard(redisClient))
 	// Project form pickers: the client from the CRM (marketflow), the cost centre from treasury.
@@ -332,9 +379,10 @@ func New(ctx context.Context) (*App, error) {
 			Attachments: handlers.NewAttachmentHandler(log, attachmentService),
 			Stream:      handlers.NewStreamHandler(log, liveHub),
 			Activity:    activityHandler, Tenders: tenderHandler, Financials: financialsHandler,
-			Time:    timeHandler,
-			Portal:  portalHandler,
-			Billing: billingHandler,
+			Time:     timeHandler,
+			Portal:   portalHandler,
+			Billing:  billingHandler,
+			Planning: planningHandler,
 		},
 		Authenticate:   authMiddleware.RequireAuth,
 		AllowedOrigins: cfg.HTTP.AllowedOrigins,
@@ -371,6 +419,7 @@ func New(ctx context.Context) (*App, error) {
 		crmContacts:  crmsync.NewContactEventsConsumer(entClient, marketflow.NewClient(cfg.Services.MarketflowURL, cfg.Auth.APIKey), log),
 		qaFeatures:   qa.NewFeatureEventsConsumer(qaService, log),
 		fieldKeys:    fieldKeys,
+		tasks:        taskService,
 	}, nil
 }
 
@@ -418,6 +467,9 @@ func (a *App) Run(ctx context.Context) error {
 	// Reloads the ring and continues an unfinished re-seal; never starts a rotation by itself.
 	if a.fieldKeys != nil {
 		go a.fieldKeys.Run(ctx)
+	}
+	if a.tasks != nil {
+		go a.runRecurring(ctx)
 	}
 
 	errCh := make(chan error, 1)

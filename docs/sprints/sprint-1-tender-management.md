@@ -1,6 +1,6 @@
 # Sprint 1: Tender Management Module
 
-**Status**: Partially done (verified against code 2026-11-16). Tender CRUD, committees, meetings, evaluations, document links and metrics (one grouped query) are live, and handler tests exist. Not built: tender sections, submissions, go/no-go decisions, meeting platform integrations (sprint 9), tender events, document storage and swagger. The tender number used COUNT+1 and could repeat; sprint 0b replaces it with a race-free counter. Comes after sprints 0b and 12 to 16 in the build order. See `docs/backlog.md`.  
+**Status**: Built 2026-11-17 (API, plus the projects-ui screens). On top of the CRUD, committees, meetings, evaluations and metrics from before, I built sections with assignment and review (US-1.7 to US-1.9, without automatic PDF compilation: the compiled bid is uploaded as a document), submissions by portal, email and physical delivery (US-1.10, US-1.11; projects-api records the email, it does not send it), the scored go/no-go decision with the evaluation summary (US-1.5 summary, US-1.6), manual status moves with notes (US-1.12), the outcome (US-1.13), document storage in the shared object storage, list search and sort, and tender events on `project.>` through the outbox. Still open: notices to assignees, reviewers and the committee (notifications-api consumers), the email sent by the system, meeting platform integrations (sprint 9), evaluation drafts and SWOT fields, and swagger. See `docs/api.md`, "Tenders", and `docs/backlog.md`.  
 **Duration**: 4 weeks  
 **Sprint Goal**: Implement complete tender management lifecycle from opportunity identification through submission  
 **Team Size**: x developers  
@@ -351,8 +351,8 @@
 - [x] Implement committee management APIs (POST/GET committees, POST/DELETE committee members)
 - [x] Implement meeting scheduling APIs (POST/GET tender meetings)
 - [x] Implement evaluation APIs (POST/GET tender evaluations)
-- [ ] Implement section management APIs (deferred — tender sections entity not yet created)
-- [ ] Implement submission APIs (deferred — tender submissions entity not yet created)
+- [x] Implement section management APIs (2026-11-17: `tender_sections`, review by the reviewer or a tender manager)
+- [x] Implement submission APIs (2026-11-17: `tender_submissions`, POST /tenders/{id}/submissions)
 - [x] Add input validation with custom validators (JSON decode + field checks in handlers)
 - [x] Add error handling and proper HTTP status codes
 - [ ] Generate OpenAPI/Swagger documentation (deferred to Phase 7). Was ticked, but no swagger or OpenAPI file exists in the repo (verified 2026-09-27).
@@ -362,9 +362,9 @@
 - [ ] Integrate Google Meet API for meeting creation (deferred to Sprint 9)
 - [ ] Integrate Microsoft Teams API (deferred to Sprint 9)
 - [ ] Integrate Zoom API (deferred to Sprint 9)
-- [ ] Integrate with notifications service (NATS events) (deferred — NATS outbox ready)
+- [ ] Integrate with notifications service. The `project.tender.*` events are written to the outbox (2026-11-17); the notifications-api consumers are still open
 - [x] Integrate with auth-service for user data (JWKS JWT validation, API key auth)
-- [ ] Setup S3/MinIO for document storage (deferred to Sprint 9)
+- [x] Document storage in the shared object storage (2026-11-17, httpware/objectstore like attachments)
 
 ### Testing
 - [ ] Write unit tests for all service layer functions

@@ -240,7 +240,10 @@ func New(ctx context.Context) (*App, error) {
 	attachmentService := attachments.NewService(entClient, attachmentStore, attachments.Limits{
 		MaxBytes: cfg.Attachments.MaxBytes, AllowedTypes: cfg.Attachments.AllowedTypes, UploadTTL: cfg.Attachments.UploadTTL,
 	}, log).WithRealtime(liveHub)
-	tenderService := tenders.NewService(entClient, cacheClient, log)
+	// Tender documents use the same bucket and limits as attachments.
+	tenderService := tenders.NewService(entClient, cacheClient, log).WithStorage(attachmentStore, tenders.Limits{
+		MaxBytes: cfg.Attachments.MaxBytes, AllowedTypes: cfg.Attachments.AllowedTypes, UploadTTL: cfg.Attachments.UploadTTL,
+	})
 	syncService := usersync.NewService(cfg.Auth.ServiceURL, cfg.Auth.APIKey, log)
 	authEventsConsumer := usersync.NewAuthEventsConsumer(entClient, log)
 
@@ -270,6 +273,9 @@ func New(ctx context.Context) (*App, error) {
 		log.Warn("system project templates seed at startup failed", zap.Error(err))
 	}
 	planningHandler := handlers.NewPlanningHandler(log, planningService, taskService)
+	// A won tender becomes a project (sprint 2): an optional project template, and the bid budget
+	// as a draft treasury project budget after the commit.
+	tenderService.WithConversion(planningService, treasuryClient)
 	taskHandler.WithBaselines(planningService)
 	// Time tracking logs the signed-in user's hours on their ERP timesheet (ERP owns them).
 	timeHandler := handlers.NewTimeHandler(log, timetracking.NewService(entClient, erpClient, log).WithStopGuard(redisClient))

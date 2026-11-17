@@ -3,6 +3,8 @@ package tenders
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	entsql "entgo.io/ent/dialect/sql"
@@ -11,15 +13,21 @@ import (
 
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/bengobox/projects-service/internal/ent"
+	"github.com/bengobox/projects-service/internal/ent/predicate"
+	entproject "github.com/bengobox/projects-service/internal/ent/project"
 	enttender "github.com/bengobox/projects-service/internal/ent/tender"
 	enttendercommittee "github.com/bengobox/projects-service/internal/ent/tendercommittee"
 	enttendercommitteemember "github.com/bengobox/projects-service/internal/ent/tendercommitteemember"
 	enttenderdoc "github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	enttendereval "github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	enttendermeeting "github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	enttendersection "github.com/bengobox/projects-service/internal/ent/tendersection"
+	enttendersubmission "github.com/bengobox/projects-service/internal/ent/tendersubmission"
+	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/people"
 	"github.com/bengobox/projects-service/internal/services/sequence"
+	"github.com/bengobox/projects-service/internal/services/tasks"
 	"github.com/bengobox/projects-service/internal/services/txn"
 )
 
@@ -28,6 +36,17 @@ type Service struct {
 	client *ent.Client
 	cache  *sharedcache.Aside
 	log    *zap.Logger
+	// store and limits keep tender documents (WithStorage); templates and treasury serve the
+	// conversion to a project (WithConversion).
+	store     Store
+	limits    Limits
+	templates TemplateSource
+	treasury  *treasury.Client
+}
+
+// tenderOf selects one tender of the tenant.
+func tenderOf(tenantID, id uuid.UUID) []predicate.Tender {
+	return []predicate.Tender{enttender.ID(id), enttender.TenantID(tenantID)}
 }
 
 // NewService creates a new tenders service.
@@ -44,7 +63,7 @@ type CreateTenderInput struct {
 	Priority       string         `json:"priority"`
 	EstimatedValue *float64       `json:"estimated_value"`
 	Currency       string         `json:"currency"`
-	Deadline       *time.Time     `json:"deadline"`
+	Deadline       *tasks.Date     `json:"deadline"`
 	Description    string         `json:"description"`
 	SubmissionType string         `json:"submission_type"`
 	Metadata       map[string]any `json:"metadata"`
@@ -60,21 +79,49 @@ type UpdateTenderInput struct {
 	Priority       *string        `json:"priority"`
 	EstimatedValue *float64       `json:"estimated_value"`
 	Currency       *string        `json:"currency"`
-	Deadline       *time.Time     `json:"deadline"`
+	Deadline       *tasks.Date     `json:"deadline"`
 	Description    *string        `json:"description"`
 	SubmissionType *string        `json:"submission_type"`
 	Metadata       map[string]any `json:"metadata"`
 }
 
 // ListTendersFilter holds filter options for listing tenders. Limit and Offset come from the
-// shared pagination parser.
+// shared pagination parser. Q searches the title, client and number; Sort is deadline,
+// estimated_value or created_at, with a leading "-" for descending (default -created_at).
 type ListTendersFilter struct {
 	Status         string
 	Priority       string
+	Q              string
+	Sort           string
 	DeadlineBefore *time.Time
 	DeadlineAfter  *time.Time
 	Limit          int
 	Offset         int
+}
+
+// SortOrders are the list orders ListTenders accepts.
+var SortOrders = []string{"deadline", "-deadline", "estimated_value", "-estimated_value", "created_at", "-created_at"}
+
+// tenderOrder is the ORDER BY of a sort, always ending on the id so pages never overlap. Missing
+// deadlines and values sort last either way.
+func tenderOrder(sort string) []enttender.OrderOption {
+	desc := strings.HasPrefix(sort, "-")
+	field := strings.TrimPrefix(sort, "-")
+	opts := []entsql.OrderTermOption{entsql.OrderNullsLast()}
+	if desc {
+		opts = append(opts, entsql.OrderDesc())
+	}
+	switch field {
+	case "deadline":
+		return []enttender.OrderOption{enttender.ByDeadline(opts...), enttender.ByID()}
+	case "estimated_value":
+		return []enttender.OrderOption{enttender.ByEstimatedValue(opts...), enttender.ByID()}
+	case "created_at":
+		if !desc {
+			return []enttender.OrderOption{enttender.ByCreatedAt(), enttender.ByID()}
+		}
+	}
+	return []enttender.OrderOption{enttender.ByCreatedAt(entsql.OrderDesc()), enttender.ByID(entsql.OrderDesc())}
 }
 
 // CreateCommitteeInput holds data for creating a committee.
@@ -106,15 +153,6 @@ type ScheduleMeetingInput struct {
 	CreatedBy   uuid.UUID `json:"-"`
 }
 
-// AddDocumentInput holds data for adding a document.
-type AddDocumentInput struct {
-	FileURL    string    `json:"file_url"`
-	FileName   string    `json:"file_name"`
-	FileSize   *int64    `json:"file_size"`
-	MimeType   string    `json:"mime_type"`
-	UploadedBy uuid.UUID `json:"-"`
-}
-
 // TenderNumber formats a tender number: TND-{year}-{seq, at least 4 digits}.
 func TenderNumber(year int, seq int64) string { return fmt.Sprintf("TND-%d-%04d", year, seq) }
 
@@ -126,19 +164,35 @@ func record(ctx context.Context, tx *ent.Tx, tenantID, tenderID uuid.UUID, actio
 
 // CreateTender creates a new tender numbered from the tenant's tender sequence, in one transaction.
 func (s *Service) CreateTender(ctx context.Context, tenantID uuid.UUID, input CreateTenderInput) (*ent.Tender, error) {
-	if input.Title == "" {
-		return nil, ErrValidation("title is required")
+	input.Title, input.ClientName = strings.TrimSpace(input.Title), strings.TrimSpace(input.ClientName)
+	if input.Title == "" || len([]rune(input.Title)) > 300 {
+		return nil, ErrValidation("title is required (at most 300 characters)")
 	}
-	if input.ClientName == "" {
-		return nil, ErrValidation("client_name is required")
+	if input.ClientName == "" || len([]rune(input.ClientName)) > 200 {
+		return nil, ErrValidation("client_name is required (at most 200 characters)")
 	}
 	status := input.Status
 	if status == "" {
-		status = "draft"
+		status = StatusDraft
+	}
+	if !validCreateStatus(status) {
+		return nil, ErrValidation("a new tender starts as draft or evaluating")
 	}
 	priority := input.Priority
 	if priority == "" {
 		priority = "medium"
+	}
+	if !slices.Contains(Priorities, priority) {
+		return nil, ErrValidation("priority must be low, medium, high or critical")
+	}
+	if input.EstimatedValue != nil && *input.EstimatedValue < 0 {
+		return nil, ErrValidation("estimated_value must be zero or more")
+	}
+	if err := normalizeInputMeta(input.Metadata); err != nil {
+		return nil, err
+	}
+	if input.Metadata != nil {
+		input.Metadata = mergeMeta(nil, input.Metadata)
 	}
 	currency := input.Currency
 	if currency == "" {
@@ -170,8 +224,8 @@ func (s *Service) CreateTender(ctx context.Context, tenantID uuid.UUID, input Cr
 		if input.EstimatedValue != nil {
 			c = c.SetEstimatedValue(*input.EstimatedValue)
 		}
-		if input.Deadline != nil {
-			c = c.SetDeadline(*input.Deadline)
+		if input.Deadline != nil && !input.Deadline.IsZero() {
+			c = c.SetDeadline(input.Deadline.Time)
 		}
 		if input.Description != "" {
 			c = c.SetDescription(input.Description)
@@ -209,11 +263,14 @@ func (s *Service) ListTenders(ctx context.Context, tenantID uuid.UUID, filter Li
 	if filter.DeadlineAfter != nil {
 		q = q.Where(enttender.DeadlineGTE(*filter.DeadlineAfter))
 	}
+	if term := strings.TrimSpace(filter.Q); term != "" {
+		q = q.Where(enttender.Or(enttender.TitleContainsFold(term), enttender.ClientNameContainsFold(term), enttender.NumberContainsFold(term)))
+	}
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count tenders: %w", err)
 	}
-	items, err := q.Order(ent.Desc(enttender.FieldCreatedAt), ent.Desc(enttender.FieldID)).
+	items, err := q.Order(tenderOrder(filter.Sort)...).
 		Offset(filter.Offset).Limit(filter.Limit).All(ctx)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list tenders: %w", err)
@@ -239,16 +296,36 @@ func (s *Service) GetTender(ctx context.Context, tenantID, id uuid.UUID) (*ent.T
 	return t, nil
 }
 
-// UpdateTender updates an existing tender.
+// UpdateTender updates an existing tender. A status change here is limited to the manual moves
+// (CanMove); the decision, submit and outcome routes make the others. Metadata is a partial
+// update (null removes a key) and never touches the server-owned keys.
 func (s *Service) UpdateTender(ctx context.Context, tenantID, id uuid.UUID, input UpdateTenderInput) (*ent.Tender, error) {
+	if input.Title != nil {
+		*input.Title = strings.TrimSpace(*input.Title)
+		if *input.Title == "" || len([]rune(*input.Title)) > 300 {
+			return nil, ErrValidation("title is required (at most 300 characters)")
+		}
+	}
+	if input.ClientName != nil {
+		*input.ClientName = strings.TrimSpace(*input.ClientName)
+		if *input.ClientName == "" || len([]rune(*input.ClientName)) > 200 {
+			return nil, ErrValidation("client_name is required (at most 200 characters)")
+		}
+	}
+	if input.Priority != nil && !slices.Contains(Priorities, *input.Priority) {
+		return nil, ErrValidation("priority must be low, medium, high or critical")
+	}
+	if input.EstimatedValue != nil && *input.EstimatedValue < 0 {
+		return nil, ErrValidation("estimated_value must be zero or more")
+	}
+	if err := normalizeInputMeta(input.Metadata); err != nil {
+		return nil, err
+	}
 	var updated *ent.Tender
 	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
-		t, err := tx.Tender.Query().Where(enttender.ID(id), enttender.TenantID(tenantID)).Only(ctx)
+		t, err := lockTender(ctx, tx, tenantID, id)
 		if err != nil {
-			if ent.IsNotFound(err) {
-				return ErrNotFound
-			}
-			return fmt.Errorf("fetch tender: %w", err)
+			return err
 		}
 		changes := map[string]any{}
 		u := t.Update()
@@ -264,12 +341,14 @@ func (s *Service) UpdateTender(ctx context.Context, tenantID, id uuid.UUID, inpu
 			u = u.SetSource(*input.Source)
 			changes["source"] = *input.Source
 		}
-		if input.Status != nil {
+		prevStatus := t.Status
+		statusChanged := input.Status != nil && *input.Status != t.Status
+		if statusChanged {
+			if !CanMove(t.Status, *input.Status) {
+				return stateErr("tender_status_move", fmt.Sprintf("a %s tender cannot be moved to %s here: use the decision, submit or outcome step", t.Status, *input.Status))
+			}
 			u = u.SetStatus(*input.Status)
 			changes["status"] = map[string]any{"from": t.Status, "to": *input.Status}
-			if *input.Status == "submitted" {
-				u = u.SetSubmittedAt(time.Now())
-			}
 		}
 		if input.Priority != nil {
 			u = u.SetPriority(*input.Priority)
@@ -284,8 +363,13 @@ func (s *Service) UpdateTender(ctx context.Context, tenantID, id uuid.UUID, inpu
 			changes["currency"] = *input.Currency
 		}
 		if input.Deadline != nil {
-			u = u.SetDeadline(*input.Deadline)
-			changes["deadline"] = input.Deadline.Format(time.RFC3339)
+			if input.Deadline.IsZero() {
+				u = u.ClearDeadline()
+				changes["deadline"] = nil
+			} else {
+				u = u.SetDeadline(input.Deadline.Time)
+				changes["deadline"] = input.Deadline.Format(time.RFC3339)
+			}
 		}
 		if input.Description != nil {
 			u = u.SetDescription(*input.Description)
@@ -296,13 +380,19 @@ func (s *Service) UpdateTender(ctx context.Context, tenantID, id uuid.UUID, inpu
 			changes["submission_type"] = *input.SubmissionType
 		}
 		if input.Metadata != nil {
-			u = u.SetMetadata(input.Metadata)
+			u = u.SetMetadata(mergeMeta(t.Metadata, input.Metadata))
 			changes["metadata"] = "changed"
 		}
 		if updated, err = u.Save(ctx); err != nil {
 			return fmt.Errorf("update tender: %w", err)
 		}
-		return record(ctx, tx, tenantID, id, activity.ActionUpdated, changes)
+		if err := record(ctx, tx, tenantID, id, activity.ActionUpdated, changes); err != nil {
+			return err
+		}
+		if statusChanged {
+			return emit(ctx, tx, updated, EventStatusChanged, map[string]any{"previous_status": prevStatus})
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -310,15 +400,33 @@ func (s *Service) UpdateTender(ctx context.Context, tenantID, id uuid.UUID, inpu
 	return updated, nil
 }
 
-// DeleteTender deletes a tender with its committees, evaluations, meetings and documents.
+// DeleteTender deletes a tender with its committees, evaluations, meetings, sections, submissions
+// and documents. A converted tender stays (its project links its documents): 409 tender_converted.
+// Stored files go after the commit unless a project attachment still links them.
 func (s *Service) DeleteTender(ctx context.Context, tenantID, id uuid.UUID) error {
-	return txn.Run(ctx, s.client, func(tx *ent.Tx) error {
-		t, err := tx.Tender.Query().Where(enttender.ID(id), enttender.TenantID(tenantID)).Only(ctx)
-		if ent.IsNotFound(err) {
-			return ErrNotFound
-		}
+	var files []string
+	err := txn.Run(ctx, s.client, func(tx *ent.Tx) error {
+		t, err := lockTender(ctx, tx, tenantID, id)
 		if err != nil {
-			return fmt.Errorf("fetch tender: %w", err)
+			return err
+		}
+		if pid := ConvertedProjectID(t.Metadata); pid != uuid.Nil {
+			exists, err := tx.Project.Query().Where(entproject.ID(pid), entproject.TenantID(tenantID)).Exist(ctx)
+			if err != nil {
+				return fmt.Errorf("check converted project: %w", err)
+			}
+			if exists {
+				return stateErr("tender_converted", "this tender became a project, so it stays as its record")
+			}
+		}
+		if _, err := tx.TenderSection.Delete().Where(enttendersection.TenantID(tenantID), enttendersection.TenderID(id)).Exec(ctx); err != nil {
+			return fmt.Errorf("delete tender sections: %w", err)
+		}
+		if _, err := tx.TenderSubmission.Delete().Where(enttendersubmission.TenantID(tenantID), enttendersubmission.TenderID(id)).Exec(ctx); err != nil {
+			return fmt.Errorf("delete tender submissions: %w", err)
+		}
+		if files, err = tx.TenderDocument.Query().Where(enttenderdoc.TenderID(id)).Select(enttenderdoc.FieldFileURL).Strings(ctx); err != nil {
+			return fmt.Errorf("list tender files: %w", err)
 		}
 		committees, err := tx.TenderCommittee.Query().Where(enttendercommittee.TenderID(id)).IDs(ctx)
 		if err != nil {
@@ -346,11 +454,16 @@ func (s *Service) DeleteTender(ctx context.Context, tenantID, id uuid.UUID) erro
 		}
 		return record(ctx, tx, tenantID, id, activity.ActionDeleted, map[string]any{"number": t.Number})
 	})
+	if err != nil {
+		return err
+	}
+	s.removeStored(ctx, tenantID, files)
+	return nil
 }
 
 // tenderStatuses are always reported (zero when a tenant has none) so the UI cards never read a
 // missing key.
-var tenderStatuses = []string{"draft", "evaluating", "submitted", "awarded", "lost", "cancelled"}
+var tenderStatuses = Statuses
 
 // StatusMetric is one status bucket of the tender pipeline.
 type StatusMetric struct {
@@ -386,7 +499,12 @@ func (s *Service) GetTenderMetrics(ctx context.Context, tenantID uuid.UUID) (map
 	}
 	total, totalValue := 0, 0.0
 	for _, r := range rows {
-		byStatus[r.Status] = StatusMetric{Count: r.Count, Value: r.Value}
+		st := r.Status
+		if !IsKnownStatus(st) {
+			st = StatusDraft // a status from before the current vocabulary counts as draft
+		}
+		cur := byStatus[st]
+		byStatus[st] = StatusMetric{Count: cur.Count + r.Count, Value: cur.Value + r.Value}
 		total += r.Count
 		totalValue += r.Value
 	}
@@ -394,13 +512,17 @@ func (s *Service) GetTenderMetrics(ctx context.Context, tenantID uuid.UUID) (map
 	if decided := byStatus["awarded"].Count + byStatus["lost"].Count; decided > 0 {
 		winRate = float64(byStatus["awarded"].Count) / float64(decided) * 100
 	}
+	pipeline := 0.0
+	for _, st := range openStatuses {
+		pipeline += byStatus[st].Value
+	}
 	return map[string]any{
 		"total":                 total,
 		"total_estimated_value": totalValue,
 		"by_status":             byStatus,
 		"win_rate":              winRate,
 		"awarded_value":         byStatus["awarded"].Value,
-		"pipeline_value":        byStatus["draft"].Value + byStatus["evaluating"].Value + byStatus["submitted"].Value,
+		"pipeline_value":        pipeline,
 	}, nil
 }
 
@@ -639,63 +761,4 @@ func (s *Service) ListMeetings(ctx context.Context, tenantID, tenderID uuid.UUID
 		return nil, fmt.Errorf("list meetings: %w", err)
 	}
 	return items, nil
-}
-
-// --- Document operations ---
-
-// AddDocument adds a document to a tender.
-func (s *Service) AddDocument(ctx context.Context, tenantID, tenderID uuid.UUID, input AddDocumentInput) (*ent.TenderDocument, error) {
-	if input.FileURL == "" || input.FileName == "" {
-		return nil, ErrValidation("file_url and file_name are required")
-	}
-	var doc *ent.TenderDocument
-	err := s.onTender(ctx, tenantID, tenderID, func(tx *ent.Tx) (map[string]any, error) {
-		c := tx.TenderDocument.Create().SetTenderID(tenderID).SetTenantID(tenantID).
-			SetFileURL(input.FileURL).SetFileName(input.FileName).SetUploadedBy(input.UploadedBy)
-		if input.FileSize != nil {
-			c = c.SetFileSize(*input.FileSize)
-		}
-		if input.MimeType != "" {
-			c = c.SetMimeType(input.MimeType)
-		}
-		var err error
-		if doc, err = c.Save(ctx); err != nil {
-			return nil, fmt.Errorf("add document: %w", err)
-		}
-		return map[string]any{"document_added": doc.FileName}, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return doc, nil
-}
-
-// ListDocuments lists documents for a tender.
-func (s *Service) ListDocuments(ctx context.Context, tenantID, tenderID uuid.UUID) ([]*ent.TenderDocument, error) {
-	items, err := s.client.TenderDocument.Query().
-		Where(enttenderdoc.TenderID(tenderID), enttenderdoc.TenantID(tenantID)).
-		Order(ent.Desc(enttenderdoc.FieldUploadedAt)).
-		Limit(subListLimit).All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list documents: %w", err)
-	}
-	return items, nil
-}
-
-// DeleteDocument removes a document from the tender.
-func (s *Service) DeleteDocument(ctx context.Context, tenantID, tenderID, id uuid.UUID) error {
-	return s.onTender(ctx, tenantID, tenderID, func(tx *ent.Tx) (map[string]any, error) {
-		doc, err := tx.TenderDocument.Query().Where(enttenderdoc.ID(id), enttenderdoc.TenderID(tenderID),
-			enttenderdoc.TenantID(tenantID)).Only(ctx)
-		if ent.IsNotFound(err) {
-			return nil, ErrNotFound
-		}
-		if err != nil {
-			return nil, fmt.Errorf("fetch document: %w", err)
-		}
-		if err := tx.TenderDocument.DeleteOne(doc).Exec(ctx); err != nil {
-			return nil, fmt.Errorf("delete document: %w", err)
-		}
-		return map[string]any{"document_removed": doc.FileName}, nil
-	})
 }

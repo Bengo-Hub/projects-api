@@ -90,11 +90,26 @@ Project finance (gated on `budget_tracking`, T3):
 
 ## Tenders
 
-- Tender sections and section review. Source: sprint-1 US-1.7 to US-1.9.
-- Tender submissions (email and physical). Source: sprint-1 US-1.10, US-1.11.
-- Go/no-go decision and outcome recording. Source: sprint-1 US-1.6, US-1.13.
-- Tender events (`projects.tender.*`) and notifications. Source: sprint-1, plan.md Event Architecture.
-- Tender to project conversion with document and team carry-over, charter and stakeholder register. Source: sprint-2.
+Built 2026-11-17 (see `docs/api.md`, "Tenders"): sections and section review, submissions (online,
+email and physical), the scored go/no-go decision and the evaluation summary, manual status moves,
+the outcome, stored documents, list search and sort, `project.tender.*` events, and the conversion
+of a won tender into a project with the team, documents, an optional template and a draft treasury
+budget. Still open:
+
+- notifications-api consumers for the tender events: the section notices to the assignee and the
+  reviewer, the committee notice on a go/no-go decision, and the won and lost notices. Source:
+  sprint-1 US-1.3, US-1.6 to US-1.8.
+- Sending the email submission from the system (today the team sends it and the submission records
+  it). Source: sprint-1 US-1.10.
+- Project charter and stakeholder register after a conversion. Source: sprint-2 US-2.2, US-2.3.
+- Evaluation drafts, the per-area scores (financial, technical, resource, risk), SWOT and votes on
+  the committee evaluation. Source: sprint-1 US-1.5.
+- Compiling the approved sections into one PDF (today the compiled bid is uploaded). Source: sprint-1
+  US-1.9.
+- A "my sections" list across tenders for the assignee. Source: sprint-1 US-1.7.
+- A trigram index for tender search once a tenant has thousands of tenders. Source: queries for
+  growth.
+- Meeting platform integrations. Source: sprint-1 US-1.4, sprint 9.
 
 ## Planning and collaboration
 

@@ -842,8 +842,8 @@ See `docs/sprints/` for detailed sprint planning.
 |---|---|---|
 | 0 Foundations | Done | Scaffold, SSO, health, metrics. The local RBAC tables were never used and are retired in 0b |
 | 0b Hardening (new) | In progress | Local RBAC per the shared-docs trinity pattern and SSO guide (JIT, `auth/me`, codes on every route), shared lib bumps, embedded migrations, transactional outbox, query fixes |
-| 1 Tenders | Partial | CRUD, committees, evaluations, meetings, document links, metrics. Open: sections, submissions, go/no-go |
-| 2 Tender to project | Planned | Nothing yet |
+| 1 Tenders | Built 2026-11-17 | CRUD, committees, evaluations, meetings, metrics, plus sections with review, submissions, the scored go/no-go decision, status moves, the outcome, stored documents, search and sort, `project.tender.*` events. Open: notifications consumers, system-sent email, meeting platforms (sprint 9) |
+| 2 Tender to project | Conversion built 2026-11-17 | A won tender becomes one project (idempotent): client, contract value, dates, committee team, linked documents, optional template, draft treasury budget after commit with retry. Open: charter and stakeholder register |
 | 3 Planning | Partial | Projects, WBS codes, subtasks, typed dependencies, Gantt data, milestones. Open: real Gantt chart, baselines, critical path |
 | 4 Collaboration | Partial | Members and comments. The activity feed had routes but nothing wrote to it until 0b. Open: mentions, attachments, live updates |
 | 5 Time and budget | Budget done, time open | Budgets live in treasury (S2S), EVM and portfolio done. Time tracking moves to sprint 13 |

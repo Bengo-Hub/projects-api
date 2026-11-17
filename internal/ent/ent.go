@@ -47,6 +47,8 @@ import (
 	"github.com/bengobox/projects-service/internal/ent/tenderdocument"
 	"github.com/bengobox/projects-service/internal/ent/tenderevaluation"
 	"github.com/bengobox/projects-service/internal/ent/tendermeeting"
+	"github.com/bengobox/projects-service/internal/ent/tendersection"
+	"github.com/bengobox/projects-service/internal/ent/tendersubmission"
 	"github.com/bengobox/projects-service/internal/ent/userroleassignment"
 )
 
@@ -143,6 +145,8 @@ func checkColumn(table, column string) error {
 			tenderdocument.Table:        tenderdocument.ValidColumn,
 			tenderevaluation.Table:      tenderevaluation.ValidColumn,
 			tendermeeting.Table:         tendermeeting.ValidColumn,
+			tendersection.Table:         tendersection.ValidColumn,
+			tendersubmission.Table:      tendersubmission.ValidColumn,
 			userroleassignment.Table:    userroleassignment.ValidColumn,
 		})
 	})

@@ -171,7 +171,9 @@ func New(d Deps) http.Handler {
 				h.Stream.RegisterRoutes(tenant, tracking)
 			}
 			h.Activity.RegisterRoutes(tenant)
-			h.Tenders.RegisterRoutes(tenant)
+			// Tenders: the project_management feature (mutations, layer 2); the conversion budget retry
+			// also needs budget_tracking, like the financials budget proxy.
+			h.Tenders.RegisterRoutes(tenant, requireFeature("budget_tracking"))
 			if h.Financials != nil {
 				// Project financials, portfolio and project budgets: the budget_tracking feature.
 				h.Financials.RegisterRoutes(tenant, requireFeature("budget_tracking"))

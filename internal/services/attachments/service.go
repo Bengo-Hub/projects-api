@@ -32,6 +32,10 @@ var ErrNotFound = errors.New("not found")
 // ErrNotOwner refuses deleting someone else's attachment without comments.manage.
 var ErrNotOwner = errors.New("you can only delete your own attachments")
 
+// MetaLinkedFrom marks an attachment that links a file another record owns (a tender document a
+// conversion linked to its project): deleting the attachment keeps the stored file.
+const MetaLinkedFrom = "linked_from"
+
 // ErrUnavailable means object storage is not configured for direct uploads (local development).
 var ErrUnavailable = errors.New("file uploads are not available right now")
 
@@ -344,7 +348,9 @@ func (s *Service) Delete(ctx context.Context, tenantID, projectID, id uuid.UUID,
 	if err != nil {
 		return err
 	}
-	if s.store != nil && strings.HasPrefix(gone.FileURL, "projects/") {
+	// A tender document linked to a converted project (metadata linked_from) is still the
+	// tender's file: removing the link never removes the file.
+	if _, linked := gone.Metadata[MetaLinkedFrom]; !linked && s.store != nil && strings.HasPrefix(gone.FileURL, "projects/") {
 		if err := s.store.Delete(ctx, gone.FileURL); err != nil {
 			s.log.Warn("deleted attachment's file not removed from storage", zap.String("key", gone.FileURL), zap.Error(err))
 		}

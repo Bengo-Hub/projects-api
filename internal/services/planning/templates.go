@@ -416,7 +416,7 @@ func (s *Service) CreateFromTemplate(ctx context.Context, tenantID, templateID u
 		return FromTemplateResult{}, err
 	}
 	start := time.Date(in.StartDate.Year(), in.StartDate.Month(), in.StartDate.Day(), 0, 0, 0, 0, time.UTC)
-	end := start.AddDate(0, 0, max(def.DurationDays, 1)-1)
+	end := TemplateEnd(def, start)
 	name := strings.TrimSpace(in.Name)
 	if name == "" {
 		name = tpl.Name
@@ -430,6 +430,32 @@ func (s *Service) CreateFromTemplate(ctx context.Context, tenantID, templateID u
 		if err != nil {
 			return err
 		}
+		tpl.Definition = def
+		res, err = ApplyTemplateTx(ctx, tx, tenantID, p, tpl, start)
+		return err
+	})
+	if res.Roles == nil {
+		res.Roles = []planmodel.TemplateRole{}
+	}
+	return res, err
+}
+
+// TemplateEnd is the last day of a template's plan laid out from start (tpl.Definition must have
+// passed ValidateDefinition).
+func TemplateEnd(def planmodel.TemplateDefinition, start time.Time) time.Time {
+	return start.AddDate(0, 0, max(def.DurationDays, 1)-1)
+}
+
+// ApplyTemplateTx lays a template's plan out on project p from start inside the caller's
+// transaction: the board statuses and status rules on the project, the phases as milestones, the
+// tasks with their parents and dependencies, one activity entry and project.template.applied.
+// tpl.Definition must have passed ValidateDefinition. A tender conversion (sprint 2) uses it
+// on the project it has just created.
+func ApplyTemplateTx(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, p *ent.Project, tpl Template, start time.Time) (FromTemplateResult, error) {
+	def := tpl.Definition
+	var res FromTemplateResult
+	err := func() error {
+		var err error
 		meta := map[string]any{}
 		for k, v := range p.Metadata {
 			meta[k] = v
@@ -518,7 +544,7 @@ func (s *Service) CreateFromTemplate(ctx context.Context, tenantID, templateID u
 			"task_count": len(def.Tasks), "milestone_count": len(def.Phases), "start_date": start.Format(time.DateOnly),
 			"actor_id": actor(ctx),
 		})
-	})
+	}()
 	if res.Roles == nil {
 		res.Roles = []planmodel.TemplateRole{}
 	}

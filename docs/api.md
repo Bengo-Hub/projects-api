@@ -838,6 +838,174 @@ projects. The workload capacity setting lives in `tenant_settings` because proje
 level row; it is the fallback for people ERP holds no working hours for.
 Deleting a project deletes its baselines, risks and change requests.
 
+## Tenders (sprints 1 and 2, 2026-11-17)
+
+A tender runs from draft to a project: evaluation by a committee, a scored go/no-go decision,
+the bid broken into sections that people write and reviewers approve, one or more submissions, the
+outcome, and for a won tender the conversion into a project. Everything sits under
+`/api/v1/{tenant}/tenders` and is written with its activity entry and its outbox event in one
+transaction.
+
+### Gating and permissions
+
+There is no tender feature code in subscriptions-api, so tenders sit under `project_management`:
+every mutation needs it (router layer 2) and reads need only the projects module. The permission
+codes are `projects.tenders.view|add|change|delete|manage`. The budget retry after a conversion also
+needs `budget_tracking` and `projects.financials.manage`, the same gate as the financials budget
+proxy. A refused permission is 403 `permission_denied`; a missing feature is 403
+`feature_not_available` with `upgrade: true`.
+
+### Statuses
+
+`draft`, `evaluating`, `preparing` (after a go), `no_go`, `submitted`, `under_review`, `shortlisted`,
+`awarded`, `lost`, `cancelled`. Only these moves can be made by hand (the status route, or `status`
+in an edit): draft and evaluating both ways, preparing back to evaluating, no_go back to evaluating,
+submitted to under_review or shortlisted, under_review and shortlisted both ways, any open status to
+cancelled, cancelled back to draft. The decision, submit and outcome routes make the other moves. A
+refused move is 409 `tender_status_move`. A new tender starts as draft or evaluating. A status
+from before this vocabulary (production had no tenders when it changed, so none is expected)
+never blocks a tender: it counts as draft in the metrics, projects-ui shows it as Draft, and it can
+be moved by hand to draft, evaluating or cancelled. `GET
+/tenders/{id}` adds `allowed_moves` (the manual moves from the current status) and
+`can_open_project` (membership scoping on the project a converted tender became).
+
+### Routes
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/tenders` | view | Paged. `?q` searches title, client and number; `?sort` is `deadline`, `estimated_value` or `created_at`, `-` for descending (default `-created_at`, missing deadlines and values last); `?status`, `?priority`, `?deadline_before`, `?deadline_after` |
+| POST | `/tenders` | add | `{title, client_name, source, status, priority, estimated_value, currency, deadline (YYYY-MM-DD or RFC 3339), description, submission_type, metadata}` |
+| PUT | `/tenders/{id}` | change | Partial. `metadata` merges (null removes a key) and never touches the server-owned keys |
+| DELETE | `/tenders/{id}` | delete | 409 `tender_converted` while the project it became exists. Stored files go after the commit unless a project still links them |
+| POST | `/tenders/{id}/status` | change | `{status, note}`. Event `tender.status_changed` |
+| GET | `/tenders/{id}/evaluation-summary` | view | `{count, average_score, min_score, max_score, evaluators: [{evaluator_id, name, score, evaluated_at}], default_criteria, criteria_note, default_threshold}` in one aggregate |
+| POST | `/tenders/{id}/decision` | manage | Go/no-go, below |
+| GET, POST | `/tenders/{id}/sections` | view, manage | Sections, below. The list answers `{data, summary: {total, by_status, ready}}` |
+| PUT, DELETE | `/tenders/{id}/sections/{sectionID}` | view (the service checks the assignee), manage | |
+| POST | `/tenders/{id}/sections/{sectionID}/submit`, `/approve`, `/request-changes` | view (the service checks who) | `request-changes` needs `{comment}` |
+| GET, POST | `/tenders/{id}/submissions` | view, manage | Submissions, below |
+| POST | `/tenders/{id}/outcome` | manage | Outcome, below |
+| POST | `/tenders/{id}/convert` | manage and `projects.projects.add` | Conversion, below. A `template_id` also needs `projects.templates.view` |
+| POST | `/tenders/{id}/conversion/push-budget` | manage, `projects.financials.manage`, `budget_tracking` | Retries the draft treasury budget: `{budget}` |
+| GET | `/tenders/{id}/documents` | view | `{data: [{..., url, stored}]}`, `url` signed for a stored file |
+| POST | `/tenders/{id}/documents/uploads` | manage | `{file_name, content_type, size}` gives a presigned PUT (`{key, upload, max_bytes, allowed_types}`) |
+| POST | `/tenders/{id}/documents` | manage | `{key, file_name}` confirms an upload (the stored bytes are checked); `{file_url, file_name}` records an https link |
+| DELETE | `/tenders/{id}/documents/{docID}` | manage | 409 `document_in_use` when a submission records it |
+
+Committees, evaluations and meetings are unchanged (see "Errors and paging" for the committee shape).
+Validation errors are 400 `{error, code: validation_error}`; state refusals are 409 `{error, code}`.
+
+### Go/no-go
+
+`{criteria: [{key, label, weight, score, note}], threshold, decision, comment}`. Each criterion
+scores 0 to 5 with a weight above 0; the weighted score is `sum(weight * score) / (sum(weight) * 5) *
+100`, one decimal. The recommendation is `go` at or above the threshold (default 65), `review`
+within 15 points below it and `no_go` under that. The decision is `go` (status preparing) or `no_go`
+(status no_go) and needs a comment whenever it differs from the recommendation. It is stored in
+`metadata.go_decision` with the decider, the time and the committee's evaluation count and average;
+an earlier decision moves to `metadata.go_decision_history` (the last 10). A decision can be made
+again until the bid is submitted (then 409 `tender_decision_closed`). Event `tender.go_decision`.
+
+### Sections
+
+A section has a title, description, position, assignee, reviewer (never the assignee), due date,
+draft document (one of the tender's documents) and status `not_started`, `in_progress`,
+`in_review`, `changes_requested` or `approved`. A tender manager edits everything; the assignee may
+only move their section between not_started and in_progress and set its draft (403 `not_assignee`
+otherwise). The assignee or a manager submits it for review (event
+`tender.section.review_requested`). The reviewer or a manager approves it or asks for changes with a
+comment (event `tender.section.reviewed`); the assignee never reviews their own section (403
+`own_section`), and anyone else gets 403 `not_reviewer`. Sections close with the tender (409
+`tender_closed` once it is won, lost, cancelled or no_go).
+
+### Submissions
+
+`{method: online|email|physical, submitted_at, recipient, reference, courier, notes, document_id,
+proof_document_id, email_subject, override_sections}`. Email needs the address it went to and
+physical the delivery address; the time cannot be in the future. The first submission needs a go
+decision (409 `tender_no_go_decision`) and every section approved unless `override_sections` (409
+`sections_not_approved`, the override is recorded); it moves the tender to submitted. Later ones
+(an amended bid, a clarification) are recorded while the bid is out and leave the status alone.
+projects-api does not send the email: the record keeps the details and the reference of the email
+the team sent. Event `tender.submitted`.
+
+### Outcome
+
+`{outcome: won|lost, award_date, award_value, contract_reference, contract_start, contract_end,
+loss_reason, competitor, competitor_price, lessons}` on a submitted, under review or shortlisted
+tender (else 409 `tender_not_submitted`). Won sets awarded (the award value defaults to the
+estimated value), lost needs its reason. Stored in `metadata.outcome`. Events `tender.won` and
+`tender.lost`. The metrics' win rate is awarded out of awarded plus lost.
+
+### Conversion
+
+`{name, billing_type, contract_value, start_date, end_date, owner_id, template_id, crm_contact_id,
+crm_contact_name, skip_team, skip_budget}`, all optional. Only an awarded tender converts (409
+`tender_not_won`). In one transaction it creates the project: the tender's title and description,
+the currency, `billing_type` (default fixed) and `contract_value` (the award value, else the
+estimate), the client as the marketflow CRM contact, the dates (the caller's, else the contract dates
+from the outcome, else today; a template sets the end when none is known), the owner (the caller or
+a committee member), the team from the committees (chair as manager, observer as viewer, everyone
+else as member; the caller joins as manager when someone else owns it), the tender documents linked
+as project files (the same stored file, `metadata.linked_from`, never copied and never deleted with
+the link), and the template's plan when one is given. `metadata.tender_id` and `tender_number` go on
+the project, `metadata.conversion` on the tender. Answer 201 `{project, tender, already_converted,
+members_added, documents_linked, template, budget}`.
+
+It is idempotent: converting again returns the same project with 200 `already_converted: true`, or
+409 `tender_already_converted` for a caller who cannot see that project. If the project was deleted,
+the tender converts again.
+
+When the tender carries a bid budget (`metadata.bid_budget.lines`), a draft project budget is
+created in treasury after the commit, as the caller, through the same treasury budget API as the
+financials proxy: monthly over the project's dates (a year when there is no end), the bid lines as
+they are. It is created, not submitted; the project manager submits it from Financials. The state is
+`metadata.conversion.budget.status`: `not_needed`, `skipped`, `not_allowed` (the caller lacks
+`projects.financials.manage` or the plan lacks `budget_tracking`), `pending`, `pushing`, `created`
+(with `budget_id`) or `failed` (with treasury's reason). A failed push is retried with the
+push-budget route; the budget id is kept as soon as treasury answers, so a retry never creates a
+second one. Projects never keeps the money itself.
+
+### Metadata
+
+User keys: `crm_contact_id` and `crm_contact_name` (the client in marketflow), `tags` (up to 20
+labels), `bid_budget` (`{lines: [{name, category: expense|revenue|capex, planned_amount (decimal
+string, two places), notes}]}`, up to 200 lines). Server-owned keys, written only by their routes:
+`go_decision`, `go_decision_history`, `outcome`, `conversion`.
+
+### Events (outbox, `project.>`)
+
+The aggregate is the tender. Every payload carries `{tender_id, tenant_id, number, title,
+client_name, status, currency, estimated_value, deadline, crm_contact_id}` plus:
+
+| Subject | Extra fields |
+|---|---|
+| `project.tender.status_changed` | `{previous_status, note}` |
+| `project.tender.go_decision` | `{decision, recommendation, weighted_score, threshold, decided_by, previous_status}` |
+| `project.tender.section.review_requested` | `{section_id, section, submitted_by, reviewer_id}` |
+| `project.tender.section.reviewed` | `{section_id, section, decision (approved or changes_requested), reviewed_by, comment, assignee_id}` |
+| `project.tender.submitted` | `{submission_id, method, submitted_at, submitted_by, recipient, reference, resubmission, previous_status, email_subject}` |
+| `project.tender.won` | `{award_value, award_date, previous_status}` |
+| `project.tender.lost` | `{loss_reason, previous_status}` |
+| `project.tender.converted` | `{project_id, project_name, owner_id, converted_by, members_added, documents_linked, budget_status, contract_value, template_id}` |
+
+The conversion also writes `project.created` (and `project.template.applied` with a template).
+notifications-api has no consumer for the tender events yet; the section notices to the assignee
+and reviewer, the committee notice on a decision and the email submission are the follow-up.
+
+### Tables
+
+`tender_sections` and `tender_submissions` (migration `20261117145109_sprint_1_2_tenders.sql`).
+Sections are a table because different people edit them at the same time (one JSONB blob on the
+tender would lose updates), they are listed in order per tender (index tenant, tender, position)
+and each carries its own review trail. Submissions are a table because a tender can be delivered
+more than once and each delivery is an append-only record listed per tender (index tenant, tender,
+submitted_at). The decision, outcome, conversion, bid budget and CRM client live in tender metadata:
+they are read with their tender and never queried across tenders. Neither table has a foreign key
+(like the sprint 16 tables); deleting a tender deletes its sections and submissions. Searching
+tenders uses case-insensitive `LIKE` on the tenant's rows; a trigram index is the next step if a
+tenant's list grows into the thousands.
+
 ## Platform: field keys
 
 These routes back the Security keys page in projects-ui. They sit under `/api/v1/platform`, outside

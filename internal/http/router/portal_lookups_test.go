@@ -21,7 +21,8 @@ func (p permsRBAC) Resolve(context.Context, uuid.UUID, uuid.UUID) (rbac.Resolved
 	return rbac.Resolved{Roles: []string{"custom"}, Perms: append([]string(nil), p...)}, nil
 }
 
-// The contact picker serves the client invite, so projects.portal.manage alone opens it; the cost
+// The contact picker serves the client invite and the tender client, so projects.portal.manage,
+// projects.tenders.add or projects.tenders.change alone opens it; the cost
 // centre picker still needs the right to create or edit a project, and a user with neither is
 // refused both.
 func TestContactLookupOpensToPortalManage(t *testing.T) {
@@ -38,7 +39,7 @@ func TestContactLookupOpensToPortalManage(t *testing.T) {
 	if w := call(inviter, claims, http.MethodGet, "/api/v1/acme/lookups/cost-centers"); w.Code != http.StatusForbidden {
 		t.Errorf("portal.manage on the cost centre lookup: %d, want 403", w.Code)
 	}
-	for _, perm := range []string{rbac.PermProjectsAdd, rbac.PermProjectsChange} {
+	for _, perm := range []string{rbac.PermProjectsAdd, rbac.PermProjectsChange, rbac.PermTendersAdd, rbac.PermTendersChange} {
 		if w := call(route(perm), claims, http.MethodGet, "/api/v1/acme/lookups/contacts"); w.Code != http.StatusOK {
 			t.Errorf("%s on the contact lookup: %d, want 200", perm, w.Code)
 		}

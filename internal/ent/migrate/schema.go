@@ -1227,6 +1227,70 @@ var (
 			},
 		},
 	}
+	// TenderSectionsColumns holds the columns for the "tender_sections" table.
+	TenderSectionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "tender_id", Type: field.TypeUUID},
+		{Name: "title", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "position", Type: field.TypeInt, Default: 0},
+		{Name: "assignee_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "reviewer_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "due_date", Type: field.TypeTime, Nullable: true},
+		{Name: "status", Type: field.TypeString, Default: "not_started"},
+		{Name: "document_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "submitted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "reviewed_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "reviewed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "review_comment", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "created_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// TenderSectionsTable holds the schema information for the "tender_sections" table.
+	TenderSectionsTable = &schema.Table{
+		Name:       "tender_sections",
+		Columns:    TenderSectionsColumns,
+		PrimaryKey: []*schema.Column{TenderSectionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tendersection_tenant_id_tender_id_position",
+				Unique:  false,
+				Columns: []*schema.Column{TenderSectionsColumns[1], TenderSectionsColumns[2], TenderSectionsColumns[5]},
+			},
+		},
+	}
+	// TenderSubmissionsColumns holds the columns for the "tender_submissions" table.
+	TenderSubmissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "tenant_id", Type: field.TypeUUID},
+		{Name: "tender_id", Type: field.TypeUUID},
+		{Name: "method", Type: field.TypeString},
+		{Name: "submitted_at", Type: field.TypeTime},
+		{Name: "submitted_by", Type: field.TypeUUID},
+		{Name: "recipient", Type: field.TypeString, Nullable: true},
+		{Name: "reference", Type: field.TypeString, Nullable: true},
+		{Name: "courier", Type: field.TypeString, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "document_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "proof_document_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// TenderSubmissionsTable holds the schema information for the "tender_submissions" table.
+	TenderSubmissionsTable = &schema.Table{
+		Name:       "tender_submissions",
+		Columns:    TenderSubmissionsColumns,
+		PrimaryKey: []*schema.Column{TenderSubmissionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "tendersubmission_tenant_id_tender_id_submitted_at",
+				Unique:  false,
+				Columns: []*schema.Column{TenderSubmissionsColumns[1], TenderSubmissionsColumns[2], TenderSubmissionsColumns[4]},
+			},
+		},
+	}
 	// UserRoleAssignmentsColumns holds the columns for the "user_role_assignments" table.
 	UserRoleAssignmentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -1306,6 +1370,8 @@ var (
 		TenderDocumentsTable,
 		TenderEvaluationsTable,
 		TenderMeetingsTable,
+		TenderSectionsTable,
+		TenderSubmissionsTable,
 		UserRoleAssignmentsTable,
 	}
 )

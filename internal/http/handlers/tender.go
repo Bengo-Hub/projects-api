@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/Bengo-Hub/pagination"
@@ -11,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/bengobox/projects-service/internal/ent"
 	"github.com/bengobox/projects-service/internal/http/authz"
 	"github.com/bengobox/projects-service/internal/modules/rbac"
 	"github.com/bengobox/projects-service/internal/services/tenders"
@@ -28,18 +31,42 @@ func NewTenderHandler(log *zap.Logger, svc *tenders.Service) *TenderHandler {
 }
 
 // RegisterRoutes registers tender routes. metrics must be before /{id} to avoid chi conflict.
-// Committees, evaluations, meetings and documents are tender management (tenders.manage).
-func (h *TenderHandler) RegisterRoutes(r chi.Router) {
+// Committees, evaluations, meetings, documents, sections, the go/no-go decision, submissions, the
+// outcome and the conversion are tender management (tenders.manage). A section's assignee and
+// reviewer act on it with tenders.view (the service checks who they are). Tenders sit under the
+// project_management plan feature (mutations, router layer 2); the conversion's budget retry also
+// needs budget (the budget_tracking feature) and projects.financials.manage.
+func (h *TenderHandler) RegisterRoutes(r chi.Router, budget func(http.Handler) http.Handler) {
 	view := authz.Require(rbac.PermTendersView)
 	manage := authz.Require(rbac.PermTendersManage)
+	change := authz.Require(rbac.PermTendersChange)
 	r.Route("/tenders", func(tr chi.Router) {
 		tr.With(view).Get("/", h.List)
 		tr.With(authz.Require(rbac.PermTendersAdd)).Post("/", h.Create)
 		tr.With(view).Get("/metrics", h.Metrics) // must be before /{id}
 		tr.Route("/{id}", func(tid chi.Router) {
 			tid.With(view).Get("/", h.Get)
-			tid.With(authz.Require(rbac.PermTendersChange)).Put("/", h.Update)
+			tid.With(change).Put("/", h.Update)
 			tid.With(authz.Require(rbac.PermTendersDelete)).Delete("/", h.Delete)
+
+			tid.With(change).Post("/status", h.ChangeStatus)
+			tid.With(view).Get("/evaluation-summary", h.EvaluationSummary)
+			tid.With(manage).Post("/decision", h.Decide)
+			tid.With(manage).Post("/outcome", h.RecordOutcome)
+			tid.With(manage, authz.Require(rbac.PermProjectsAdd)).Post("/convert", h.Convert)
+			tid.With(manage, authz.Require(rbac.PermFinancialsManage), budget).Post("/conversion/push-budget", h.PushConversionBudget)
+
+			tid.With(view).Get("/sections", h.ListSections)
+			tid.With(manage).Post("/sections", h.CreateSection)
+			tid.With(view).Put("/sections/{sectionID}", h.UpdateSection)
+			tid.With(manage).Delete("/sections/{sectionID}", h.DeleteSection)
+			tid.With(view).Post("/sections/{sectionID}/submit", h.SubmitSection)
+			tid.With(view).Post("/sections/{sectionID}/approve", h.ApproveSection)
+			tid.With(view).Post("/sections/{sectionID}/request-changes", h.RequestSectionChanges)
+
+			tid.With(view).Get("/submissions", h.ListSubmissions)
+			tid.With(manage).Post("/submissions", h.Submit)
+			tid.With(manage).Post("/documents/uploads", h.RequestUpload)
 
 			tid.With(manage).Post("/committees", h.CreateCommittee)
 			tid.With(view).Get("/committees", h.ListCommittees)
@@ -61,11 +88,22 @@ func (h *TenderHandler) RegisterRoutes(r chi.Router) {
 
 func (h *TenderHandler) writeErr(w http.ResponseWriter, err error, notFound, msg string) {
 	var verr tenders.ValidationError
+	var serr *tenders.StateError
 	switch {
 	case errors.Is(err, tenders.ErrNotFound):
 		respondError(w, http.StatusNotFound, notFound)
 	case errors.As(err, &verr):
-		respondError(w, http.StatusBadRequest, verr.Error())
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": verr.Error(), "code": "validation_error"})
+	case errors.As(err, &serr):
+		respondJSON(w, http.StatusConflict, map[string]string{"error": serr.Msg, "code": serr.Code})
+	case errors.Is(err, tenders.ErrNotYours):
+		respondJSON(w, http.StatusForbidden, map[string]string{"error": err.Error(), "code": "not_assignee"})
+	case errors.Is(err, tenders.ErrOwnSection):
+		respondJSON(w, http.StatusForbidden, map[string]string{"error": err.Error(), "code": "own_section"})
+	case errors.Is(err, tenders.ErrNotReviewer):
+		respondJSON(w, http.StatusForbidden, map[string]string{"error": err.Error(), "code": "not_reviewer"})
+	case errors.Is(err, tenders.ErrUnavailable):
+		respondJSON(w, http.StatusServiceUnavailable, map[string]string{"error": err.Error(), "code": "uploads_unavailable"})
 	default:
 		serverError(w, h.log, msg, err)
 	}
@@ -83,8 +121,18 @@ func (h *TenderHandler) List(w http.ResponseWriter, r *http.Request) {
 	filter := tenders.ListTendersFilter{
 		Status:   q.Get("status"),
 		Priority: q.Get("priority"),
+		Q:        q.Get("q"),
+		Sort:     q.Get("sort"),
 		Limit:    p.Limit,
 		Offset:   p.Offset,
+	}
+	if filter.Sort != "" && !slices.Contains(tenders.SortOrders, filter.Sort) {
+		respondError(w, http.StatusBadRequest, "sort must be one of "+strings.Join(tenders.SortOrders, ", "))
+		return
+	}
+	if len(filter.Q) > 200 {
+		respondError(w, http.StatusBadRequest, "q is at most 200 characters")
+		return
 	}
 	for key, dst := range map[string]**time.Time{"deadline_before": &filter.DeadlineBefore, "deadline_after": &filter.DeadlineAfter} {
 		if v := q.Get(key); v != "" {
@@ -146,7 +194,23 @@ func (h *TenderHandler) Get(w http.ResponseWriter, r *http.Request) {
 		h.writeErr(w, err, "tender not found", "get tender failed")
 		return
 	}
-	respondJSON(w, http.StatusOK, t)
+	view := tenderView{Tender: t, AllowedMoves: tenders.ManualMoves(t.Status)}
+	if pid := tenders.ConvertedProjectID(t.Metadata); pid != uuid.Nil {
+		// Membership scoping: the tender is tenant-wide, its project is not.
+		if view.CanOpenProject, err = accessOf(r).CanSeeProject(r.Context(), pid); err != nil {
+			serverError(w, h.log, "check converted project", err)
+			return
+		}
+	}
+	respondJSON(w, http.StatusOK, view)
+}
+
+// tenderView is a tender with what the caller can do next: the manual status moves, and whether
+// they may open the project a converted tender became (membership scoping).
+type tenderView struct {
+	*ent.Tender
+	AllowedMoves   []string `json:"allowed_moves"`
+	CanOpenProject bool     `json:"can_open_project"`
 }
 
 func (h *TenderHandler) Update(w http.ResponseWriter, r *http.Request) {

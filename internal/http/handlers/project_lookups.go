@@ -35,9 +35,10 @@ func (h *ProjectHandler) WithLookups(contacts contactSearcher, costCenters costC
 
 func (h *ProjectHandler) registerLookups(r chi.Router) {
 	// The pickers serve the project form, so they need the right to create or edit a project. The
-	// contact picker also serves the client invite (sprint 14), so portal.manage opens it too.
+	// contact picker also serves the client invite (sprint 14), so portal.manage opens it too, and
+	// the tender client (sprint 1), so tenders.add and tenders.change do.
 	form := authz.Require(rbac.PermProjectsAdd, rbac.PermProjectsChange)
-	r.With(authz.Require(rbac.PermProjectsAdd, rbac.PermProjectsChange, rbac.PermPortalManage)).
+	r.With(authz.Require(rbac.PermProjectsAdd, rbac.PermProjectsChange, rbac.PermPortalManage, rbac.PermTendersAdd, rbac.PermTendersChange)).
 		Get("/lookups/contacts", h.LookupContacts)
 	r.With(form).Get("/lookups/cost-centers", h.LookupCostCenters)
 }

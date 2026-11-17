@@ -1,6 +1,6 @@
 # Sprint 2: Tender to Project Conversion
 
-**Status**: Planned (verified against code 2026-11-16). There is no conversion route or service, projects carry no tender link, and no charter or stakeholder register exists. See `docs/backlog.md`.
+**Status**: Conversion built 2026-11-17 (US-2.1). `POST /tenders/{id}/convert` turns a won tender into a project once, in one transaction: name, client (the marketflow CRM contact), the award as `contract_value` with a billing type, the dates, the team from the committees, the documents linked as project files and an optional project template from sprint 16; the bid budget becomes a draft treasury project budget after the commit, with a retry. Converting again returns the same project. Still open: the project charter (US-2.2) and the stakeholder register (US-2.3). See `docs/api.md`, "Tenders", and `docs/backlog.md`.
 
 **Duration**: 2 weeks  
 **Sprint Goal**: Implement the seamless transition from an awarded tender to a live project.  

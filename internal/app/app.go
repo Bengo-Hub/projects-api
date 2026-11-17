@@ -263,7 +263,9 @@ func New(ctx context.Context) (*App, error) {
 	billingHandler := handlers.NewBillingHandler(log, billingService)
 	// Planning depth (sprint 16): workload, baselines, risks, change requests (cost changes go to
 	// treasury as project budgets), templates; the system templates are seeded like the RBAC seed.
-	planningService := planning.NewService(entClient, taskService, treasuryClient, log)
+	// Workload capacity comes from ERP (work shift minus leave and holidays) where ERP holds a
+	// person's hours, else from the tenant's capacity settings.
+	planningService := planning.NewService(entClient, taskService, treasuryClient, log).WithERP(erpClient)
 	if err := planning.SeedSystemTemplates(ctx, entClient); err != nil {
 		log.Warn("system project templates seed at startup failed", zap.Error(err))
 	}

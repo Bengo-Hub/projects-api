@@ -38,9 +38,9 @@
   `20261117065829_sprint_16_planning_depth.sql`.
 
 ## Decisions
-- Capacity: erp-api has no per-employee working hours read (shifts are not assigned to employees),
-  so capacity is a tenant setting (40 hours a week by default, per person overrides) rather than a
-  new ERP route built on data ERP does not hold yet.
+- Capacity: erp-api had no per-employee working hours read (shifts were not assigned to employees),
+  so capacity started as a tenant setting (40 hours a week by default, per person overrides). On
+  2026-11-17 I moved it to ERP where ERP holds a person's hours; the setting stays as the fallback.
 - Approving is its own permission module (`projects.change_approvals.manage`) because the fleet
   action vocabulary has no `approve`.
 - A recurring task's next copy appears when the task is done or its due date passes, whichever is
@@ -48,14 +48,20 @@
 - Without `project_automation` stored rules and automations stay dormant instead of being deleted.
 
 ## Still open
-- An ERP capacity read (working hours and leave per employee).
+- Done 2026-11-17: the ERP capacity read. erp-api gives an employee a standard work shift and
+  answers `GET /api/v1/hrm/attendance/capacity` (weekly hours minus approved leave and public
+  holidays, per ISO week); the workload uses it per person and falls back to the tenant setting
+  for anyone ERP holds no hours for. Left: erp-ui has no field yet to pick an employee's work shift
+  (HR sets it through `PUT /api/v1/hrm/employees/{id}` with `work_shift_id`), and pending leave,
+  county holidays and roster day overrides do not count.
 - `actual_hours` requirements read the task's `metadata.actual_hours`, not ERP logged hours.
 - Notices done 2026-11-17: `project.change_request.review_requested` (one per approver candidate
   holding change approvals, never the requester) and `project.change_request.decided` (to the
   requester) beside the recipient-free events, and notifications-api now consumes them and
-  `project.task.automation_notice` (email only). Left: the WhatsApp templates for these three
-  (a Meta approval, so mine to submit), the risk events, and the
+  `project.task.automation_notice` by email, and since 2026-11-17 by WhatsApp too (their UTILITY
+  templates are in notifications-api and wait for my Meta sync). Left: the risk events, and the
   `/{org}/projects/{id}/change-requests?request={id}` page the notice links to, which comes with
   the UI below.
-- Recurring copies start without the checklist; workload ignores public holidays.
+- Recurring copies start without the checklist. Workload counts public holidays only for people
+  whose capacity comes from ERP.
 - The UI for all eight stories.

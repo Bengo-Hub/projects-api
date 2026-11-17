@@ -1,7 +1,7 @@
 // Package billing turns finished project work into invoices in treasury (sprint 15): a
 // milestone's amount, a period of approved billable ERP hours, or a month of a retainer.
-// Treasury approves a service's invoice on create (system origin); the firm sends it from
-// treasury, which is when it goes to eTIMS and its revenue posts to the project.
+// Every invoice is created as a draft (keep_draft, owner 17 November 2026): the firm approves and
+// sends it from treasury, which is when it goes to eTIMS and its revenue posts to the project.
 //
 // Treasury owns invoices, payments and eTIMS; ERP owns the hours. projects-api keeps only the
 // invoice id, number and reference on a milestone's metadata. Every create carries a reference
@@ -126,7 +126,8 @@ func requireClient(t Terms) error {
 
 // invoiceInput is the common part of every project invoice: for the project's CRM contact, dated
 // today (EAT) and due in 30 days, tagged with the project (and its cost centre) so the revenue
-// lands on the project in treasury, with the project's VAT on every line.
+// lands on the project in treasury, with the project's VAT on every line. It stays a draft in
+// treasury for the firm to approve and send.
 func (s *Service) invoiceInput(p *ent.Project, t Terms, refType string, refID uuid.UUID, notes string, lines []treasury.InvoiceLine) treasury.CreateInvoiceInput {
 	today := eatDate(s.now())
 	meta := map[string]any{"project_id": p.ID.String(), "project_name": p.Name, "source": "projects"}
@@ -141,7 +142,7 @@ func (s *Service) invoiceInput(p *ent.Project, t Terms, refType string, refID uu
 	return treasury.CreateInvoiceInput{
 		CRMCustomerID: t.ClientID, CustomerName: t.ClientName,
 		InvoiceDate: today, DueDate: today.AddDate(0, 0, 30), Currency: t.Currency, Notes: notes,
-		ReferenceID: refID, ReferenceType: refType, Lines: lines, Metadata: meta,
+		ReferenceID: refID, ReferenceType: refType, Lines: lines, Metadata: meta, KeepDraft: true,
 	}
 }
 

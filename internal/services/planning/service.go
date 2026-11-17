@@ -11,11 +11,13 @@ import (
 	"errors"
 	"fmt"
 
+	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/projects-service/internal/ent"
 	entproject "github.com/bengobox/projects-service/internal/ent/project"
+	"github.com/bengobox/projects-service/internal/platform/erp"
 	"github.com/bengobox/projects-service/internal/platform/treasury"
 	"github.com/bengobox/projects-service/internal/services/activity"
 	"github.com/bengobox/projects-service/internal/services/tasks"
@@ -51,6 +53,10 @@ type Service struct {
 	tasks    *tasks.Service
 	treasury *treasury.Client
 	log      *zap.Logger
+	// erpCap reads people's working hours for the workload (WithERP; nil: settings only), and
+	// capacities keeps each person's answer briefly (erpcapacity.go).
+	erpCap     capacityReader
+	capacities *sharedcache.Local[string, erp.Capacity]
 }
 
 // NewService builds the service. tasksSvc sends the live hints for tasks a change request moves;

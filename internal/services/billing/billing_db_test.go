@@ -26,7 +26,8 @@ import (
 
 // fakeTreasury mirrors treasury-api's S2S invoice routes: a create always creates (treasury does
 // not dedupe on the reference, so a second create of a live reference fails the test), the
-// service's invoice comes back approved, by-reference answers 404 when there is none, and the
+// create must carry keep_draft and comes back a draft (the firm approves and sends it in treasury,
+// owner 17 November 2026), by-reference answers 404 when there is none, and the
 // summaries carry balance_due.
 type fakeTreasury struct {
 	mu      sync.Mutex
@@ -59,10 +60,13 @@ func (f *fakeTreasury) handler(t *testing.T, tenant uuid.UUID) http.Handler {
 			if _, set := body["invoice_type"]; set {
 				t.Errorf("invoice_type sent: %v (treasury rejects \"invoice\")", body["invoice_type"])
 			}
+			if body["keep_draft"] != true {
+				t.Errorf("create without keep_draft: %v (treasury would approve it)", body["keep_draft"])
+			}
 			f.creates = append(f.creates, body)
 			f.seq++
 			refID := uuid.MustParse(fmt.Sprint(body["reference_id"]))
-			inv := &treasury.Invoice{ID: uuid.New(), InvoiceNumber: fmt.Sprintf("INV-%04d", f.seq), Status: "approved",
+			inv := &treasury.Invoice{ID: uuid.New(), InvoiceNumber: fmt.Sprintf("INV-%04d", f.seq), Status: "draft",
 				PaymentStatus: "unpaid", Currency: "KES", AmountDue: 100, ReferenceType: fmt.Sprint(body["reference_type"]), ReferenceID: &refID}
 			f.byRef[key] = inv
 			_ = json.NewEncoder(w).Encode(inv)
@@ -107,10 +111,10 @@ func (f *fakeTreasury) void(refType string, refID uuid.UUID) {
 // fakeERP mirrors erp-api's billing routes: reserve tags entries with a reference and returns the
 // tagged set, confirm overwrites the invoice id, release frees them.
 type fakeERP struct {
-	mu        sync.Mutex
-	entries   []fakeEntry
-	confirms  []string // ref|invoice
-	releases  []string // ref|include_confirmed
+	mu       sync.Mutex
+	entries  []fakeEntry
+	confirms []string // ref|invoice
+	releases []string // ref|include_confirmed
 }
 
 type fakeEntry struct {
@@ -210,7 +214,7 @@ func (r *rig) milestone(t *testing.T, p *ent.Project, name string) *ent.Mileston
 	return r.client.Milestone.Create().SetTenantID(r.tenant).SetProjectID(p.ID).SetName(name).SaveX(context.Background())
 }
 
-func str(s string) *string    { return &s }
+func str(s string) *string   { return &s }
 func pct(v float64) *float64 { return &v }
 
 // A milestone bills its amount (or its share of the contract value) once: a second click returns
@@ -245,6 +249,9 @@ func TestMilestoneInvoiceIsIdempotentAndVoidable(t *testing.T) {
 	again, err := r.svc.InvoiceMilestone(ctx, r.tenant, p.ID, survey.ID, r.user)
 	if err != nil || again.ID != first.ID || len(r.treasury.creates) != 1 {
 		t.Fatalf("second click = %+v %v with %d creates, want the first invoice", again, err, len(r.treasury.creates))
+	}
+	if first.Status != "draft" {
+		t.Fatalf("milestone invoice status = %q, want a draft for the firm to approve", first.Status)
 	}
 	body := r.treasury.creates[0]
 	lines, _ := body["lines"].([]any)

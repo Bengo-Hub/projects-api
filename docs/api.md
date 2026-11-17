@@ -464,8 +464,9 @@ clients' notices were written with the milestone.
 
 Treasury owns invoices, payments and eTIMS; ERP owns the hours. projects-api creates customer
 invoices in treasury over S2S and keeps only a milestone's invoice id, number and reference.
-Treasury approves a service's invoice on create (system origin): it comes back `approved`, not yet
-sent and not yet on eTIMS. The firm sends it from treasury, and that is when its revenue posts to
+Every create sends `keep_draft: true`, so the invoice comes back a `draft` (owner, 2026-11-17):
+treasury would otherwise approve a service's invoice on create (system origin). The firm approves
+and sends it in treasury, and sending is when it goes to eTIMS and its revenue posts to
 the project (`metadata.project_id` on the revenue journal lines). Code:
 `internal/services/billing`, `internal/http/handlers/billing.go`,
 `internal/platform/treasury/invoices.go`, `internal/platform/erp/billing.go`.
@@ -580,16 +581,20 @@ Demand is each open task's estimate spread evenly over its working days (Monday 
 start date to its due date, split equally between its assignees, summed per person and ISO week in
 one SQL statement. A task with only a due date is a one-day task; a task that spans only a weekend
 spreads over those days; tasks without an estimate or a due date add nothing; done tasks count only
-with `include_done=true`. Capacity: ERP has no per-employee working hours read (its shifts carry
-`total_hours_per_week` but are not assigned to employees), so capacity comes from the tenant's
-projects settings: `weekly_hours` (40 when unset) and per person overrides. A week over 100 percent
+with `include_done=true`. Capacity (2026-11-17): a person ERP holds working hours for (an employee
+with a standard work shift) takes ERP's hours per week, net of approved leave and public holidays
+(`GET /api/v1/hrm/attendance/capacity`, one batched call per page, each person's answer kept in the
+pod for 3 minutes, 4 second timeout), and gets `capacity_source: "erp"`. Everyone else keeps the
+tenant's projects settings: `weekly_hours` (40 when unset) and per person overrides, with
+`capacity_source: "settings"`. The grid's own `capacity_source` is `erp`, `settings` or `mixed`, and
+`erp_unavailable: true` says the ERP read failed and the settings were used. A week over 100 percent
 is `overloaded`; zero capacity with any demand is overloaded too. A caller without
 `projects.manage` sees demand from the projects they belong to only. Reassigning from the view is the
 existing task update (`PUT /projects/{id}/tasks/{taskId}` with `assignee_ids`).
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/workload` | `workload.view` | `?from=YYYY-MM-DD` (default this week; moved to its Monday), `?weeks=1..26` (default 8), `?project_id` (people limited to that project's owner and staff, demand still across every visible project), `?include_done=true`. `{from, to, weeks: ["YYYY-MM-DD"...], default_weekly_hours, capacity_source: "settings", people: [{user_id, name, email, weekly_capacity, total_demand, overloaded_weeks, weeks: [{week_start, demand_hours, capacity_hours, load_pct, overloaded, task_count}]}], unassigned: [{week_start, demand_hours, task_count}], truncated}` (at most 500 people) |
+| GET | `/workload` | `workload.view` | `?from=YYYY-MM-DD` (default this week; moved to its Monday), `?weeks=1..26` (default 8), `?project_id` (people limited to that project's owner and staff, demand still across every visible project), `?include_done=true`. `{from, to, weeks: ["YYYY-MM-DD"...], default_weekly_hours, capacity_source: "erp"|"settings"|"mixed", erp_unavailable?, people: [{user_id, name, email, weekly_capacity, capacity_source: "erp"|"settings", work_shift?, total_demand, overloaded_weeks, weeks: [{week_start, demand_hours, capacity_hours, load_pct, overloaded, task_count}]}], unassigned: [{week_start, demand_hours, task_count}], truncated}` (at most 500 people) |
 | GET | `/workload/tasks` | `workload.view` | `?user_id=` a user id or `unassigned`, `&week=YYYY-MM-DD`, optional `&include_done=true`: the tasks behind one cell, largest share first, at most 100. `{data: [{task_id, title, project_id, project_name, status, due_date, hours}]}` |
 | GET | `/workload/settings` | `workload.view` | `{weekly_hours, person_hours: {user_id: hours}, capacity_source}` |
 | PUT | `/workload/settings` | `workload.manage` | Same body; hours 0 to 168, at most 2000 overrides. Event `project.workload.settings_updated` |
@@ -766,7 +771,8 @@ tenant (and project) columns. Change requests are a table rather than project me
 are listed by status per project and across the tenant (the approvals queue). Templates are a table
 because they belong to the tenant, not to a project, and system rows have no tenant. Status rules and
 automations live in project metadata: they are read only with their project and never queried across
-projects. Workload capacity lives in `tenant_settings` because projects had no tenant level row.
+projects. The workload capacity setting lives in `tenant_settings` because projects had no tenant
+level row; it is the fallback for people ERP holds no working hours for.
 Deleting a project deletes its baselines, risks and change requests.
 
 ## Platform: field keys

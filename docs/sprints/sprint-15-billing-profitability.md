@@ -20,9 +20,10 @@
 - Retainer hours: the allowance and rollover are stored and shown, but hours over the allowance are
   not billed automatically and the monthly usage is not tracked yet (ERP hours have no per-month
   project read). Until then overage is billed by hand in treasury.
-- Sending the invoice stays in treasury: a service's invoice comes back approved (system origin),
-  and the firm sends it there, which puts it on eTIMS and posts its revenue to the project. A way to
-  keep it a draft would be a treasury change; I did not need one.
+- Approving and sending the invoice stay in treasury. Since 2026-11-17 projects-api sends
+  `keep_draft: true` (a new treasury create field), so the invoice comes back a draft instead of
+  approved; the firm approves it and sends it there, which puts it on eTIMS and posts its revenue to
+  the project.
 - VAT: lines carry the project's `tax_code` (VAT-16, VAT-8, VAT-0, VAT-EXEMPT). A project without one
   invoices with no VAT, so a VAT registered firm must set it on the commercial terms.
 
@@ -32,7 +33,7 @@
 Treasury owns invoices, payments and eTIMS. projects-api creates invoices over S2S (`POST /api/v1/s2s/{tenant}/invoices`) with `reference_type` set to `project_milestone`, `project_time` or `project_retainer` and a reference id. Treasury's create does not dedupe, so projects-api checks `GET /invoices/by-reference` first under a Redis lock per reference, which makes every create idempotent. projects-api keeps only the invoice id, number and reference in milestone metadata.
 
 ## Stories
-- **US-15.1 Bill a milestone.** A milestone carries an amount or a share of the contract value. "Create invoice" makes the invoice in treasury (approved, ready to send) and links to it.
+- **US-15.1 Bill a milestone.** A milestone carries an amount or a share of the contract value. "Create invoice" makes the invoice in treasury (a draft the firm approves and sends there) and links to it.
 - **US-15.2 Bill time.** Pick a period. Approved billable ERP hours times the project rate become invoice lines, and the hours are marked billed in the entry metadata so they are never billed twice.
 - **US-15.3 Contract types.** Fixed fee, time and materials, retainer (a monthly amount with a hours allowance and a rollover rule) and non-billable, in project metadata. This finishes the `billing_type` and `contract_value` work from the budgets plan.
 - **US-15.4 Profitability.** Margin per project and per client from invoiced revenue (treasury) minus cost (treasury actuals plus ERP labour cost), worked out in SQL or batched S2S calls, never one call per project.

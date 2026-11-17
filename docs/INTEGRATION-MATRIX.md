@@ -13,8 +13,8 @@ This document provides a comprehensive matrix of all services and platforms that
 | Service | Location | Status | Integration Type | Data Flow | Key Use Cases |
 |---------|----------|--------|------------------|-----------|---------------|
 | **Auth Service** | `auth-service/` | ✅ Production | REST API + Events | Bi-directional | • JWT validation (JWKS)<br>• User synchronization<br>• Tenant management<br>• SSO authentication |
-| **HRM (ERP)** | `erp/erp-api/` | ✅ Production; timesheets integrated (project hours 2026-09-28, time logging 2026-11-16) | REST API (S2S) | Projects reads project hours; logs, reads and submits the signed-in user's timesheet time | • Utilisation and earned value from timesheet hours<br>• Task timer and week grid on ERP timesheets<br>• Weekly submit (approval in ERP) |
-| **Treasury** | `treasury-api/` | ✅ Integrated: budgets and financials (2026-09-28), project invoices (sprint 15, 2026-11-17) | REST API (S2S) | Projects reads budgets and financials, and creates project invoices (approved, sent from treasury) | • Budget approval<br>• Voucher processing<br>• Payment tracking<br>• Expense recording<br>• Cost center allocation |
+| **HRM (ERP)** | `erp/erp-api/` | ✅ Production; timesheets integrated (project hours 2026-09-28, time logging 2026-11-16, workload capacity 2026-11-17) | REST API (S2S) | Projects reads project hours; logs, reads and submits the signed-in user's timesheet time | • Utilisation and earned value from timesheet hours<br>• Task timer and week grid on ERP timesheets<br>• Weekly submit (approval in ERP) |
+| **Treasury** | `treasury-api/` | ✅ Integrated: budgets and financials (2026-09-28), project invoices (sprint 15, 2026-11-17) | REST API (S2S) | Projects reads budgets and financials, and creates project invoices (drafts, approved and sent in treasury) | • Budget approval<br>• Voucher processing<br>• Payment tracking<br>• Expense recording<br>• Cost center allocation |
 | **Finance (ERP)** | `erp/erp-api/` | Not applicable: ERP is HR and payroll only, finance lives in treasury-api (verified 2026-09-27) | REST API | Projects → Finance (read) | • Invoice management<br>• Cost center lookup<br>• Financial reporting<br>• Budget integration |
 | **CRM (ERP)** | `erp/erp-api/` | ✅ Production | REST API + Events | Bi-directional | • Client information<br>• Opportunity tracking<br>• Contact management<br>• Client portal<br>• Feedback collection |
 | **Notifications** | `notifications-service/notifications-api/` | ✅ Production | Events (NATS) | Projects → Notifications | • Task assignments<br>• Deadline reminders<br>• Status changes<br>• Comment mentions<br>• Meeting reminders<br>• Budget alerts |
@@ -39,6 +39,7 @@ erp-api's own plan gate, so projects-api checks the user's token first: `time_tr
 | `GET /api/v1/hrm/attendance/timesheets/for-user?auth_user_id=&from=&to=` | `GET /time/week` | the user's timesheets and entries for the week |
 | `POST /api/v1/hrm/attendance/timesheets/for-user/entries` | `PUT /time/entries` (mode set), timer stop and timer switch (mode add, one call per local date) | opens the Monday to Sunday timesheet when none covers the date; carries `task_id` and `billable`. POST so the shared client never retries an add |
 | `POST /api/v1/hrm/attendance/timesheets/for-user/submit` | `POST /time/week/submit` | ERP's submit transition; approve and reject stay in erp-ui |
+| `GET /api/v1/hrm/attendance/capacity?auth_user_ids=&from=&to=` | `GET /workload` (2026-11-17) | per person `{has_employee, configured, work_shift, weekly_hours, weeks: [{week_start, hours}]}`, hours net of approved leave and public holidays; one batched call per page (500 ids each), answers cached per person for 3 minutes; `configured: false` falls back to the capacity settings |
 
 ERP answers 404 `no_employee_record` for a user without an employee (projects-api answers 409
 with the same code), 409 `timesheet_locked` and `nothing_to_submit`. erp-api's ingress
@@ -61,7 +62,7 @@ milestone's invoice id, number and reference.
 
 | Call | Used by | Notes |
 |---|---|---|
-| `POST /api/v1/s2s/{tenant}/invoices` | milestone, time and retainer invoices | for `crm_customer_id` plus `customer_name` (the project's CRM contact), `metadata.project_id` (puts the revenue on the project when sent) and `cost_center_id`, with `reference_type` `project_milestone`, `project_time` or `project_retainer`, no `invoice_type` (treasury's default, standard) and the project's `tax_code` on each line. Comes back `approved` (system origin), not sent. Treasury does not dedupe on the reference: projects-api reads by reference first under a Redis lock |
+| `POST /api/v1/s2s/{tenant}/invoices` | milestone, time and retainer invoices | for `crm_customer_id` plus `customer_name` (the project's CRM contact), `metadata.project_id` (puts the revenue on the project when sent) and `cost_center_id`, with `reference_type` `project_milestone`, `project_time` or `project_retainer`, no `invoice_type` (treasury's default, standard) and the project's `tax_code` on each line. Sends `keep_draft: true` (2026-11-17), so it comes back a `draft` for the firm to approve and send in treasury. Treasury does not dedupe on the reference: projects-api reads by reference first under a Redis lock |
 | `GET /api/v1/s2s/{tenant}/invoices/by-reference` | every create, first | the live invoice for a reference; a void or cancelled one moves the item to the next reference in its chain |
 | `GET /api/v1/s2s/{tenant}/invoices/by-references` | billing overview | payment state of every invoiced milestone of a project in one call (up to 200) |
 | `GET /api/v1/s2s/{tenant}/invoices/by-project` | billing overview (drafts included), portal (sent and paid only) | through the invoice metadata GIN index |
@@ -79,10 +80,11 @@ already uses, acting as the approver (`X-User-ID`). No new treasury or ERP route
 | `POST /api/v1/s2s/{tenant}/budgets` | approval with a `budget` body only | `budget_type` project, `project_id` forced; the new id is saved before the submit |
 | `POST /api/v1/s2s/{tenant}/budgets/{id}/submit` | every push | starts treasury's own budget approval; a failure is kept on the request and retried from `push-budget` |
 
-Workload capacity does not call ERP: erp-api has shifts with `total_hours_per_week` but no shift
-assigned per employee and no S2S read of a person's working hours, so capacity comes from the
-tenant's projects settings (40 hours a week by default, per person overrides). An ERP capacity read
-is a follow-up.
+Workload capacity (2026-11-17) reads ERP first: `GET /api/v1/hrm/attendance/capacity` (see the ERP
+table above) gives each person's hours per ISO week from their standard work shift, net of approved
+leave and public holidays. A person ERP holds no hours for, or every person when the read fails,
+keeps the tenant's projects settings (40 hours a week by default, per person overrides). Each
+person carries `capacity_source` (`erp` or `settings`).
 
 ---
 

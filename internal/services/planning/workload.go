@@ -22,9 +22,10 @@ import (
 // (Monday to Friday) from its start date to its due date (a task with only a due date is a
 // one-day task; a task spanning only a weekend spreads over those days), split equally between
 // its assignees, and summed per person and ISO week, all in one SQL statement. Capacity is per
-// person and week: ERP has no per-employee working hours read yet (its shifts carry
-// total_hours_per_week but are not assigned to employees), so capacity comes from the tenant's
-// projects settings: weekly_hours for everyone (40 when unset) and person_hours overrides.
+// person and week. Since 2026-11-17 it comes from ERP when ERP holds the person's working hours
+// (an employee with a standard work shift; each week's hours net of approved leave and public
+// holidays, erpcapacity.go), else from the tenant's projects settings: weekly_hours for everyone
+// (40 when unset) and person_hours overrides. Each person says which source it used.
 const (
 	DefaultWeeklyHours = 40.0
 	MaxWeeks           = 26
@@ -156,10 +157,14 @@ type WeekLoad struct {
 
 // PersonLoad is one person's row.
 type PersonLoad struct {
-	UserID          uuid.UUID  `json:"user_id"`
-	Name            string     `json:"name"`
-	Email           string     `json:"email"`
-	WeeklyCapacity  float64    `json:"weekly_capacity"`
+	UserID         uuid.UUID `json:"user_id"`
+	Name           string    `json:"name"`
+	Email          string    `json:"email"`
+	WeeklyCapacity float64   `json:"weekly_capacity"`
+	// CapacitySource is "erp" when ERP holds this person's working hours, else "settings".
+	CapacitySource string `json:"capacity_source"`
+	// WorkShift names the ERP work shift the capacity came from (ERP only).
+	WorkShift       string     `json:"work_shift,omitempty"`
 	TotalDemand     float64    `json:"total_demand"`
 	OverloadedWeeks int        `json:"overloaded_weeks"`
 	Weeks           []WeekLoad `json:"weeks"`
@@ -174,11 +179,15 @@ type UnassignedWeek struct {
 
 // Workload is the whole grid.
 type Workload struct {
-	From           string           `json:"from"`
-	To             string           `json:"to"`
-	Weeks          []string         `json:"weeks"`
-	DefaultWeekly  float64          `json:"default_weekly_hours"`
-	CapacitySource string           `json:"capacity_source"`
+	From          string   `json:"from"`
+	To            string   `json:"to"`
+	Weeks         []string `json:"weeks"`
+	DefaultWeekly float64  `json:"default_weekly_hours"`
+	// CapacitySource is "erp" when every person's capacity came from ERP, "settings" when none
+	// did, and "mixed" otherwise; each person carries its own.
+	CapacitySource string `json:"capacity_source"`
+	// ERPUnavailable is true when the ERP capacity read failed and the settings were used.
+	ERPUnavailable bool             `json:"erp_unavailable,omitempty"`
 	People         []PersonLoad     `json:"people"`
 	Unassigned     []UnassignedWeek `json:"unassigned"`
 	Truncated      bool             `json:"truncated"`
@@ -274,7 +283,7 @@ func BuildWorkload(rows []DemandRow, team []uuid.UUID, start time.Time, weeks in
 			cells = make([]cell, weeks)
 		}
 		capacity := settings.CapacityOf(id)
-		p := PersonLoad{UserID: id, WeeklyCapacity: capacity, Weeks: make([]WeekLoad, weeks)}
+		p := PersonLoad{UserID: id, WeeklyCapacity: capacity, CapacitySource: settings.CapacitySource, Weeks: make([]WeekLoad, weeks)}
 		for i, c := range cells {
 			w := WeekLoad{WeekStart: out.Weeks[i], Demand: round2(c.hours), Capacity: capacity, Tasks: c.tasks}
 			switch {
@@ -392,6 +401,9 @@ func (s *Service) Workload(ctx context.Context, tenantID uuid.UUID, q WorkloadQu
 	for i, p := range out.People {
 		ids[i] = p.UserID
 	}
+	caps, erpErr := s.erpCapacity(ctx, tenantID, ids, start, end)
+	ApplyERPCapacity(&out, caps)
+	out.ERPUnavailable = erpErr != nil
 	known, err := people.Lookup(ctx, s.client.ProjectsUser, tenantID, ids)
 	if err != nil {
 		return Workload{}, err

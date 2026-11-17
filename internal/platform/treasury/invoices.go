@@ -37,8 +37,10 @@ type InvoiceLine struct {
 // CreateInvoiceInput is the customer invoice projects-api asks treasury to create. The customer is
 // the project's CRM contact (treasury keeps crm_customer_id only when the CRM confirms it is the
 // tenant's, so the name goes too); metadata.project_id puts the revenue on the project when the
-// invoice is sent. invoice_type is left out: treasury's default is its standard invoice. A service
-// caller's invoice comes back approved (system origin), not sent and not yet on eTIMS.
+// invoice is sent. invoice_type is left out: treasury's default is its standard invoice. KeepDraft
+// is always true for project invoices: treasury would otherwise approve a service's invoice on
+// create (system origin), and the firm approves and sends it in treasury itself (owner, 17 November
+// 2026). It comes back a draft, not sent and not yet on eTIMS.
 type CreateInvoiceInput struct {
 	CRMCustomerID string         `json:"crm_customer_id"`
 	CustomerName  string         `json:"customer_name,omitempty"`
@@ -50,22 +52,23 @@ type CreateInvoiceInput struct {
 	ReferenceType string         `json:"reference_type"`
 	Lines         []InvoiceLine  `json:"lines"`
 	Metadata      map[string]any `json:"metadata"`
+	KeepDraft     bool           `json:"keep_draft"`
 }
 
 // Invoice is the part of a treasury invoice projects-api reads back after a create or a
 // by-reference read.
 type Invoice struct {
-	ID            uuid.UUID  `json:"id"`
-	InvoiceNumber string     `json:"invoice_number"`
-	Status        string     `json:"status"`
-	PaymentStatus string     `json:"payment_status"`
-	Currency      string     `json:"currency"`
-	TotalAmount   Money      `json:"total_amount"`
-	AmountPaid    Money      `json:"amount_paid"`
+	ID            uuid.UUID `json:"id"`
+	InvoiceNumber string    `json:"invoice_number"`
+	Status        string    `json:"status"`
+	PaymentStatus string    `json:"payment_status"`
+	Currency      string    `json:"currency"`
+	TotalAmount   Money     `json:"total_amount"`
+	AmountPaid    Money     `json:"amount_paid"`
 	// AmountDue is what is still owed. Treasury's full invoice calls it amount_due and its summary
 	// balance_due (net of credit notes); normalize fills both from whichever came back.
-	AmountDue  Money `json:"amount_due"`
-	BalanceDue Money `json:"balance_due"`
+	AmountDue     Money      `json:"amount_due"`
+	BalanceDue    Money      `json:"balance_due"`
 	InvoiceDate   time.Time  `json:"invoice_date"`
 	DueDate       time.Time  `json:"due_date"`
 	ReferenceType string     `json:"reference_type,omitempty"`
